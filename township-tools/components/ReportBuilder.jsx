@@ -511,7 +511,7 @@ const RichTextEditor = ({ content, onChange, themeColors, maxHeight, defaultFont
             setShowSizeMenu(false); setShowSpacingMenu(false);
             handleFormat('bold'); 
           }} 
-          className={`p-1.5 rounded transition-colors ${isBold ? 'bg-slate-700 text-white' : 'hover:bg-slate-200'}`}
+          className={`p-1.5 rounded transition-colors ${isBold ? 'bg-slate-700 text-white' : 'text-slate-700 hover:bg-slate-200'}`}
           title="Bold"
         >
           <Bold className="w-4 h-4" />
@@ -524,7 +524,7 @@ const RichTextEditor = ({ content, onChange, themeColors, maxHeight, defaultFont
             setShowSizeMenu(false); setShowSpacingMenu(false);
             handleFormat('italic'); 
           }} 
-          className={`p-1.5 rounded transition-colors ${isItalic ? 'bg-slate-700 text-white' : 'hover:bg-slate-200'}`}
+          className={`p-1.5 rounded transition-colors ${isItalic ? 'bg-slate-700 text-white' : 'text-slate-700 hover:bg-slate-200'}`}
           title="Italic"
         >
           <Italic className="w-4 h-4" />
@@ -537,7 +537,7 @@ const RichTextEditor = ({ content, onChange, themeColors, maxHeight, defaultFont
             setShowSizeMenu(false); setShowSpacingMenu(false);
             handleFormat('underline'); 
           }} 
-          className={`p-1.5 rounded transition-colors ${isUnderline ? 'bg-slate-700 text-white' : 'hover:bg-slate-200'}`}
+          className={`p-1.5 rounded transition-colors ${isUnderline ? 'bg-slate-700 text-white' : 'text-slate-700 hover:bg-slate-200'}`}
           title="Underline"
         >
           <Underline className="w-4 h-4" />
@@ -555,7 +555,7 @@ const RichTextEditor = ({ content, onChange, themeColors, maxHeight, defaultFont
               setShowFontMenu(false);
               setShowSizeMenu(false); setShowSpacingMenu(false);
             }}
-            className="p-1.5 hover:bg-slate-200 rounded flex items-center gap-1"
+            className="p-1.5 text-slate-700 hover:bg-slate-200 rounded flex items-center gap-1"
           >
             <Palette className="w-4 h-4" />
           </button>
@@ -590,7 +590,7 @@ const RichTextEditor = ({ content, onChange, themeColors, maxHeight, defaultFont
             setShowSizeMenu(false); setShowSpacingMenu(false);
             handleFormat('justifyLeft'); 
           }} 
-          className="p-1.5 hover:bg-slate-200 rounded"
+          className="p-1.5 text-slate-700 hover:bg-slate-200 rounded"
           title="Align Left"
         >
           <AlignLeft className="w-4 h-4" />
@@ -603,7 +603,7 @@ const RichTextEditor = ({ content, onChange, themeColors, maxHeight, defaultFont
             setShowSizeMenu(false); setShowSpacingMenu(false);
             handleFormat('justifyCenter'); 
           }} 
-          className="p-1.5 hover:bg-slate-200 rounded"
+          className="p-1.5 text-slate-700 hover:bg-slate-200 rounded"
           title="Align Center"
         >
           <AlignCenter className="w-4 h-4" />
@@ -616,7 +616,7 @@ const RichTextEditor = ({ content, onChange, themeColors, maxHeight, defaultFont
             setShowSizeMenu(false); setShowSpacingMenu(false);
             handleFormat('justifyRight'); 
           }} 
-          className="p-1.5 hover:bg-slate-200 rounded"
+          className="p-1.5 text-slate-700 hover:bg-slate-200 rounded"
           title="Align Right"
         >
           <AlignRight className="w-4 h-4" />
@@ -633,7 +633,7 @@ const RichTextEditor = ({ content, onChange, themeColors, maxHeight, defaultFont
             setShowSizeMenu(false); setShowSpacingMenu(false);
             handleFormat('insertUnorderedList'); 
           }} 
-          className="p-1.5 hover:bg-slate-200 rounded"
+          className="p-1.5 text-slate-700 hover:bg-slate-200 rounded"
           title="Bullet List"
         >
           <List className="w-4 h-4" />
@@ -646,7 +646,7 @@ const RichTextEditor = ({ content, onChange, themeColors, maxHeight, defaultFont
             setShowSizeMenu(false); setShowSpacingMenu(false);
             handleFormat('insertOrderedList'); 
           }} 
-          className="p-1.5 hover:bg-slate-200 rounded"
+          className="p-1.5 text-slate-700 hover:bg-slate-200 rounded"
           title="Numbered List"
         >
           <ListOrdered className="w-4 h-4" />
@@ -689,7 +689,7 @@ const RichTextEditor = ({ content, onChange, themeColors, maxHeight, defaultFont
               setShowColorMenu(false);
               setShowSizeMenu(false);
             }}
-            className="px-2 py-1 hover:bg-slate-200 rounded flex items-center gap-1 text-sm"
+            className="px-2 py-1 text-slate-700 hover:bg-slate-200 rounded flex items-center gap-1 text-sm"
             title="Line & Paragraph Spacing"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -2185,9 +2185,9 @@ const BannerSection = ({ section, onUpdate, themeColors, logo, isPreview }) => {
       className="relative flex flex-col items-center justify-center p-10 text-center text-white"
       style={{ 
         backgroundColor: themeColors?.primary || '#2B3E50',
-        minHeight: '1500px',
-        maxHeight: '1500px',
-        height: '1500px'
+        minHeight: '1100px',
+        maxHeight: '1100px',
+        height: '1100px'
       }}
     >
       {logo && (
@@ -2323,7 +2323,7 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
   const headerHeight = 200;
   const topPadding = 64;
   const bottomPadding = isPreview ? 20 : 32; // Much smaller bottom padding in preview
-  const pageHeight = 1500;
+  const pageHeight = 1100;
   
   // Calculate actual image canvas height based on content
   const getActualImageCanvasHeight = () => {
@@ -2547,9 +2547,9 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
       data-section="letter"
       className="bg-white flex flex-col"
       style={{ 
-        minHeight: '1500px', 
-        maxHeight: '1500px', 
-        height: '1500px', 
+        minHeight: '1100px', 
+        maxHeight: '1100px', 
+        height: '1100px', 
         overflow: 'hidden', 
         padding: isPreview ? '64px 64px 20px 64px' : '64px 64px 32px 64px' 
       }}
@@ -3417,9 +3417,9 @@ const ContentSection = ({ section, onUpdate, onDelete, themeColors, isPreview })
       style={{ 
         backgroundColor: section.bgColor || themeColors?.primary || '#2B3E50',
         color: 'white',
-        minHeight: '1500px',
-        maxHeight: '1500px',
-        height: '1500px',
+        minHeight: '1100px',
+        maxHeight: '1100px',
+        height: '1100px',
         padding: isPreview ? '64px 64px 20px 64px' : '64px 64px 32px 64px'
       }}
     >
@@ -4128,11 +4128,11 @@ export default function ReportBuilder() {
         throw new Error('No sections found to export');
       }
       
-      // Create PDF with square page format (1500x1500 aspect ratio)
+      // Create PDF with US Letter page format (8.5" x 11")
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
-        format: [297, 297] // Square format in mm
+        format: 'letter' // US Letter: 215.9mm x 279.4mm (8.5" x 11")
       });
       
       for (let i = 0; i < sectionElements.length; i++) {
@@ -4141,7 +4141,7 @@ export default function ReportBuilder() {
         
         // Add new page for sections after the first
         if (i > 0) {
-          pdf.addPage([297, 297]);
+          pdf.addPage('letter');
         }
         
         // Capture section as canvas
@@ -4158,9 +4158,9 @@ export default function ReportBuilder() {
         // Convert to image and add to PDF
         const imgData = canvas.toDataURL('image/jpeg', 0.95);
         
-        // Calculate dimensions to fit the page
-        const pageWidth = 297;
-        const pageHeight = 297;
+        // Calculate dimensions to fit the letter page (215.9mm x 279.4mm)
+        const pageWidth = 215.9;
+        const pageHeight = 279.4;
         const imgWidth = pageWidth;
         const imgHeight = (canvas.height * pageWidth) / canvas.width;
         
@@ -4680,7 +4680,7 @@ export default function ReportBuilder() {
                   value={versionNameInput}
                   onChange={(e) => setVersionNameInput(e.target.value)}
                   placeholder="Enter version name..."
-                  className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 bg-white"
                   maxLength={30}
                   disabled={savedVersions.length >= 3}
                   onKeyDown={(e) => {

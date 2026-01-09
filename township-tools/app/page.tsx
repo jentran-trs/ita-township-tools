@@ -171,7 +171,7 @@ export default function Home() {
             We offer bulk licensing and dedicated support for ITA members.
           </p>
           <a 
-            href="mailto:contact@example.com" 
+            href="mailto:ita@ita-in.org" 
             className="inline-block px-6 py-3 bg-amber-500 text-slate-900 rounded-lg font-medium hover:bg-amber-400 transition-colors"
           >
             Contact for Partnership

@@ -2,7 +2,7 @@
 
 import { UserButton, OrganizationSwitcher, useUser, useOrganization } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { Building2, FileText, Settings, Users, ArrowRight, Plus } from "lucide-react";
+import { Building2, FileText, Settings, Users, ArrowRight, Plus, ShieldCheck } from "lucide-react";
 
 export default function Dashboard() {
   const { user } = useUser();
@@ -40,6 +40,15 @@ export default function Dashboard() {
           </div>
           
           <div className="flex items-center gap-4">
+            {user?.publicMetadata?.role === "superadmin" && (
+              <button
+                onClick={() => router.push("/admin")}
+                className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/20 text-amber-500 rounded-lg hover:bg-amber-500/30 transition-colors text-sm font-medium"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                Admin
+              </button>
+            )}
             <span className="text-slate-400 text-sm">
               Welcome, {user?.firstName || user?.emailAddresses[0]?.emailAddress}
             </span>

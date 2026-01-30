@@ -442,10 +442,10 @@ const RichTextEditor = ({ content, onChange, themeColors, maxHeight, defaultFont
               setShowColorMenu(false);
               setShowSizeMenu(false); setShowSpacingMenu(false);
             }}
-            className="flex items-center gap-1 px-2 py-1 bg-white border border-slate-300 rounded text-sm hover:bg-slate-100"
+            className="flex items-center gap-1 px-2 py-1 bg-white border border-slate-300 rounded text-sm hover:bg-slate-100 text-slate-900"
           >
             <Type className="w-4 h-4" />
-            <span className="max-w-20 truncate">{currentFont.name}</span>
+            <span className="max-w-20 truncate text-slate-900">{currentFont.name}</span>
             <ChevronDown className="w-3 h-3" />
           </button>
           {showFontMenu && (
@@ -457,8 +457,8 @@ const RichTextEditor = ({ content, onChange, themeColors, maxHeight, defaultFont
                 <button
                   key={font.name}
                   onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleFontChange(font); }}
-                  className="block w-full text-left px-3 py-2 hover:bg-slate-100 text-sm"
-                  style={{ fontFamily: font.value }}
+                  className="block w-full text-left px-3 py-2 hover:bg-slate-100 text-sm text-slate-900"
+                  style={{ fontFamily: font.value, color: '#0f172a' }}
                 >
                   {font.name}
                 </button>
@@ -477,9 +477,9 @@ const RichTextEditor = ({ content, onChange, themeColors, maxHeight, defaultFont
               setShowFontMenu(false);
               setShowColorMenu(false);
             }}
-            className="flex items-center gap-1 px-2 py-1 bg-white border border-slate-300 rounded text-sm hover:bg-slate-100"
+            className="flex items-center gap-1 px-2 py-1 bg-white border border-slate-300 rounded text-sm hover:bg-slate-100 text-slate-900"
           >
-            {fontSize}px
+            <span className="text-slate-900">{fontSize}px</span>
             <ChevronDown className="w-3 h-3" />
           </button>
           {showSizeMenu && (
@@ -491,7 +491,8 @@ const RichTextEditor = ({ content, onChange, themeColors, maxHeight, defaultFont
                 <button
                   key={size}
                   onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleSizeChange(size); }}
-                  className="block w-full text-left px-3 py-2 hover:bg-slate-100 text-sm"
+                  className="block w-full text-left px-3 py-2 hover:bg-slate-100 text-sm text-slate-900"
+                  style={{ color: '#0f172a' }}
                 >
                   {size}px
                 </button>
@@ -665,15 +666,16 @@ const RichTextEditor = ({ content, onChange, themeColors, maxHeight, defaultFont
               e.target.value = '';
             }
           }}
-          className="px-2 py-1 bg-white border border-slate-300 rounded text-sm"
+          className="px-2 py-1 bg-white border border-slate-300 rounded text-sm text-slate-900"
           defaultValue=""
+          style={{ color: '#0f172a' }}
         >
-          <option value="" disabled>Format</option>
-          <option value="p">Paragraph</option>
-          <option value="h1">Heading 1</option>
-          <option value="h2">Heading 2</option>
-          <option value="h3">Heading 3</option>
-          <option value="h4">Heading 4</option>
+          <option value="" disabled style={{ color: '#0f172a' }}>Format</option>
+          <option value="p" style={{ color: '#0f172a' }}>Paragraph</option>
+          <option value="h1" style={{ color: '#0f172a' }}>Heading 1</option>
+          <option value="h2" style={{ color: '#0f172a' }}>Heading 2</option>
+          <option value="h3" style={{ color: '#0f172a' }}>Heading 3</option>
+          <option value="h4" style={{ color: '#0f172a' }}>Heading 4</option>
         </select>
 
         <div className="w-px h-6 bg-slate-300 mx-1" />
@@ -711,13 +713,14 @@ const RichTextEditor = ({ content, onChange, themeColors, maxHeight, defaultFont
                 <select
                   value={lineSpacing}
                   onChange={(e) => setLineSpacing(parseFloat(e.target.value))}
-                  className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-sm"
+                  className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-sm text-slate-900"
+                  style={{ color: '#0f172a' }}
                 >
-                  <option value="1">Single (1.0)</option>
-                  <option value="1.15">1.15</option>
-                  <option value="1.4">1.4</option>
-                  <option value="1.5">1.5</option>
-                  <option value="2">Double (2.0)</option>
+                  <option value="1" style={{ color: '#0f172a' }}>Single (1.0)</option>
+                  <option value="1.15" style={{ color: '#0f172a' }}>1.15</option>
+                  <option value="1.4" style={{ color: '#0f172a' }}>1.4</option>
+                  <option value="1.5" style={{ color: '#0f172a' }}>1.5</option>
+                  <option value="2" style={{ color: '#0f172a' }}>Double (2.0)</option>
                 </select>
               </div>
               <div>
@@ -725,13 +728,14 @@ const RichTextEditor = ({ content, onChange, themeColors, maxHeight, defaultFont
                 <select
                   value={paragraphSpacing}
                   onChange={(e) => setParagraphSpacing(parseInt(e.target.value))}
-                  className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-sm"
+                  className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-sm text-slate-900"
+                  style={{ color: '#0f172a' }}
                 >
-                  <option value="0">None</option>
-                  <option value="2">Compact</option>
-                  <option value="4">Small</option>
-                  <option value="8">Medium</option>
-                  <option value="12">Large</option>
+                  <option value="0" style={{ color: '#0f172a' }}>None</option>
+                  <option value="2" style={{ color: '#0f172a' }}>Compact</option>
+                  <option value="4" style={{ color: '#0f172a' }}>Small</option>
+                  <option value="8" style={{ color: '#0f172a' }}>Medium</option>
+                  <option value="12" style={{ color: '#0f172a' }}>Large</option>
                 </select>
               </div>
             </div>
@@ -743,14 +747,15 @@ const RichTextEditor = ({ content, onChange, themeColors, maxHeight, defaultFont
         ref={editorRef}
         contentEditable
         dir="ltr"
-        className="min-h-32 p-4 focus:outline-none"
-        style={{ 
-          direction: 'ltr', 
+        className="min-h-32 p-4 focus:outline-none text-slate-900"
+        style={{
+          direction: 'ltr',
           textAlign: 'left',
           fontSize: defaultFontSize || '16px',
           lineHeight: lineSpacing,
           maxHeight: maxHeight ? `${maxHeight}px` : 'none',
-          overflowY: maxHeight ? 'auto' : 'visible'
+          overflowY: maxHeight ? 'auto' : 'visible',
+          color: '#0f172a'
         }}
         onInput={handleInput}
         onBlur={saveSelection}
@@ -1606,6 +1611,13 @@ const TextBlock = ({ textBlock, onUpdate, onDelete, themeColors, editable = true
   const editorRef = useRef(null);
   const isInitialized = useRef(false);
 
+  const TEXT_COLORS = [
+    { name: 'White', value: '#FFFFFF' },
+    { name: 'Primary', value: themeColors?.primary || '#1e3a5f' },
+    { name: 'Accent', value: themeColors?.accent || '#8B0000' },
+    { name: 'Gold/Highlight', value: themeColors?.gold || '#D4B896' },
+  ];
+
   const GRID_SIZE = 20;
   const snapToGrid = (value) => Math.round(value / GRID_SIZE) * GRID_SIZE;
 
@@ -1622,13 +1634,19 @@ const TextBlock = ({ textBlock, onUpdate, onDelete, themeColors, editable = true
     }
   }, [textBlock.posX, textBlock.posY, isDragging]);
 
-  // Initialize content
+  // Initialize content when entering edit mode
   useEffect(() => {
-    if (editorRef.current && !isInitialized.current && editable) {
+    if (editorRef.current && editable) {
       editorRef.current.innerHTML = textBlock.content || '';
-      isInitialized.current = true;
     }
-  }, [textBlock.content, editable]);
+  }, [editable]);
+
+  // Reset initialized flag when leaving edit mode
+  useEffect(() => {
+    if (!editable) {
+      isInitialized.current = false;
+    }
+  }, [editable]);
 
   // Check formatting state
   const checkFormatting = () => {
@@ -1654,6 +1672,14 @@ const TextBlock = ({ textBlock, onUpdate, onDelete, themeColors, editable = true
       document.execCommand(command, false, null);
       onUpdate({ ...textBlock, content: editorRef.current.innerHTML });
       checkFormatting();
+    }
+  };
+
+  const handleColorChange = (color) => {
+    if (editorRef.current) {
+      editorRef.current.focus();
+      document.execCommand('foreColor', false, color);
+      onUpdate({ ...textBlock, content: editorRef.current.innerHTML });
     }
   };
 
@@ -1790,6 +1816,19 @@ const TextBlock = ({ textBlock, onUpdate, onDelete, themeColors, editable = true
           >
             <Underline className="w-4 h-4" />
           </button>
+
+          <div className="w-px h-5 bg-white/30" />
+
+          {/* Color options */}
+          {TEXT_COLORS.map((color) => (
+            <button
+              key={color.name}
+              onMouseDown={(e) => { e.preventDefault(); handleColorChange(color.value); }}
+              className="w-5 h-5 rounded border border-white/30 hover:scale-110 transition-transform"
+              style={{ backgroundColor: color.value }}
+              title={color.name}
+            />
+          ))}
         </div>
       )}
 
@@ -1845,6 +1884,237 @@ const TextBlock = ({ textBlock, onUpdate, onDelete, themeColors, editable = true
           font-style: italic;
         }
       `}</style>
+    </div>
+  );
+};
+
+// Footer Element Component - for adding footer within content section
+const FooterElement = ({ footer, onUpdate, onDelete, themeColors, logo, editable = true, canvasWidth = 1000, canvasMaxHeight = 1100 }) => {
+  const [width, setWidth] = useState(footer.width || 860);
+  const [height, setHeight] = useState(footer.height || 280);
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0, posX: 0, posY: 0 });
+  const [position, setPosition] = useState({ x: footer.posX || 0, y: footer.posY || 0 });
+
+  const GRID_SIZE = 20;
+  const snapToGrid = (value) => Math.round(value / GRID_SIZE) * GRID_SIZE;
+
+  useEffect(() => {
+    if (!isResizing) {
+      setWidth(footer.width || 860);
+      setHeight(footer.height || 280);
+    }
+  }, [footer.width, footer.height, isResizing]);
+
+  useEffect(() => {
+    if (!isDragging) {
+      setPosition({ x: footer.posX || 0, y: footer.posY || 0 });
+    }
+  }, [footer.posX, footer.posY, isDragging]);
+
+  const handleResizeStart = (e) => {
+    if (!editable) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setIsResizing(true);
+    setResizeStart({ x: e.clientX, y: e.clientY, width, height });
+  };
+
+  const handleDragStart = (e) => {
+    if (!editable) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+    setDragStart({ x: e.clientX, y: e.clientY, posX: position.x, posY: position.y });
+  };
+
+  useEffect(() => {
+    const handleResizeMove = (e) => {
+      if (!isResizing) return;
+      let newWidth = Math.max(400, resizeStart.width + (e.clientX - resizeStart.x));
+      let newHeight = Math.max(200, resizeStart.height + (e.clientY - resizeStart.y));
+      const maxWidth = canvasWidth - position.x;
+      newWidth = Math.min(newWidth, maxWidth);
+      const maxHeight = Math.max(200, canvasMaxHeight - position.y);
+      newHeight = Math.min(newHeight, maxHeight);
+      setWidth(snapToGrid(newWidth));
+      setHeight(snapToGrid(newHeight));
+    };
+
+    const handleResizeEnd = () => {
+      if (isResizing) {
+        setIsResizing(false);
+        onUpdate({ ...footer, width: snapToGrid(width), height: snapToGrid(height) });
+      }
+    };
+
+    const handleDragMove = (e) => {
+      if (!isDragging) return;
+      const newX = snapToGrid(dragStart.posX + (e.clientX - dragStart.x));
+      const newY = snapToGrid(dragStart.posY + (e.clientY - dragStart.y));
+      const maxX = Math.max(0, canvasWidth - width);
+      const maxY = Math.max(0, canvasMaxHeight - height);
+      setPosition({ x: Math.max(0, Math.min(maxX, newX)), y: Math.max(0, Math.min(maxY, newY)) });
+    };
+
+    const handleDragEnd = () => {
+      if (isDragging) {
+        setIsDragging(false);
+        onUpdate({ ...footer, posX: position.x, posY: position.y });
+      }
+    };
+
+    if (isResizing) {
+      document.addEventListener('mousemove', handleResizeMove);
+      document.addEventListener('mouseup', handleResizeEnd);
+    }
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleDragMove);
+      document.addEventListener('mouseup', handleDragEnd);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleResizeMove);
+      document.removeEventListener('mouseup', handleResizeEnd);
+      document.removeEventListener('mousemove', handleDragMove);
+      document.removeEventListener('mouseup', handleDragEnd);
+    };
+  }, [isResizing, isDragging, resizeStart, dragStart, width, height, position, footer, onUpdate, canvasWidth, canvasMaxHeight]);
+
+  return (
+    <div
+      className={`absolute rounded-lg transition-shadow ${editable ? 'group' : ''}`}
+      style={{
+        width: `${width}px`,
+        height: `${height}px`,
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+        zIndex: isDragging ? 100 : 1,
+        backgroundColor: themeColors?.primaryDark || '#1a2d3d',
+        border: editable ? '2px dashed rgba(255,255,255,0.3)' : 'none'
+      }}
+    >
+      {editable && (
+        <button
+          onClick={onDelete}
+          className="absolute top-2 right-2 p-1 text-red-400 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 rounded transition-opacity z-10"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      )}
+
+      {editable && (
+        <div
+          className="absolute top-2 left-2 cursor-move p-1 hover:bg-white/20 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10"
+          onMouseDown={handleDragStart}
+        >
+          <Move className="w-4 h-4 text-white/70" />
+        </div>
+      )}
+
+      <div className="p-6 text-center text-white flex flex-col items-center justify-center h-full">
+        {logo && (
+          <div className="w-16 h-16 mb-3">
+            <img src={logo} alt="Logo" className="w-full h-full object-contain" />
+          </div>
+        )}
+
+        {editable ? (
+          <>
+            <input
+              type="text"
+              value={footer.name || ''}
+              onChange={(e) => onUpdate({ ...footer, name: e.target.value })}
+              placeholder="Organization Name"
+              className="text-xl font-bold bg-transparent border-none text-center w-full focus:outline-none"
+            />
+            <input
+              type="text"
+              value={footer.subtitle || ''}
+              onChange={(e) => onUpdate({ ...footer, subtitle: e.target.value })}
+              placeholder="Department or Division"
+              className="text-base font-semibold bg-transparent border-none text-center w-full mt-1 focus:outline-none"
+            />
+            <div className="mt-3 space-y-1 w-full" style={{ color: themeColors?.gold || '#D4B896' }}>
+              <input
+                type="text"
+                value={footer.address || ''}
+                onChange={(e) => onUpdate({ ...footer, address: e.target.value })}
+                placeholder="Street Address"
+                className="bg-transparent border-none text-center w-full focus:outline-none text-sm"
+                style={{ color: themeColors?.gold || '#D4B896' }}
+              />
+              <input
+                type="text"
+                value={footer.cityStateZip || ''}
+                onChange={(e) => onUpdate({ ...footer, cityStateZip: e.target.value })}
+                placeholder="City, State ZIP"
+                className="bg-transparent border-none text-center w-full focus:outline-none text-sm"
+                style={{ color: themeColors?.gold || '#D4B896' }}
+              />
+              <input
+                type="text"
+                value={footer.phone || ''}
+                onChange={(e) => onUpdate({ ...footer, phone: e.target.value })}
+                placeholder="Phone: 000-000-0000"
+                className="bg-transparent border-none text-center w-full focus:outline-none text-sm"
+                style={{ color: themeColors?.gold || '#D4B896' }}
+              />
+              <input
+                type="text"
+                value={footer.website || ''}
+                onChange={(e) => onUpdate({ ...footer, website: e.target.value })}
+                placeholder="www.website.com"
+                className="bg-transparent border-none text-center w-full focus:outline-none text-sm underline"
+                style={{ color: themeColors?.gold || '#D4B896' }}
+              />
+            </div>
+          </>
+        ) : (
+          <>
+            {footer.name && <h2 className="text-xl font-bold">{footer.name}</h2>}
+            {footer.subtitle && <p className="text-base font-semibold mt-1">{footer.subtitle}</p>}
+            <div className="mt-3 space-y-0.5" style={{ color: themeColors?.gold || '#D4B896' }}>
+              {footer.address && <p className="text-sm">{footer.address}</p>}
+              {footer.cityStateZip && <p className="text-sm">{footer.cityStateZip}</p>}
+              {footer.phone && <p className="text-sm">{footer.phone}</p>}
+              {footer.website && (
+                <a
+                  href={footer.website.startsWith('http') ? footer.website : `https://${footer.website}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm underline hover:opacity-80"
+                >
+                  {footer.website}
+                </a>
+              )}
+            </div>
+          </>
+        )}
+
+        <p className="mt-3 text-xs opacity-80">
+          © {new Date().getFullYear()} All Rights Reserved
+        </p>
+      </div>
+
+      {editable && (
+        <div
+          onMouseDown={handleResizeStart}
+          className="absolute bottom-0 right-0 w-6 h-6 cursor-se-resize opacity-50 group-hover:opacity-100 transition-opacity"
+          style={{
+            background: `linear-gradient(135deg, transparent 50%, ${themeColors?.gold || '#D4B896'} 50%)`,
+          }}
+        />
+      )}
+
+      {editable && (
+        <div className="absolute bottom-1 left-2 text-xs text-white/50 opacity-0 group-hover:opacity-100 transition-opacity">
+          {Math.round(width)} × {Math.round(height)}
+        </div>
+      )}
     </div>
   );
 };
@@ -2183,11 +2453,12 @@ const BannerSection = ({ section, onUpdate, themeColors, logo, isPreview }) => {
     <div 
       data-section="banner"
       className="relative flex flex-col items-center justify-center p-10 text-center text-white"
-      style={{ 
+      style={{
         backgroundColor: themeColors?.primary || '#2B3E50',
-        minHeight: '1100px',
-        maxHeight: '1100px',
-        height: '1100px'
+        minHeight: '1400px',
+        maxHeight: '1400px',
+        height: '1400px',
+        width: '990px'
       }}
     >
       {logo && (
@@ -2253,9 +2524,40 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
   const [isResizingContent, setIsResizingContent] = useState(false);
   const [resizeStart, setResizeStart] = useState({ y: 0, height: 0 });
   const [contentHeight, setContentHeight] = useState(section.contentHeight || null);
+  const [isDraggingPhoto, setIsDraggingPhoto] = useState(false);
+  const [photoDragStart, setPhotoDragStart] = useState({ y: 0, posY: 0 });
   const fileInputRef = useRef(null);
   const canvasRef = useRef(null);
   const contentRef = useRef(null);
+  const bottomCanvasRef = useRef(null);
+  const [bottomCanvasWidth, setBottomCanvasWidth] = useState(400);
+
+  // Photo vertical position (0-100, where 50 is center)
+  const photoPositionY = section.photoPositionY ?? 50;
+
+  // Initialize bottom images if they don't exist
+  const bottomImage1 = section.bottomImage1 || { id: 'bottom1', width: 400, height: 240, posX: 0, posY: 0 };
+  const bottomImage2 = section.bottomImage2 || { id: 'bottom2', width: 400, height: 240, posX: 0, posY: 0 };
+
+  // Measure bottom canvas width
+  useEffect(() => {
+    const measureBottomCanvas = () => {
+      if (bottomCanvasRef.current) {
+        const width = bottomCanvasRef.current.offsetWidth;
+        if (width > 0) {
+          setBottomCanvasWidth(width);
+        }
+      }
+    };
+
+    const timeoutId = setTimeout(measureBottomCanvas, 100);
+    window.addEventListener('resize', measureBottomCanvas);
+
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('resize', measureBottomCanvas);
+    };
+  }, []);
 
   // Sync contentHeight with section data
   useEffect(() => {
@@ -2317,45 +2619,52 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
     }
   };
 
+  // Photo repositioning handlers
+  const handlePhotoDragStart = (e) => {
+    if (isPreview) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingPhoto(true);
+    setPhotoDragStart({ y: e.clientY, posY: photoPositionY });
+  };
+
+  useEffect(() => {
+    const handlePhotoDragMove = (e) => {
+      if (!isDraggingPhoto) return;
+      const deltaY = e.clientY - photoDragStart.y;
+      // Convert pixel movement to percentage (negative delta = move image up = lower percentage)
+      let newPosY = photoDragStart.posY + (deltaY * 0.5);
+      newPosY = Math.max(0, Math.min(100, newPosY));
+      onUpdate({ ...section, photoPositionY: Math.round(newPosY) });
+    };
+
+    const handlePhotoDragEnd = () => {
+      setIsDraggingPhoto(false);
+    };
+
+    if (isDraggingPhoto) {
+      window.addEventListener('mousemove', handlePhotoDragMove);
+      window.addEventListener('mouseup', handlePhotoDragEnd);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handlePhotoDragMove);
+      window.removeEventListener('mouseup', handlePhotoDragEnd);
+    };
+  }, [isDraggingPhoto, photoDragStart, section, onUpdate, photoPositionY]);
+
   // Fixed layout heights for Opening Letter section
-  // Page: 1400px, Padding: 64px top + 64px sides + minimal bottom padding in preview
+  // Page: 1400px, Padding: 64px top and bottom for symmetry
   // Header (photo + titles): ~200px
+  // Bottom images: 256px (h-64) + 24px gap + 24px padding
   const headerHeight = 200;
   const topPadding = 64;
-  const bottomPadding = isPreview ? 20 : 32; // Much smaller bottom padding in preview
-  const pageHeight = 1100;
-  
-  // Calculate actual image canvas height based on content
-  const getActualImageCanvasHeight = () => {
-    const images = section.images || [];
-    if (images.length === 0) {
-      return isPreview ? 0 : 300; // No canvas in preview if no images, 300px in edit for adding
-    }
-    
-    let lowestPoint = 0;
-    images.forEach(img => {
-      const imgBottom = (img.posY || 0) + (img.height || 200);
-      if (imgBottom > lowestPoint) lowestPoint = imgBottom;
-    });
-    
-    // Add small buffer for caption in preview, more space for controls in edit
-    const buffer = isPreview ? 60 : 100;
-    return Math.max(isPreview ? lowestPoint + buffer : 300, lowestPoint + buffer);
-  };
-  
-  const actualImageCanvasHeight = getActualImageCanvasHeight();
-  const addButtonHeight = isPreview ? 0 : 50;
-  
-  // Calculate available height for content - allow more space for content
-  const totalFixedHeight = headerHeight + topPadding + bottomPadding;
-  const hasImages = (section.images || []).length > 0;
-  const hasImagesOrEditMode = hasImages || !isPreview;
-  
-  // If showing image area, subtract that space
-  const imageAreaHeight = hasImagesOrEditMode ? (actualImageCanvasHeight + addButtonHeight + 16) : 0;
-  const maxContentHeight = pageHeight - totalFixedHeight - imageAreaHeight - 10; // Small margin
-  
-  const maxCanvasHeight = isPreview ? actualImageCanvasHeight : Math.max(350, actualImageCanvasHeight);
+  const bottomPadding = 0; // Reduced - actual padding is on container
+  const bottomImagesHeight = 256 + 24; // h-64 images + gap (removed extra padding)
+  const pageHeight = 1400;
+
+  // Calculate available height for content area
+  const totalFixedHeight = headerHeight + topPadding + bottomPadding + bottomImagesHeight;
+  const maxContentHeight = pageHeight - totalFixedHeight - 50; // 50px bottom padding on container
 
   // Content box resize handlers
   const handleContentResizeStart = (e) => {
@@ -2543,15 +2852,16 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
   };
 
   return (
-    <div 
+    <div
       data-section="letter"
       className="bg-white flex flex-col"
-      style={{ 
-        minHeight: '1100px', 
-        maxHeight: '1100px', 
-        height: '1100px', 
-        overflow: 'hidden', 
-        padding: isPreview ? '64px 64px 20px 64px' : '64px 64px 32px 64px' 
+      style={{
+        minHeight: '1400px',
+        maxHeight: '1400px',
+        height: '1400px',
+        width: '990px',
+        overflow: 'hidden',
+        padding: '64px 64px 50px 64px'
       }}
     >
       <div 
@@ -2561,18 +2871,22 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
         {/* Author Photo */}
         {isPreview ? (
           section.photo && (
-            <div 
+            <div
               className="w-36 h-36 rounded-full flex-shrink-0 overflow-hidden"
               style={{ border: `4px solid ${themeColors?.accent || '#C1272D'}` }}
             >
-              <img src={section.photo} alt="Author" className="w-full h-full object-cover" />
+              <img
+                src={section.photo}
+                alt="Author"
+                className="w-full h-full object-cover"
+                style={{ objectPosition: `center ${photoPositionY}%` }}
+              />
             </div>
           )
         ) : (
-          <div 
-            className="w-36 h-36 rounded-full bg-slate-100 flex-shrink-0 overflow-hidden cursor-pointer relative group"
+          <div
+            className="w-36 h-36 rounded-full bg-slate-100 flex-shrink-0 overflow-hidden relative group"
             style={{ border: `4px solid ${themeColors?.accent || '#C1272D'}` }}
-            onClick={() => !isPhotoLoading && fileInputRef.current?.click()}
           >
             {isPhotoLoading ? (
               <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
@@ -2580,13 +2894,33 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
               </div>
             ) : section.photo ? (
               <>
-                <img src={section.photo} alt="Author" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                  <Upload className="w-6 h-6 text-white" />
+                <img
+                  src={section.photo}
+                  alt="Author"
+                  className="w-full h-full object-cover cursor-move"
+                  style={{ objectPosition: `center ${photoPositionY}%` }}
+                  onMouseDown={handlePhotoDragStart}
+                  draggable={false}
+                />
+                <div
+                  className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-opacity pointer-events-none"
+                >
+                  <Move className="w-5 h-5 text-white mb-1" />
+                  <span className="text-white text-xs">Drag to reposition</span>
                 </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                  className="absolute bottom-1 right-1 p-1.5 bg-white/90 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white"
+                  title="Change photo"
+                >
+                  <Upload className="w-3 h-3 text-slate-600" />
+                </button>
               </>
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-slate-400">
+              <div
+                className="w-full h-full flex items-center justify-center text-slate-400 cursor-pointer"
+                onClick={() => fileInputRef.current?.click()}
+              >
                 <Upload className="w-8 h-8" />
               </div>
             )}
@@ -2637,11 +2971,11 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
         </div>
       </div>
 
-      {/* Letter content - resizable box */}
-      <div 
+      {/* Letter content - full width text box */}
+      <div
         ref={contentRef}
-        className="flex-shrink-0 mt-4 relative"
-        style={{ 
+        className="flex-1 mt-4 relative"
+        style={{
           height: actualContentHeight === 'auto' ? 'auto' : `${actualContentHeight}px`,
           minHeight: '100px',
           maxHeight: `${maxContentHeight}px`,
@@ -2741,51 +3075,36 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
         )}
       </div>
 
-      {/* Image area - only show if there are images in preview, or always in edit mode */}
-      {((section.images || []).length > 0 || !isPreview) && (
-        <div className="flex-shrink-0" style={{ marginTop: '1rem' }}>
-          {/* Add Image button - only in edit mode */}
-          {!isPreview && (
-            <div className="flex justify-center mb-4">
-              <button
-                onClick={addImage}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors text-slate-700"
-              >
-                <Image className="w-4 h-4" />
-                Add Image
-              </button>
-            </div>
-          )}
-
-          {/* Canvas for draggable images - dynamic height in preview */}
-          <div 
-            ref={canvasRef}
-            className="relative w-full"
-            style={{ 
-              height: `${maxCanvasHeight}px`,
-              minHeight: isPreview ? 'auto' : '200px'
-            }}
-          >
-          {(section.images || []).map((img, idx) => (
-              <ImageFrame
-                key={img.id}
-                imageData={img}
-                onUpdate={(updated) => {
-                  const newImages = [...(section.images || [])];
-                  newImages[idx] = updated;
-                  onUpdate({ ...section, images: newImages });
-                }}
-                onDelete={() => deleteLetterImage(idx)}
-                themeColors={themeColors}
-                editable={!isPreview}
-                canvasWidth={canvasWidth}
-                canvasMaxHeight={maxCanvasHeight}
-                lightBackground={true}
-              />
-            ))}
-          </div>
+      {/* Two fixed bottom images */}
+      <div className="flex gap-6 mt-4" ref={bottomCanvasRef}>
+        {/* Bottom Image 1 */}
+        <div className="flex-1 relative" style={{ height: '240px' }}>
+          <ImageFrame
+            imageData={bottomImage1}
+            onUpdate={(updated) => onUpdate({ ...section, bottomImage1: updated })}
+            onDelete={() => onUpdate({ ...section, bottomImage1: { id: 'bottom1', width: 400, height: 240, posX: 0, posY: 0 } })}
+            themeColors={themeColors}
+            editable={!isPreview}
+            canvasWidth={bottomCanvasWidth / 2 - 12}
+            canvasMaxHeight={240}
+            lightBackground={true}
+          />
         </div>
-      )}
+
+        {/* Bottom Image 2 */}
+        <div className="flex-1 relative" style={{ height: '240px' }}>
+          <ImageFrame
+            imageData={bottomImage2}
+            onUpdate={(updated) => onUpdate({ ...section, bottomImage2: updated })}
+            onDelete={() => onUpdate({ ...section, bottomImage2: { id: 'bottom2', width: 400, height: 240, posX: 0, posY: 0 } })}
+            themeColors={themeColors}
+            editable={!isPreview}
+            canvasWidth={bottomCanvasWidth / 2 - 12}
+            canvasMaxHeight={240}
+            lightBackground={true}
+          />
+        </div>
+      </div>
     </div>
   );
 };
@@ -2796,10 +3115,11 @@ const FooterSection = ({ section, onUpdate, themeColors, logo, isPreview }) => {
     <div 
       data-section="footer"
       className="p-12 text-center text-white flex flex-col items-center justify-center"
-      style={{ 
+      style={{
         backgroundColor: themeColors?.primary || '#2B3E50',
         minHeight: isPreview ? '400px' : '500px',
-        height: isPreview ? 'auto' : '500px'
+        height: isPreview ? 'auto' : '500px',
+        width: '990px'
       }}
     >
       {logo && (
@@ -2892,7 +3212,7 @@ const FooterSection = ({ section, onUpdate, themeColors, logo, isPreview }) => {
 };
 
 // Content Section Component
-const ContentSection = ({ section, onUpdate, onDelete, themeColors, isPreview }) => {
+const ContentSection = ({ section, onUpdate, onDelete, themeColors, logo, isPreview }) => {
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [canvasWidth, setCanvasWidth] = useState(1200);
   const canvasRef = useRef(null);
@@ -3088,7 +3408,7 @@ const ContentSection = ({ section, onUpdate, onDelete, themeColors, isPreview })
     return null;
   };
 
-  const maxCanvasHeight = 1150;
+  const maxCanvasHeight = 1100;
   
   // Calculate actual canvas height needed for preview
   const actualCanvasHeight = (() => {
@@ -3289,45 +3609,47 @@ const ContentSection = ({ section, onUpdate, onDelete, themeColors, isPreview })
     };
   };
 
-  // Delete handlers with reflow
+  // Delete handlers - preserve positions of remaining elements
   const deleteCard = (idx) => {
-    const updatedSection = {
+    onUpdate({
       ...section,
       cards: section.cards.filter((_, i) => i !== idx)
-    };
-    onUpdate(reflowElements(updatedSection));
+    });
   };
 
   const deleteChart = (idx) => {
-    const updatedSection = {
+    onUpdate({
       ...section,
       charts: section.charts.filter((_, i) => i !== idx)
-    };
-    onUpdate(reflowElements(updatedSection));
+    });
   };
 
   const deleteImage = (idx) => {
-    const updatedSection = {
+    onUpdate({
       ...section,
       images: section.images.filter((_, i) => i !== idx)
-    };
-    onUpdate(reflowElements(updatedSection));
+    });
   };
 
   const deleteStat = (idx) => {
-    const updatedSection = {
+    onUpdate({
       ...section,
       stats: section.stats.filter((_, i) => i !== idx)
-    };
-    onUpdate(reflowElements(updatedSection));
+    });
   };
 
   const deleteTextBlock = (idx) => {
-    const updatedSection = {
+    onUpdate({
       ...section,
       textBlocks: section.textBlocks.filter((_, i) => i !== idx)
-    };
-    onUpdate(reflowElements(updatedSection));
+    });
+  };
+
+  const deleteFooter = (idx) => {
+    onUpdate({
+      ...section,
+      footers: section.footers.filter((_, i) => i !== idx)
+    });
   };
 
   const addCard = () => {
@@ -3398,15 +3720,43 @@ const ContentSection = ({ section, onUpdate, onDelete, themeColors, isPreview })
     const textWidth = 600;
     const textHeight = 200;
     const position = findBestPosition(textWidth, textHeight, 40);
-    
+
     if (!position) {
       alert('No more space available on this page. Please delete or resize existing elements.');
       return;
     }
-    
+
     onUpdate({
       ...section,
       textBlocks: [...(section.textBlocks || []), { id: generateId(), content: '', width: textWidth, height: textHeight, posX: position.x, posY: position.y }]
+    });
+  };
+
+  const addFooter = () => {
+    const footerWidth = 860;
+    const footerHeight = 280;
+    const position = findBestPosition(footerWidth, footerHeight, 40);
+
+    if (!position) {
+      alert('No more space available on this page. Please delete or resize existing elements.');
+      return;
+    }
+
+    onUpdate({
+      ...section,
+      footers: [...(section.footers || []), {
+        id: generateId(),
+        name: '',
+        subtitle: '',
+        address: '',
+        cityStateZip: '',
+        phone: '',
+        website: '',
+        width: footerWidth,
+        height: footerHeight,
+        posX: position.x,
+        posY: position.y
+      }]
     });
   };
 
@@ -3414,13 +3764,14 @@ const ContentSection = ({ section, onUpdate, onDelete, themeColors, isPreview })
     <div 
       data-section="content"
       className="relative overflow-hidden"
-      style={{ 
+      style={{
         backgroundColor: section.bgColor || themeColors?.primary || '#2B3E50',
         color: 'white',
-        minHeight: '1100px',
-        maxHeight: '1100px',
-        height: '1100px',
-        padding: isPreview ? '64px 64px 20px 64px' : '64px 64px 32px 64px'
+        minHeight: '1400px',
+        maxHeight: '1400px',
+        height: '1400px',
+        width: '990px',
+        padding: '64px 64px 50px 64px'
       }}
     >
       {!isPreview && (
@@ -3515,6 +3866,13 @@ const ContentSection = ({ section, onUpdate, onDelete, themeColors, isPreview })
           >
             <Type className="w-4 h-4" />
             Add Text
+          </button>
+          <button
+            onClick={addFooter}
+            className="flex items-center gap-2 px-4 py-2 bg-black/40 text-white rounded-lg hover:bg-black/50 transition-colors border border-white/20"
+          >
+            <PanelBottom className="w-4 h-4" />
+            Add Footer
           </button>
         </div>
       )}
@@ -3612,6 +3970,25 @@ const ContentSection = ({ section, onUpdate, onDelete, themeColors, isPreview })
             }}
             onDelete={() => deleteTextBlock(idx)}
             themeColors={themeColors}
+            editable={!isPreview}
+            canvasWidth={canvasWidth}
+            canvasMaxHeight={maxCanvasHeight}
+          />
+        ))}
+
+        {/* Footers */}
+        {(section.footers || []).map((footer, idx) => (
+          <FooterElement
+            key={footer.id}
+            footer={footer}
+            onUpdate={(updated) => {
+              const newFooters = [...(section.footers || [])];
+              newFooters[idx] = updated;
+              onUpdate({ ...section, footers: newFooters });
+            }}
+            onDelete={() => deleteFooter(idx)}
+            themeColors={themeColors}
+            logo={logo}
             editable={!isPreview}
             canvasWidth={canvasWidth}
             canvasMaxHeight={maxCanvasHeight}
@@ -3758,15 +4135,77 @@ export default function ReportBuilder() {
   const [versionNameInput, setVersionNameInput] = useState('');
   const [feedbackMessage, setFeedbackMessage] = useState('');
 
-  // Load saved versions on mount
+  // IndexedDB helper functions for large data storage
+  const openDB = () => {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open('ReportBuilderDB', 1);
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+      request.onupgradeneeded = (event) => {
+        const db = event.target.result;
+        if (!db.objectStoreNames.contains('versions')) {
+          db.createObjectStore('versions', { keyPath: 'id' });
+        }
+      };
+    });
+  };
+
+  const saveVersionToDB = async (version) => {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['versions'], 'readwrite');
+      const store = transaction.objectStore('versions');
+      const request = store.put(version);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  };
+
+  const getAllVersionsFromDB = async () => {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['versions'], 'readonly');
+      const store = transaction.objectStore('versions');
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+  };
+
+  const getVersionFromDB = async (id) => {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['versions'], 'readonly');
+      const store = transaction.objectStore('versions');
+      const request = store.get(id);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  };
+
+  const deleteVersionFromDB = async (id) => {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['versions'], 'readwrite');
+      const store = transaction.objectStore('versions');
+      const request = store.delete(id);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  };
+
+  // Load saved versions from IndexedDB on mount
   useEffect(() => {
-    const versions = localStorage.getItem('reportBuilderVersions');
-    console.log('Loading versions from localStorage:', versions);
-    if (versions) {
-      const parsed = JSON.parse(versions);
-      console.log('Parsed versions:', parsed);
-      setSavedVersions(parsed);
-    }
+    const loadVersions = async () => {
+      try {
+        const versions = await getAllVersionsFromDB();
+        console.log('Loaded versions from IndexedDB:', versions.length);
+        setSavedVersions(versions.map(v => ({ id: v.id, name: v.name, savedAt: v.savedAt })));
+      } catch (error) {
+        console.error('Error loading versions:', error);
+      }
+    };
+    loadVersions();
   }, []);
 
   // Check for saved draft on mount
@@ -3853,26 +4292,26 @@ export default function ReportBuilder() {
   };
 
   // Version management functions
-  const saveVersion = (name) => {
+  const saveVersion = async (name) => {
     if (!name.trim()) {
       setFeedbackMessage('Please enter a version name.');
       setTimeout(() => setFeedbackMessage(''), 3000);
       return;
     }
-    
+
     if (savedVersions.length >= 3) {
       setFeedbackMessage('Maximum 3 versions. Delete one first.');
       setTimeout(() => setFeedbackMessage(''), 3000);
       return;
     }
-    
+
     // Check for duplicate names
     if (savedVersions.some(v => v.name.toLowerCase() === name.trim().toLowerCase())) {
       setFeedbackMessage('Version name already exists.');
       setTimeout(() => setFeedbackMessage(''), 3000);
       return;
     }
-    
+
     const version = {
       id: generateId(),
       name: name.trim(),
@@ -3883,41 +4322,41 @@ export default function ReportBuilder() {
         sections,
       }
     };
-    
-    const updatedVersions = [...savedVersions, version];
-    setSavedVersions(updatedVersions);
-    localStorage.setItem('reportBuilderVersions', JSON.stringify(updatedVersions));
-    setVersionNameInput('');
-    setFeedbackMessage(`Version "${name.trim()}" saved!`);
-    setTimeout(() => setFeedbackMessage(''), 3000);
+
+    try {
+      await saveVersionToDB(version);
+      setSavedVersions([...savedVersions, { id: version.id, name: version.name, savedAt: version.savedAt }]);
+      setVersionNameInput('');
+      setFeedbackMessage(`Version "${name.trim()}" saved with all images!`);
+      setTimeout(() => setFeedbackMessage(''), 3000);
+    } catch (e) {
+      console.error('Error saving version:', e);
+      setFeedbackMessage('Failed to save version. Please try again.');
+      setTimeout(() => setFeedbackMessage(''), 5000);
+    }
   };
   
-  const loadVersion = (versionId) => {
-    // Read directly from localStorage to ensure we have fresh data
-    const versionsStr = localStorage.getItem('reportBuilderVersions');
-    if (!versionsStr) {
-      console.error('No versions found in storage.');
-      return;
-    }
-    
-    const allVersions = JSON.parse(versionsStr);
-    console.log('Loading version:', versionId);
-    
-    const version = allVersions.find(v => v.id === versionId);
-    if (!version) {
-      console.error('Version not found.');
-      return;
-    }
-    
-    if (!version.data) {
-      console.error('Version data is corrupted.');
-      return;
-    }
-    
+  const loadVersion = async (versionId) => {
     try {
+      const version = await getVersionFromDB(versionId);
+
+      if (!version) {
+        console.error('Version not found.');
+        setFeedbackMessage('Version not found.');
+        setTimeout(() => setFeedbackMessage(''), 3000);
+        return;
+      }
+
+      if (!version.data) {
+        console.error('Version data is corrupted.');
+        setFeedbackMessage('Version data is corrupted.');
+        setTimeout(() => setFeedbackMessage(''), 3000);
+        return;
+      }
+
       // Load logo (or clear it if none saved)
       setLogo(version.data.logo || null);
-      
+
       // Load theme colors (or reset to defaults)
       if (version.data.themeColors) {
         setThemeColors({
@@ -3929,7 +4368,7 @@ export default function ReportBuilder() {
       } else {
         setThemeColors(DEFAULT_THEME_COLORS);
       }
-      
+
       // Load sections (or reset to defaults)
       if (version.data.sections && version.data.sections.length > 0) {
         setSections(version.data.sections);
@@ -3939,59 +4378,72 @@ export default function ReportBuilder() {
           { id: generateId(), type: 'letter', heading: '', subheading: '', content: '', images: [] },
         ]);
       }
-      
+
       setShowVersionManager(false);
       setFeedbackMessage(`Version "${version.name}" loaded!`);
       setTimeout(() => setFeedbackMessage(''), 3000);
     } catch (error) {
       console.error('Error loading version:', error);
+      setFeedbackMessage('Failed to load version. Please try again.');
+      setTimeout(() => setFeedbackMessage(''), 3000);
     }
   };
   
-  const deleteVersion = (versionId) => {
-    const versionsStr = localStorage.getItem('reportBuilderVersions');
-    if (!versionsStr) return;
-    
-    const allVersions = JSON.parse(versionsStr);
-    const version = allVersions.find(v => v.id === versionId);
-    if (!version) return;
-    
-    const updatedVersions = allVersions.filter(v => v.id !== versionId);
-    setSavedVersions(updatedVersions);
-    localStorage.setItem('reportBuilderVersions', JSON.stringify(updatedVersions));
-    setFeedbackMessage(`Version "${version.name}" deleted.`);
-    setTimeout(() => setFeedbackMessage(''), 3000);
-  };
-  
-  const updateVersion = (versionId) => {
-    const versionsStr = localStorage.getItem('reportBuilderVersions');
-    if (!versionsStr) {
-      console.error('No versions found.');
-      return;
-    }
-    
-    const allVersions = JSON.parse(versionsStr);
-    const version = allVersions.find(v => v.id === versionId);
-    if (!version) {
-      console.error('Version not found.');
-      return;
-    }
-    
-    const updatedVersion = {
-      ...version,
-      savedAt: new Date().toISOString(),
-      data: {
-        logo,
-        themeColors,
-        sections,
+  const deleteVersion = async (versionId) => {
+    try {
+      // Find the version name for the feedback message
+      const versionToDelete = savedVersions.find(v => v.id === versionId);
+      if (!versionToDelete) {
+        setFeedbackMessage('Version not found.');
+        setTimeout(() => setFeedbackMessage(''), 3000);
+        return;
       }
-    };
-    
-    const updatedVersions = allVersions.map(v => v.id === versionId ? updatedVersion : v);
-    setSavedVersions(updatedVersions);
-    localStorage.setItem('reportBuilderVersions', JSON.stringify(updatedVersions));
-    setFeedbackMessage(`Version "${version.name}" updated!`);
-    setTimeout(() => setFeedbackMessage(''), 3000);
+
+      await deleteVersionFromDB(versionId);
+      setSavedVersions(savedVersions.filter(v => v.id !== versionId));
+      setFeedbackMessage(`Version "${versionToDelete.name}" deleted.`);
+      setTimeout(() => setFeedbackMessage(''), 3000);
+    } catch (error) {
+      console.error('Error deleting version:', error);
+      setFeedbackMessage('Failed to delete version. Please try again.');
+      setTimeout(() => setFeedbackMessage(''), 3000);
+    }
+  };
+  
+  const updateVersion = async (versionId) => {
+    try {
+      const existingVersion = savedVersions.find(v => v.id === versionId);
+      if (!existingVersion) {
+        console.error('Version not found.');
+        setFeedbackMessage('Version not found.');
+        setTimeout(() => setFeedbackMessage(''), 3000);
+        return;
+      }
+
+      const updatedVersion = {
+        id: versionId,
+        name: existingVersion.name,
+        savedAt: new Date().toISOString(),
+        data: {
+          logo,
+          themeColors,
+          sections,
+        }
+      };
+
+      await saveVersionToDB(updatedVersion);
+      setSavedVersions(savedVersions.map(v =>
+        v.id === versionId
+          ? { id: updatedVersion.id, name: updatedVersion.name, savedAt: updatedVersion.savedAt }
+          : v
+      ));
+      setFeedbackMessage(`Version "${existingVersion.name}" updated!`);
+      setTimeout(() => setFeedbackMessage(''), 3000);
+    } catch (error) {
+      console.error('Error updating version:', error);
+      setFeedbackMessage('Failed to update version. Please try again.');
+      setTimeout(() => setFeedbackMessage(''), 3000);
+    }
   };
 
   const handleLogoUpload = (e) => {
@@ -4128,11 +4580,11 @@ export default function ReportBuilder() {
         throw new Error('No sections found to export');
       }
       
-      // Create PDF with US Letter page format (8.5" x 11")
+      // Create PDF with A4 page format (210mm x 297mm)
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
-        format: 'letter' // US Letter: 215.9mm x 279.4mm (8.5" x 11")
+        format: 'a4' // A4: 210mm x 297mm
       });
       
       for (let i = 0; i < sectionElements.length; i++) {
@@ -4141,33 +4593,58 @@ export default function ReportBuilder() {
         
         // Add new page for sections after the first
         if (i > 0) {
-          pdf.addPage('letter');
+          pdf.addPage('a4');
         }
         
         // Capture section as canvas
+        // Set fixed dimensions for consistent export
+        const originalWidth = section.style.width;
+        const originalMinWidth = section.style.minWidth;
+        section.style.width = '990px';
+        section.style.minWidth = '990px';
+
         const canvas = await window.html2canvas(section, {
           scale: 2, // Higher quality
           useCORS: true,
           allowTaint: true,
           backgroundColor: null,
-          logging: true
+          logging: true,
+          width: 990,
+          windowWidth: 990
         });
+
+        // Restore original dimensions
+        section.style.width = originalWidth;
+        section.style.minWidth = originalMinWidth;
         
         console.log(`Section ${i + 1} captured: ${canvas.width}x${canvas.height}`);
         
         // Convert to image and add to PDF
         const imgData = canvas.toDataURL('image/jpeg', 0.95);
-        
-        // Calculate dimensions to fit the letter page (215.9mm x 279.4mm)
-        const pageWidth = 215.9;
-        const pageHeight = 279.4;
-        const imgWidth = pageWidth;
-        const imgHeight = (canvas.height * pageWidth) / canvas.width;
-        
-        // Center vertically if image is shorter than page
-        const yOffset = imgHeight < pageHeight ? (pageHeight - imgHeight) / 2 : 0;
-        
-        pdf.addImage(imgData, 'JPEG', 0, yOffset, imgWidth, Math.min(imgHeight, pageHeight));
+
+        // Calculate dimensions to fit the A4 page (210mm x 297mm) while maintaining aspect ratio
+        const pageWidth = 210;
+        const pageHeight = 297;
+        const canvasAspect = canvas.width / canvas.height;
+        const pageAspect = pageWidth / pageHeight;
+
+        let imgWidth, imgHeight, xOffset, yOffset;
+
+        if (canvasAspect > pageAspect) {
+          // Canvas is wider than page - fit to width
+          imgWidth = pageWidth;
+          imgHeight = pageWidth / canvasAspect;
+          xOffset = 0;
+          yOffset = (pageHeight - imgHeight) / 2;
+        } else {
+          // Canvas is taller than page - fit to height
+          imgHeight = pageHeight;
+          imgWidth = pageHeight * canvasAspect;
+          xOffset = (pageWidth - imgWidth) / 2;
+          yOffset = 0;
+        }
+
+        pdf.addImage(imgData, 'JPEG', xOffset, yOffset, imgWidth, imgHeight);
       }
       
       console.log('Saving PDF...');
@@ -4616,16 +5093,6 @@ export default function ReportBuilder() {
                         <span className="text-xs text-slate-400">Message with photo and text</span>
                       </div>
                     </button>
-                    <button
-                      onClick={() => addSection('footer')}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-600 text-white text-left"
-                    >
-                      <PanelBottom className="w-5 h-5 text-purple-500" />
-                      <div>
-                        <span className="block font-medium">Footer</span>
-                        <span className="text-xs text-slate-400">Contact info and logo</span>
-                      </div>
-                    </button>
                   </div>
                 )}
               </div>
@@ -4634,10 +5101,10 @@ export default function ReportBuilder() {
 
           {/* Main Content */}
           <main className="col-span-9">
-            <div 
+            <div
               id="report-preview"
-              className="bg-white rounded-2xl shadow-2xl overflow-hidden"
-              style={{ maxWidth: '1500px' }}
+              className="bg-white rounded-2xl shadow-2xl overflow-hidden mx-auto"
+              style={{ width: '990px', maxWidth: '990px' }}
             >
               {sections.map((section, idx) => renderSection(section, idx))}
             </div>
@@ -4681,6 +5148,7 @@ export default function ReportBuilder() {
                   onChange={(e) => setVersionNameInput(e.target.value)}
                   placeholder="Enter version name..."
                   className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 bg-white"
+                  style={{ color: '#0f172a' }}
                   maxLength={30}
                   disabled={savedVersions.length >= 3}
                   onKeyDown={(e) => {

@@ -1358,18 +1358,22 @@ const InfoCard = ({ card, onUpdate, onDelete, themeColors, editable = true, canv
 
       {/* Title */}
       {editable ? (
-        <input
-          type="text"
+        <textarea
           value={card.title || ''}
           onChange={(e) => onUpdate({ ...card, title: e.target.value })}
           placeholder="Card Title"
-          className="text-xl font-semibold w-full bg-transparent border-none focus:outline-none mb-3 placeholder-white/50 cursor-text"
-          style={{ color: themeColors?.gold || '#D4B896' }}
+          className="text-xl font-semibold w-full bg-transparent border-none focus:outline-none mb-3 placeholder-white/50 cursor-text resize-none"
+          style={{ color: themeColors?.gold || '#D4B896', minHeight: '28px', overflow: 'hidden' }}
           onMouseDown={(e) => e.stopPropagation()}
+          rows={1}
+          onInput={(e) => {
+            e.target.style.height = 'auto';
+            e.target.style.height = e.target.scrollHeight + 'px';
+          }}
         />
       ) : (
         card.title && (
-          <h3 className="text-xl font-semibold mb-3" style={{ color: themeColors?.gold || '#D4B896' }}>
+          <h3 className="text-xl font-semibold mb-3" style={{ color: themeColors?.gold || '#D4B896', wordWrap: 'break-word', overflowWrap: 'break-word' }}>
             {card.title}
           </h3>
         )

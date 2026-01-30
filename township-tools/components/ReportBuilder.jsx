@@ -272,13 +272,17 @@ const RichTextEditor = ({ content, onChange, themeColors, maxHeight, defaultFont
     setIsUnderline(document.queryCommandState('underline'));
   };
 
-  // Save selection when editor loses focus
+  // Save selection and content when editor loses focus
   const saveSelection = () => {
     const selection = window.getSelection();
     if (selection.rangeCount > 0) {
       savedSelection.current = selection.getRangeAt(0).cloneRange();
     }
     checkFormatting();
+    // Also save content on blur to ensure changes are persisted
+    if (editorRef.current) {
+      onChange(editorRef.current.innerHTML);
+    }
   };
 
   const execCommand = (command, value = null) => {
@@ -2983,26 +2987,25 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
         }}
       >
         {isPreview ? (
-          section.content && (
-            <>
-              <style>{`
-                .letter-content-preview p { margin: ${section.paragraphSpacing || 2}px 0; }
-                .letter-content-preview li { margin: ${Math.max(1, (section.paragraphSpacing || 2) / 2)}px 0; }
-              `}</style>
-              <div 
-                className="prose prose-lg max-w-none h-full letter-content-preview"
-                style={{ 
-                  direction: 'ltr', 
-                  textAlign: 'left',
-                  fontSize: '14pt',
-                  lineHeight: section.lineSpacing || 1.4,
-                  maxHeight: contentHeight ? `${contentHeight}px` : `${maxContentHeight}px`,
-                  overflowY: 'auto'
-                }}
-                dangerouslySetInnerHTML={{ __html: section.content }}
-              />
-            </>
-          )
+          <>
+            <style>{`
+              .letter-content-preview p { margin: ${section.paragraphSpacing || 2}px 0; }
+              .letter-content-preview li { margin: ${Math.max(1, (section.paragraphSpacing || 2) / 2)}px 0; }
+            `}</style>
+            <div
+              className="prose prose-lg max-w-none h-full letter-content-preview"
+              style={{
+                direction: 'ltr',
+                textAlign: 'left',
+                fontSize: '14pt',
+                lineHeight: section.lineSpacing || 1.4,
+                maxHeight: contentHeight ? `${contentHeight}px` : `${maxContentHeight}px`,
+                overflowY: 'auto',
+                color: '#1e293b'
+              }}
+              dangerouslySetInnerHTML={{ __html: section.content || '' }}
+            />
+          </>
         ) : isEditingContent ? (
           <div className="h-full flex flex-col" style={{ overflow: 'visible' }}>
             <div className="flex-1" style={{ overflow: 'visible' }}>

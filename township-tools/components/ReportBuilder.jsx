@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Plus, Upload, Image, FileText, BarChart3, Trash2, Move, GripVertical, ChevronDown, ChevronUp, ArrowUp, ArrowDown, Eye, Pencil, Download, Save, FolderOpen, Type, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, List, ListOrdered, Palette, Square, Circle, RectangleHorizontal, ZoomIn, ZoomOut, RotateCw, Check, X, Settings, Layers, PanelTop, PanelBottom, Mail, Layout, Maximize2, Minimize2, Undo2, Redo2, Hash } from 'lucide-react';
+import { Plus, Upload, Image, FileText, BarChart3, Trash2, Move, GripVertical, ChevronDown, ChevronUp, ArrowUp, ArrowDown, Eye, Pencil, Download, Save, FolderOpen, Type, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, List, ListOrdered, Palette, Square, Circle, RectangleHorizontal, ZoomIn, ZoomOut, RotateCw, Check, X, Settings, Layers, PanelTop, PanelBottom, Mail, Layout, Maximize2, Minimize2, Undo2, Redo2, Hash, Menu } from 'lucide-react';
 
 // Color extraction utility - returns hex colors
 const rgbToHex = (r, g, b) => {
@@ -1580,18 +1580,26 @@ const StatBox = ({ stat, onUpdate, onDelete, themeColors, editable = true, canva
 
       {/* Label */}
       {editable ? (
-        <input
-          type="text"
+        <textarea
           value={stat.label || ''}
-          onChange={(e) => onUpdate({ ...stat, label: e.target.value })}
+          onChange={(e) => {
+            onUpdate({ ...stat, label: e.target.value });
+            e.target.style.height = 'auto';
+            e.target.style.height = Math.min(e.target.scrollHeight, height * 0.4) + 'px';
+          }}
           placeholder="LABEL"
-          className="font-semibold uppercase tracking-wider bg-transparent border-none text-center w-full focus:outline-none placeholder-white/50 mt-2 px-2"
-          style={{ color: 'white', fontSize: `${labelFontSize}px` }}
+          className="font-semibold uppercase tracking-wider bg-transparent border-none text-center w-full focus:outline-none placeholder-white/50 mt-2 px-2 resize-none overflow-hidden"
+          style={{ color: 'white', fontSize: `${labelFontSize}px`, minHeight: `${labelFontSize + 8}px`, maxHeight: `${height * 0.4}px` }}
           onMouseDown={(e) => e.stopPropagation()}
+          rows={1}
+          onFocus={(e) => {
+            e.target.style.height = 'auto';
+            e.target.style.height = Math.min(e.target.scrollHeight, height * 0.4) + 'px';
+          }}
         />
       ) : (
         stat.label && (
-          <p className="font-semibold uppercase tracking-wider mt-2 px-2" style={{ color: 'white', fontSize: `${labelFontSize}px` }}>
+          <p className="font-semibold uppercase tracking-wider mt-2 px-2 text-center break-words" style={{ color: 'white', fontSize: `${labelFontSize}px`, maxWidth: '100%', wordWrap: 'break-word' }}>
             {stat.label}
           </p>
         )
@@ -2084,6 +2092,14 @@ const FooterElement = ({ footer, onUpdate, onDelete, themeColors, logo, editable
                 style={{ color: themeColors?.gold || '#D4B896' }}
               />
               <input
+                type="email"
+                value={footer.email || ''}
+                onChange={(e) => onUpdate({ ...footer, email: e.target.value })}
+                placeholder="email@example.com"
+                className="bg-transparent border-none text-center w-full focus:outline-none text-sm"
+                style={{ color: themeColors?.gold || '#D4B896' }}
+              />
+              <input
                 type="text"
                 value={footer.website || ''}
                 onChange={(e) => onUpdate({ ...footer, website: e.target.value })}
@@ -2101,12 +2117,20 @@ const FooterElement = ({ footer, onUpdate, onDelete, themeColors, logo, editable
               {footer.address && <p className="text-sm">{footer.address}</p>}
               {footer.cityStateZip && <p className="text-sm">{footer.cityStateZip}</p>}
               {footer.phone && <p className="text-sm">{footer.phone}</p>}
+              {footer.email && (
+                <a
+                  href={`mailto:${footer.email}`}
+                  className="block text-sm hover:opacity-80"
+                >
+                  {footer.email}
+                </a>
+              )}
               {footer.website && (
                 <a
                   href={footer.website.startsWith('http') ? footer.website : `https://${footer.website}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm underline hover:opacity-80"
+                  className="block text-sm underline hover:opacity-80"
                 >
                   {footer.website}
                 </a>
@@ -4028,6 +4052,7 @@ export default function ReportBuilder() {
   ]);
   const [showPreview, setShowPreview] = useState(false);
   const [showAddSection, setShowAddSection] = useState(false);
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [draggedSectionIdx, setDraggedSectionIdx] = useState(null);
   const [dragOverIdx, setDragOverIdx] = useState(null);
   const [hasSavedDraft, setHasSavedDraft] = useState(false);
@@ -4152,6 +4177,7 @@ export default function ReportBuilder() {
   const [savedVersions, setSavedVersions] = useState([]);
   const [showVersionManager, setShowVersionManager] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showLoadModal, setShowLoadModal] = useState(false);
   const [versionNameInput, setVersionNameInput] = useState('');
   const [feedbackMessage, setFeedbackMessage] = useState('');
 
@@ -4731,29 +4757,39 @@ export default function ReportBuilder() {
 
       {/* Header */}
       <header className="sticky top-0 z-50 backdrop-blur-xl bg-slate-900/80 border-b border-slate-700/50">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
-                <Layers className="w-5 h-5 text-white" />
+            <div className="flex items-center gap-2 sm:gap-4">
+              {/* Mobile sidebar toggle */}
+              <button
+                onClick={() => setShowMobileSidebar(true)}
+                className="lg:hidden p-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
+                title="Open settings"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+                <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-white">Report Builder</h1>
+              <div className="hidden sm:block">
+                <h1 className="text-lg sm:text-xl font-bold text-white">Report Builder</h1>
                 <p className="text-xs text-slate-400">
                   {lastSaved ? `Auto-saved ${lastSaved.toLocaleTimeString()}` : 'Create professional branded reports'}
                 </p>
               </div>
             </div>
-            
-            <div className="flex items-center gap-3">
-              {/* Theme Colors Display */}
-              <div className="flex items-center gap-2 px-3 py-2 bg-slate-800 rounded-lg">
-                <span className="text-xs text-slate-400">Theme:</span>
+
+            {/* Desktop/Tablet action buttons */}
+            <div className="flex items-center gap-1 sm:gap-2 lg:gap-3">
+              {/* Theme Colors Display - hidden on mobile */}
+              <div className="hidden md:flex items-center gap-2 px-2 lg:px-3 py-2 bg-slate-800 rounded-lg">
+                <span className="hidden lg:inline text-xs text-slate-400">Theme:</span>
                 <div className="flex gap-1">
                   {Object.entries(themeColors).slice(0, 4).map(([key, color]) => (
                     <div
                       key={key}
-                      className="w-5 h-5 rounded-full border-2 border-slate-600"
+                      className="w-4 h-4 lg:w-5 lg:h-5 rounded-full border-2 border-slate-600"
                       style={{ backgroundColor: color }}
                       title={key}
                     />
@@ -4763,41 +4799,42 @@ export default function ReportBuilder() {
 
               <button
                 onClick={() => setShowSaveModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 lg:px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
                 title={lastSaved ? `Last saved: ${lastSaved.toLocaleTimeString()}` : 'Save your work'}
               >
                 <Save className="w-4 h-4" />
-                Save
+                <span className="hidden sm:inline">Save</span>
               </button>
 
-              {hasSavedDraft && (
+              {(hasSavedDraft || savedVersions.length > 0) && (
                 <button
-                  onClick={loadDraft}
-                  className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
-                  title={lastSaved ? `Load draft from ${lastSaved.toLocaleString()}` : 'Load saved draft'}
+                  onClick={() => setShowLoadModal(true)}
+                  className="hidden sm:flex items-center gap-2 px-3 lg:px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
+                  title="Load a saved version or draft"
                 >
                   <FolderOpen className="w-4 h-4" />
-                  Load
+                  <span className="hidden lg:inline">Load</span>
                 </button>
               )}
 
               <button
                 onClick={() => setShowVersionManager(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-emerald-700 text-white rounded-lg hover:bg-emerald-600 transition-colors"
+                className="hidden sm:flex items-center gap-1 sm:gap-2 px-2 sm:px-3 lg:px-4 py-2 bg-emerald-700 text-white rounded-lg hover:bg-emerald-600 transition-colors"
                 title="Manage saved versions"
               >
                 <Layers className="w-4 h-4" />
-                Versions ({savedVersions.length}/3)
+                <span className="hidden lg:inline">Versions ({savedVersions.length}/3)</span>
+                <span className="lg:hidden">{savedVersions.length}/3</span>
               </button>
 
               {/* Undo/Redo buttons */}
-              <div className="flex gap-1">
+              <div className="hidden sm:flex gap-1">
                 <button
                   onClick={undo}
                   disabled={historyIndex <= 0}
-                  className={`flex items-center gap-1 px-3 py-2 rounded-lg transition-colors ${
-                    historyIndex <= 0 
-                      ? 'bg-slate-300 text-slate-500 cursor-not-allowed' 
+                  className={`flex items-center gap-1 px-2 sm:px-3 py-2 rounded-lg transition-colors ${
+                    historyIndex <= 0
+                      ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
                       : 'bg-slate-600 text-white hover:bg-slate-500'
                   }`}
                   title="Undo (Ctrl+Z)"
@@ -4807,9 +4844,9 @@ export default function ReportBuilder() {
                 <button
                   onClick={redo}
                   disabled={historyIndex >= history.length - 1}
-                  className={`flex items-center gap-1 px-3 py-2 rounded-lg transition-colors ${
-                    historyIndex >= history.length - 1 
-                      ? 'bg-slate-300 text-slate-500 cursor-not-allowed' 
+                  className={`flex items-center gap-1 px-2 sm:px-3 py-2 rounded-lg transition-colors ${
+                    historyIndex >= history.length - 1
+                      ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
                       : 'bg-slate-600 text-white hover:bg-slate-500'
                   }`}
                   title="Redo (Ctrl+Shift+Z)"
@@ -4820,26 +4857,26 @@ export default function ReportBuilder() {
 
               <button
                 onClick={() => setShowPreview(!showPreview)}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 lg:px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
               >
                 {showPreview ? <Pencil className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                {showPreview ? 'Edit' : 'Preview'}
+                <span className="hidden sm:inline">{showPreview ? 'Edit' : 'Preview'}</span>
               </button>
-              
+
               <button
                 onClick={exportReport}
                 disabled={isExporting}
-                className={`flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-lg transition-colors ${isExporting ? 'opacity-70 cursor-not-allowed' : 'hover:from-amber-600 hover:to-orange-700'}`}
+                className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 lg:px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-lg transition-colors ${isExporting ? 'opacity-70 cursor-not-allowed' : 'hover:from-amber-600 hover:to-orange-700'}`}
               >
                 {isExporting ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Exporting...
+                    <span className="hidden sm:inline">Exporting...</span>
                   </>
                 ) : (
                   <>
                     <Download className="w-4 h-4" />
-                    Export PDF
+                    <span className="hidden sm:inline">Export PDF</span>
                   </>
                 )}
               </button>
@@ -4879,10 +4916,10 @@ export default function ReportBuilder() {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-12 gap-8">
-          {/* Sidebar */}
-          <aside className="col-span-3 space-y-6 sticky top-24 self-start max-h-[calc(100vh-8rem)] overflow-y-auto">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8">
+          {/* Sidebar - hidden on mobile/tablet, shown on desktop */}
+          <aside className="hidden lg:block lg:col-span-3 space-y-6 sticky top-24 self-start max-h-[calc(100vh-8rem)] overflow-y-auto">
             {/* Logo Upload */}
             <div className="bg-slate-800/50 backdrop-blur rounded-2xl p-6 border border-slate-700/50">
               <h3 className="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
@@ -5120,17 +5157,285 @@ export default function ReportBuilder() {
           </aside>
 
           {/* Main Content */}
-          <main className="col-span-9">
+          <main className="col-span-1 lg:col-span-9">
             <div
               id="report-preview"
-              className="bg-white rounded-2xl shadow-2xl overflow-hidden mx-auto"
-              style={{ width: '990px', maxWidth: '990px' }}
+              className="bg-white rounded-2xl shadow-2xl overflow-hidden mx-auto w-full lg:w-[990px] lg:max-w-[990px]"
             >
               {sections.map((section, idx) => renderSection(section, idx))}
             </div>
           </main>
         </div>
       </div>
+
+      {/* Mobile Sidebar Overlay */}
+      {showMobileSidebar && (
+        <div
+          className="fixed inset-0 bg-black/50 lg:hidden"
+          style={{ zIndex: 10000 }}
+          onClick={() => setShowMobileSidebar(false)}
+        >
+          <div
+            className="absolute left-0 top-0 bottom-0 w-80 max-w-[85vw] bg-slate-900 shadow-2xl overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-4 border-b border-slate-700 sticky top-0 bg-slate-900 z-10">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <Settings className="w-5 h-5 text-amber-500" />
+                Settings
+              </h2>
+              <button
+                onClick={() => setShowMobileSidebar(false)}
+                className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-white" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-6">
+              {/* Brand Settings */}
+              <div className="bg-slate-800/50 backdrop-blur rounded-2xl p-4 border border-slate-700/50">
+                <h3 className="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
+                  <Settings className="w-4 h-4" />
+                  Brand Settings
+                </h3>
+
+                <div
+                  onClick={() => logoInputRef.current?.click()}
+                  className="relative aspect-square bg-slate-700/50 rounded-xl border-2 border-dashed border-slate-600 hover:border-amber-500/50 transition-colors cursor-pointer overflow-hidden group"
+                >
+                  {logo ? (
+                    <>
+                      <img src={logo} alt="Logo" className="w-full h-full object-contain p-4" />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <div className="p-2 bg-white rounded-lg">
+                          <Upload className="w-5 h-5 text-slate-700" />
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
+                      <Upload className="w-10 h-10 mb-2" />
+                      <span className="text-sm font-medium">Upload Logo</span>
+                      <span className="text-xs mt-1 opacity-70">Sets theme colors</span>
+                    </div>
+                  )}
+                </div>
+
+                {logo && (
+                  <button
+                    onClick={() => {
+                      setLogo(null);
+                      setThemeColors(DEFAULT_THEME_COLORS);
+                    }}
+                    className="mt-2 w-full flex items-center justify-center gap-2 px-3 py-2 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    Remove Logo
+                  </button>
+                )}
+
+                <div className="mt-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-400">Primary</span>
+                    <input
+                      type="color"
+                      value={ensureHexColor(themeColors.primary, DEFAULT_THEME_COLORS.primary)}
+                      onChange={(e) => setThemeColors({ ...themeColors, primary: e.target.value, primaryDark: rgbToHex(
+                        Math.max(0, parseInt(e.target.value.slice(1, 3), 16) - 20),
+                        Math.max(0, parseInt(e.target.value.slice(3, 5), 16) - 20),
+                        Math.max(0, parseInt(e.target.value.slice(5, 7), 16) - 20)
+                      )})}
+                      className="w-8 h-8 rounded cursor-pointer"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-400">Accent</span>
+                    <input
+                      type="color"
+                      value={ensureHexColor(themeColors.accent, DEFAULT_THEME_COLORS.accent)}
+                      onChange={(e) => setThemeColors({ ...themeColors, accent: e.target.value })}
+                      className="w-8 h-8 rounded cursor-pointer"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-400">Highlight</span>
+                    <input
+                      type="color"
+                      value={ensureHexColor(themeColors.gold, DEFAULT_THEME_COLORS.gold)}
+                      onChange={(e) => setThemeColors({ ...themeColors, gold: e.target.value })}
+                      className="w-8 h-8 rounded cursor-pointer"
+                    />
+                  </div>
+                  <button
+                    onClick={() => setThemeColors(DEFAULT_THEME_COLORS)}
+                    className="w-full mt-2 px-3 py-1.5 text-xs text-slate-400 hover:text-slate-300 hover:bg-slate-700/50 rounded transition-colors"
+                  >
+                    Reset to Defaults
+                  </button>
+                </div>
+              </div>
+
+              {/* Section List */}
+              <div className="bg-slate-800/50 backdrop-blur rounded-2xl p-4 border border-slate-700/50">
+                <h3 className="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
+                  <Layout className="w-4 h-4" />
+                  Sections
+                </h3>
+
+                <div className="space-y-2">
+                  {sections.map((section, idx) => (
+                    <div
+                      key={section.id}
+                      className="flex items-center gap-2 p-3 bg-slate-700/50 rounded-lg"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          {section.type === 'banner' && <PanelTop className="w-4 h-4 text-slate-400 flex-shrink-0" />}
+                          {section.type === 'letter' && <Mail className="w-4 h-4 text-slate-400 flex-shrink-0" />}
+                          {section.type === 'footer' && <PanelBottom className="w-4 h-4 text-slate-400 flex-shrink-0" />}
+                          {section.type === 'content' && <Layers className="w-4 h-4 text-slate-400 flex-shrink-0" />}
+                          <span className="text-sm text-white truncate">
+                            {(section.title || section.heading || section.name) || (
+                              <span className="capitalize">{section.type}</span>
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => moveSection(idx, -1)}
+                          disabled={idx === 0}
+                          className="p-1 hover:bg-slate-600 rounded disabled:opacity-30 bg-slate-600/50"
+                        >
+                          <ArrowUp className="w-4 h-4 text-white" strokeWidth={2.5} />
+                        </button>
+                        <button
+                          onClick={() => moveSection(idx, 1)}
+                          disabled={idx === sections.length - 1}
+                          className="p-1 hover:bg-slate-600 rounded disabled:opacity-30 bg-slate-600/50"
+                        >
+                          <ArrowDown className="w-4 h-4 text-white" strokeWidth={2.5} />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (sections.length > 1) {
+                              setSections(sections.filter((_, i) => i !== idx));
+                            }
+                          }}
+                          disabled={sections.length <= 1}
+                          className="p-1 hover:bg-red-600 rounded disabled:opacity-30 bg-red-500/50"
+                        >
+                          <Trash2 className="w-4 h-4 text-white" strokeWidth={2.5} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Add Section */}
+                <div className="relative mt-4">
+                  <button
+                    onClick={() => setShowAddSection(!showAddSection)}
+                    className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-slate-600 rounded-xl text-slate-400 hover:border-amber-500/50 hover:text-amber-500 transition-colors"
+                  >
+                    <Plus className="w-5 h-5" />
+                    Add Section
+                  </button>
+
+                  {showAddSection && (
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-slate-700 rounded-xl shadow-xl border border-slate-600 overflow-hidden z-10">
+                      <button
+                        onClick={() => { addSection('content'); setShowMobileSidebar(false); }}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-600 text-white text-left"
+                      >
+                        <Layers className="w-5 h-5 text-emerald-500" />
+                        <div>
+                          <span className="block font-medium">Content Section</span>
+                          <span className="text-xs text-slate-400">Cards, charts, and images</span>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => { addSection('banner'); setShowMobileSidebar(false); }}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-600 text-white text-left"
+                      >
+                        <PanelTop className="w-5 h-5 text-amber-500" />
+                        <div>
+                          <span className="block font-medium">Banner</span>
+                          <span className="text-xs text-slate-400">Full-page cover with logo</span>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => { addSection('letter'); setShowMobileSidebar(false); }}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-600 text-white text-left"
+                      >
+                        <Mail className="w-5 h-5 text-blue-500" />
+                        <div>
+                          <span className="block font-medium">Opening Letter</span>
+                          <span className="text-xs text-slate-400">Message with photo and text</span>
+                        </div>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Quick Actions for Mobile */}
+              <div className="bg-slate-800/50 backdrop-blur rounded-2xl p-4 border border-slate-700/50">
+                <h3 className="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
+                  <Layers className="w-4 h-4" />
+                  Quick Actions
+                </h3>
+                <div className="space-y-2">
+                  {(hasSavedDraft || savedVersions.length > 0) && (
+                    <button
+                      onClick={() => { setShowLoadModal(true); setShowMobileSidebar(false); }}
+                      className="w-full flex items-center gap-3 px-4 py-3 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
+                    >
+                      <FolderOpen className="w-5 h-5" />
+                      Load
+                    </button>
+                  )}
+                  <button
+                    onClick={() => { setShowVersionManager(true); setShowMobileSidebar(false); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 bg-emerald-700 text-white rounded-lg hover:bg-emerald-600 transition-colors"
+                  >
+                    <Layers className="w-5 h-5" />
+                    Versions ({savedVersions.length}/3)
+                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={undo}
+                      disabled={historyIndex <= 0}
+                      className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-colors ${
+                        historyIndex <= 0
+                          ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                          : 'bg-slate-600 text-white hover:bg-slate-500'
+                      }`}
+                    >
+                      <Undo2 className="w-5 h-5" />
+                      Undo
+                    </button>
+                    <button
+                      onClick={redo}
+                      disabled={historyIndex >= history.length - 1}
+                      className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-colors ${
+                        historyIndex >= history.length - 1
+                          ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                          : 'bg-slate-600 text-white hover:bg-slate-500'
+                      }`}
+                    >
+                      <Redo2 className="w-5 h-5" />
+                      Redo
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Version Manager Modal */}
       {showVersionManager && (
@@ -5430,6 +5735,125 @@ export default function ReportBuilder() {
               <button
                 type="button"
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowSaveModal(false); }}
+                className="w-full px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors font-medium cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Load Modal - Choose what to load */}
+      {showLoadModal && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center"
+          style={{ zIndex: 10000 }}
+          onClick={(e) => { if (e.target === e.currentTarget) setShowLoadModal(false); }}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50">
+              <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                <FolderOpen className="w-5 h-5" />
+                Load Report
+              </h2>
+              <button
+                type="button"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowLoadModal(false); }}
+                className="p-2 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Load Options */}
+            <div className="px-6 py-4">
+              <p className="text-sm text-slate-600 mb-4">Choose what to load:</p>
+
+              {/* Load Draft */}
+              {hasSavedDraft && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    loadDraft();
+                    setShowLoadModal(false);
+                  }}
+                  className="w-full mb-3 p-4 bg-slate-100 hover:bg-slate-200 rounded-xl border border-slate-200 hover:border-slate-300 transition-all text-left group cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-slate-700 rounded-lg flex items-center justify-center">
+                      <Save className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-slate-800 group-hover:text-slate-900">Load Draft</h3>
+                      <p className="text-xs text-slate-500">
+                        {lastSaved ? `Last saved: ${lastSaved.toLocaleString()}` : 'Your work in progress'}
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              )}
+
+              {/* Divider */}
+              {hasSavedDraft && savedVersions.length > 0 && (
+                <div className="flex items-center gap-3 my-4">
+                  <div className="flex-1 h-px bg-slate-200"></div>
+                  <span className="text-xs text-slate-400 font-medium">OR LOAD A VERSION</span>
+                  <div className="flex-1 h-px bg-slate-200"></div>
+                </div>
+              )}
+
+              {/* Saved Versions */}
+              {savedVersions.length > 0 && (
+                <div className="space-y-2">
+                  {savedVersions.map((version) => (
+                    <button
+                      key={version.id}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        loadVersion(version.id);
+                        setShowLoadModal(false);
+                      }}
+                      className="w-full p-4 bg-blue-50 hover:bg-blue-100 rounded-xl border border-blue-200 hover:border-blue-300 transition-all text-left group cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                          <Layers className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-slate-800 group-hover:text-slate-900 truncate">{version.name}</h3>
+                          <p className="text-xs text-slate-500">Saved: {new Date(version.savedAt).toLocaleString()}</p>
+                        </div>
+                        <div className="text-blue-600 text-sm font-medium">Load</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* No content message */}
+              {!hasSavedDraft && savedVersions.length === 0 && (
+                <div className="text-center py-8 text-slate-400">
+                  <FolderOpen className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p>No saved content to load</p>
+                  <p className="text-sm">Save your work first</p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-slate-200 bg-slate-50">
+              <button
+                type="button"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowLoadModal(false); }}
                 className="w-full px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors font-medium cursor-pointer"
               >
                 Cancel

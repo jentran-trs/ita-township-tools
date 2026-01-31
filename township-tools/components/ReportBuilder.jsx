@@ -759,7 +759,8 @@ const RichTextEditor = ({ content, onChange, themeColors, maxHeight, defaultFont
           lineHeight: lineSpacing,
           maxHeight: maxHeight ? `${maxHeight}px` : 'none',
           overflowY: maxHeight ? 'auto' : 'visible',
-          color: '#0f172a'
+          color: '#0f172a',
+          fontFamily: '"Instrument Sans", sans-serif'
         }}
         onInput={handleInput}
         onBlur={saveSelection}
@@ -775,7 +776,7 @@ const RichTextEditor = ({ content, onChange, themeColors, maxHeight, defaultFont
         suppressContentEditableWarning={true}
       />
       <style>{`
-        [contenteditable] { line-height: ${lineSpacing}; }
+        [contenteditable] { line-height: ${lineSpacing}; font-family: "Instrument Sans", sans-serif; }
         [contenteditable] h1 { font-size: 32px; font-weight: bold; margin: ${paragraphSpacing * 2}px 0 ${paragraphSpacing}px 0; }
         [contenteditable] h2 { font-size: 26px; font-weight: bold; margin: ${paragraphSpacing * 1.5}px 0 ${paragraphSpacing * 0.75}px 0; }
         [contenteditable] h3 { font-size: 22px; font-weight: bold; margin: ${paragraphSpacing}px 0 ${paragraphSpacing * 0.5}px 0; }
@@ -1192,7 +1193,7 @@ const ImageFrame = ({ imageData, onUpdate, onDelete, themeColors, editable = tru
             }}
             placeholder="Add caption (optional) - Press Enter for new line"
             className="w-full px-2 py-1 text-sm border border-slate-200 rounded bg-white text-slate-700 focus:outline-none focus:border-slate-400 resize-none overflow-hidden"
-            style={{ minHeight: '32px' }}
+            style={{ minHeight: '32px', fontFamily: '"Instrument Sans", sans-serif' }}
             rows={1}
             onMouseDown={(e) => e.stopPropagation()}
           />
@@ -1201,16 +1202,17 @@ const ImageFrame = ({ imageData, onUpdate, onDelete, themeColors, editable = tru
 
       {/* Caption display - only in preview mode */}
       {!editable && imageData.caption && (
-        <p 
-          className="mt-2 text-sm text-center italic font-medium" 
-          style={{ 
+        <p
+          className="mt-2 text-sm text-center italic font-medium"
+          style={{
             width: `${frameWidth}px`,
             maxWidth: `${frameWidth}px`,
             color: lightBackground ? (themeColors?.primary || '#2B3E50') : (themeColors?.gold || '#D4B896'),
             textShadow: lightBackground ? 'none' : '0 1px 2px rgba(0,0,0,0.5)',
             wordWrap: 'break-word',
             overflowWrap: 'break-word',
-            whiteSpace: 'pre-wrap'
+            whiteSpace: 'pre-wrap',
+            fontFamily: '"Instrument Sans", sans-serif'
           }}
         >
           {imageData.caption}
@@ -1368,7 +1370,8 @@ const InfoCard = ({ card, onUpdate, onDelete, themeColors, editable = true, canv
             minHeight: '28px',
             overflow: 'hidden',
             whiteSpace: 'pre-wrap',
-            wordWrap: 'break-word'
+            wordWrap: 'break-word',
+            fontFamily: '"Instrument Sans", sans-serif'
           }}
           onMouseDown={(e) => e.stopPropagation()}
           rows={1}
@@ -1385,7 +1388,7 @@ const InfoCard = ({ card, onUpdate, onDelete, themeColors, editable = true, canv
         />
       ) : (
         card.title && (
-          <h3 className="text-xl font-semibold mb-3" style={{ color: themeColors?.gold || '#D4B896', wordWrap: 'break-word', overflowWrap: 'break-word' }}>
+          <h3 className="text-xl font-semibold mb-3" style={{ color: themeColors?.gold || '#D4B896', wordWrap: 'break-word', overflowWrap: 'break-word', fontFamily: '"Instrument Sans", sans-serif' }}>
             {card.title}
           </h3>
         )
@@ -1398,12 +1401,12 @@ const InfoCard = ({ card, onUpdate, onDelete, themeColors, editable = true, canv
           onChange={(e) => onUpdate({ ...card, content: e.target.value })}
           placeholder="Enter card content..."
           className="w-full bg-transparent border-none focus:outline-none resize-none text-base placeholder-white/50 cursor-text"
-          style={{ color: 'white', height: 'calc(100% - 60px)' }}
+          style={{ color: 'white', height: 'calc(100% - 60px)', fontFamily: '"Instrument Sans", sans-serif' }}
           onMouseDown={(e) => e.stopPropagation()}
         />
       ) : (
         card.content && (
-          <p className="text-base text-white" style={{ whiteSpace: 'pre-wrap' }}>
+          <p className="text-base text-white" style={{ whiteSpace: 'pre-wrap', fontFamily: '"Instrument Sans", sans-serif' }}>
             {card.content}
           </p>
         )
@@ -1569,11 +1572,11 @@ const StatBox = ({ stat, onUpdate, onDelete, themeColors, editable = true, canva
           onChange={(e) => onUpdate({ ...stat, number: e.target.value })}
           placeholder="0"
           className="font-bold bg-transparent border-none text-center w-full focus:outline-none placeholder-white/50"
-          style={{ color: themeColors?.gold || '#D4B896', fontSize: `${numberFontSize}px`, lineHeight: 1.1 }}
+          style={{ color: themeColors?.gold || '#D4B896', fontSize: `${numberFontSize}px`, lineHeight: 1.1, fontFamily: '"Instrument Sans", sans-serif' }}
           onMouseDown={(e) => e.stopPropagation()}
         />
       ) : (
-        <p className="font-bold" style={{ color: themeColors?.gold || '#D4B896', fontSize: `${numberFontSize}px`, lineHeight: 1.1 }}>
+        <p className="font-bold" style={{ color: themeColors?.gold || '#D4B896', fontSize: `${numberFontSize}px`, lineHeight: 1.1, fontFamily: '"Instrument Sans", sans-serif' }}>
           {stat.number || ''}
         </p>
       )}
@@ -1589,7 +1592,7 @@ const StatBox = ({ stat, onUpdate, onDelete, themeColors, editable = true, canva
           }}
           placeholder="LABEL"
           className="font-semibold uppercase tracking-wider bg-transparent border-none text-center w-full focus:outline-none placeholder-white/50 mt-2 px-2 resize-none overflow-hidden"
-          style={{ color: 'white', fontSize: `${labelFontSize}px`, minHeight: `${labelFontSize + 8}px`, maxHeight: `${height * 0.4}px` }}
+          style={{ color: 'white', fontSize: `${labelFontSize}px`, minHeight: `${labelFontSize + 8}px`, maxHeight: `${height * 0.4}px`, fontFamily: '"Instrument Sans", sans-serif' }}
           onMouseDown={(e) => e.stopPropagation()}
           rows={1}
           onFocus={(e) => {
@@ -1599,7 +1602,7 @@ const StatBox = ({ stat, onUpdate, onDelete, themeColors, editable = true, canva
         />
       ) : (
         stat.label && (
-          <p className="font-semibold uppercase tracking-wider mt-2 px-2 text-center break-words" style={{ color: 'white', fontSize: `${labelFontSize}px`, maxWidth: '100%', wordWrap: 'break-word' }}>
+          <p className="font-semibold uppercase tracking-wider mt-2 px-2 text-center break-words" style={{ color: 'white', fontSize: `${labelFontSize}px`, maxWidth: '100%', wordWrap: 'break-word', fontFamily: '"Instrument Sans", sans-serif' }}>
             {stat.label}
           </p>
         )
@@ -1867,22 +1870,24 @@ const TextBlock = ({ textBlock, onUpdate, onDelete, themeColors, editable = true
           onInput={handleContentChange}
           onBlur={handleContentChange}
           className="w-full overflow-auto focus:outline-none text-white p-3 pt-10"
-          style={{ 
+          style={{
             fontSize: '16px',
             lineHeight: 1.6,
             height: '100%',
-            minHeight: '60px'
+            minHeight: '60px',
+            fontFamily: '"Instrument Sans", sans-serif'
           }}
           data-placeholder="Enter paragraph text..."
           suppressContentEditableWarning
         />
       ) : (
         textBlock.content && (
-          <div 
+          <div
             className="w-full h-full p-3 overflow-hidden text-white"
-            style={{ 
+            style={{
               fontSize: '16px',
-              lineHeight: 1.6
+              lineHeight: 1.6,
+              fontFamily: '"Instrument Sans", sans-serif'
             }}
             dangerouslySetInnerHTML={{ __html: textBlock.content }}
           />
@@ -2463,7 +2468,7 @@ const ChartContainer = ({ chart, onUpdate, onDelete, themeColors, editable = tru
             }}
             placeholder="Add caption (optional) - Press Enter for new line"
             className="w-full px-2 py-1 text-sm border border-slate-200 rounded bg-white text-slate-700 focus:outline-none focus:border-slate-400 resize-none overflow-hidden"
-            style={{ minHeight: '32px' }}
+            style={{ minHeight: '32px', fontFamily: '"Instrument Sans", sans-serif' }}
             rows={1}
             onMouseDown={(e) => e.stopPropagation()}
           />
@@ -2472,16 +2477,17 @@ const ChartContainer = ({ chart, onUpdate, onDelete, themeColors, editable = tru
 
       {/* Caption display - only in preview mode */}
       {!editable && chart.caption && (
-        <p 
-          className="mt-2 text-sm text-center italic font-medium" 
-          style={{ 
+        <p
+          className="mt-2 text-sm text-center italic font-medium"
+          style={{
             width: `${width}px`,
             maxWidth: `${width}px`,
             color: themeColors?.gold || '#D4B896',
             textShadow: '0 1px 2px rgba(0,0,0,0.5)',
             wordWrap: 'break-word',
             overflowWrap: 'break-word',
-            whiteSpace: 'pre-wrap'
+            whiteSpace: 'pre-wrap',
+            fontFamily: '"Instrument Sans", sans-serif'
           }}
         >
           {chart.caption}
@@ -3041,7 +3047,8 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
                 lineHeight: section.lineSpacing || 1.4,
                 maxHeight: contentHeight ? `${contentHeight}px` : `${maxContentHeight}px`,
                 overflowY: 'auto',
-                color: '#1e293b'
+                color: '#1e293b',
+                fontFamily: '"Instrument Sans", sans-serif'
               }}
               dangerouslySetInnerHTML={{ __html: section.content || '' }}
             />
@@ -3073,16 +3080,17 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
               .letter-content-edit p { margin: ${section.paragraphSpacing || 2}px 0; }
               .letter-content-edit li { margin: ${Math.max(1, (section.paragraphSpacing || 2) / 2)}px 0; }
             `}</style>
-            <div 
+            <div
               className="prose prose-lg max-w-none cursor-pointer p-4 border-2 border-dashed border-slate-200 rounded-xl hover:border-slate-400 transition-colors h-full letter-content-edit"
-              style={{ 
-                direction: 'ltr', 
-                textAlign: 'left', 
+              style={{
+                direction: 'ltr',
+                textAlign: 'left',
                 fontSize: '14pt',
                 lineHeight: section.lineSpacing || 1.4,
                 minHeight: '100px',
                 maxHeight: contentHeight ? `${contentHeight}px` : `${maxContentHeight - 40}px`,
-                overflowY: 'auto'
+                overflowY: 'auto',
+                fontFamily: '"Instrument Sans", sans-serif'
               }}
               onClick={() => setIsEditingContent(true)}
             >
@@ -4919,15 +4927,15 @@ export default function ReportBuilder() {
       <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8">
           {/* Sidebar - hidden on mobile/tablet, shown on desktop */}
-          <aside className="hidden lg:block lg:col-span-3 space-y-6 sticky top-24 self-start max-h-[calc(100vh-8rem)] overflow-y-auto">
+          <aside className="hidden lg:block lg:col-span-4 space-y-6 sticky top-24 self-start max-h-[calc(100vh-8rem)] overflow-y-auto">
             {/* Logo Upload */}
             <div className="bg-slate-800/50 backdrop-blur rounded-2xl p-6 border border-slate-700/50">
-              <h3 className="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
-                <Settings className="w-4 h-4" />
+              <h3 className="text-base font-semibold text-slate-300 mb-4 flex items-center gap-2">
+                <Settings className="w-5 h-5" />
                 Brand Settings
               </h3>
-              
-              <div 
+
+              <div
                 onClick={() => logoInputRef.current?.click()}
                 className="relative aspect-square bg-slate-700/50 rounded-xl border-2 border-dashed border-slate-600 hover:border-amber-500/50 transition-colors cursor-pointer overflow-hidden group"
               >
@@ -4943,8 +4951,8 @@ export default function ReportBuilder() {
                 ) : (
                   <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
                     <Upload className="w-10 h-10 mb-2" />
-                    <span className="text-sm font-medium">Upload Logo</span>
-                    <span className="text-xs mt-1 opacity-70">Sets theme colors</span>
+                    <span className="text-base font-medium">Upload Logo</span>
+                    <span className="text-sm mt-1 opacity-70">Sets theme colors</span>
                   </div>
                 )}
                 <input
@@ -4963,9 +4971,9 @@ export default function ReportBuilder() {
                     setLogo(null);
                     setThemeColors(DEFAULT_THEME_COLORS);
                   }}
-                  className="mt-2 w-full flex items-center justify-center gap-2 px-3 py-2 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
+                  className="mt-2 w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
                 >
-                  <Trash2 className="w-3 h-3" />
+                  <Trash2 className="w-4 h-4" />
                   Remove Logo
                 </button>
               )}
@@ -4973,7 +4981,7 @@ export default function ReportBuilder() {
               {/* Manual color override */}
               <div className="mt-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-400">Primary</span>
+                  <span className="text-sm text-slate-400">Primary</span>
                   <input
                     type="color"
                     value={ensureHexColor(themeColors.primary, DEFAULT_THEME_COLORS.primary)}
@@ -4986,7 +4994,7 @@ export default function ReportBuilder() {
                   />
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-400">Accent</span>
+                  <span className="text-sm text-slate-400">Accent</span>
                   <input
                     type="color"
                     value={ensureHexColor(themeColors.accent, DEFAULT_THEME_COLORS.accent)}
@@ -4995,7 +5003,7 @@ export default function ReportBuilder() {
                   />
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-400">Highlight</span>
+                  <span className="text-sm text-slate-400">Highlight</span>
                   <input
                     type="color"
                     value={ensureHexColor(themeColors.gold, DEFAULT_THEME_COLORS.gold)}
@@ -5005,7 +5013,7 @@ export default function ReportBuilder() {
                 </div>
                 <button
                   onClick={() => setThemeColors(DEFAULT_THEME_COLORS)}
-                  className="w-full mt-2 px-3 py-1.5 text-xs text-slate-400 hover:text-slate-300 hover:bg-slate-700/50 rounded transition-colors"
+                  className="w-full mt-2 px-3 py-1.5 text-sm text-slate-400 hover:text-slate-300 hover:bg-slate-700/50 rounded transition-colors"
                 >
                   Reset to Defaults
                 </button>
@@ -5014,8 +5022,8 @@ export default function ReportBuilder() {
 
             {/* Section List */}
             <div className="bg-slate-800/50 backdrop-blur rounded-2xl p-6 border border-slate-700/50">
-              <h3 className="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
-                <Layout className="w-4 h-4" />
+              <h3 className="text-base font-semibold text-slate-300 mb-4 flex items-center gap-2">
+                <Layout className="w-5 h-5" />
                 Sections
               </h3>
               
@@ -5157,7 +5165,7 @@ export default function ReportBuilder() {
           </aside>
 
           {/* Main Content */}
-          <main className="col-span-1 lg:col-span-9">
+          <main className="col-span-1 lg:col-span-8">
             <div
               id="report-preview"
               className="bg-white rounded-2xl shadow-2xl overflow-hidden mx-auto w-full lg:w-[990px] lg:max-w-[990px]"

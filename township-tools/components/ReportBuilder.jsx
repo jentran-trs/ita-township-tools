@@ -5127,7 +5127,7 @@ export default function ReportBuilder() {
                 </button>
                 
                 {showAddSection && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-slate-700 rounded-xl shadow-xl border border-slate-600 overflow-hidden z-10">
+                  <div className="absolute bottom-full left-0 right-0 mb-2 bg-slate-700 rounded-xl shadow-xl border border-slate-600 overflow-hidden z-10">
                     <button
                       onClick={() => addSection('content')}
                       className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-600 text-white text-left"
@@ -5353,7 +5353,7 @@ export default function ReportBuilder() {
                   </button>
 
                   {showAddSection && (
-                    <div className="absolute top-full left-0 right-0 mt-2 bg-slate-700 rounded-xl shadow-xl border border-slate-600 overflow-hidden z-10">
+                    <div className="absolute bottom-full left-0 right-0 mb-2 bg-slate-700 rounded-xl shadow-xl border border-slate-600 overflow-hidden z-10">
                       <button
                         onClick={() => { addSection('content'); setShowMobileSidebar(false); }}
                         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-600 text-white text-left"

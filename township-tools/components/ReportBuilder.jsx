@@ -4924,10 +4924,10 @@ export default function ReportBuilder() {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8">
+      <div className="mx-auto px-3 sm:px-6 py-4 sm:py-8">
+        <div className="flex flex-col lg:flex-row lg:justify-center gap-4 lg:gap-8">
           {/* Sidebar - hidden on mobile/tablet, shown on desktop */}
-          <aside className="hidden lg:block lg:col-span-4 space-y-6 sticky top-24 self-start max-h-[calc(100vh-8rem)] overflow-y-auto">
+          <aside className="hidden lg:block lg:w-[340px] lg:flex-shrink-0 space-y-6 sticky top-24 self-start max-h-[calc(100vh-8rem)] overflow-y-auto">
             {/* Logo Upload */}
             <div className="bg-slate-800/50 backdrop-blur rounded-2xl p-6 border border-slate-700/50">
               <h3 className="text-base font-semibold text-slate-300 mb-4 flex items-center gap-2">
@@ -5165,7 +5165,7 @@ export default function ReportBuilder() {
           </aside>
 
           {/* Main Content */}
-          <main className="col-span-1 lg:col-span-8">
+          <main className="w-full lg:w-auto lg:flex-shrink-0">
             <div
               id="report-preview"
               className="bg-white rounded-2xl shadow-2xl overflow-hidden mx-auto w-full lg:w-[990px] lg:max-w-[990px]"

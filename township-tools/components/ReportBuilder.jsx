@@ -3035,6 +3035,7 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
         {isPreview ? (
           <>
             <style>{`
+              .letter-content-preview, .letter-content-preview * { color: #1e293b !important; }
               .letter-content-preview p { margin: ${section.paragraphSpacing || 2}px 0; }
               .letter-content-preview li { margin: ${Math.max(1, (section.paragraphSpacing || 2) / 2)}px 0; }
             `}</style>
@@ -3077,6 +3078,7 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
         ) : (
           <>
             <style>{`
+              .letter-content-edit, .letter-content-edit * { color: #1e293b !important; }
               .letter-content-edit p { margin: ${section.paragraphSpacing || 2}px 0; }
               .letter-content-edit li { margin: ${Math.max(1, (section.paragraphSpacing || 2) / 2)}px 0; }
             `}</style>

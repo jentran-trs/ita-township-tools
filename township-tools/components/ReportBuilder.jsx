@@ -4151,6 +4151,7 @@ export default function ReportBuilder() {
   // Version management state
   const [savedVersions, setSavedVersions] = useState([]);
   const [showVersionManager, setShowVersionManager] = useState(false);
+  const [showSaveModal, setShowSaveModal] = useState(false);
   const [versionNameInput, setVersionNameInput] = useState('');
   const [feedbackMessage, setFeedbackMessage] = useState('');
 
@@ -4761,7 +4762,7 @@ export default function ReportBuilder() {
               </div>
 
               <button
-                onClick={() => saveDraft(false)}
+                onClick={() => setShowSaveModal(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
                 title={lastSaved ? `Last saved: ${lastSaved.toLocaleTimeString()}` : 'Save your work'}
               >
@@ -4881,7 +4882,7 @@ export default function ReportBuilder() {
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-12 gap-8">
           {/* Sidebar */}
-          <aside className="col-span-3 space-y-6">
+          <aside className="col-span-3 space-y-6 sticky top-24 self-start max-h-[calc(100vh-8rem)] overflow-y-auto">
             {/* Logo Upload */}
             <div className="bg-slate-800/50 backdrop-blur rounded-2xl p-6 border border-slate-700/50">
               <h3 className="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
@@ -5133,12 +5134,12 @@ export default function ReportBuilder() {
 
       {/* Version Manager Modal */}
       {showVersionManager && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center"
           style={{ zIndex: 10000 }}
           onClick={(e) => { if (e.target === e.currentTarget) setShowVersionManager(false); }}
         >
-          <div 
+          <div
             className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
@@ -5156,7 +5157,7 @@ export default function ReportBuilder() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            
+
             {/* Save New Version */}
             <div className="px-6 py-4 border-b border-slate-200">
               <h3 className="text-sm font-semibold text-slate-600 mb-2">Save Current Report as Version</h3>
@@ -5201,7 +5202,7 @@ export default function ReportBuilder() {
                 </div>
               )}
             </div>
-            
+
             {/* Saved Versions List */}
             <div className="px-6 py-4 max-h-80 overflow-y-auto">
               <h3 className="text-sm font-semibold text-slate-600 mb-3">Saved Versions ({savedVersions.length}/3)</h3>
@@ -5214,7 +5215,7 @@ export default function ReportBuilder() {
               ) : (
                 <div className="space-y-2">
                   {savedVersions.map((version) => (
-                    <div 
+                    <div
                       key={version.id}
                       className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors"
                     >
@@ -5257,7 +5258,7 @@ export default function ReportBuilder() {
                 </div>
               )}
             </div>
-            
+
             {/* Footer */}
             <div className="px-6 py-4 border-t border-slate-200 bg-slate-50">
               <button
@@ -5266,6 +5267,172 @@ export default function ReportBuilder() {
                 className="w-full px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors font-medium cursor-pointer"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Save Modal - Choose where to save */}
+      {showSaveModal && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center"
+          style={{ zIndex: 10000 }}
+          onClick={(e) => { if (e.target === e.currentTarget) setShowSaveModal(false); }}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50">
+              <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                <Save className="w-5 h-5" />
+                Save Report
+              </h2>
+              <button
+                type="button"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowSaveModal(false); }}
+                className="p-2 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Save Options */}
+            <div className="px-6 py-4">
+              <p className="text-sm text-slate-600 mb-4">Choose where to save your current report:</p>
+
+              {/* Save as Draft */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  saveDraft(false);
+                  setShowSaveModal(false);
+                }}
+                className="w-full mb-3 p-4 bg-slate-100 hover:bg-slate-200 rounded-xl border border-slate-200 hover:border-slate-300 transition-all text-left group cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-slate-700 rounded-lg flex items-center justify-center">
+                    <Save className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-slate-800 group-hover:text-slate-900">Save as Draft</h3>
+                    <p className="text-xs text-slate-500">Quick save for work in progress</p>
+                  </div>
+                </div>
+              </button>
+
+              {/* Divider */}
+              {savedVersions.length > 0 && (
+                <div className="flex items-center gap-3 my-4">
+                  <div className="flex-1 h-px bg-slate-200"></div>
+                  <span className="text-xs text-slate-400 font-medium">OR UPDATE EXISTING VERSION</span>
+                  <div className="flex-1 h-px bg-slate-200"></div>
+                </div>
+              )}
+
+              {/* Existing Versions */}
+              {savedVersions.length > 0 && (
+                <div className="space-y-2 mb-4">
+                  {savedVersions.map((version) => (
+                    <button
+                      key={version.id}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        updateVersion(version.id);
+                        setShowSaveModal(false);
+                      }}
+                      className="w-full p-4 bg-amber-50 hover:bg-amber-100 rounded-xl border border-amber-200 hover:border-amber-300 transition-all text-left group cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-amber-600 rounded-lg flex items-center justify-center">
+                          <Layers className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-slate-800 group-hover:text-slate-900 truncate">{version.name}</h3>
+                          <p className="text-xs text-slate-500">Last saved: {new Date(version.savedAt).toLocaleString()}</p>
+                        </div>
+                        <div className="text-amber-600 text-sm font-medium">Update</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Create New Version */}
+              {savedVersions.length < 3 && (
+                <>
+                  {savedVersions.length > 0 && (
+                    <div className="flex items-center gap-3 my-4">
+                      <div className="flex-1 h-px bg-slate-200"></div>
+                      <span className="text-xs text-slate-400 font-medium">OR CREATE NEW VERSION</span>
+                      <div className="flex-1 h-px bg-slate-200"></div>
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={versionNameInput}
+                      onChange={(e) => setVersionNameInput(e.target.value)}
+                      placeholder="Enter version name..."
+                      className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 bg-white"
+                      style={{ color: '#0f172a' }}
+                      maxLength={30}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && versionNameInput.trim()) {
+                          e.preventDefault();
+                          saveVersion(versionNameInput);
+                          setShowSaveModal(false);
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (versionNameInput.trim()) {
+                          saveVersion(versionNameInput);
+                          setShowSaveModal(false);
+                        }
+                      }}
+                      disabled={!versionNameInput.trim()}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
+                        !versionNameInput.trim()
+                          ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                          : 'bg-emerald-600 text-white hover:bg-emerald-500 cursor-pointer'
+                      }`}
+                    >
+                      <Plus className="w-4 h-4" />
+                      Create
+                    </button>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-2">
+                    {savedVersions.length}/3 versions used
+                  </p>
+                </>
+              )}
+
+              {savedVersions.length >= 3 && (
+                <p className="text-xs text-amber-600 text-center">
+                  Maximum 3 versions reached. Delete a version from Version Manager to create a new one.
+                </p>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-slate-200 bg-slate-50">
+              <button
+                type="button"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowSaveModal(false); }}
+                className="w-full px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors font-medium cursor-pointer"
+              >
+                Cancel
               </button>
             </div>
           </div>

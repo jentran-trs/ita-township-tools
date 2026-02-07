@@ -1,6 +1,27 @@
 import { createServerSupabaseClient } from '@/lib/supabase';
-import { auth, currentUser } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
+
+// Helper to safely get auth data (returns null if Clerk not configured)
+async function getAuthData() {
+  try {
+    const { auth } = await import('@clerk/nextjs/server');
+    return await auth();
+  } catch (error) {
+    console.log('Clerk auth not available:', error.message);
+    return null;
+  }
+}
+
+// Helper to safely get current user
+async function getCurrentUser() {
+  try {
+    const { currentUser } = await import('@clerk/nextjs/server');
+    return await currentUser();
+  } catch (error) {
+    console.log('Clerk currentUser not available:', error.message);
+    return null;
+  }
+}
 
 // Disable caching for this route
 export const dynamic = 'force-dynamic';
@@ -65,7 +86,7 @@ export async function GET(request, { params }) {
 export async function PUT(request, { params }) {
   console.log('PUT /api/submissions/[id] called');
   try {
-    const authData = await auth();
+    const authData = await getAuthData();
     const { id } = await params;
     console.log('Submission ID from params:', id);
 
@@ -120,22 +141,27 @@ export async function PUT(request, { params }) {
     }
 
     // Check permission: must match clerk_user_id, submitter_email, or be admin
+    // When Clerk is not available, allow edits (for development/staging)
     const userId = authData?.userId;
 
     // Get user email from currentUser()
-    const user = await currentUser();
+    const user = await getCurrentUser();
     const userEmail = user?.emailAddresses?.[0]?.emailAddress;
 
     // Check for admin role - Clerk stores org role in sessionClaims.o.rol
     const orgRole = authData?.sessionClaims?.o?.rol;
     const isAdmin = orgRole === 'admin' || orgRole === 'org:admin';
 
+    // If no auth available at all, allow edit (for production without Clerk Pro)
+    const noAuthAvailable = !authData && !user;
+
     const canEdit =
+      noAuthAvailable ||
       isAdmin ||
       (userId && existing.clerk_user_id === userId) ||
       (userEmail && existing.submitter_email?.toLowerCase() === userEmail?.toLowerCase());
 
-    console.log('Permission check:', { userEmail, orgRole, isAdmin, submitterEmail: existing.submitter_email, canEdit });
+    console.log('Permission check:', { userEmail, orgRole, isAdmin, noAuthAvailable, submitterEmail: existing.submitter_email, canEdit });
 
     if (!canEdit) {
       return NextResponse.json(

@@ -1,19 +1,34 @@
 import { createServerSupabaseClient } from '@/lib/supabase';
-import { auth, currentUser } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 
-// POST - Finalize a project (Clerk members only)
+// Helper to safely get auth data (returns null if Clerk not configured)
+async function getAuthData() {
+  try {
+    const { auth } = await import('@clerk/nextjs/server');
+    return await auth();
+  } catch (error) {
+    console.log('Clerk auth not available:', error.message);
+    return null;
+  }
+}
+
+// Helper to safely get current user
+async function getCurrentUser() {
+  try {
+    const { currentUser } = await import('@clerk/nextjs/server');
+    return await currentUser();
+  } catch (error) {
+    console.log('Clerk currentUser not available:', error.message);
+    return null;
+  }
+}
+
+// POST - Finalize a project
 export async function POST(request, { params }) {
   try {
-    const authData = await auth();
-    const { userId, orgId } = authData;
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
+    const authData = await getAuthData();
+    const userId = authData?.userId;
+    const orgId = authData?.orgId;
 
     const { id } = await params;
     const supabase = createServerSupabaseClient();
@@ -32,8 +47,8 @@ export async function POST(request, { params }) {
       );
     }
 
-    // Verify user belongs to the org that owns the project
-    if (project.org_id && project.org_id !== orgId) {
+    // Skip org check when auth not available
+    if (authData && project.org_id && project.org_id !== orgId) {
       return NextResponse.json(
         { error: 'You do not have permission to finalize this project' },
         { status: 403 }
@@ -49,8 +64,8 @@ export async function POST(request, { params }) {
     }
 
     // Get user info for the finalized_by field
-    const user = await currentUser();
-    const finalizedBy = user?.emailAddresses?.[0]?.emailAddress || userId;
+    const user = await getCurrentUser();
+    const finalizedBy = user?.emailAddresses?.[0]?.emailAddress || userId || 'system';
 
     // Finalize the project
     const { data: updatedProject, error: updateError } = await supabase
@@ -106,15 +121,9 @@ export async function POST(request, { params }) {
 // DELETE - Reopen a finalized project (undo finalization)
 export async function DELETE(request, { params }) {
   try {
-    const authData = await auth();
-    const { userId, orgId } = authData;
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
+    const authData = await getAuthData();
+    const userId = authData?.userId;
+    const orgId = authData?.orgId;
 
     const { id } = await params;
     const supabase = createServerSupabaseClient();
@@ -133,8 +142,8 @@ export async function DELETE(request, { params }) {
       );
     }
 
-    // Verify user belongs to the org that owns the project
-    if (project.org_id && project.org_id !== orgId) {
+    // Skip org check when auth not available
+    if (authData && project.org_id && project.org_id !== orgId) {
       return NextResponse.json(
         { error: 'You do not have permission to modify this project' },
         { status: 403 }

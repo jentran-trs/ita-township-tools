@@ -1,6 +1,16 @@
 import { createServerSupabaseClient } from '@/lib/supabase';
-import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
+
+// Helper to safely get auth data (returns null if Clerk not configured)
+async function getAuthData() {
+  try {
+    const { auth } = await import('@clerk/nextjs/server');
+    return await auth();
+  } catch (error) {
+    console.log('Clerk auth not available:', error.message);
+    return null;
+  }
+}
 
 export async function POST(request) {
   try {
@@ -13,8 +23,8 @@ export async function POST(request) {
     console.log('sections array length:', body.sections?.length);
     console.log('sections titles:', body.sections?.map(s => s.title));
 
-    // Get Clerk user ID if logged in
-    const authData = await auth();
+    // Get Clerk user ID if logged in (optional)
+    const authData = await getAuthData();
     const clerkUserId = authData?.userId || null;
 
     const supabase = createServerSupabaseClient();

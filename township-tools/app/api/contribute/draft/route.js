@@ -1,18 +1,29 @@
 import { createServerSupabaseClient } from '@/lib/supabase';
-import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
+
+// Helper to safely get auth data (returns null if Clerk not configured)
+async function getAuthData() {
+  try {
+    const { auth } = await import('@clerk/nextjs/server');
+    return await auth();
+  } catch (error) {
+    console.log('Clerk auth not available:', error.message);
+    return null;
+  }
+}
 
 // PUT - Save draft data for a Clerk member's session
 export async function PUT(request) {
   try {
-    const authData = await auth();
-    const { userId } = authData;
+    const authData = await getAuthData();
+    const userId = authData?.userId;
 
+    // When auth not available, skip draft saving (will work without login)
     if (!userId) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
+      return NextResponse.json({
+        success: true,
+        message: 'Draft saving skipped (no auth)',
+      });
     }
 
     const body = await request.json();
@@ -154,14 +165,15 @@ export async function PUT(request) {
 // GET - Get draft data for a session
 export async function GET(request) {
   try {
-    const authData = await auth();
-    const { userId } = authData;
+    const authData = await getAuthData();
+    const userId = authData?.userId;
 
+    // When auth not available, return no draft
     if (!userId) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
+      return NextResponse.json({
+        session: null,
+        draftData: null,
+      });
     }
 
     const { searchParams } = new URL(request.url);

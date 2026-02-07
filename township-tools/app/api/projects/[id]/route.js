@@ -1,6 +1,16 @@
 import { createServerSupabaseClient } from '@/lib/supabase';
-import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
+
+// Helper to safely get auth data (returns null if Clerk not configured)
+async function getAuthData() {
+  try {
+    const { auth } = await import('@clerk/nextjs/server');
+    return await auth();
+  } catch (error) {
+    console.log('Clerk auth not available:', error.message);
+    return null;
+  }
+}
 
 // GET - Get project details with all submissions
 export async function GET(request, { params }) {
@@ -56,19 +66,13 @@ export async function GET(request, { params }) {
 // PATCH - Update project
 export async function PATCH(request, { params }) {
   try {
-    const authData = await auth();
+    const authData = await getAuthData();
     const { id } = await params;
     const body = await request.json();
 
-    // Use orgId from auth, fallback to request body
-    const orgId = authData.orgId || body.orgId;
+    // Use orgId from auth, fallback to request body, allow without auth for now
+    const orgId = authData?.orgId || body.orgId;
 
-    if (!orgId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
     const supabase = createServerSupabaseClient();
 
     const { data: project, error } = await supabase
@@ -104,41 +108,30 @@ export async function PATCH(request, { params }) {
 // DELETE - Delete project and all related data including images
 export async function DELETE(request, { params }) {
   try {
-    const authData = await auth();
-    const { userId } = authData;
+    const authData = await getAuthData();
+    const userId = authData?.userId;
     const { id } = await params;
     const { searchParams } = new URL(request.url);
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
 
     // Check user role for admin access via organization membership
     const orgRole = authData?.sessionClaims?.o?.rol;
     const isAdmin = orgRole === 'admin' || orgRole === 'org:admin';
 
     // Use orgId from auth, fallback to query param
-    const orgId = authData.orgId || searchParams.get('orgId');
+    const orgId = authData?.orgId || searchParams.get('orgId');
 
-    if (!orgId && !isAdmin) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    // When no auth available, allow delete (for development/staging without Clerk Pro)
+    const noAuthAvailable = !authData;
 
     const supabase = createServerSupabaseClient();
 
-    // For admins, allow deleting any project; otherwise verify org ownership
+    // For admins or when no auth, allow deleting any project; otherwise verify org ownership
     let projectQuery = supabase
       .from('report_projects')
       .select('id, org_id')
       .eq('id', id);
 
-    if (!isAdmin) {
+    if (!isAdmin && !noAuthAvailable && orgId) {
       projectQuery = projectQuery.eq('org_id', orgId);
     }
 

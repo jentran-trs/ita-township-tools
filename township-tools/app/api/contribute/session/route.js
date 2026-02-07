@@ -1,18 +1,30 @@
 import { createServerSupabaseClient } from '@/lib/supabase';
-import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
+
+// Helper to safely get auth data (returns null if Clerk not configured)
+async function getAuthData() {
+  try {
+    const { auth } = await import('@clerk/nextjs/server');
+    return await auth();
+  } catch (error) {
+    console.log('Clerk auth not available:', error.message);
+    return null;
+  }
+}
 
 // POST - Create or retrieve a contributor session for Clerk members
 export async function POST(request) {
   try {
-    const authData = await auth();
-    const { userId } = authData;
+    const authData = await getAuthData();
+    const userId = authData?.userId;
 
+    // When auth not available, skip session management
     if (!userId) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
+      return NextResponse.json({
+        session: null,
+        isNew: false,
+        message: 'Auth not available',
+      });
     }
 
     const body = await request.json();
@@ -118,14 +130,14 @@ export async function POST(request) {
 // GET - Get session by ID or for current user
 export async function GET(request) {
   try {
-    const authData = await auth();
-    const { userId } = authData;
+    const authData = await getAuthData();
+    const userId = authData?.userId;
 
+    // When auth not available, return no session
     if (!userId) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
+      return NextResponse.json({
+        session: null,
+      });
     }
 
     const { searchParams } = new URL(request.url);

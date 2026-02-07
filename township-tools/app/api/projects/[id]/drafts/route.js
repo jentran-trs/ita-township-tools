@@ -1,6 +1,16 @@
 import { createServerSupabaseClient } from '@/lib/supabase';
-import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
+
+// Helper to safely get auth data (returns null if Clerk not configured)
+async function getAuthData() {
+  try {
+    const { auth } = await import('@clerk/nextjs/server');
+    return await auth();
+  } catch (error) {
+    console.log('Clerk auth not available:', error.message);
+    return null;
+  }
+}
 
 // GET - Get the latest draft for a project
 export async function GET(request, { params }) {
@@ -44,15 +54,8 @@ export async function GET(request, { params }) {
 // POST - Save a new draft or update existing
 export async function POST(request, { params }) {
   try {
-    const authData = await auth();
-    const userId = authData.userId;
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const authData = await getAuthData();
+    const userId = authData?.userId || 'anonymous';
 
     const { id } = await params;
     const body = await request.json();
@@ -135,15 +138,8 @@ export async function POST(request, { params }) {
 // DELETE - Delete draft for a project
 export async function DELETE(request, { params }) {
   try {
-    const authData = await auth();
-    const userId = authData.userId;
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const authData = await getAuthData();
+    const userId = authData?.userId;
 
     const { id } = await params;
     const supabase = createServerSupabaseClient();

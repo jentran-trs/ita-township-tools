@@ -1,25 +1,24 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-// Check if user is superadmin
-async function isSuperAdmin(userId: string) {
-  const client = await clerkClient();
-  const user = await client.users.getUser(userId);
-  return user.publicMetadata?.role === "superadmin";
+// Check if user is admin via session claims
+function isAdmin(authData: any) {
+  const orgRole = authData?.sessionClaims?.o?.rol;
+  return orgRole === 'admin' || orgRole === 'org:admin';
 }
 
-// GET all users (superadmin only)
+// GET all users (admin only)
 export async function GET() {
   try {
-    const { userId } = await auth();
+    const authData = await auth();
+    const { userId } = authData;
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const superAdmin = await isSuperAdmin(userId);
-    if (!superAdmin) {
-      return NextResponse.json({ error: "Forbidden - Superadmin access required" }, { status: 403 });
+    if (!isAdmin(authData)) {
+      return NextResponse.json({ error: "Forbidden - Admin access required" }, { status: 403 });
     }
 
     const client = await clerkClient();

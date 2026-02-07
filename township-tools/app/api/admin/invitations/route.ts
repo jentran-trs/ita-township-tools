@@ -1,13 +1,6 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-// Check if user is superadmin
-async function isSuperAdmin(userId: string) {
-  const client = await clerkClient();
-  const user = await client.users.getUser(userId);
-  return user.publicMetadata?.role === "superadmin";
-}
-
 // Check if user is org admin
 async function isOrgAdmin(userId: string, organizationId: string) {
   const client = await clerkClient();
@@ -40,10 +33,9 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Organization ID is required" }, { status: 400 });
     }
 
-    const superAdmin = await isSuperAdmin(userId);
     const orgAdmin = await isOrgAdmin(userId, organizationId);
 
-    if (!superAdmin && !orgAdmin) {
+    if (!orgAdmin) {
       return NextResponse.json({ error: "Forbidden - Admin access required" }, { status: 403 });
     }
 
@@ -85,10 +77,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const superAdmin = await isSuperAdmin(userId);
     const orgAdmin = await isOrgAdmin(userId, organizationId);
 
-    if (!superAdmin && !orgAdmin) {
+    if (!orgAdmin) {
       return NextResponse.json({ error: "Forbidden - Admin access required" }, { status: 403 });
     }
 
@@ -130,10 +121,9 @@ export async function DELETE(request: Request) {
       );
     }
 
-    const superAdmin = await isSuperAdmin(userId);
     const orgAdmin = await isOrgAdmin(userId, organizationId);
 
-    if (!superAdmin && !orgAdmin) {
+    if (!orgAdmin) {
       return NextResponse.json({ error: "Forbidden - Admin access required" }, { status: 403 });
     }
 

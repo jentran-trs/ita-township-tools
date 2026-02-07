@@ -1,13 +1,18 @@
 "use client";
 
-import { UserButton, OrganizationSwitcher, useUser, useOrganization } from "@clerk/nextjs";
+import { UserButton, OrganizationSwitcher, useUser, useOrganization, useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { Building2, FileText, Users, ArrowRight, Plus, ShieldCheck } from "lucide-react";
+import { Building2, FileText, Users, ArrowRight, Plus, ShieldCheck, FolderOpen } from "lucide-react";
+import NotificationBell from "@/components/NotificationBell";
 
 export default function Dashboard() {
   const { user } = useUser();
-  const { organization } = useOrganization();
+  const { organization, membership } = useOrganization();
+  const { orgRole } = useAuth();
   const router = useRouter();
+
+  // Check if user is admin via organization membership
+  const isAdmin = membership?.role === 'org:admin' || orgRole === 'org:admin';
 
   return (
     <div className="min-h-screen bg-slate-900">
@@ -25,19 +30,22 @@ export default function Dashboard() {
             </div>
 
             <div className="flex items-center gap-2 sm:gap-4">
-              {user?.publicMetadata?.role === "superadmin" && (
-                <button
-                  onClick={() => router.push("/admin")}
-                  className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 bg-amber-500/20 text-amber-500 rounded-lg hover:bg-amber-500/30 transition-colors text-xs sm:text-sm font-medium"
-                >
-                  <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">Admin</span>
-                </button>
+              {isAdmin && (
+                <>
+                  <NotificationBell orgId={organization?.id} />
+                  <button
+                    onClick={() => router.push("/admin")}
+                    className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 bg-amber-500/20 text-amber-500 rounded-lg hover:bg-amber-500/30 transition-colors text-xs sm:text-sm font-medium"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">Admin</span>
+                  </button>
+                </>
               )}
               <span className="hidden md:inline text-slate-400 text-sm">
                 Welcome, {user?.firstName || user?.emailAddresses[0]?.emailAddress}
               </span>
-              <UserButton afterSignOutUrl="/" />
+              <UserButton afterSignOutUrl="/sign-in" />
             </div>
           </div>
 
@@ -77,20 +85,39 @@ export default function Dashboard() {
 
             {/* Tools Grid */}
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-12">
-              {/* Annual Report Builder */}
+              {/* Annual Report Builder - Admin Only */}
+              {isAdmin && (
+                <div
+                  onClick={() => router.push("/tools/report-builder")}
+                  className="bg-slate-800 border border-slate-700 rounded-xl p-5 sm:p-6 hover:border-amber-500/50 transition-colors cursor-pointer group"
+                >
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-amber-500/20 rounded-lg flex items-center justify-center mb-3 sm:mb-4 group-hover:bg-amber-500/30 transition-colors">
+                    <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-amber-500" />
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Annual Report Builder</h3>
+                  <p className="text-sm sm:text-base text-slate-400 mb-3 sm:mb-4">
+                    Create professional annual reports with our drag-and-drop builder.
+                  </p>
+                  <div className="flex items-center text-amber-500 font-medium text-sm sm:text-base">
+                    Open Tool <ArrowRight className="w-4 h-4 ml-2" />
+                  </div>
+                </div>
+              )}
+
+              {/* Submit Report Assets */}
               <div
-                onClick={() => router.push("/tools/report-builder")}
+                onClick={() => router.push("/projects")}
                 className="bg-slate-800 border border-slate-700 rounded-xl p-5 sm:p-6 hover:border-amber-500/50 transition-colors cursor-pointer group"
               >
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-amber-500/20 rounded-lg flex items-center justify-center mb-3 sm:mb-4 group-hover:bg-amber-500/30 transition-colors">
-                  <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-amber-500" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-500/20 rounded-lg flex items-center justify-center mb-3 sm:mb-4 group-hover:bg-blue-500/30 transition-colors">
+                  <FolderOpen className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
                 </div>
-                <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Annual Report Builder</h3>
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Submit Report Assets</h3>
                 <p className="text-sm sm:text-base text-slate-400 mb-3 sm:mb-4">
-                  Create professional annual reports with our drag-and-drop builder.
+                  Submit your report assets and let us handle the design.
                 </p>
-                <div className="flex items-center text-amber-500 font-medium text-sm sm:text-base">
-                  Open Tool <ArrowRight className="w-4 h-4 ml-2" />
+                <div className="flex items-center text-blue-500 font-medium text-sm sm:text-base">
+                  Submit Assets <ArrowRight className="w-4 h-4 ml-2" />
                 </div>
               </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { UserButton, OrganizationSwitcher, useOrganization } from "@clerk/nextjs";
+import { UserButton, OrganizationSwitcher, useOrganization, useUser, useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { Building2, ArrowLeft } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -19,8 +19,13 @@ const ReportBuilder = dynamic(() => import("@/components/ReportBuilder"), {
 });
 
 export default function ReportBuilderPage() {
-  const { organization } = useOrganization();
+  const { organization, membership } = useOrganization();
+  const { user } = useUser();
+  const { orgRole } = useAuth();
   const router = useRouter();
+
+  // Check if user is admin via organization membership
+  const isAdmin = membership?.role === 'org:admin' || orgRole === 'org:admin';
 
   // Redirect if no organization
   if (!organization) {
@@ -29,6 +34,24 @@ export default function ReportBuilderPage() {
         <div className="text-center">
           <h1 className="text-2xl font-bold text-white mb-4">No Organization Selected</h1>
           <p className="text-slate-400 mb-6">Please create or select an organization to use the Report Builder.</p>
+          <button
+            onClick={() => router.push("/dashboard")}
+            className="px-6 py-3 bg-amber-500 text-slate-900 rounded-lg font-medium hover:bg-amber-400 transition-colors"
+          >
+            Go to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Restrict access to admins only
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-white mb-4">Access Restricted</h1>
+          <p className="text-slate-400 mb-6">Only administrators can access the Report Builder.</p>
           <button
             onClick={() => router.push("/dashboard")}
             className="px-6 py-3 bg-amber-500 text-slate-900 rounded-lg font-medium hover:bg-amber-400 transition-colors"
@@ -69,7 +92,7 @@ export default function ReportBuilderPage() {
                 }
               }}
             />
-            <UserButton afterSignOutUrl="/" />
+            <UserButton afterSignOutUrl="/sign-in" />
           </div>
         </div>
       </header>

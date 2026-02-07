@@ -1,25 +1,24 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-// Check if user is superadmin
-async function isSuperAdmin(userId: string) {
-  const client = await clerkClient();
-  const user = await client.users.getUser(userId);
-  return user.publicMetadata?.role === "superadmin";
+// Check if user is admin via session claims
+function isAdmin(authData: any) {
+  const orgRole = authData?.sessionClaims?.o?.rol;
+  return orgRole === 'admin' || orgRole === 'org:admin';
 }
 
-// GET all organizations (superadmin only)
+// GET all organizations (admin only)
 export async function GET() {
   try {
-    const { userId } = await auth();
+    const authData = await auth();
+    const { userId } = authData;
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const superAdmin = await isSuperAdmin(userId);
-    if (!superAdmin) {
-      return NextResponse.json({ error: "Forbidden - Superadmin access required" }, { status: 403 });
+    if (!isAdmin(authData)) {
+      return NextResponse.json({ error: "Forbidden - Admin access required" }, { status: 403 });
     }
 
     const client = await clerkClient();
@@ -57,18 +56,18 @@ export async function GET() {
   }
 }
 
-// POST create a new organization (superadmin only)
+// POST create a new organization (admin only)
 export async function POST(request: Request) {
   try {
-    const { userId } = await auth();
+    const authData = await auth();
+    const { userId } = authData;
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const superAdmin = await isSuperAdmin(userId);
-    if (!superAdmin) {
-      return NextResponse.json({ error: "Forbidden - Superadmin access required" }, { status: 403 });
+    if (!isAdmin(authData)) {
+      return NextResponse.json({ error: "Forbidden - Admin access required" }, { status: 403 });
     }
 
     const { name, slug } = await request.json();

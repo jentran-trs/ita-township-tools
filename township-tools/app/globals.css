@@ -7,6 +7,15 @@ html, body {
   padding: 0;
 }
 
+/* Ensure form inputs have visible text by default */
+input, textarea, select {
+  color: #0f172a; /* slate-900 */
+}
+
+input::placeholder, textarea::placeholder {
+  color: #94a3b8; /* slate-400 */
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
@@ -24,4 +33,18 @@ html, body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #64748b;
+}
+
+/* Highlight animation for newly added elements */
+@keyframes highlight-fade {
+  0%, 30% {
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.6);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+.highlight-new-element {
+  animation: highlight-fade 5s ease-out forwards;
 }

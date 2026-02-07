@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Plus, Upload, Image, FileText, BarChart3, Trash2, Move, GripVertical, ChevronDown, ChevronUp, ArrowUp, ArrowDown, Eye, Pencil, Download, Save, FolderOpen, Type, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, List, ListOrdered, Palette, Square, Circle, RectangleHorizontal, ZoomIn, ZoomOut, RotateCw, Check, X, Settings, Layers, PanelTop, PanelBottom, Mail, Layout, Maximize2, Minimize2, Undo2, Redo2, Hash, Menu } from 'lucide-react';
+import { Plus, Upload, Image, FileText, BarChart3, Trash2, Move, GripVertical, ChevronDown, ChevronUp, ArrowUp, ArrowDown, Eye, Pencil, Download, Save, FolderOpen, Type, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, List, ListOrdered, Palette, Square, Circle, RectangleHorizontal, ZoomIn, ZoomOut, RotateCw, Check, X, Settings, Layers, PanelTop, PanelBottom, Mail, Layout, Maximize2, Minimize2, Undo2, Redo2, Hash, Menu, ArrowRightLeft, MessageSquare } from 'lucide-react';
 
 // Color extraction utility - returns hex colors
 const rgbToHex = (r, g, b) => {
@@ -795,7 +795,7 @@ const RichTextEditor = ({ content, onChange, themeColors, maxHeight, defaultFont
 };
 
 // Image Frame Component
-const ImageFrame = ({ imageData, onUpdate, onDelete, themeColors, editable = true, canvasWidth = 1000, canvasMaxHeight = 1100, lightBackground = false }) => {
+const ImageFrame = ({ imageData, onUpdate, onDelete, onMove, targetSections, themeColors, editable = true, canvasWidth = 1000, canvasMaxHeight = 1100, lightBackground = false }) => {
   const [frameWidth, setFrameWidth] = useState(imageData.width || 300);
   const [frameHeight, setFrameHeight] = useState(imageData.height || 200);
   const [isResizing, setIsResizing] = useState(false);
@@ -1044,16 +1044,19 @@ const ImageFrame = ({ imageData, onUpdate, onDelete, themeColors, editable = tru
                 <Move className="w-4 h-4" />
               </div>
             )}
-            {/* Delete frame button - top right */}
+            {/* Move & Delete buttons - top right */}
             {editable && !isLoading && (
-              <button
-                onClick={(e) => { e.stopPropagation(); onDelete(); }}
-                onMouseDown={(e) => e.stopPropagation()}
-                className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded opacity-70 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-30"
-                title="Delete frame"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+              <div className="absolute top-2 right-2 flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity z-30">
+                {onMove && <MoveToDropdown targetSections={targetSections || []} onMove={onMove} />}
+                <button
+                  onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  className="p-1.5 bg-red-500 text-white rounded hover:bg-red-600"
+                  title="Delete frame"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             )}
             {editable && !isLoading && (
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3">
@@ -1122,16 +1125,19 @@ const ImageFrame = ({ imageData, onUpdate, onDelete, themeColors, editable = tru
                 </div>
               </>
             )}
-            {/* Delete frame button for empty frames */}
+            {/* Move & Delete buttons for empty frames */}
             {editable && !isLoading && (
-              <button
-                onClick={(e) => { e.stopPropagation(); onDelete(); }}
-                onMouseDown={(e) => e.stopPropagation()}
-                className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded opacity-70 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-30"
-                title="Delete frame"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+              <div className="absolute top-2 right-2 flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity z-30">
+                {onMove && <MoveToDropdown targetSections={targetSections || []} onMove={onMove} />}
+                <button
+                  onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  className="p-1.5 bg-red-500 text-white rounded hover:bg-red-600"
+                  title="Delete frame"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             )}
           </>
         )}
@@ -1223,7 +1229,7 @@ const ImageFrame = ({ imageData, onUpdate, onDelete, themeColors, editable = tru
 };
 
 // Information Card Component
-const InfoCard = ({ card, onUpdate, onDelete, themeColors, editable = true, canvasWidth = 1000, canvasMaxHeight = 1100 }) => {
+const InfoCard = ({ card, onUpdate, onDelete, onMove, targetSections, themeColors, editable = true, canvasWidth = 1000, canvasMaxHeight = 1100 }) => {
   const [width, setWidth] = useState(card.width || 350);
   const [height, setHeight] = useState(card.height || 200);
   const [isResizing, setIsResizing] = useState(false);
@@ -1325,10 +1331,10 @@ const InfoCard = ({ card, onUpdate, onDelete, themeColors, editable = true, canv
   }, [isResizing, isDragging, resizeStart, dragStart, width, height, position, card, onUpdate, canvasWidth, canvasMaxHeight]);
 
   return (
-    <div 
+    <div
       ref={cardRef}
-      className={`absolute rounded-xl p-6 transition-shadow ${editable ? 'group cursor-move' : ''}`}
-      style={{ 
+      className={`absolute rounded-xl pt-4 px-6 pb-6 transition-shadow ${editable ? 'group cursor-move' : ''}`}
+      style={{
         borderTop: `4px solid ${themeColors?.gold || '#D4B896'}`,
         backgroundColor: 'rgba(255, 255, 255, 0.1)',
         backdropFilter: 'blur(10px)',
@@ -1343,12 +1349,15 @@ const InfoCard = ({ card, onUpdate, onDelete, themeColors, editable = true, canv
       onMouseDown={handleDragStart}
     >
       {editable && (
-        <button
-          onClick={onDelete}
-          className="absolute top-2 right-2 p-1 text-red-400 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 rounded transition-opacity z-10"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+        <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+          {onMove && <MoveToDropdown targetSections={targetSections || []} onMove={onMove} />}
+          <button
+            onClick={onDelete}
+            className="p-1 text-red-400 hover:bg-red-500/20 rounded"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
       )}
 
       {/* Drag Handle Indicator */}
@@ -1358,58 +1367,69 @@ const InfoCard = ({ card, onUpdate, onDelete, themeColors, editable = true, canv
         </div>
       )}
 
-      {/* Title */}
+      {/* Card Content Container */}
       {editable ? (
-        <textarea
-          value={card.title || ''}
-          onChange={(e) => onUpdate({ ...card, title: e.target.value })}
-          placeholder="Card Title"
-          className="text-xl font-semibold w-full bg-transparent border-none focus:outline-none mb-3 placeholder-white/50 cursor-text resize-none"
-          style={{
-            color: themeColors?.gold || '#D4B896',
-            minHeight: '28px',
-            overflow: 'hidden',
-            whiteSpace: 'pre-wrap',
-            wordWrap: 'break-word',
-            fontFamily: '"Instrument Sans", sans-serif'
-          }}
-          onMouseDown={(e) => e.stopPropagation()}
-          rows={1}
-          ref={(el) => {
-            if (el) {
-              el.style.height = 'auto';
-              el.style.height = el.scrollHeight + 'px';
-            }
-          }}
-          onInput={(e) => {
-            e.target.style.height = 'auto';
-            e.target.style.height = e.target.scrollHeight + 'px';
-          }}
-        />
+        <>
+          {/* Title - editable */}
+          <textarea
+            value={card.title || ''}
+            onChange={(e) => onUpdate({ ...card, title: e.target.value })}
+            placeholder="Card Title"
+            className="text-xl font-semibold w-full bg-transparent border-none focus:outline-none mb-2 placeholder-white/50 cursor-text resize-none"
+            style={{
+              color: themeColors?.gold || '#D4B896',
+              minHeight: '28px',
+              maxHeight: '80px',
+              overflow: 'auto',
+              whiteSpace: 'pre-wrap',
+              wordWrap: 'break-word',
+              fontFamily: '"Instrument Sans", sans-serif'
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+          />
+          {/* Content - editable */}
+          <textarea
+            value={card.content || ''}
+            onChange={(e) => onUpdate({ ...card, content: e.target.value })}
+            placeholder="Enter card content..."
+            className="w-full bg-transparent border-none focus:outline-none resize-none text-base placeholder-white/50 cursor-text"
+            style={{ color: 'white', height: 'calc(100% - 60px)', fontFamily: '"Instrument Sans", sans-serif' }}
+            onMouseDown={(e) => e.stopPropagation()}
+          />
+        </>
       ) : (
-        card.title && (
-          <h3 className="text-xl font-semibold mb-3" style={{ color: themeColors?.gold || '#D4B896', wordWrap: 'break-word', overflowWrap: 'break-word', fontFamily: '"Instrument Sans", sans-serif' }}>
-            {card.title}
-          </h3>
-        )
-      )}
-
-      {/* Content */}
-      {editable ? (
-        <textarea
-          value={card.content || ''}
-          onChange={(e) => onUpdate({ ...card, content: e.target.value })}
-          placeholder="Enter card content..."
-          className="w-full bg-transparent border-none focus:outline-none resize-none text-base placeholder-white/50 cursor-text"
-          style={{ color: 'white', height: 'calc(100% - 60px)', fontFamily: '"Instrument Sans", sans-serif' }}
-          onMouseDown={(e) => e.stopPropagation()}
-        />
-      ) : (
-        card.content && (
-          <p className="text-base text-white" style={{ whiteSpace: 'pre-wrap', fontFamily: '"Instrument Sans", sans-serif' }}>
-            {card.content}
-          </p>
-        )
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', margin: 0, padding: 0 }}>
+          {/* Title - preview */}
+          {card.title && (
+            <h3 style={{
+              fontSize: '1.25rem',
+              fontWeight: 600,
+              lineHeight: 1.2,
+              color: themeColors?.gold || '#D4B896',
+              wordWrap: 'break-word',
+              overflowWrap: 'break-word',
+              fontFamily: '"Instrument Sans", sans-serif',
+              margin: 0,
+              padding: 0
+            }}>
+              {card.title.trim()}
+            </h3>
+          )}
+          {/* Content - preview */}
+          {card.content && (
+            <p style={{
+              fontSize: '1rem',
+              lineHeight: 1.4,
+              color: 'white',
+              whiteSpace: 'pre-wrap',
+              fontFamily: '"Instrument Sans", sans-serif',
+              margin: 0,
+              padding: 0
+            }}>
+              {card.content.trim().replace(/^\n+/, '')}
+            </p>
+          )}
+        </div>
       )}
 
       {/* Resize Handle - only in edit mode */}
@@ -1435,7 +1455,7 @@ const InfoCard = ({ card, onUpdate, onDelete, themeColors, editable = true, canv
 };
 
 // Stat Box Component - displays a big number with label
-const StatBox = ({ stat, onUpdate, onDelete, themeColors, editable = true, canvasWidth = 1000, canvasMaxHeight = 1100 }) => {
+const StatBox = ({ stat, onUpdate, onDelete, onMove, targetSections, themeColors, editable = true, canvasWidth = 1000, canvasMaxHeight = 1100 }) => {
   const [width, setWidth] = useState(stat.width || 300);
   const [height, setHeight] = useState(stat.height || 180);
   const [isResizing, setIsResizing] = useState(false);
@@ -1550,12 +1570,15 @@ const StatBox = ({ stat, onUpdate, onDelete, themeColors, editable = true, canva
       onMouseDown={handleDragStart}
     >
       {editable && (
-        <button
-          onClick={onDelete}
-          className="absolute top-2 right-2 p-1 text-red-400 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 rounded transition-opacity z-10"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+        <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+          {onMove && <MoveToDropdown targetSections={targetSections || []} onMove={onMove} />}
+          <button
+            onClick={onDelete}
+            className="p-1 text-red-400 hover:bg-red-500/20 rounded"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
       )}
 
       {editable && (
@@ -1628,7 +1651,7 @@ const StatBox = ({ stat, onUpdate, onDelete, themeColors, editable = true, canva
 };
 
 // Text Block Component - paragraph text on dark background with formatting
-const TextBlock = ({ textBlock, onUpdate, onDelete, themeColors, editable = true, canvasWidth = 1000, canvasMaxHeight = 1100 }) => {
+const TextBlock = ({ textBlock, onUpdate, onDelete, onMove, targetSections, themeColors, editable = true, canvasWidth = 1000, canvasMaxHeight = 1100 }) => {
   const [width, setWidth] = useState(textBlock.width || 600);
   const [height, setHeight] = useState(textBlock.height || 200);
   const [isResizing, setIsResizing] = useState(false);
@@ -1804,17 +1827,20 @@ const TextBlock = ({ textBlock, onUpdate, onDelete, themeColors, editable = true
       }}
     >
       {editable && (
-        <button
-          onClick={onDelete}
-          className="absolute top-0 right-2 p-1 text-red-400 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 rounded transition-opacity z-10"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+        <div className="absolute top-0 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+          {onMove && <MoveToDropdown targetSections={targetSections || []} onMove={onMove} />}
+          <button
+            onClick={onDelete}
+            className="p-1 text-red-400 hover:bg-red-500/20 rounded"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
       )}
 
       {/* Toolbar with drag handle and formatting buttons */}
       {editable && (
-        <div className="absolute top-0 left-0 right-8 h-8 flex items-center gap-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity z-10 bg-black/40 rounded-t-lg">
+        <div className="absolute top-0 left-0 right-16 h-8 flex items-center gap-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity z-10 bg-black/40 rounded-t-lg">
           {/* Drag Handle */}
           <div 
             className="cursor-move p-1 hover:bg-white/20 rounded mr-2"
@@ -1869,7 +1895,7 @@ const TextBlock = ({ textBlock, onUpdate, onDelete, themeColors, editable = true
           contentEditable
           onInput={handleContentChange}
           onBlur={handleContentChange}
-          className="w-full overflow-auto focus:outline-none text-white p-3 pt-10"
+          className="w-full overflow-auto focus:outline-none text-white p-3 pt-10 textblock-content"
           style={{
             fontSize: '16px',
             lineHeight: 1.6,
@@ -1883,16 +1909,28 @@ const TextBlock = ({ textBlock, onUpdate, onDelete, themeColors, editable = true
       ) : (
         textBlock.content && (
           <div
-            className="w-full h-full p-3 overflow-hidden text-white"
+            className="w-full h-full p-3 overflow-hidden text-white textblock-content"
             style={{
               fontSize: '16px',
               lineHeight: 1.6,
               fontFamily: '"Instrument Sans", sans-serif'
             }}
-            dangerouslySetInnerHTML={{ __html: textBlock.content }}
+            dangerouslySetInnerHTML={{ __html: textBlock.content.trim() }}
           />
         )
       )}
+
+      <style>{`
+        .textblock-content p {
+          margin: 0 0 1em 0;
+        }
+        .textblock-content p:first-child {
+          margin-top: 0;
+        }
+        .textblock-content p:last-child {
+          margin-bottom: 0;
+        }
+      `}</style>
 
       {editable && (
         <div
@@ -2062,14 +2100,14 @@ const FooterElement = ({ footer, onUpdate, onDelete, themeColors, logo, editable
               value={footer.name || ''}
               onChange={(e) => onUpdate({ ...footer, name: e.target.value })}
               placeholder="Organization Name"
-              className="text-xl font-bold bg-transparent border-none text-center w-full focus:outline-none"
+              className="text-xl font-bold bg-transparent border-none text-center w-full focus:outline-none text-white placeholder-white/50"
             />
             <input
               type="text"
               value={footer.subtitle || ''}
               onChange={(e) => onUpdate({ ...footer, subtitle: e.target.value })}
               placeholder="Department or Division"
-              className="text-base font-semibold bg-transparent border-none text-center w-full mt-1 focus:outline-none"
+              className="text-base font-semibold bg-transparent border-none text-center w-full mt-1 focus:outline-none text-white placeholder-white/50"
             />
             <div className="mt-3 space-y-1 w-full" style={{ color: themeColors?.gold || '#D4B896' }}>
               <input
@@ -2116,8 +2154,8 @@ const FooterElement = ({ footer, onUpdate, onDelete, themeColors, logo, editable
           </>
         ) : (
           <>
-            {footer.name && <h2 className="text-xl font-bold">{footer.name}</h2>}
-            {footer.subtitle && <p className="text-base font-semibold mt-1">{footer.subtitle}</p>}
+            {footer.name && <h2 className="text-xl font-bold text-white">{footer.name}</h2>}
+            {footer.subtitle && <p className="text-base font-semibold mt-1 text-white">{footer.subtitle}</p>}
             <div className="mt-3 space-y-0.5" style={{ color: themeColors?.gold || '#D4B896' }}>
               {footer.address && <p className="text-sm">{footer.address}</p>}
               {footer.cityStateZip && <p className="text-sm">{footer.cityStateZip}</p>}
@@ -2169,7 +2207,7 @@ const FooterElement = ({ footer, onUpdate, onDelete, themeColors, logo, editable
 };
 
 // Chart Container Component
-const ChartContainer = ({ chart, onUpdate, onDelete, themeColors, editable = true, canvasWidth = 1000, canvasMaxHeight = 1100 }) => {
+const ChartContainer = ({ chart, onUpdate, onDelete, onMove, targetSections, themeColors, editable = true, canvasWidth = 1000, canvasMaxHeight = 1100 }) => {
   const [embedUrl, setEmbedUrl] = useState(chart.embedUrl || '');
   const [width, setWidth] = useState(chart.width || 780);
   const [height, setHeight] = useState(chart.height || 320);
@@ -2429,12 +2467,17 @@ const ChartContainer = ({ chart, onUpdate, onDelete, themeColors, editable = tru
           />
         )}
 
-        {/* Dimension and delete controls - inside frame, bottom left */}
+        {/* Dimension, move, and delete controls - inside frame, bottom left */}
         {editable && (
           <div className="absolute bottom-2 left-2 flex items-center gap-2 z-10">
             <div className="flex items-center gap-1 text-xs text-slate-600 bg-white/90 px-2 py-1 rounded shadow-sm">
               {Math.round(width)} × {Math.round(height)}
             </div>
+            {onMove && (
+              <div className="bg-white/90 rounded shadow-sm">
+                <MoveToDropdown targetSections={targetSections || []} onMove={onMove} />
+              </div>
+            )}
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -2525,7 +2568,7 @@ const BannerSection = ({ section, onUpdate, themeColors, logo, isPreview }) => {
             </h1>
           )}
           {section.subtitle && (
-            <h2 className="text-3xl font-semibold mt-4">{section.subtitle}</h2>
+            <h2 className="text-3xl font-semibold mt-4 text-white">{section.subtitle}</h2>
           )}
           {section.tagline && (
             <p className="text-xl italic mt-6" style={{ color: themeColors?.gold || '#D4B896' }}>
@@ -2549,7 +2592,7 @@ const BannerSection = ({ section, onUpdate, themeColors, logo, isPreview }) => {
             value={section.subtitle || ''}
             onChange={(e) => onUpdate({ ...section, subtitle: e.target.value })}
             placeholder="2025 Year In Review"
-            className="text-3xl font-semibold bg-transparent border-none text-center w-full mt-4 focus:outline-none placeholder-white/50"
+            className="text-3xl font-semibold bg-transparent border-none text-center w-full mt-4 focus:outline-none placeholder-white/50 text-white"
           />
           
           <input
@@ -2988,12 +3031,12 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
           {isPreview ? (
             <>
               {section.heading && (
-                <h1 className="text-4xl font-semibold" style={{ color: themeColors?.primary || '#2B3E50' }}>
+                <h1 className="text-4xl font-semibold" style={{ color: themeColors?.primary || '#2B3E50', wordSpacing: '0.1em', whiteSpace: 'pre-wrap' }}>
                   {section.heading}
                 </h1>
               )}
               {section.subheading && (
-                <p className="text-xl font-semibold mt-2" style={{ color: themeColors?.accent || '#C1272D' }}>
+                <p className="text-xl font-semibold mt-2" style={{ color: themeColors?.accent || '#C1272D', wordSpacing: '0.1em', whiteSpace: 'pre-wrap' }}>
                   {section.subheading}
                 </p>
               )}
@@ -3036,8 +3079,9 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
           <>
             <style>{`
               .letter-content-preview, .letter-content-preview * { color: #1e293b !important; }
-              .letter-content-preview p { margin: ${section.paragraphSpacing || 2}px 0; }
-              .letter-content-preview li { margin: ${Math.max(1, (section.paragraphSpacing || 2) / 2)}px 0; }
+              .letter-content-preview p { margin: ${section.paragraphSpacing || 16}px 0; }
+              .letter-content-preview p:first-child { margin-top: 0; }
+              .letter-content-preview li { margin: ${Math.max(1, (section.paragraphSpacing || 16) / 2)}px 0; }
             `}</style>
             <div
               className="prose prose-lg max-w-none h-full letter-content-preview"
@@ -3045,7 +3089,7 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
                 direction: 'ltr',
                 textAlign: 'left',
                 fontSize: '14pt',
-                lineHeight: section.lineSpacing || 1.4,
+                lineHeight: section.lineSpacing || 1.15,
                 maxHeight: contentHeight ? `${contentHeight}px` : `${maxContentHeight}px`,
                 overflowY: 'auto',
                 color: '#1e293b',
@@ -3063,8 +3107,8 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
                 themeColors={themeColors}
                 maxHeight={contentHeight ? contentHeight - 80 : maxContentHeight - 80}
                 defaultFontSize="14pt"
-                initialLineSpacing={section.lineSpacing || 1.4}
-                initialParagraphSpacing={section.paragraphSpacing || 2}
+                initialLineSpacing={section.lineSpacing || 1.15}
+                initialParagraphSpacing={section.paragraphSpacing || 16}
                 onSpacingChange={(line, para) => onUpdate({ ...section, lineSpacing: line, paragraphSpacing: para })}
               />
             </div>
@@ -3079,8 +3123,9 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
           <>
             <style>{`
               .letter-content-edit, .letter-content-edit * { color: #1e293b !important; }
-              .letter-content-edit p { margin: ${section.paragraphSpacing || 2}px 0; }
-              .letter-content-edit li { margin: ${Math.max(1, (section.paragraphSpacing || 2) / 2)}px 0; }
+              .letter-content-edit p { margin: ${section.paragraphSpacing || 16}px 0; }
+              .letter-content-edit p:first-child { margin-top: 0; }
+              .letter-content-edit li { margin: ${Math.max(1, (section.paragraphSpacing || 16) / 2)}px 0; }
             `}</style>
             <div
               className="prose prose-lg max-w-none cursor-pointer p-4 border-2 border-dashed border-slate-200 rounded-xl hover:border-slate-400 transition-colors h-full letter-content-edit"
@@ -3088,7 +3133,7 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
                 direction: 'ltr',
                 textAlign: 'left',
                 fontSize: '14pt',
-                lineHeight: section.lineSpacing || 1.4,
+                lineHeight: section.lineSpacing || 1.15,
                 minHeight: '100px',
                 maxHeight: contentHeight ? `${contentHeight}px` : `${maxContentHeight - 40}px`,
                 overflowY: 'auto',
@@ -3264,8 +3309,48 @@ const FooterSection = ({ section, onUpdate, themeColors, logo, isPreview }) => {
   );
 };
 
+// Move element to another section dropdown
+const MoveToDropdown = ({ targetSections, onMove }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  if (targetSections.length === 0) return null;
+
+  return (
+    <div className="relative">
+      <button
+        onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}
+        className="p-1 text-blue-400 opacity-0 group-hover:opacity-100 hover:bg-blue-500/20 rounded transition-opacity z-10"
+        title="Move to another section"
+      >
+        <ArrowRightLeft className="w-4 h-4" />
+      </button>
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-[200]" onClick={(e) => { e.stopPropagation(); setIsOpen(false); }} />
+          <div className="absolute top-full right-0 mt-1 bg-slate-800 border border-slate-600 rounded-lg shadow-xl z-[201] min-w-[180px] overflow-hidden">
+            <p className="px-3 py-2 text-xs text-slate-400 border-b border-slate-700">Move to...</p>
+            {targetSections.map((s) => (
+              <button
+                key={s.id}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMove(s.id);
+                  setIsOpen(false);
+                }}
+                className="w-full px-3 py-2 text-left text-sm text-white hover:bg-slate-700 transition-colors"
+              >
+                {s.title || s.sectionNumber || 'Untitled Section'}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
 // Content Section Component
-const ContentSection = ({ section, onUpdate, onDelete, themeColors, logo, isPreview }) => {
+const ContentSection = ({ section, onUpdate, onDelete, onMoveElement, contentSections, themeColors, logo, isPreview }) => {
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [canvasWidth, setCanvasWidth] = useState(1200);
   const canvasRef = useRef(null);
@@ -3705,6 +3790,28 @@ const ContentSection = ({ section, onUpdate, onDelete, themeColors, logo, isPrev
     });
   };
 
+  // Other content sections available as move targets
+  const targetSections = (contentSections || []).filter(s => s.id !== section.id);
+
+  // Move element to another section
+  const moveElement = (elementType, idx, targetSectionId) => {
+    const arrayKey = elementType;
+    const element = section[arrayKey]?.[idx];
+    if (!element || !onMoveElement) return;
+
+    // Reset position so it gets placed automatically in the target
+    const movedElement = { ...element, posX: 0, posY: 0 };
+
+    // Remove from current section
+    onUpdate({
+      ...section,
+      [arrayKey]: section[arrayKey].filter((_, i) => i !== idx)
+    });
+
+    // Add to target section
+    onMoveElement(targetSectionId, arrayKey, movedElement);
+  };
+
   const addCard = () => {
     const cardWidth = 350;
     const cardHeight = 200;
@@ -3882,6 +3989,19 @@ const ContentSection = ({ section, onUpdate, onDelete, themeColors, logo, isPrev
         </div>
       )}
 
+      {/* Design notes from contributor */}
+      {!isPreview && section.designNotes && (
+        <div className="absolute top-4 right-4 z-10 max-w-xs">
+          <div className="bg-amber-500/90 text-white px-3 py-2 rounded-lg shadow-lg">
+            <div className="flex items-center gap-1.5 mb-1">
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span className="text-xs font-semibold">Contributor Note</span>
+            </div>
+            <p className="text-xs leading-relaxed">{section.designNotes}</p>
+          </div>
+        </div>
+      )}
+
       {/* Add content buttons - only in edit mode */}
       {!isPreview && (
         <div className="flex justify-center gap-4 mb-8">
@@ -3950,6 +4070,8 @@ const ContentSection = ({ section, onUpdate, onDelete, themeColors, logo, isPrev
               onUpdate({ ...section, cards: newCards });
             }}
             onDelete={() => deleteCard(idx)}
+            onMove={targetSections.length > 0 ? (targetId) => moveElement('cards', idx, targetId) : null}
+            targetSections={targetSections}
             themeColors={themeColors}
             editable={!isPreview}
             canvasWidth={canvasWidth}
@@ -3968,6 +4090,8 @@ const ContentSection = ({ section, onUpdate, onDelete, themeColors, logo, isPrev
               onUpdate({ ...section, charts: newCharts });
             }}
             onDelete={() => deleteChart(idx)}
+            onMove={targetSections.length > 0 ? (targetId) => moveElement('charts', idx, targetId) : null}
+            targetSections={targetSections}
             themeColors={themeColors}
             editable={!isPreview}
             canvasWidth={canvasWidth}
@@ -3986,6 +4110,8 @@ const ContentSection = ({ section, onUpdate, onDelete, themeColors, logo, isPrev
               onUpdate({ ...section, images: newImages });
             }}
             onDelete={() => deleteImage(idx)}
+            onMove={targetSections.length > 0 ? (targetId) => moveElement('images', idx, targetId) : null}
+            targetSections={targetSections}
             themeColors={themeColors}
             editable={!isPreview}
             canvasWidth={canvasWidth}
@@ -4004,6 +4130,8 @@ const ContentSection = ({ section, onUpdate, onDelete, themeColors, logo, isPrev
               onUpdate({ ...section, stats: newStats });
             }}
             onDelete={() => deleteStat(idx)}
+            onMove={targetSections.length > 0 ? (targetId) => moveElement('stats', idx, targetId) : null}
+            targetSections={targetSections}
             themeColors={themeColors}
             editable={!isPreview}
             canvasWidth={canvasWidth}
@@ -4022,6 +4150,8 @@ const ContentSection = ({ section, onUpdate, onDelete, themeColors, logo, isPrev
               onUpdate({ ...section, textBlocks: newTextBlocks });
             }}
             onDelete={() => deleteTextBlock(idx)}
+            onMove={targetSections.length > 0 ? (targetId) => moveElement('textBlocks', idx, targetId) : null}
+            targetSections={targetSections}
             themeColors={themeColors}
             editable={!isPreview}
             canvasWidth={canvasWidth}
@@ -4068,6 +4198,8 @@ export default function ReportBuilder() {
   const [hasSavedDraft, setHasSavedDraft] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
   const [showDraftNotification, setShowDraftNotification] = useState(false);
+  const [currentProjectId, setCurrentProjectId] = useState(null);
+  const [isSavingToServer, setIsSavingToServer] = useState(false);
   const [isLogoLoading, setIsLogoLoading] = useState(false);
   const logoInputRef = useRef(null);
   
@@ -4277,9 +4409,65 @@ export default function ReportBuilder() {
     }
   }, []);
 
+  // Check for generated report from project (sessionStorage)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('from') === 'project') {
+      try {
+        const generatedReport = sessionStorage.getItem('generatedReport');
+        const projectInfo = sessionStorage.getItem('generatedReportProject');
+
+        // Set the project ID if available
+        if (projectInfo) {
+          const project = JSON.parse(projectInfo);
+          if (project.id) {
+            setCurrentProjectId(project.id);
+          }
+        }
+
+        if (generatedReport) {
+          const reportData = JSON.parse(generatedReport);
+
+          // Load logo
+          if (reportData.logo) {
+            setLogo(reportData.logo);
+          }
+
+          // Load theme colors
+          if (reportData.themeColors) {
+            setThemeColors({
+              primary: ensureHexColor(reportData.themeColors.primary, DEFAULT_THEME_COLORS.primary),
+              primaryDark: ensureHexColor(reportData.themeColors.primaryDark, DEFAULT_THEME_COLORS.primaryDark),
+              accent: ensureHexColor(reportData.themeColors.accent, DEFAULT_THEME_COLORS.accent),
+              gold: ensureHexColor(reportData.themeColors.gold, DEFAULT_THEME_COLORS.gold),
+            });
+          }
+
+          // Load sections
+          if (reportData.sections && reportData.sections.length > 0) {
+            const loadedSections = reportData.sections.map((section, idx) => ({
+              id: generateId(),
+              ...section,
+            }));
+            setSections(loadedSections);
+          }
+
+          // Clear sessionStorage after loading
+          sessionStorage.removeItem('generatedReport');
+          sessionStorage.removeItem('generatedReportProject');
+
+          // Hide draft notification since we loaded from project
+          setShowDraftNotification(false);
+        }
+      } catch (error) {
+        console.error('Error loading generated report:', error);
+      }
+    }
+  }, []);
+
   // Auto-save every 30 seconds
   useEffect(() => {
-    const autoSaveInterval = setInterval(() => {
+    const autoSaveInterval = setInterval(async () => {
       // Save directly in the interval to avoid stale closure issues
       const draft = {
         logo,
@@ -4290,20 +4478,77 @@ export default function ReportBuilder() {
       localStorage.setItem('reportBuilderDraft', JSON.stringify(draft));
       setHasSavedDraft(true);
       setLastSaved(new Date());
+
+      // Also auto-save to server if working on a project
+      if (currentProjectId) {
+        try {
+          await fetch(`/api/projects/${currentProjectId}/drafts`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              name: 'Report Draft',
+              data: draft,
+            }),
+          });
+        } catch (error) {
+          console.error('Auto-save to server failed:', error);
+        }
+      }
     }, 30000);
     return () => clearInterval(autoSaveInterval);
-  }, [sections, themeColors, logo]);
+  }, [sections, themeColors, logo, currentProjectId]);
 
-  const saveDraft = (silent = false) => {
+  // Helper function to save draft to server
+  const saveDraftToServer = async (draftData, silent = true) => {
+    if (!currentProjectId) return;
+
+    setIsSavingToServer(true);
+    try {
+      const response = await fetch(`/api/projects/${currentProjectId}/drafts`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: 'Report Draft',
+          data: draftData,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save to server');
+      }
+
+      if (!silent) {
+        console.log('Draft saved to server');
+      }
+    } catch (error) {
+      console.error('Error saving draft to server:', error);
+    } finally {
+      setIsSavingToServer(false);
+    }
+  };
+
+  const saveDraft = async (silent = false) => {
     const draft = {
       logo,
       themeColors,
       sections,
       lastSaved: new Date().toISOString(),
     };
+
+    // Save to localStorage
     localStorage.setItem('reportBuilderDraft', JSON.stringify(draft));
     setHasSavedDraft(true);
     setLastSaved(new Date());
+
+    // Also save to server if working on a project
+    if (currentProjectId) {
+      await saveDraftToServer(draft, silent);
+    }
+
     if (!silent) {
       alert('Draft saved successfully!');
     }
@@ -4548,6 +4793,19 @@ export default function ReportBuilder() {
     setSections(sections.filter(s => s.id !== id));
   };
 
+  // Move an element from one content section to another
+  const moveElementToSection = (targetSectionId, arrayKey, element) => {
+    setSections(prev => prev.map(s => {
+      if (s.id === targetSectionId) {
+        return {
+          ...s,
+          [arrayKey]: [...(s[arrayKey] || []), element]
+        };
+      }
+      return s;
+    }));
+  };
+
   const moveSection = (idx, direction) => {
     const newSections = [...sections];
     const newIdx = idx + direction;
@@ -4746,7 +5004,14 @@ export default function ReportBuilder() {
       case 'footer':
         return <FooterSection {...commonProps} />;
       case 'content':
-        return <ContentSection {...commonProps} onDelete={() => deleteSection(section.id)} />;
+        return (
+          <ContentSection
+            {...commonProps}
+            onDelete={() => deleteSection(section.id)}
+            onMoveElement={moveElementToSection}
+            contentSections={sections.filter(s => s.type === 'content')}
+          />
+        );
       default:
         return null;
     }
@@ -5082,6 +5347,7 @@ export default function ReportBuilder() {
                             <span className="capitalize">{section.type}</span>
                           )}
                         </span>
+                        {section.designNotes && <MessageSquare className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" title="Has contributor notes" />}
                       </div>
                     </div>
                     <div className="flex gap-1">
@@ -5311,6 +5577,7 @@ export default function ReportBuilder() {
                               <span className="capitalize">{section.type}</span>
                             )}
                           </span>
+                          {section.designNotes && <MessageSquare className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" title="Has contributor notes" />}
                         </div>
                       </div>
                       <div className="flex gap-1">

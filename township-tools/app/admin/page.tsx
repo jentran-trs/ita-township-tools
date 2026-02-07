@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
+import { useUser, useOrganization, useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
@@ -48,6 +48,8 @@ interface Invitation {
 
 export default function AdminPage() {
   const { user, isLoaded } = useUser();
+  const { membership } = useOrganization();
+  const { orgRole } = useAuth();
   const router = useRouter();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,19 +62,20 @@ export default function AdminPage() {
   const [inviting, setInviting] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
-  const isSuperAdmin = user?.publicMetadata?.role === "superadmin";
+  // Check admin via organization membership
+  const isAdmin = membership?.role === 'org:admin' || orgRole === 'org:admin';
 
   useEffect(() => {
-    if (isLoaded && !isSuperAdmin) {
+    if (isLoaded && !isAdmin) {
       router.push("/dashboard");
     }
-  }, [isLoaded, isSuperAdmin, router]);
+  }, [isLoaded, isAdmin, router]);
 
   useEffect(() => {
-    if (isSuperAdmin) {
+    if (isAdmin) {
       fetchOrganizations();
     }
-  }, [isSuperAdmin]);
+  }, [isAdmin]);
 
   const fetchOrganizations = async () => {
     try {
@@ -223,7 +226,7 @@ export default function AdminPage() {
     );
   }
 
-  if (!isSuperAdmin) {
+  if (!isAdmin) {
     return null;
   }
 

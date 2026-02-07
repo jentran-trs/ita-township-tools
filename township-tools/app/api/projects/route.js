@@ -62,7 +62,7 @@ export async function GET(request) {
   } catch (error) {
     console.error('Server error:', error);
     return NextResponse.json(
-      { error: 'Server error' },
+      { error: 'Server error', message: error.message, stack: error.stack?.substring(0, 500) },
       { status: 500 }
     );
   }

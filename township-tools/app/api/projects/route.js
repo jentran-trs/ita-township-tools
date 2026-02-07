@@ -15,11 +15,13 @@ function generateShareId() {
 // GET - List all projects for the user's organization
 export async function GET(request) {
   try {
+    console.log('GET /api/projects - starting');
     const authData = await auth();
     const { searchParams } = new URL(request.url);
 
     // Use orgId from auth, fallback to query param
     const orgId = authData.orgId || searchParams.get('orgId');
+    console.log('GET /api/projects - orgId:', orgId);
 
     if (!orgId) {
       return NextResponse.json(
@@ -28,78 +30,30 @@ export async function GET(request) {
       );
     }
 
+    console.log('GET /api/projects - creating supabase client');
     const supabase = createServerSupabaseClient();
+    console.log('GET /api/projects - supabase client created');
 
-    // Try fetching with related tables, fall back to basic query if tables don't exist
-    let projects = [];
-    let error = null;
-
-    // First try with all related tables
-    const result1 = await supabase
+    // Simple query first - avoid relationship issues
+    const { data: projects, error } = await supabase
       .from('report_projects')
-      .select(`
-        *,
-        report_submissions(count),
-        contributor_sessions(status)
-      `)
+      .select('*')
       .eq('org_id', orgId)
       .order('created_at', { ascending: false });
-
-    if (result1.error) {
-      console.log('Full query failed, trying without contributor_sessions:', result1.error.message);
-
-      // Try without contributor_sessions
-      const result2 = await supabase
-        .from('report_projects')
-        .select(`
-          *,
-          report_submissions(count)
-        `)
-        .eq('org_id', orgId)
-        .order('created_at', { ascending: false });
-
-      if (result2.error) {
-        console.log('Query without sessions failed, trying basic query:', result2.error.message);
-
-        // Try basic query
-        const result3 = await supabase
-          .from('report_projects')
-          .select('*')
-          .eq('org_id', orgId)
-          .order('created_at', { ascending: false });
-
-        projects = result3.data || [];
-        error = result3.error;
-      } else {
-        projects = result2.data || [];
-      }
-    } else {
-      projects = result1.data || [];
-    }
 
     if (error) {
       console.error('Error fetching projects:', error);
       return NextResponse.json(
-        { error: 'Failed to fetch projects', details: error.message },
+        { error: 'Failed to fetch projects', details: error.message, code: error.code },
         { status: 500 }
       );
     }
 
-    // Compute display status - use project.status if set, otherwise derive from sessions
-    const projectsWithStatus = projects.map(project => {
-      // If project has a manual status set, use that
-      if (project.status && project.status !== 'not_started') {
-        return { ...project, derived_status: project.status };
-      }
+    console.log('Projects fetched successfully:', projects?.length || 0, 'projects');
 
-      // Otherwise derive from contributor sessions (if available)
-      const sessions = project.contributor_sessions || [];
-      let derived_status = 'collecting_assets';
-      if (Array.isArray(sessions) && sessions.some(s => s.status === 'submitted')) {
-        derived_status = 'collecting_assets';
-      } else if (Array.isArray(sessions) && sessions.some(s => s.status === 'drafting')) {
-        derived_status = 'collecting_assets';
-      }
+    // Compute display status - use project.status if set, default to collecting_assets
+    const projectsWithStatus = (projects || []).map(project => {
+      const derived_status = project.status || 'collecting_assets';
       return { ...project, derived_status };
     });
 

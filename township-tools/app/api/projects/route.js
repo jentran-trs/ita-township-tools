@@ -30,7 +30,12 @@ export async function GET(request) {
 
     const supabase = createServerSupabaseClient();
 
-    const { data: projects, error } = await supabase
+    // Try fetching with related tables, fall back to basic query if tables don't exist
+    let projects = [];
+    let error = null;
+
+    // First try with all related tables
+    const result1 = await supabase
       .from('report_projects')
       .select(`
         *,
@@ -40,27 +45,59 @@ export async function GET(request) {
       .eq('org_id', orgId)
       .order('created_at', { ascending: false });
 
+    if (result1.error) {
+      console.log('Full query failed, trying without contributor_sessions:', result1.error.message);
+
+      // Try without contributor_sessions
+      const result2 = await supabase
+        .from('report_projects')
+        .select(`
+          *,
+          report_submissions(count)
+        `)
+        .eq('org_id', orgId)
+        .order('created_at', { ascending: false });
+
+      if (result2.error) {
+        console.log('Query without sessions failed, trying basic query:', result2.error.message);
+
+        // Try basic query
+        const result3 = await supabase
+          .from('report_projects')
+          .select('*')
+          .eq('org_id', orgId)
+          .order('created_at', { ascending: false });
+
+        projects = result3.data || [];
+        error = result3.error;
+      } else {
+        projects = result2.data || [];
+      }
+    } else {
+      projects = result1.data || [];
+    }
+
     if (error) {
       console.error('Error fetching projects:', error);
       return NextResponse.json(
-        { error: 'Failed to fetch projects' },
+        { error: 'Failed to fetch projects', details: error.message },
         { status: 500 }
       );
     }
 
     // Compute display status - use project.status if set, otherwise derive from sessions
-    const projectsWithStatus = (projects || []).map(project => {
+    const projectsWithStatus = projects.map(project => {
       // If project has a manual status set, use that
       if (project.status && project.status !== 'not_started') {
         return { ...project, derived_status: project.status };
       }
 
-      // Otherwise derive from contributor sessions
+      // Otherwise derive from contributor sessions (if available)
       const sessions = project.contributor_sessions || [];
       let derived_status = 'collecting_assets';
-      if (sessions.some(s => s.status === 'submitted')) {
+      if (Array.isArray(sessions) && sessions.some(s => s.status === 'submitted')) {
         derived_status = 'collecting_assets';
-      } else if (sessions.some(s => s.status === 'drafting')) {
+      } else if (Array.isArray(sessions) && sessions.some(s => s.status === 'drafting')) {
         derived_status = 'collecting_assets';
       }
       return { ...project, derived_status };

@@ -26,7 +26,7 @@ import {
   Unlock,
 } from 'lucide-react';
 
-function SubmissionCard({ submission, isExpanded, onToggle }) {
+function SubmissionCard({ submission, isExpanded, onToggle, onDelete, isDeleting }) {
   const sections = submission.report_sections || [];
   const totalImages = sections.reduce((acc, s) => acc + (s.image_urls?.length || 0), 0) +
     (submission.letter_headshot_url ? 1 : 0) +
@@ -34,6 +34,18 @@ function SubmissionCard({ submission, isExpanded, onToggle }) {
     (submission.letter_image2_url ? 1 : 0) +
     (submission.logo_url ? 1 : 0);
   const totalStats = sections.reduce((acc, s) => acc + (s.report_section_stats?.length || 0), 0);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const handleDeleteClick = (e) => {
+    e.stopPropagation();
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = async (e) => {
+    e.stopPropagation();
+    await onDelete(submission.id);
+    setShowDeleteConfirm(false);
+  };
 
   return (
     <div className="bg-slate-700/50 rounded-xl overflow-hidden">
@@ -56,6 +68,18 @@ function SubmissionCard({ submission, isExpanded, onToggle }) {
               <p>{new Date(submission.created_at).toLocaleDateString()}</p>
               <p>{totalImages} images, {sections.length} sections</p>
             </div>
+            <button
+              onClick={handleDeleteClick}
+              disabled={isDeleting}
+              className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+              title="Delete submission"
+            >
+              {isDeleting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4" />
+              )}
+            </button>
             {isExpanded ? (
               <ChevronUp className="w-5 h-5 text-slate-400" />
             ) : (
@@ -63,6 +87,33 @@ function SubmissionCard({ submission, isExpanded, onToggle }) {
             )}
           </div>
         </div>
+
+        {/* Delete Confirmation Inline */}
+        {showDeleteConfirm && (
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg"
+          >
+            <p className="text-sm text-red-300 mb-2">
+              Delete this submission from <strong>{submission.submitter_name}</strong>?
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={handleConfirmDelete}
+                disabled={isDeleting}
+                className="px-3 py-1 bg-red-600 text-white text-sm rounded font-medium hover:bg-red-500 disabled:opacity-50"
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(false); }}
+                className="px-3 py-1 text-slate-300 text-sm hover:bg-slate-600 rounded"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {isExpanded && (
@@ -183,6 +234,7 @@ export default function ProjectDetailPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const [deletingSubmissionId, setDeletingSubmissionId] = useState(null);
   const [copied, setCopied] = useState(false);
   const [savedDraft, setSavedDraft] = useState(null);
   const [loadingDraft, setLoadingDraft] = useState(false);
@@ -314,6 +366,28 @@ export default function ProjectDetailPage() {
       setDeleteError('Network error. Please try again.');
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleDeleteSubmission = async (submissionId) => {
+    setDeletingSubmissionId(submissionId);
+    try {
+      const response = await fetch(`/api/submissions/${submissionId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        // Remove the submission from the list
+        setSubmissions(submissions.filter(s => s.id !== submissionId));
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Failed to delete submission');
+      }
+    } catch (error) {
+      console.error('Error deleting submission:', error);
+      alert('Network error. Please try again.');
+    } finally {
+      setDeletingSubmissionId(null);
     }
   };
 
@@ -583,6 +657,8 @@ export default function ProjectDetailPage() {
                 onToggle={() => setExpandedSubmission(
                   expandedSubmission === submission.id ? null : submission.id
                 )}
+                onDelete={handleDeleteSubmission}
+                isDeleting={deletingSubmissionId === submission.id}
               />
             ))}
           </div>

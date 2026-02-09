@@ -226,3 +226,135 @@ export async function PUT(request, { params }) {
     );
   }
 }
+
+// DELETE - Delete a submission
+export async function DELETE(request, { params }) {
+  console.log('DELETE /api/submissions/[id] called');
+  try {
+    const authData = await getAuthData();
+    const { id } = await params;
+
+    const supabase = createServerSupabaseClient();
+
+    // Get the submission to check permissions and get image URLs for cleanup
+    const { data: submission, error: fetchError } = await supabase
+      .from('report_submissions')
+      .select(`
+        id,
+        submitter_email,
+        clerk_user_id,
+        logo_url,
+        letter_headshot_url,
+        letter_image1_url,
+        letter_image2_url,
+        report_sections(
+          id,
+          image_urls
+        )
+      `)
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !submission) {
+      return NextResponse.json(
+        { error: 'Submission not found' },
+        { status: 404 }
+      );
+    }
+
+    // Check permission
+    const user = await getCurrentUser();
+    const userEmail = user?.emailAddresses?.[0]?.emailAddress;
+    const orgRole = authData?.sessionClaims?.o?.rol;
+    const isAdmin = orgRole === 'admin' || orgRole === 'org:admin';
+    const noAuthAvailable = !authData && !user;
+
+    const canDelete =
+      noAuthAvailable ||
+      isAdmin ||
+      (authData?.userId && submission.clerk_user_id === authData.userId) ||
+      (userEmail && submission.submitter_email?.toLowerCase() === userEmail?.toLowerCase());
+
+    if (!canDelete) {
+      return NextResponse.json(
+        { error: 'You do not have permission to delete this submission' },
+        { status: 403 }
+      );
+    }
+
+    // Collect all image URLs for storage cleanup
+    const imageUrls = [];
+    if (submission.logo_url) imageUrls.push(submission.logo_url);
+    if (submission.letter_headshot_url) imageUrls.push(submission.letter_headshot_url);
+    if (submission.letter_image1_url) imageUrls.push(submission.letter_image1_url);
+    if (submission.letter_image2_url) imageUrls.push(submission.letter_image2_url);
+
+    for (const section of submission.report_sections || []) {
+      if (section.image_urls && Array.isArray(section.image_urls)) {
+        imageUrls.push(...section.image_urls);
+      }
+    }
+
+    // Delete stats first (foreign key constraint)
+    const sectionIds = (submission.report_sections || []).map(s => s.id);
+    if (sectionIds.length > 0) {
+      await supabase
+        .from('report_section_stats')
+        .delete()
+        .in('section_id', sectionIds);
+    }
+
+    // Delete sections
+    await supabase
+      .from('report_sections')
+      .delete()
+      .eq('submission_id', id);
+
+    // Delete the submission
+    const { error: deleteError } = await supabase
+      .from('report_submissions')
+      .delete()
+      .eq('id', id);
+
+    if (deleteError) {
+      console.error('Error deleting submission:', deleteError);
+      return NextResponse.json(
+        { error: 'Failed to delete submission' },
+        { status: 500 }
+      );
+    }
+
+    // Try to delete images from storage (best effort, don't fail if this fails)
+    if (imageUrls.length > 0) {
+      const filePaths = imageUrls
+        .map(url => {
+          try {
+            const match = url.match(/\/report-assets\/(.+?)(\?|$)/);
+            return match ? match[1] : null;
+          } catch {
+            return null;
+          }
+        })
+        .filter(Boolean);
+
+      if (filePaths.length > 0) {
+        await supabase.storage
+          .from('report-assets')
+          .remove(filePaths)
+          .catch(err => console.warn('Failed to delete some images:', err));
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      deletedImages: imageUrls.length,
+    });
+
+  } catch (error) {
+    console.error('Server error:', error);
+    return NextResponse.json(
+      { error: 'Server error' },
+      { status: 500 }
+    );
+  }
+}

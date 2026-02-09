@@ -1369,7 +1369,7 @@ const InfoCard = ({ card, onUpdate, onDelete, onMove, targetSections, themeColor
 
       {/* Card Content Container */}
       {editable ? (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '4px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '8px' }}>
           {/* Title - editable */}
           <textarea
             value={card.title || ''}
@@ -1411,7 +1411,7 @@ const InfoCard = ({ card, onUpdate, onDelete, onMove, targetSections, themeColor
               overflowWrap: 'break-word',
               fontFamily: '"Instrument Sans", sans-serif',
               margin: 0,
-              marginBottom: '4px',
+              marginBottom: '8px',
               padding: 0,
               display: 'block'
             }}>

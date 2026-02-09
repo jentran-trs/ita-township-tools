@@ -233,11 +233,15 @@ export async function DELETE(request, { params }) {
   try {
     const authData = await getAuthData();
     const { id } = await params;
+    console.log('Deleting submission:', id);
 
     const supabase = createServerSupabaseClient();
 
-    // Get the submission to check permissions and get image URLs for cleanup
-    const { data: submission, error: fetchError } = await supabase
+    // Get the submission - try with clerk_user_id first, then without if column doesn't exist
+    let submission = null;
+    let fetchError = null;
+
+    const { data: data1, error: error1 } = await supabase
       .from('report_submissions')
       .select(`
         id,
@@ -255,9 +259,37 @@ export async function DELETE(request, { params }) {
       .eq('id', id)
       .single();
 
+    if (error1?.code === '42703') {
+      // clerk_user_id column doesn't exist, retry without it
+      console.log('clerk_user_id column not found, querying without it');
+      const { data: data2, error: error2 } = await supabase
+        .from('report_submissions')
+        .select(`
+          id,
+          submitter_email,
+          logo_url,
+          letter_headshot_url,
+          letter_image1_url,
+          letter_image2_url,
+          report_sections(
+            id,
+            image_urls
+          )
+        `)
+        .eq('id', id)
+        .single();
+      submission = data2;
+      fetchError = error2;
+    } else {
+      submission = data1;
+      fetchError = error1;
+    }
+
+    console.log('Delete fetch result:', { found: !!submission, error: fetchError?.message });
+
     if (fetchError || !submission) {
       return NextResponse.json(
-        { error: 'Submission not found' },
+        { error: 'Submission not found', details: fetchError?.message },
         { status: 404 }
       );
     }

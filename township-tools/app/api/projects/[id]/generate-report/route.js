@@ -381,7 +381,7 @@ export async function POST(request, { params }) {
             }] : [],
             charts: section.chart_link ? [{
               id: `chart-${section.id}`,
-              embedUrl: section.chart_link,
+              chartImage: section.chart_link,
               posX: GAP,
               posY: chartsStartY,
               width: chartWidth,

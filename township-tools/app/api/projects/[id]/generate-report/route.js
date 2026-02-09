@@ -223,7 +223,12 @@ export async function POST(request, { params }) {
         while (startIdx < bodyLines.length && !bodyLines[startIdx].trim()) {
           startIdx++;
         }
-        const body = bodyLines.slice(startIdx).join('\n').trim();
+        // Join lines and clean up: trim, remove leading/trailing whitespace, collapse multiple newlines
+        const body = bodyLines.slice(startIdx).join('\n')
+          .trim()
+          .replace(/^[\s\n\r]+/, '')  // Remove all leading whitespace
+          .replace(/[\s\n\r]+$/, '')  // Remove all trailing whitespace
+          .replace(/\n{3,}/g, '\n\n'); // Collapse 3+ newlines to 2
 
         if (title || body) {
           cards.push({ title, content: body });

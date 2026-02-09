@@ -1398,7 +1398,7 @@ const InfoCard = ({ card, onUpdate, onDelete, onMove, targetSections, themeColor
           />
         </>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', margin: 0, padding: 0 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', margin: 0, padding: 0 }}>
           {/* Title - preview */}
           {card.title && (
             <h3 style={{
@@ -1426,7 +1426,7 @@ const InfoCard = ({ card, onUpdate, onDelete, onMove, targetSections, themeColor
               margin: 0,
               padding: 0
             }}>
-              {card.content.trim().replace(/^\n+/, '')}
+              {card.content.trim().replace(/^[\s\n\r]+/, '').replace(/[\s\n\r]+$/, '')}
             </p>
           )}
         </div>

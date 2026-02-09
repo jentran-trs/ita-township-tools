@@ -1369,7 +1369,7 @@ const InfoCard = ({ card, onUpdate, onDelete, onMove, targetSections, themeColor
 
       {/* Card Content Container */}
       {editable ? (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '8px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
           {/* Title - editable */}
           <textarea
             value={card.title || ''}
@@ -1384,7 +1384,10 @@ const InfoCard = ({ card, onUpdate, onDelete, onMove, targetSections, themeColor
               whiteSpace: 'pre-wrap',
               wordWrap: 'break-word',
               fontFamily: '"Instrument Sans", sans-serif',
-              flexShrink: 0
+              flexShrink: 0,
+              lineHeight: 1.2,
+              marginBottom: '8px',
+              padding: 0
             }}
             onMouseDown={(e) => e.stopPropagation()}
           />

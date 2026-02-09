@@ -617,35 +617,46 @@ export default function ContributePage() {
         const section = formData.sections[i];
         console.log(`Section ${i}:`, { title: section.title, imageCount: section.images?.length, textBlocks: section.textBlocks?.length, contentCards: section.contentCards?.length });
 
-        // Upload images with individual captions
+        // Upload images with individual captions - separate charts from regular images
         const imagesWithCaptions = [];
+        let chartUrl = section.chartLink || ''; // Start with existing chartLink if any
+
         if (section.images?.length > 0) {
           for (let j = 0; j < section.images.length; j++) {
             const img = section.images[j];
+            const isChart = img.isChart || false;
+
             // Debug: show full image structure
             console.log(`Image ${i}-${j} structure:`, {
               hasFile: !!img.file,
-              fileType: img.file ? typeof img.file : 'none',
-              fileKeys: img.file ? Object.keys(img.file) : [],
-              hasFileFile: !!img.file?.file,
-              fileFileType: img.file?.file ? typeof img.file.file : 'none',
+              isChart,
               hasExistingUrl: !!img.existingUrl,
-              existingUrl: img.existingUrl?.substring(0, 50),
             });
+
             if (img.file?.file) {
               // New file uploaded - use timestamp in filename to avoid CDN cache
-              // Pass old URL so server can delete the old file
               const timestamp = Date.now();
               const oldUrl = img.existingUrl || null;
-              const url = await uploadFile(img.file, `${finalSubmissionId}/sections/${i}/image-${j}-${timestamp}`, oldUrl);
-              console.log(`Uploaded new image ${i}-${j}:`, url, oldUrl ? `(deleted old: ${oldUrl})` : '');
+              const fileType = isChart ? 'chart' : 'image';
+              const url = await uploadFile(img.file, `${finalSubmissionId}/sections/${i}/${fileType}-${j}-${timestamp}`, oldUrl);
+              console.log(`Uploaded new ${fileType} ${i}-${j}:`, url);
+
               if (url) {
-                imagesWithCaptions.push({ url, caption: img.caption || '' });
+                if (isChart) {
+                  // Store chart URL separately
+                  chartUrl = url;
+                } else {
+                  imagesWithCaptions.push({ url, caption: img.caption || '' });
+                }
               }
             } else if (img.existingUrl) {
-              // Keep existing image
-              console.log(`Keeping existing image ${i}-${j}:`, img.existingUrl);
-              imagesWithCaptions.push({ url: img.existingUrl, caption: img.caption || '' });
+              // Keep existing image/chart
+              console.log(`Keeping existing ${isChart ? 'chart' : 'image'} ${i}-${j}:`, img.existingUrl);
+              if (isChart) {
+                chartUrl = img.existingUrl;
+              } else {
+                imagesWithCaptions.push({ url: img.existingUrl, caption: img.caption || '' });
+              }
             }
           }
         }
@@ -666,7 +677,7 @@ export default function ContributePage() {
           stats: section.stats?.filter(s => s.label && s.value) || [],
           contentCards: section.contentCards?.filter(c => c.title || c.body) || [],
           designNotes: section.designNotes || '',
-          chartLink: section.chartLink || '',
+          chartLink: chartUrl,
         });
       }
 

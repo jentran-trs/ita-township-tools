@@ -275,32 +275,35 @@ export async function POST(request, { params }) {
         const parsedCards = parseCardsFromContent(section.content);
         const textContent = getTextContent(section.content);
 
-        // Count total elements to determine if we need minimum sizes
+        // Count total elements to determine sizing tier
         const totalElements = stats.length + images.length + parsedCards.length + (textContent ? 1 : 0) + (section.chart_link ? 1 : 0);
-        const useMinSizes = totalElements > 9;
 
-        // Size configurations - use smaller sizes when many elements
-        const GAP = useMinSizes ? 15 : 20;
+        // Three tiers: normal (<=6), compact (7-12), dense (>12)
+        const isDense = totalElements > 12;
+        const isCompact = totalElements > 6;
 
-        // Stats sizing
-        const statWidth = useMinSizes ? 200 : 280;
-        const statHeight = useMinSizes ? 120 : 180;
-        const statsPerRow = useMinSizes ? 4 : 3;
+        // Size configurations - progressively smaller for more elements
+        const GAP = isDense ? 10 : isCompact ? 15 : 20;
+
+        // Stats sizing - smaller for crowded sections
+        const statWidth = isDense ? 160 : isCompact ? 200 : 280;
+        const statHeight = isDense ? 100 : isCompact ? 120 : 180;
+        const statsPerRow = isDense ? 5 : isCompact ? 4 : 3;
         const statsRowHeight = statHeight + GAP;
 
-        // Image sizing
-        const imageWidth = useMinSizes ? 280 : 400;
-        const imageHeight = useMinSizes ? 180 : 250;
-        const imagesPerRow = useMinSizes ? 3 : 2;
-        const imageRowHeight = imageHeight + GAP + 20; // Extra for caption
+        // Image sizing - smaller for crowded sections
+        const imageWidth = isDense ? 220 : isCompact ? 280 : 400;
+        const imageHeight = isDense ? 140 : isCompact ? 180 : 250;
+        const imagesPerRow = isDense ? 4 : isCompact ? 3 : 2;
+        const imageRowHeight = imageHeight + GAP + 16; // Extra for caption
 
-        // Card sizing
-        const cardWidth = useMinSizes ? 400 : 820;
-        const cardHeight = useMinSizes ? 150 : 250;
-        const cardsPerRow = useMinSizes ? 2 : 1;
+        // Card sizing - more compact for crowded sections
+        const cardWidth = isDense ? 380 : isCompact ? 400 : 820;
+        const cardHeight = isDense ? 120 : isCompact ? 150 : 250;
+        const cardsPerRow = isDense ? 2 : isCompact ? 2 : 1;
         const cardRowHeight = cardHeight + GAP;
 
-        // Calculate vertical positions to prevent overlapping
+        // Calculate vertical positions - all elements will be placed even if they overflow
         let currentY = GAP;
 
         // Stats positioning
@@ -315,7 +318,7 @@ export async function POST(request, { params }) {
 
         // Text block positioning (if any text content outside cards)
         const textBlockY = currentY;
-        const textBlockHeight = textContent ? (useMinSizes ? 120 : 200) : 0;
+        const textBlockHeight = textContent ? (isDense ? 100 : isCompact ? 120 : 200) : 0;
         currentY += textBlockHeight + (textContent ? GAP : 0);
 
         // Images positioning
@@ -323,8 +326,10 @@ export async function POST(request, { params }) {
         currentY += images.length > 0 ? Math.ceil(images.length / imagesPerRow) * imageRowHeight : 0;
         currentY += images.length > 0 ? GAP : 0;
 
-        // Charts positioning
+        // Charts positioning - charts always go at the end, sized appropriately
         const chartsStartY = currentY;
+        const chartWidth = isDense ? 500 : isCompact ? 600 : 820;
+        const chartHeight = isDense ? 200 : isCompact ? 240 : 320;
 
         allSections.push({
           order: section.section_order,
@@ -371,7 +376,7 @@ export async function POST(request, { params }) {
               content: textToHtml(textContent),
               posX: GAP,
               posY: textBlockY,
-              width: useMinSizes ? 400 : 820,
+              width: isDense ? 380 : isCompact ? 400 : 820,
               height: textBlockHeight,
             }] : [],
             charts: section.chart_link ? [{
@@ -379,8 +384,8 @@ export async function POST(request, { params }) {
               embedUrl: section.chart_link,
               posX: GAP,
               posY: chartsStartY,
-              width: useMinSizes ? 600 : 820,
-              height: useMinSizes ? 240 : 320,
+              width: chartWidth,
+              height: chartHeight,
             }] : [],
             footers: [],
           },

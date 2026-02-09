@@ -2354,8 +2354,8 @@ const ChartContainer = ({ chart, onUpdate, onDelete, onMove, targetSections, the
         )}
 
         {chart.chartImage ? (
-          <div className="w-full h-full relative">
-            <img 
+          <div className="w-full h-full relative px-6">
+            <img
               src={chart.chartImage}
               alt="Chart"
               className="w-full h-full object-contain"

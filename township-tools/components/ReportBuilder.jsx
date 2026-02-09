@@ -1369,21 +1369,22 @@ const InfoCard = ({ card, onUpdate, onDelete, onMove, targetSections, themeColor
 
       {/* Card Content Container */}
       {editable ? (
-        <>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '4px' }}>
           {/* Title - editable */}
           <textarea
             value={card.title || ''}
             onChange={(e) => onUpdate({ ...card, title: e.target.value })}
             placeholder="Card Title"
-            className="text-xl font-semibold w-full bg-transparent border-none focus:outline-none mb-2 placeholder-white/50 cursor-text resize-none"
+            className="text-xl font-semibold w-full bg-transparent border-none focus:outline-none placeholder-white/50 cursor-text resize-none"
             style={{
               color: themeColors?.gold || '#D4B896',
-              minHeight: '28px',
-              maxHeight: '80px',
-              overflow: 'auto',
+              minHeight: '24px',
+              maxHeight: '60px',
+              overflow: 'hidden',
               whiteSpace: 'pre-wrap',
               wordWrap: 'break-word',
-              fontFamily: '"Instrument Sans", sans-serif'
+              fontFamily: '"Instrument Sans", sans-serif',
+              flexShrink: 0
             }}
             onMouseDown={(e) => e.stopPropagation()}
           />
@@ -1393,10 +1394,10 @@ const InfoCard = ({ card, onUpdate, onDelete, onMove, targetSections, themeColor
             onChange={(e) => onUpdate({ ...card, content: e.target.value })}
             placeholder="Enter card content..."
             className="w-full bg-transparent border-none focus:outline-none resize-none text-base placeholder-white/50 cursor-text"
-            style={{ color: 'white', height: 'calc(100% - 60px)', fontFamily: '"Instrument Sans", sans-serif' }}
+            style={{ color: 'white', flex: 1, fontFamily: '"Instrument Sans", sans-serif' }}
             onMouseDown={(e) => e.stopPropagation()}
           />
-        </>
+        </div>
       ) : (
         <div style={{ margin: 0, padding: 0 }}>
           {/* Title - preview */}

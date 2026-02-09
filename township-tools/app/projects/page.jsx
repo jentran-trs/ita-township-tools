@@ -280,7 +280,7 @@ export default function ProjectsPage() {
                           )}
                           <span className="flex items-center gap-1">
                             <FileText className="w-4 h-4" />
-                            {project.report_submissions?.[0]?.count || 0} submissions
+                            {project.submission_count || 0} submissions
                           </span>
                         </div>
                       )}

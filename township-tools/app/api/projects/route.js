@@ -39,7 +39,7 @@ export async function GET(request) {
       const supabase = createServerSupabaseClient();
       const { data: projects, error } = await supabase
         .from('report_projects')
-        .select('*')
+        .select('*, report_submissions(count)')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -53,6 +53,7 @@ export async function GET(request) {
       const projectsWithStatus = (projects || []).map(project => ({
         ...project,
         derived_status: project.status || 'collecting_assets',
+        submission_count: project.report_submissions?.[0]?.count || 0,
       }));
 
       return NextResponse.json({ projects: projectsWithStatus });
@@ -62,10 +63,10 @@ export async function GET(request) {
     const supabase = createServerSupabaseClient();
     console.log('GET /api/projects - supabase client created');
 
-    // Simple query first - avoid relationship issues
+    // Query with submission count
     const { data: projects, error } = await supabase
       .from('report_projects')
-      .select('*')
+      .select('*, report_submissions(count)')
       .eq('org_id', orgId)
       .order('created_at', { ascending: false });
 
@@ -79,10 +80,11 @@ export async function GET(request) {
 
     console.log('Projects fetched successfully:', projects?.length || 0, 'projects');
 
-    // Compute display status - use project.status if set, default to collecting_assets
+    // Compute display status and extract submission count
     const projectsWithStatus = (projects || []).map(project => {
       const derived_status = project.status || 'collecting_assets';
-      return { ...project, derived_status };
+      const submission_count = project.report_submissions?.[0]?.count || 0;
+      return { ...project, derived_status, submission_count };
     });
 
     return NextResponse.json({ projects: projectsWithStatus });

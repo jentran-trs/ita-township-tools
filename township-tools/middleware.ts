@@ -1,12 +1,4 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-
-// Check if Clerk is properly configured for production
-const isClerkProduction = () => {
-  const key = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-  return key && !key.includes('pk_test_');
-};
 
 // Routes that should be public (accessible without auth)
 const isPublicRoute = createRouteMatcher([
@@ -21,21 +13,14 @@ const isPublicRoute = createRouteMatcher([
   '/',
 ]);
 
-// Use conditional middleware based on environment
-export default function middleware(request: NextRequest) {
-  // Skip Clerk entirely if using development keys in production
-  if (!isClerkProduction()) {
-    return NextResponse.next();
+// Use Clerk middleware - development keys work in production (with limits)
+export default clerkMiddleware(async (auth, req) => {
+  // Public routes don't require authentication
+  if (isPublicRoute(req)) {
+    return;
   }
-
-  // Use Clerk middleware for production with proper keys
-  return clerkMiddleware((auth, req) => {
-    // Allow public routes
-    if (isPublicRoute(req)) {
-      return NextResponse.next();
-    }
-  })(request, {} as any);
-}
+  // For non-public routes, protect them (but this is handled by the client-side)
+});
 
 export const config = {
   matcher: [

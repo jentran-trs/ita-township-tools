@@ -3138,7 +3138,7 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
         ) : (
           <>
             <style>{`
-              .letter-content-edit, .letter-content-edit * { color: #1e293b !important; }
+              .letter-content-edit { color: #1e293b; }
               .letter-content-edit p { margin: ${section.paragraphSpacing || 16}px 0; }
               .letter-content-edit p:first-child { margin-top: 0; }
               .letter-content-edit li { margin: ${Math.max(1, (section.paragraphSpacing || 16) / 2)}px 0; }

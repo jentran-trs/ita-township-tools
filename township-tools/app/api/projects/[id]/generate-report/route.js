@@ -275,32 +275,26 @@ export async function POST(request, { params }) {
         const parsedCards = parseCardsFromContent(section.content);
         const textContent = getTextContent(section.content);
 
-        // Count total elements to determine sizing tier
-        const totalElements = stats.length + images.length + parsedCards.length + (textContent ? 1 : 0) + (section.chart_link ? 1 : 0);
+        // Always use minimum sizes so admin can see all elements on one page
+        // Admin can then resize/rearrange as needed
+        const GAP = 10;
 
-        // Three tiers: normal (<=6), compact (7-12), dense (>12)
-        const isDense = totalElements > 12;
-        const isCompact = totalElements > 6;
-
-        // Size configurations - progressively smaller for more elements
-        const GAP = isDense ? 10 : isCompact ? 15 : 20;
-
-        // Stats sizing - smaller for crowded sections
-        const statWidth = isDense ? 160 : isCompact ? 200 : 280;
-        const statHeight = isDense ? 100 : isCompact ? 120 : 180;
-        const statsPerRow = isDense ? 5 : isCompact ? 4 : 3;
+        // Stats sizing - minimum size
+        const statWidth = 160;
+        const statHeight = 100;
+        const statsPerRow = 5;
         const statsRowHeight = statHeight + GAP;
 
-        // Image sizing - smaller for crowded sections
-        const imageWidth = isDense ? 220 : isCompact ? 280 : 400;
-        const imageHeight = isDense ? 140 : isCompact ? 180 : 250;
-        const imagesPerRow = isDense ? 4 : isCompact ? 3 : 2;
+        // Image sizing - minimum size
+        const imageWidth = 220;
+        const imageHeight = 140;
+        const imagesPerRow = 4;
         const imageRowHeight = imageHeight + GAP + 16; // Extra for caption
 
-        // Card sizing - more compact for crowded sections
-        const cardWidth = isDense ? 380 : isCompact ? 400 : 820;
-        const cardHeight = isDense ? 120 : isCompact ? 150 : 250;
-        const cardsPerRow = isDense ? 2 : isCompact ? 2 : 1;
+        // Card sizing - minimum size
+        const cardWidth = 380;
+        const cardHeight = 120;
+        const cardsPerRow = 2;
         const cardRowHeight = cardHeight + GAP;
 
         // Calculate vertical positions - all elements will be placed even if they overflow
@@ -318,7 +312,7 @@ export async function POST(request, { params }) {
 
         // Text block positioning (if any text content outside cards)
         const textBlockY = currentY;
-        const textBlockHeight = textContent ? (isDense ? 100 : isCompact ? 120 : 200) : 0;
+        const textBlockHeight = textContent ? 100 : 0;
         currentY += textBlockHeight + (textContent ? GAP : 0);
 
         // Images positioning
@@ -326,10 +320,10 @@ export async function POST(request, { params }) {
         currentY += images.length > 0 ? Math.ceil(images.length / imagesPerRow) * imageRowHeight : 0;
         currentY += images.length > 0 ? GAP : 0;
 
-        // Charts positioning - charts always go at the end, sized appropriately
+        // Charts positioning - minimum size
         const chartsStartY = currentY;
-        const chartWidth = isDense ? 500 : isCompact ? 600 : 820;
-        const chartHeight = isDense ? 200 : isCompact ? 240 : 320;
+        const chartWidth = 500;
+        const chartHeight = 200;
 
         allSections.push({
           order: section.section_order,
@@ -376,7 +370,7 @@ export async function POST(request, { params }) {
               content: textToHtml(textContent),
               posX: GAP,
               posY: textBlockY,
-              width: isDense ? 380 : isCompact ? 400 : 820,
+              width: 380,
               height: textBlockHeight,
             }] : [],
             charts: section.chart_link ? [{

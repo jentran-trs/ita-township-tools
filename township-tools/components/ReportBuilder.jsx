@@ -1426,7 +1426,7 @@ const InfoCard = ({ card, onUpdate, onDelete, onMove, targetSections, themeColor
           {/* Content - preview */}
           {card.content && (
             <p style={{
-              fontSize: '14px',
+              fontSize: '16px',
               lineHeight: 1.4,
               color: 'white',
               whiteSpace: 'pre-wrap',
@@ -1921,7 +1921,7 @@ const TextBlock = ({ textBlock, onUpdate, onDelete, onMove, targetSections, them
           <div
             className="w-full h-full p-3 overflow-hidden text-white textblock-content"
             style={{
-              fontSize: '14px',
+              fontSize: '16px',
               lineHeight: 1.6,
               fontFamily: '"Instrument Sans", sans-serif'
             }}

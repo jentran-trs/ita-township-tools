@@ -72,10 +72,10 @@ function SubmissionCard({ submission, isExpanded, onToggle, onDelete, isDeleting
             <Link
               href={`/submissions/${submission.id}`}
               onClick={(e) => e.stopPropagation()}
-              className="p-2 text-slate-400 hover:text-amber-400 hover:bg-amber-500/10 rounded-lg transition-colors"
-              title="View submission"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 rounded-lg transition-colors"
             >
               <Eye className="w-4 h-4" />
+              View
             </Link>
             <button
               onClick={handleDeleteClick}

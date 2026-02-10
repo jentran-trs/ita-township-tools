@@ -1592,8 +1592,24 @@ const StatBox = ({ stat, onUpdate, onDelete, onMove, targetSections, themeColors
   const numberFontSize = Math.min(width * 0.25, height * 0.4);
   const labelFontSize = Math.min(width * 0.06, height * 0.12, 18);
 
+  // Calculate vertical padding for centering in preview/export mode
+  // Applied directly on the outer container so html2canvas sees it
+  const previewVertPad = (() => {
+    if (editable) return 0;
+    const numberHeight = numberFontSize * 1.1;
+    const gap = stat.label ? 16 : 0;
+    const availableTextWidth = width * 0.9;
+    const charWidth = labelFontSize * 0.65;
+    const charsPerLine = Math.max(1, Math.floor(availableTextWidth / charWidth));
+    const labelLines = stat.label ? Math.ceil(stat.label.length / charsPerLine) : 0;
+    const labelHeight = labelLines * labelFontSize * 1.4;
+    const contentHeight = numberHeight + gap + labelHeight;
+    const innerHeight = height - 6; // 3px border top + bottom
+    return Math.max(0, (innerHeight - contentHeight) / 2);
+  })();
+
   return (
-    <div 
+    <div
       className={`absolute rounded-xl text-center transition-shadow ${editable ? 'group cursor-move' : ''}`}
       style={{
         backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -1603,7 +1619,15 @@ const StatBox = ({ stat, onUpdate, onDelete, onMove, targetSections, themeColors
         height: `${height}px`,
         left: `${position.x}px`,
         top: `${position.y}px`,
-        zIndex: isDragging ? 100 : 1
+        zIndex: isDragging ? 100 : 1,
+        overflow: 'hidden',
+        // In preview mode, apply centering padding directly on this container
+        ...(editable ? {} : {
+          paddingTop: `${previewVertPad}px`,
+          paddingBottom: `${previewVertPad}px`,
+          paddingLeft: '5%',
+          paddingRight: '5%',
+        })
       }}
       onMouseDown={handleDragStart}
     >
@@ -1625,7 +1649,6 @@ const StatBox = ({ stat, onUpdate, onDelete, onMove, targetSections, themeColors
         </div>
       )}
 
-      {/* Content - centered like InfoCard (no intermediate wrapper) */}
       {editable ? (
         <div style={{
           position: 'absolute',
@@ -1664,42 +1687,16 @@ const StatBox = ({ stat, onUpdate, onDelete, onMove, targetSections, themeColors
           />
         </div>
       ) : (
-        (() => {
-          // Calculate equal top/bottom padding for centering (html2canvas compatible)
-          const numberHeight = numberFontSize * 1.1;
-          const gap = stat.label ? 16 : 0;
-          const availableTextWidth = width * 0.9;
-          const charWidth = labelFontSize * 0.65;
-          const charsPerLine = Math.max(1, Math.floor(availableTextWidth / charWidth));
-          const labelLines = stat.label ? Math.ceil(stat.label.length / charsPerLine) : 0;
-          const labelHeight = labelLines * labelFontSize * 1.4;
-          const contentHeight = numberHeight + gap + labelHeight;
-          const innerHeight = height - 6; // 3px border top + bottom
-          const vertPad = Math.max(0, (innerHeight - contentHeight) / 2);
-
-          return (
-            <div style={{
-              width: '100%',
-              height: '100%',
-              boxSizing: 'border-box',
-              paddingTop: `${vertPad}px`,
-              paddingBottom: `${vertPad}px`,
-              paddingLeft: '5%',
-              paddingRight: '5%',
-              textAlign: 'center',
-              overflow: 'hidden',
-            }}>
-              <p className="font-bold" style={{ color: themeColors?.gold || '#D4B896', fontSize: `${numberFontSize}px`, lineHeight: 1.1, fontFamily: '"Instrument Sans", sans-serif', margin: 0 }}>
-                {stat.number || ''}
-              </p>
-              {stat.label && (
-                <p className="font-semibold uppercase tracking-wider px-2 text-center break-words" style={{ color: 'white', fontSize: `${labelFontSize}px`, maxWidth: '100%', wordWrap: 'break-word', fontFamily: '"Instrument Sans", sans-serif', margin: 0, marginTop: '16px' }}>
-                  {stat.label}
-                </p>
-              )}
-            </div>
-          );
-        })()
+        <>
+          <p className="font-bold" style={{ color: themeColors?.gold || '#D4B896', fontSize: `${numberFontSize}px`, lineHeight: 1.1, fontFamily: '"Instrument Sans", sans-serif', margin: 0 }}>
+            {stat.number || ''}
+          </p>
+          {stat.label && (
+            <p className="font-semibold uppercase tracking-wider px-2 text-center break-words" style={{ color: 'white', fontSize: `${labelFontSize}px`, maxWidth: '100%', wordWrap: 'break-word', fontFamily: '"Instrument Sans", sans-serif', margin: 0, marginTop: '16px' }}>
+              {stat.label}
+            </p>
+          )}
+        </>
       )}
 
       {editable && (

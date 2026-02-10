@@ -1665,7 +1665,7 @@ const StatBox = ({ stat, onUpdate, onDelete, onMove, targetSections, themeColors
         </div>
       ) : (
         (() => {
-          // Calculate explicit padding for vertical centering (reliable in html2canvas)
+          // Calculate equal top/bottom padding for centering (html2canvas compatible)
           const numberHeight = numberFontSize * 1.1;
           const gap = stat.label ? 16 : 0;
           const availableTextWidth = width * 0.9;
@@ -1675,14 +1675,19 @@ const StatBox = ({ stat, onUpdate, onDelete, onMove, targetSections, themeColors
           const labelHeight = labelLines * labelFontSize * 1.4;
           const contentHeight = numberHeight + gap + labelHeight;
           const innerHeight = height - 6; // 3px border top + bottom
-          const topPad = Math.max(0, (innerHeight - contentHeight) / 2);
+          const vertPad = Math.max(0, (innerHeight - contentHeight) / 2);
 
           return (
             <div style={{
-              paddingTop: `${topPad}px`,
-              textAlign: 'center',
+              width: '100%',
+              height: '100%',
+              boxSizing: 'border-box',
+              paddingTop: `${vertPad}px`,
+              paddingBottom: `${vertPad}px`,
               paddingLeft: '5%',
               paddingRight: '5%',
+              textAlign: 'center',
+              overflow: 'hidden',
             }}>
               <p className="font-bold" style={{ color: themeColors?.gold || '#D4B896', fontSize: `${numberFontSize}px`, lineHeight: 1.1, fontFamily: '"Instrument Sans", sans-serif', margin: 0 }}>
                 {stat.number || ''}

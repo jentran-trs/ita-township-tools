@@ -308,8 +308,10 @@ function AddElementDropdown({ onAdd, imageCount, chartCount, textCount, cardCoun
                 className="w-full px-4 py-3 flex items-center gap-3 text-left transition-colors hover:bg-slate-50 text-slate-700"
               >
                 <option.icon className="w-5 h-5 flex-shrink-0" />
-                <span className="flex-1">{option.label}</span>
-                <span className="text-xs text-slate-400 whitespace-nowrap">{option.count}/{option.recommended}</span>
+                <div className="flex-1">
+                  <span>{option.label}</span>
+                  <p className="text-xs text-slate-400 whitespace-nowrap">{option.count} added · {option.recommended} recommended</p>
+                </div>
               </button>
             ))}
           </div>

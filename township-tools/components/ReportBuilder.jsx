@@ -1664,24 +1664,37 @@ const StatBox = ({ stat, onUpdate, onDelete, onMove, targetSections, themeColors
           />
         </div>
       ) : (
-        <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '0',
-          right: '0',
-          transform: 'translateY(-50%)',
-          textAlign: 'center',
-          padding: '0 5%',
-        }}>
-          <p className="font-bold" style={{ color: themeColors?.gold || '#D4B896', fontSize: `${numberFontSize}px`, lineHeight: 1.1, fontFamily: '"Instrument Sans", sans-serif', margin: 0 }}>
-            {stat.number || ''}
-          </p>
-          {stat.label && (
-            <p className="font-semibold uppercase tracking-wider px-2 text-center break-words" style={{ color: 'white', fontSize: `${labelFontSize}px`, maxWidth: '100%', wordWrap: 'break-word', fontFamily: '"Instrument Sans", sans-serif', margin: 0, marginTop: '16px' }}>
-              {stat.label}
-            </p>
-          )}
-        </div>
+        (() => {
+          // Calculate explicit padding for vertical centering (reliable in html2canvas)
+          const numberHeight = numberFontSize * 1.1;
+          const gap = stat.label ? 16 : 0;
+          const availableTextWidth = width * 0.9;
+          const charWidth = labelFontSize * 0.65;
+          const charsPerLine = Math.max(1, Math.floor(availableTextWidth / charWidth));
+          const labelLines = stat.label ? Math.ceil(stat.label.length / charsPerLine) : 0;
+          const labelHeight = labelLines * labelFontSize * 1.4;
+          const contentHeight = numberHeight + gap + labelHeight;
+          const innerHeight = height - 6; // 3px border top + bottom
+          const topPad = Math.max(0, (innerHeight - contentHeight) / 2);
+
+          return (
+            <div style={{
+              paddingTop: `${topPad}px`,
+              textAlign: 'center',
+              paddingLeft: '5%',
+              paddingRight: '5%',
+            }}>
+              <p className="font-bold" style={{ color: themeColors?.gold || '#D4B896', fontSize: `${numberFontSize}px`, lineHeight: 1.1, fontFamily: '"Instrument Sans", sans-serif', margin: 0 }}>
+                {stat.number || ''}
+              </p>
+              {stat.label && (
+                <p className="font-semibold uppercase tracking-wider px-2 text-center break-words" style={{ color: 'white', fontSize: `${labelFontSize}px`, maxWidth: '100%', wordWrap: 'break-word', fontFamily: '"Instrument Sans", sans-serif', margin: 0, marginTop: '16px' }}>
+                  {stat.label}
+                </p>
+              )}
+            </div>
+          );
+        })()
       )}
 
       {editable && (

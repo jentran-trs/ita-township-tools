@@ -364,8 +364,8 @@ export async function POST(request, { params }) {
               width: cardWidth,
               height: cardHeight,
             })),
-            // Add text content as textBlocks (not cards)
-            textBlocks: textContent ? [{
+            // Add text content as textBlocks (not cards) - only if there's actual content
+            textBlocks: textContent && textContent.trim() ? [{
               id: `text-${section.id}`,
               content: textToHtml(textContent),
               posX: GAP,

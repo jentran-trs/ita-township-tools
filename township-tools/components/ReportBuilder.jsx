@@ -1592,25 +1592,9 @@ const StatBox = ({ stat, onUpdate, onDelete, onMove, targetSections, themeColors
   const numberFontSize = Math.min(width * 0.25, height * 0.4);
   const labelFontSize = Math.min(width * 0.06, height * 0.12, 18);
 
-  // Calculate vertical padding for centering in preview/export mode
-  // Applied directly on the outer container so html2canvas sees it
-  const previewVertPad = (() => {
-    if (editable) return 0;
-    const numberHeight = numberFontSize * 1.1;
-    const gap = stat.label ? 16 : 0;
-    const availableTextWidth = width * 0.9;
-    const charWidth = labelFontSize * 0.65;
-    const charsPerLine = Math.max(1, Math.floor(availableTextWidth / charWidth));
-    const labelLines = stat.label ? Math.ceil(stat.label.length / charsPerLine) : 0;
-    const labelHeight = labelLines * labelFontSize * 1.4;
-    const contentHeight = numberHeight + gap + labelHeight;
-    const innerHeight = height - 6; // 3px border top + bottom
-    return Math.max(0, (innerHeight - contentHeight) / 2);
-  })();
-
   return (
     <div
-      className={`absolute rounded-xl text-center transition-shadow ${editable ? 'group cursor-move' : ''}`}
+      className={`absolute rounded-xl flex flex-col items-center justify-center text-center transition-shadow ${editable ? 'group cursor-move' : ''}`}
       style={{
         backgroundColor: 'rgba(255, 255, 255, 0.1)',
         border: `3px solid ${themeColors?.gold || '#D4B896'}`,
@@ -1619,15 +1603,7 @@ const StatBox = ({ stat, onUpdate, onDelete, onMove, targetSections, themeColors
         height: `${height}px`,
         left: `${position.x}px`,
         top: `${position.y}px`,
-        zIndex: isDragging ? 100 : 1,
-        overflow: 'hidden',
-        // In preview mode, apply centering padding directly on this container
-        ...(editable ? {} : {
-          paddingTop: `${previewVertPad}px`,
-          paddingBottom: `${previewVertPad}px`,
-          paddingLeft: '5%',
-          paddingRight: '5%',
-        })
+        zIndex: isDragging ? 100 : 1
       }}
       onMouseDown={handleDragStart}
     >
@@ -1649,54 +1625,48 @@ const StatBox = ({ stat, onUpdate, onDelete, onMove, targetSections, themeColors
         </div>
       )}
 
+      {/* Number */}
       {editable ? (
-        <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '0',
-          right: '0',
-          transform: 'translateY(-50%)',
-          textAlign: 'center',
-          padding: '0 5%',
-        }}>
-          <input
-            type="text"
-            value={stat.number || ''}
-            onChange={(e) => onUpdate({ ...stat, number: e.target.value })}
-            placeholder="0"
-            className="font-bold bg-transparent border-none text-center w-full focus:outline-none placeholder-white/50"
-            style={{ color: themeColors?.gold || '#D4B896', fontSize: `${numberFontSize}px`, lineHeight: 1.1, fontFamily: '"Instrument Sans", sans-serif' }}
-            onMouseDown={(e) => e.stopPropagation()}
-          />
-          <textarea
-            value={stat.label || ''}
-            onChange={(e) => {
-              onUpdate({ ...stat, label: e.target.value });
-              e.target.style.height = 'auto';
-              e.target.style.height = Math.min(e.target.scrollHeight, height * 0.4) + 'px';
-            }}
-            placeholder="LABEL"
-            className="font-semibold uppercase tracking-wider bg-transparent border-none text-center w-full focus:outline-none placeholder-white/50 mt-2 px-2 resize-none overflow-hidden"
-            style={{ color: 'white', fontSize: `${labelFontSize}px`, minHeight: `${labelFontSize + 8}px`, maxHeight: `${height * 0.4}px`, fontFamily: '"Instrument Sans", sans-serif' }}
-            onMouseDown={(e) => e.stopPropagation()}
-            rows={1}
-            onFocus={(e) => {
-              e.target.style.height = 'auto';
-              e.target.style.height = Math.min(e.target.scrollHeight, height * 0.4) + 'px';
-            }}
-          />
-        </div>
+        <input
+          type="text"
+          value={stat.number || ''}
+          onChange={(e) => onUpdate({ ...stat, number: e.target.value })}
+          placeholder="0"
+          className="font-bold bg-transparent border-none text-center w-full focus:outline-none placeholder-white/50"
+          style={{ color: themeColors?.gold || '#D4B896', fontSize: `${numberFontSize}px`, lineHeight: 1.1, fontFamily: '"Instrument Sans", sans-serif' }}
+          onMouseDown={(e) => e.stopPropagation()}
+        />
       ) : (
-        <>
-          <p className="font-bold" style={{ color: themeColors?.gold || '#D4B896', fontSize: `${numberFontSize}px`, lineHeight: 1.1, fontFamily: '"Instrument Sans", sans-serif', margin: 0 }}>
-            {stat.number || ''}
+        <p className="font-bold w-full" style={{ color: themeColors?.gold || '#D4B896', fontSize: `${numberFontSize}px`, lineHeight: 1.1, textAlign: 'center', fontFamily: '"Instrument Sans", sans-serif' }}>
+          {stat.number || ''}
+        </p>
+      )}
+
+      {/* Label */}
+      {editable ? (
+        <textarea
+          value={stat.label || ''}
+          onChange={(e) => {
+            onUpdate({ ...stat, label: e.target.value });
+            e.target.style.height = 'auto';
+            e.target.style.height = Math.min(e.target.scrollHeight, height * 0.4) + 'px';
+          }}
+          placeholder="LABEL"
+          className="font-semibold uppercase tracking-wider bg-transparent border-none text-center w-full focus:outline-none placeholder-white/50 mt-2 px-2 resize-none overflow-hidden"
+          style={{ color: 'white', fontSize: `${labelFontSize}px`, minHeight: `${labelFontSize + 8}px`, maxHeight: `${height * 0.4}px`, fontFamily: '"Instrument Sans", sans-serif' }}
+          onMouseDown={(e) => e.stopPropagation()}
+          rows={1}
+          onFocus={(e) => {
+            e.target.style.height = 'auto';
+            e.target.style.height = Math.min(e.target.scrollHeight, height * 0.4) + 'px';
+          }}
+        />
+      ) : (
+        stat.label && (
+          <p className="font-semibold uppercase tracking-wider mt-2 px-2 text-center w-full break-words" style={{ color: 'white', fontSize: `${labelFontSize}px`, wordWrap: 'break-word', fontFamily: '"Instrument Sans", sans-serif' }}>
+            {stat.label}
           </p>
-          {stat.label && (
-            <p className="font-semibold uppercase tracking-wider px-2 text-center break-words" style={{ color: 'white', fontSize: `${labelFontSize}px`, maxWidth: '100%', wordWrap: 'break-word', fontFamily: '"Instrument Sans", sans-serif', margin: 0, marginTop: '16px' }}>
-              {stat.label}
-            </p>
-          )}
-        </>
+        )
       )}
 
       {editable && (

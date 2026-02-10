@@ -1,6 +1,6 @@
 "use client";
 
-import { ClipboardCheck, Check, Image, FileText, BarChart3, Upload } from 'lucide-react';
+import { ClipboardCheck, Check, Image, FileText, BarChart3, Upload, Info } from 'lucide-react';
 import FileUpload from './FileUpload';
 
 export default function ReviewSection({ formData, reviewData, onChange, onUpdateCover, existingLogoUrl }) {
@@ -37,6 +37,14 @@ export default function ReviewSection({ formData, reviewData, onChange, onUpdate
         <div>
           <h2 className="text-xl font-bold text-slate-800">Review & Submit</h2>
           <p className="text-sm text-slate-500">Verify your information before submitting</p>
+        </div>
+      </div>
+
+      {/* Info Note */}
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex gap-3">
+        <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+        <div className="text-sm text-blue-800">
+          <strong>You can edit your submission anytime.</strong> After submitting, you can return to this form to add more sections, upload additional assets, or make changes until you confirm that everything is ready for design.
         </div>
       </div>
 

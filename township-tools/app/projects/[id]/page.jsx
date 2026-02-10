@@ -340,14 +340,18 @@ export default function ProjectDetailPage() {
   const updateProjectStatus = async (newStatus) => {
     setUpdatingStatus(true);
     try {
+      const isLocking = newStatus === 'designing';
       const response = await fetch(`/api/projects/${params.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({
+          status: newStatus,
+          allow_public_submissions: !isLocking,
+        }),
       });
 
       if (response.ok) {
-        setProject({ ...project, status: newStatus, derived_status: newStatus });
+        setProject({ ...project, status: newStatus, derived_status: newStatus, allow_public_submissions: !isLocking });
       }
     } catch (error) {
       console.error('Error updating status:', error);

@@ -17,6 +17,7 @@ import {
   Pencil,
   Send,
   Eye,
+  Lock,
 } from 'lucide-react';
 
 export default function ProjectsPage() {
@@ -258,12 +259,9 @@ export default function ProjectsPage() {
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <h3 className="text-lg font-semibold text-white">{project.name}</h3>
-                        {/* Show status to admin only */}
-                        {isAdmin && (
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(project.derived_status)}`}>
-                            {getStatusLabel(project.derived_status)}
-                          </span>
-                        )}
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(project.derived_status)}`}>
+                          {getStatusLabel(project.derived_status)}
+                        </span>
                       </div>
                       <p className="text-slate-400 text-sm mb-3">{project.organization_name}</p>
                       {project.description && isAdmin && (
@@ -291,17 +289,18 @@ export default function ProjectsPage() {
                       {isMember && (
                         <>
                           {/* If user has submitted, show View Submission button */}
-                          {userSubmission ? (
+                          {userSubmission && (
+                            <button
+                              onClick={() => router.push(`/submissions/${userSubmission.id}`)}
+                              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors text-sm font-medium"
+                            >
+                              <Eye className="w-4 h-4" />
+                              View Submission
+                            </button>
+                          )}
+                          {canEditSubmission ? (
                             <>
-                              <button
-                                onClick={() => router.push(`/submissions/${userSubmission.id}`)}
-                                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors text-sm font-medium"
-                              >
-                                <Eye className="w-4 h-4" />
-                                View Submission
-                              </button>
-                              {/* Show Edit button if status allows */}
-                              {canEditSubmission && (
+                              {userSubmission ? (
                                 <button
                                   onClick={() => router.push(`/contribute/${project.share_id}?edit=${userSubmission.id}`)}
                                   className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-slate-900 rounded-lg hover:bg-amber-400 transition-colors text-sm font-medium"
@@ -309,34 +308,38 @@ export default function ProjectsPage() {
                                   <Pencil className="w-4 h-4" />
                                   Edit Submission
                                 </button>
+                              ) : (
+                                <button
+                                  onClick={() => router.push(`/contribute/${project.share_id}`)}
+                                  className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-slate-900 rounded-lg hover:bg-amber-400 transition-colors text-sm font-medium"
+                                >
+                                  <Send className="w-4 h-4" />
+                                  Submit Assets
+                                </button>
                               )}
+                              <button
+                                onClick={(e) => copyFormLink(e, project.share_id)}
+                                className="flex items-center gap-2 px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-500 transition-colors text-sm"
+                              >
+                                {copiedId === project.share_id ? (
+                                  <>
+                                    <Check className="w-4 h-4 text-green-400" />
+                                    Copied!
+                                  </>
+                                ) : (
+                                  <>
+                                    <Link2 className="w-4 h-4" />
+                                    Copy Form Link
+                                  </>
+                                )}
+                              </button>
                             </>
                           ) : (
-                            /* No submission yet - show Submit Assets */
-                            <button
-                              onClick={() => router.push(`/contribute/${project.share_id}`)}
-                              className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-slate-900 rounded-lg hover:bg-amber-400 transition-colors text-sm font-medium"
-                            >
-                              <Send className="w-4 h-4" />
-                              Submit Assets
-                            </button>
+                            <div className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-slate-400 rounded-lg text-sm">
+                              <Lock className="w-4 h-4" />
+                              Submissions locked for designing
+                            </div>
                           )}
-                          <button
-                            onClick={(e) => copyFormLink(e, project.share_id)}
-                            className="flex items-center gap-2 px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-500 transition-colors text-sm"
-                          >
-                            {copiedId === project.share_id ? (
-                              <>
-                                <Check className="w-4 h-4 text-green-400" />
-                                Copied!
-                              </>
-                            ) : (
-                              <>
-                                <Link2 className="w-4 h-4" />
-                                Copy Form Link
-                              </>
-                            )}
-                          </button>
                         </>
                       )}
 

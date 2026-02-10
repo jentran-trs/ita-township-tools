@@ -70,27 +70,31 @@ export async function PATCH(request, { params }) {
     const { id } = await params;
     const body = await request.json();
 
-    // Use orgId from auth, fallback to request body, allow without auth for now
+    // Extract orgId from body so it doesn't get spread into the Supabase update
     const { orgId: bodyOrgId, ...updateFields } = body;
     const orgId = authData?.orgId || bodyOrgId;
 
     const supabase = createServerSupabaseClient();
 
-    const { data: project, error } = await supabase
+    // Build query - only filter by org_id if we have one
+    let query = supabase
       .from('report_projects')
       .update({
         ...updateFields,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', id)
-      .eq('org_id', orgId)
-      .select()
-      .single();
+      .eq('id', id);
+
+    if (orgId) {
+      query = query.eq('org_id', orgId);
+    }
+
+    const { data: project, error } = await query.select().single();
 
     if (error) {
-      console.error('Error updating project:', error);
+      console.error('Error updating project:', error, { id, orgId, updateFields });
       return NextResponse.json(
-        { error: 'Failed to update project' },
+        { error: 'Failed to update project', details: error.message },
         { status: 500 }
       );
     }
@@ -100,7 +104,7 @@ export async function PATCH(request, { params }) {
   } catch (error) {
     console.error('Server error:', error);
     return NextResponse.json(
-      { error: 'Server error' },
+      { error: 'Server error', details: error.message },
       { status: 500 }
     );
   }

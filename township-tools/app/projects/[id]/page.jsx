@@ -551,6 +551,27 @@ export default function ProjectDetailPage() {
             </div>
           </div>
 
+          {/* Description */}
+          {editingField === 'description' ? (
+            <textarea
+              autoFocus
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              onBlur={saveField}
+              onKeyDown={(e) => { if (e.key === 'Escape') setEditingField(null); }}
+              rows={3}
+              className="w-full text-sm text-slate-300 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 outline-none focus:border-amber-500 mb-4 resize-none"
+            />
+          ) : (
+            <p
+              className="text-sm text-slate-400 mb-4 cursor-pointer hover:text-amber-400 transition-colors"
+              onClick={() => startEditing('description')}
+              title="Click to edit description"
+            >
+              {project.description || 'Add a project description...'}
+            </p>
+          )}
+
           {/* Stats */}
           <div className="grid grid-cols-3 gap-4 mb-4">
             <div className="bg-slate-700/50 rounded-lg p-3">

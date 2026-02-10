@@ -290,7 +290,7 @@ export default function ProjectsPage() {
                         )}
                       </div>
                       <p className="text-slate-400 text-sm mb-3">{project.organization_name}</p>
-                      {project.description && isAdmin && (
+                      {project.description && (
                         <p className="text-slate-500 text-sm mb-3">{project.description}</p>
                       )}
                       {/* Show stats to admin only */}

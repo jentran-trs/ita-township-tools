@@ -62,6 +62,7 @@ function SubmissionCard({ submission, isExpanded, onToggle, onDelete, isDeleting
             <div>
               <p className="font-medium text-white">{submission.submitter_name}</p>
               <p className="text-sm text-slate-400">{submission.submitter_email}</p>
+              <p className="text-xs text-slate-500 font-mono">{submission.id}</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -546,6 +547,7 @@ export default function ProjectDetailPage() {
                   {project.organization_name}
                 </p>
               )}
+              <p className="text-xs text-slate-500 font-mono mt-0.5">{project.id}</p>
             </div>
           </div>
 

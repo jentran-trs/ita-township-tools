@@ -1574,7 +1574,11 @@ const StatBox = ({ stat, onUpdate, onDelete, onMove, targetSections, themeColors
   return (
     <div 
       className={`absolute rounded-xl flex flex-col items-center justify-center text-center transition-shadow ${editable ? 'group cursor-move' : ''}`}
-      style={{ 
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
         backgroundColor: 'rgba(255, 255, 255, 0.1)',
         border: `3px solid ${themeColors?.gold || '#D4B896'}`,
         backdropFilter: 'blur(10px)',
@@ -1642,7 +1646,7 @@ const StatBox = ({ stat, onUpdate, onDelete, onMove, targetSections, themeColors
         />
       ) : (
         stat.label && (
-          <p className="font-semibold uppercase tracking-wider mt-2 px-2 text-center break-words" style={{ color: 'white', fontSize: `${labelFontSize}px`, maxWidth: '100%', wordWrap: 'break-word', fontFamily: '"Instrument Sans", sans-serif' }}>
+          <p className="font-semibold uppercase tracking-wider mt-4 px-2 text-center break-words" style={{ color: 'white', fontSize: `${labelFontSize}px`, maxWidth: '100%', wordWrap: 'break-word', fontFamily: '"Instrument Sans", sans-serif' }}>
             {stat.label}
           </p>
         )
@@ -1928,6 +1932,9 @@ const TextBlock = ({ textBlock, onUpdate, onDelete, onMove, targetSections, them
           <div
             className="w-full h-full p-3 overflow-hidden text-white textblock-content"
             style={{
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
               fontSize: '16px',
               lineHeight: 1.6,
               fontFamily: '"Instrument Sans", sans-serif'
@@ -2371,11 +2378,11 @@ const ChartContainer = ({ chart, onUpdate, onDelete, onMove, targetSections, the
         )}
 
         {chart.chartImage ? (
-          <div className="w-full h-full relative px-6">
+          <div className="w-full h-full relative px-6" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <img
               src={chart.chartImage}
               alt="Chart"
-              className="w-full h-full object-contain"
+              style={{ maxWidth: '100%', maxHeight: '100%', width: 'auto', height: 'auto' }}
             />
             {/* Loading overlay when replacing chart */}
             {isLoading && (

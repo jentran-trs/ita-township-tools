@@ -1625,15 +1625,18 @@ const StatBox = ({ stat, onUpdate, onDelete, onMove, targetSections, themeColors
         </div>
       )}
 
-      {/* Content wrapper - table centering for html2canvas compatibility */}
+      {/* Content wrapper - absolute centering for html2canvas compatibility */}
       <div style={{
-        display: 'table',
+        position: 'relative',
         width: '100%',
         height: '100%',
       }}>
         <div style={{
-          display: 'table-cell',
-          verticalAlign: 'middle',
+          position: 'absolute',
+          top: '50%',
+          left: '0',
+          right: '0',
+          transform: 'translateY(-50%)',
           textAlign: 'center',
           padding: '0 5%',
         }}>

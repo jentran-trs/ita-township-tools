@@ -1,6 +1,6 @@
 "use client";
 
-import { ClipboardCheck, Check, Image, FileText, BarChart3, Upload, Info } from 'lucide-react';
+import { ClipboardCheck, Check, Upload, Info } from 'lucide-react';
 import FileUpload from './FileUpload';
 
 export default function ReviewSection({ formData, reviewData, onChange, onUpdateCover, existingLogoUrl }) {
@@ -13,20 +13,6 @@ export default function ReviewSection({ formData, reviewData, onChange, onUpdate
   };
 
   const { cover, letter, footer, sections } = formData;
-
-  // Count totals
-  const totalImages = sections.reduce((acc, s) => {
-    const sectionImages = (s.images || []).filter(img => img.file?.file).length;
-    return acc + sectionImages;
-  }, 0) +
-    (letter.headshot ? 1 : 0) +
-    (letter.letterImage1 ? 1 : 0) +
-    (letter.letterImage2 ? 1 : 0) +
-    (cover.logo ? 1 : 0);
-
-  const totalStats = sections.reduce((acc, s) => acc + (s.stats?.length || 0), 0);
-  const totalTextBlocks = sections.reduce((acc, s) => acc + (s.textBlocks?.length || 0), 0);
-  const totalCards = sections.reduce((acc, s) => acc + (s.contentCards?.length || 0), 0);
 
   return (
     <div className="space-y-6">
@@ -75,31 +61,6 @@ export default function ReviewSection({ formData, reviewData, onChange, onUpdate
         <p className="mt-2 text-xs text-amber-700">
           <strong>Important:</strong> The colors from your logo will be used to generate your report's color theme. For best results, use a logo with a transparent background.
         </p>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid sm:grid-cols-3 gap-4">
-        <div className="bg-slate-50 rounded-xl p-4">
-          <div className="flex items-center gap-2 text-slate-600 mb-1">
-            <Image className="w-4 h-4" />
-            <span className="text-sm font-medium">Images</span>
-          </div>
-          <p className="text-2xl font-bold text-slate-800">{totalImages}</p>
-        </div>
-        <div className="bg-slate-50 rounded-xl p-4">
-          <div className="flex items-center gap-2 text-slate-600 mb-1">
-            <FileText className="w-4 h-4" />
-            <span className="text-sm font-medium">Sections</span>
-          </div>
-          <p className="text-2xl font-bold text-slate-800">{sections.length}</p>
-        </div>
-        <div className="bg-slate-50 rounded-xl p-4">
-          <div className="flex items-center gap-2 text-slate-600 mb-1">
-            <BarChart3 className="w-4 h-4" />
-            <span className="text-sm font-medium">Stats</span>
-          </div>
-          <p className="text-2xl font-bold text-slate-800">{totalStats}</p>
-        </div>
       </div>
 
       {/* Submission Summary */}

@@ -267,11 +267,14 @@ function AddElementDropdown({ onAdd, imageCount, chartCount, textCount, cardCoun
   useEffect(() => {
     if (isOpen && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
+      const dropdownWidth = 280;
+      const buttonCenter = rect.left + rect.width / 2;
+      const dropdownLeft = buttonCenter - dropdownWidth / 2;
       setDropdownStyle({
         position: 'fixed',
         bottom: window.innerHeight - rect.top + 8,
-        left: rect.left,
-        width: rect.width,
+        left: Math.max(8, dropdownLeft), // Ensure it doesn't go off-screen
+        width: dropdownWidth,
       });
     }
   }, [isOpen]);
@@ -304,11 +307,9 @@ function AddElementDropdown({ onAdd, imageCount, chartCount, textCount, cardCoun
                 }}
                 className="w-full px-4 py-3 flex items-center gap-3 text-left transition-colors hover:bg-slate-50 text-slate-700"
               >
-                <option.icon className="w-5 h-5" />
-                <div className="flex-1">
-                  <span>{option.label}</span>
-                  <p className="text-xs text-slate-400">{option.count} added · {option.recommended} recommended</p>
-                </div>
+                <option.icon className="w-5 h-5 flex-shrink-0" />
+                <span className="flex-1">{option.label}</span>
+                <span className="text-xs text-slate-400 whitespace-nowrap">{option.count}/{option.recommended}</span>
               </button>
             ))}
           </div>

@@ -277,12 +277,12 @@ function AddElementDropdown({ onAdd, imageCount, chartCount, textCount, cardCoun
   }, [isOpen]);
 
   return (
-    <div className="relative">
+    <div className="relative flex justify-center">
       <button
         ref={buttonRef}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="px-6 py-3 bg-[#D4B896] text-[#1e3a5f] rounded-xl hover:bg-[#c4a886] transition-colors flex items-center justify-center gap-2 font-medium shadow-md"
+        className="px-12 py-3 bg-[#D4B896] text-[#1e3a5f] rounded-xl hover:bg-[#c4a886] transition-colors flex items-center justify-center gap-2 font-medium shadow-md"
       >
         <Plus className="w-4 h-4" />
         Add Element

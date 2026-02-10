@@ -1016,27 +1016,29 @@ const ImageFrame = ({ imageData, onUpdate, onDelete, onMove, targetSections, the
         {imageData.src ? (
           <>
             <div className={`absolute inset-0 overflow-hidden ${editable ? 'pointer-events-none' : ''}`}>
-              {/* Hidden img for dimension measurement */}
-              <img
-                src={imageData.src}
-                alt=""
-                onLoad={handleImageLoad}
-                style={{ position: 'absolute', width: 0, height: 0, opacity: 0, pointerEvents: 'none' }}
-              />
-              {/* Visible image using background-image for html2canvas compatibility */}
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                  backgroundImage: `url(${imageData.src})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: `center calc(50% + ${imageOffsetY}px)`,
-                  backgroundRepeat: 'no-repeat',
-                }}
-              />
+              {(() => {
+                // Calculate cover-style sizing without object-fit (html2canvas compatible)
+                const hasValidDimensions = imageDimensions.width > 0 && imageDimensions.height > 0;
+                const imgAspect = hasValidDimensions ? imageDimensions.width / imageDimensions.height : 1;
+                const frameAspect = frameWidth / frameHeight;
+                // "Cover" = fill the smaller dimension, overflow the larger
+                const fillWidth = !hasValidDimensions || imgAspect >= frameAspect;
+                return (
+                  <img
+                    src={imageData.src}
+                    alt=""
+                    className="absolute select-none pointer-events-none"
+                    style={{
+                      ...(fillWidth
+                        ? { width: '100%', height: 'auto', left: '0', top: '50%', transform: `translateY(calc(-50% + ${imageOffsetY}px))` }
+                        : { height: '100%', width: 'auto', top: '50%', left: '50%', transform: `translate(-50%, calc(-50% + ${imageOffsetY}px))` }
+                      ),
+                    }}
+                    onLoad={handleImageLoad}
+                    draggable={false}
+                  />
+                );
+              })()}
             </div>
             {/* Loading overlay when replacing image */}
             {isLoading && (
@@ -1611,58 +1613,62 @@ const StatBox = ({ stat, onUpdate, onDelete, onMove, targetSections, themeColors
         </div>
       )}
 
-      {/* Content wrapper - absolute centering for html2canvas compatibility */}
+      {/* Content wrapper - table centering for html2canvas compatibility */}
       <div style={{
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        textAlign: 'center',
-        width: '90%',
+        display: 'table',
+        width: '100%',
+        height: '100%',
       }}>
-        {/* Number */}
-        {editable ? (
-          <input
-            type="text"
-            value={stat.number || ''}
-            onChange={(e) => onUpdate({ ...stat, number: e.target.value })}
-            placeholder="0"
-            className="font-bold bg-transparent border-none text-center w-full focus:outline-none placeholder-white/50"
-            style={{ color: themeColors?.gold || '#D4B896', fontSize: `${numberFontSize}px`, lineHeight: 1.1, fontFamily: '"Instrument Sans", sans-serif' }}
-            onMouseDown={(e) => e.stopPropagation()}
-          />
-        ) : (
-          <p className="font-bold" style={{ color: themeColors?.gold || '#D4B896', fontSize: `${numberFontSize}px`, lineHeight: 1.1, fontFamily: '"Instrument Sans", sans-serif', margin: 0 }}>
-            {stat.number || ''}
-          </p>
-        )}
-
-        {/* Label */}
-        {editable ? (
-          <textarea
-            value={stat.label || ''}
-            onChange={(e) => {
-              onUpdate({ ...stat, label: e.target.value });
-              e.target.style.height = 'auto';
-              e.target.style.height = Math.min(e.target.scrollHeight, height * 0.4) + 'px';
-            }}
-            placeholder="LABEL"
-            className="font-semibold uppercase tracking-wider bg-transparent border-none text-center w-full focus:outline-none placeholder-white/50 mt-2 px-2 resize-none overflow-hidden"
-            style={{ color: 'white', fontSize: `${labelFontSize}px`, minHeight: `${labelFontSize + 8}px`, maxHeight: `${height * 0.4}px`, fontFamily: '"Instrument Sans", sans-serif' }}
-            onMouseDown={(e) => e.stopPropagation()}
-            rows={1}
-            onFocus={(e) => {
-              e.target.style.height = 'auto';
-              e.target.style.height = Math.min(e.target.scrollHeight, height * 0.4) + 'px';
-            }}
-          />
-        ) : (
-          stat.label && (
-            <p className="font-semibold uppercase tracking-wider px-2 text-center break-words" style={{ color: 'white', fontSize: `${labelFontSize}px`, maxWidth: '100%', wordWrap: 'break-word', fontFamily: '"Instrument Sans", sans-serif', margin: 0, marginTop: '16px' }}>
-              {stat.label}
+        <div style={{
+          display: 'table-cell',
+          verticalAlign: 'middle',
+          textAlign: 'center',
+          padding: '0 5%',
+        }}>
+          {/* Number */}
+          {editable ? (
+            <input
+              type="text"
+              value={stat.number || ''}
+              onChange={(e) => onUpdate({ ...stat, number: e.target.value })}
+              placeholder="0"
+              className="font-bold bg-transparent border-none text-center w-full focus:outline-none placeholder-white/50"
+              style={{ color: themeColors?.gold || '#D4B896', fontSize: `${numberFontSize}px`, lineHeight: 1.1, fontFamily: '"Instrument Sans", sans-serif' }}
+              onMouseDown={(e) => e.stopPropagation()}
+            />
+          ) : (
+            <p className="font-bold" style={{ color: themeColors?.gold || '#D4B896', fontSize: `${numberFontSize}px`, lineHeight: 1.1, fontFamily: '"Instrument Sans", sans-serif', margin: 0 }}>
+              {stat.number || ''}
             </p>
-          )
-        )}
+          )}
+
+          {/* Label */}
+          {editable ? (
+            <textarea
+              value={stat.label || ''}
+              onChange={(e) => {
+                onUpdate({ ...stat, label: e.target.value });
+                e.target.style.height = 'auto';
+                e.target.style.height = Math.min(e.target.scrollHeight, height * 0.4) + 'px';
+              }}
+              placeholder="LABEL"
+              className="font-semibold uppercase tracking-wider bg-transparent border-none text-center w-full focus:outline-none placeholder-white/50 mt-2 px-2 resize-none overflow-hidden"
+              style={{ color: 'white', fontSize: `${labelFontSize}px`, minHeight: `${labelFontSize + 8}px`, maxHeight: `${height * 0.4}px`, fontFamily: '"Instrument Sans", sans-serif' }}
+              onMouseDown={(e) => e.stopPropagation()}
+              rows={1}
+              onFocus={(e) => {
+                e.target.style.height = 'auto';
+                e.target.style.height = Math.min(e.target.scrollHeight, height * 0.4) + 'px';
+              }}
+            />
+          ) : (
+            stat.label && (
+              <p className="font-semibold uppercase tracking-wider px-2 text-center break-words" style={{ color: 'white', fontSize: `${labelFontSize}px`, maxWidth: '100%', wordWrap: 'break-word', fontFamily: '"Instrument Sans", sans-serif', margin: 0, marginTop: '16px' }}>
+                {stat.label}
+              </p>
+            )
+          )}
+        </div>
       </div>
 
       {editable && (
@@ -1945,7 +1951,7 @@ const TextBlock = ({ textBlock, onUpdate, onDelete, onMove, targetSections, them
           <div
             className="w-full h-full overflow-hidden text-white textblock-content"
             style={{
-              position: 'relative',
+              display: 'table',
               fontSize: '16px',
               lineHeight: 1.6,
               fontFamily: '"Instrument Sans", sans-serif'
@@ -1953,11 +1959,8 @@ const TextBlock = ({ textBlock, onUpdate, onDelete, onMove, targetSections, them
           >
             <div
               style={{
-                position: 'absolute',
-                top: '50%',
-                left: 0,
-                right: 0,
-                transform: 'translateY(-50%)',
+                display: 'table-cell',
+                verticalAlign: 'middle',
                 padding: '12px',
               }}
               dangerouslySetInnerHTML={{ __html: textBlock.content || '' }}

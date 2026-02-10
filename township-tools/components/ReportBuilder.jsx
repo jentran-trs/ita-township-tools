@@ -1209,8 +1209,9 @@ const ImageFrame = ({ imageData, onUpdate, onDelete, onMove, targetSections, the
       {/* Caption display - only in preview mode */}
       {!editable && imageData.caption && (
         <p
-          className="mt-2 text-sm text-center italic font-medium"
+          className="mt-2 text-center italic font-medium"
           style={{
+            fontSize: '12px',
             width: `${frameWidth}px`,
             maxWidth: `${frameWidth}px`,
             color: lightBackground ? (themeColors?.primary || '#2B3E50') : (themeColors?.gold || '#D4B896'),
@@ -1402,7 +1403,7 @@ const InfoCard = ({ card, onUpdate, onDelete, onMove, targetSections, themeColor
           />
         </div>
       ) : (
-        <div style={{ margin: 0, padding: 0 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', margin: 0, padding: 0 }}>
           {/* Title - preview */}
           {card.title && (
             <h3 style={{
@@ -1416,7 +1417,8 @@ const InfoCard = ({ card, onUpdate, onDelete, onMove, targetSections, themeColor
               margin: 0,
               marginBottom: '8px',
               padding: 0,
-              display: 'block'
+              display: 'block',
+              flexShrink: 0
             }}>
               {card.title.trim()}
             </h3>
@@ -1424,14 +1426,15 @@ const InfoCard = ({ card, onUpdate, onDelete, onMove, targetSections, themeColor
           {/* Content - preview */}
           {card.content && (
             <p style={{
-              fontSize: '1rem',
+              fontSize: '14px',
               lineHeight: 1.4,
               color: 'white',
               whiteSpace: 'pre-wrap',
               fontFamily: '"Instrument Sans", sans-serif',
               margin: 0,
               padding: 0,
-              display: 'block'
+              display: 'block',
+              overflow: 'hidden'
             }}>
               {card.content.trim().replace(/^[\s\n\r]+/, '').replace(/[\s\n\r]+$/, '')}
             </p>
@@ -1918,7 +1921,7 @@ const TextBlock = ({ textBlock, onUpdate, onDelete, onMove, targetSections, them
           <div
             className="w-full h-full p-3 overflow-hidden text-white textblock-content"
             style={{
-              fontSize: '16px',
+              fontSize: '14px',
               lineHeight: 1.6,
               fontFamily: '"Instrument Sans", sans-serif'
             }}
@@ -3085,7 +3088,6 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
         {isPreview ? (
           <>
             <style>{`
-              .letter-content-preview, .letter-content-preview * { color: #1e293b !important; }
               .letter-content-preview p { margin: ${section.paragraphSpacing || 16}px 0; }
               .letter-content-preview p:first-child { margin-top: 0; }
               .letter-content-preview li { margin: ${Math.max(1, (section.paragraphSpacing || 16) / 2)}px 0; }
@@ -3095,7 +3097,7 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
               style={{
                 direction: 'ltr',
                 textAlign: 'left',
-                fontSize: '14pt',
+                fontSize: '14px',
                 lineHeight: section.lineSpacing || 1.15,
                 maxHeight: contentHeight ? `${contentHeight}px` : `${maxContentHeight}px`,
                 overflowY: 'auto',

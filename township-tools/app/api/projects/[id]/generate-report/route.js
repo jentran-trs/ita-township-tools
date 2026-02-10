@@ -376,6 +376,7 @@ export async function POST(request, { params }) {
             charts: section.chart_link ? [{
               id: `chart-${section.id}`,
               chartImage: section.chart_link,
+              caption: section.chart_caption || '',
               posX: GAP,
               posY: chartsStartY,
               width: chartWidth,

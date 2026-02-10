@@ -225,13 +225,27 @@ export default function ContributePage() {
         const transformedSections = (sub.report_sections || []).map(section => {
           const { textBlocks, contentCards } = parseContent(section.content);
 
+          // Build images array from regular images
+          const images = (section.image_urls || []).map((url, idx) => ({
+            file: null,
+            caption: section.image_captions?.[idx] || '',
+            existingUrl: url, // Store existing URL
+            isChart: false,
+          }));
+
+          // Add existing chart to images array if present
+          if (section.chart_link) {
+            images.push({
+              file: null,
+              caption: section.chart_caption || '',
+              existingUrl: section.chart_link,
+              isChart: true,
+            });
+          }
+
           return {
             title: section.title || '',
-            images: (section.image_urls || []).map((url, idx) => ({
-              file: null,
-              caption: section.image_captions?.[idx] || '',
-              existingUrl: url, // Store existing URL
-            })),
+            images,
             textBlocks,
             contentCards,
             stats: (section.report_section_stats || []).map(stat => ({
@@ -240,6 +254,7 @@ export default function ContributePage() {
             })),
             designNotes: section.design_notes || '',
             chartLink: section.chart_link || '',
+            chartCaption: section.chart_caption || '',
           };
         });
 
@@ -620,6 +635,7 @@ export default function ContributePage() {
         // Upload images with individual captions - separate charts from regular images
         const imagesWithCaptions = [];
         let chartUrl = section.chartLink || ''; // Start with existing chartLink if any
+        let chartCaption = section.chartCaption || ''; // Track chart caption
 
         if (section.images?.length > 0) {
           for (let j = 0; j < section.images.length; j++) {
@@ -643,8 +659,9 @@ export default function ContributePage() {
 
               if (url) {
                 if (isChart) {
-                  // Store chart URL separately
+                  // Store chart URL and caption separately
                   chartUrl = url;
+                  chartCaption = img.caption || '';
                 } else {
                   imagesWithCaptions.push({ url, caption: img.caption || '' });
                 }
@@ -654,6 +671,7 @@ export default function ContributePage() {
               console.log(`Keeping existing ${isChart ? 'chart' : 'image'} ${i}-${j}:`, img.existingUrl);
               if (isChart) {
                 chartUrl = img.existingUrl;
+                chartCaption = img.caption || '';
               } else {
                 imagesWithCaptions.push({ url: img.existingUrl, caption: img.caption || '' });
               }
@@ -678,6 +696,7 @@ export default function ContributePage() {
           contentCards: section.contentCards?.filter(c => c.title || c.body) || [],
           designNotes: section.designNotes || '',
           chartLink: chartUrl,
+          chartCaption: chartCaption,
         });
       }
 

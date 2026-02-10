@@ -160,6 +160,11 @@ export async function POST(request) {
           sectionInsert.design_notes = section.designNotes;
         }
 
+        // Only include chart_caption if the value exists (column may not exist yet)
+        if (section.chartCaption) {
+          sectionInsert.chart_caption = section.chartCaption;
+        }
+
         const { data: sectionData, error: sectionError } = await supabase
           .from('report_sections')
           .insert(sectionInsert)
@@ -351,6 +356,10 @@ export async function POST(request) {
 
         if (section.designNotes) {
           sectionInsert.design_notes = section.designNotes;
+        }
+
+        if (section.chartCaption) {
+          sectionInsert.chart_caption = section.chartCaption;
         }
 
         console.log(`Inserting section ${section.order}:`, {

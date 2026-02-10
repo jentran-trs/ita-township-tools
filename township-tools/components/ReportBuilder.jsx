@@ -1625,12 +1625,8 @@ const StatBox = ({ stat, onUpdate, onDelete, onMove, targetSections, themeColors
         </div>
       )}
 
-      {/* Content wrapper - absolute centering for html2canvas compatibility */}
-      <div style={{
-        position: 'relative',
-        width: '100%',
-        height: '100%',
-      }}>
+      {/* Content - centered like InfoCard (no intermediate wrapper) */}
+      {editable ? (
         <div style={{
           position: 'absolute',
           top: '50%',
@@ -1640,51 +1636,53 @@ const StatBox = ({ stat, onUpdate, onDelete, onMove, targetSections, themeColors
           textAlign: 'center',
           padding: '0 5%',
         }}>
-          {/* Number */}
-          {editable ? (
-            <input
-              type="text"
-              value={stat.number || ''}
-              onChange={(e) => onUpdate({ ...stat, number: e.target.value })}
-              placeholder="0"
-              className="font-bold bg-transparent border-none text-center w-full focus:outline-none placeholder-white/50"
-              style={{ color: themeColors?.gold || '#D4B896', fontSize: `${numberFontSize}px`, lineHeight: 1.1, fontFamily: '"Instrument Sans", sans-serif' }}
-              onMouseDown={(e) => e.stopPropagation()}
-            />
-          ) : (
-            <p className="font-bold" style={{ color: themeColors?.gold || '#D4B896', fontSize: `${numberFontSize}px`, lineHeight: 1.1, fontFamily: '"Instrument Sans", sans-serif', margin: 0 }}>
-              {stat.number || ''}
+          <input
+            type="text"
+            value={stat.number || ''}
+            onChange={(e) => onUpdate({ ...stat, number: e.target.value })}
+            placeholder="0"
+            className="font-bold bg-transparent border-none text-center w-full focus:outline-none placeholder-white/50"
+            style={{ color: themeColors?.gold || '#D4B896', fontSize: `${numberFontSize}px`, lineHeight: 1.1, fontFamily: '"Instrument Sans", sans-serif' }}
+            onMouseDown={(e) => e.stopPropagation()}
+          />
+          <textarea
+            value={stat.label || ''}
+            onChange={(e) => {
+              onUpdate({ ...stat, label: e.target.value });
+              e.target.style.height = 'auto';
+              e.target.style.height = Math.min(e.target.scrollHeight, height * 0.4) + 'px';
+            }}
+            placeholder="LABEL"
+            className="font-semibold uppercase tracking-wider bg-transparent border-none text-center w-full focus:outline-none placeholder-white/50 mt-2 px-2 resize-none overflow-hidden"
+            style={{ color: 'white', fontSize: `${labelFontSize}px`, minHeight: `${labelFontSize + 8}px`, maxHeight: `${height * 0.4}px`, fontFamily: '"Instrument Sans", sans-serif' }}
+            onMouseDown={(e) => e.stopPropagation()}
+            rows={1}
+            onFocus={(e) => {
+              e.target.style.height = 'auto';
+              e.target.style.height = Math.min(e.target.scrollHeight, height * 0.4) + 'px';
+            }}
+          />
+        </div>
+      ) : (
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '0',
+          right: '0',
+          transform: 'translateY(-50%)',
+          textAlign: 'center',
+          padding: '0 5%',
+        }}>
+          <p className="font-bold" style={{ color: themeColors?.gold || '#D4B896', fontSize: `${numberFontSize}px`, lineHeight: 1.1, fontFamily: '"Instrument Sans", sans-serif', margin: 0 }}>
+            {stat.number || ''}
+          </p>
+          {stat.label && (
+            <p className="font-semibold uppercase tracking-wider px-2 text-center break-words" style={{ color: 'white', fontSize: `${labelFontSize}px`, maxWidth: '100%', wordWrap: 'break-word', fontFamily: '"Instrument Sans", sans-serif', margin: 0, marginTop: '16px' }}>
+              {stat.label}
             </p>
           )}
-
-          {/* Label */}
-          {editable ? (
-            <textarea
-              value={stat.label || ''}
-              onChange={(e) => {
-                onUpdate({ ...stat, label: e.target.value });
-                e.target.style.height = 'auto';
-                e.target.style.height = Math.min(e.target.scrollHeight, height * 0.4) + 'px';
-              }}
-              placeholder="LABEL"
-              className="font-semibold uppercase tracking-wider bg-transparent border-none text-center w-full focus:outline-none placeholder-white/50 mt-2 px-2 resize-none overflow-hidden"
-              style={{ color: 'white', fontSize: `${labelFontSize}px`, minHeight: `${labelFontSize + 8}px`, maxHeight: `${height * 0.4}px`, fontFamily: '"Instrument Sans", sans-serif' }}
-              onMouseDown={(e) => e.stopPropagation()}
-              rows={1}
-              onFocus={(e) => {
-                e.target.style.height = 'auto';
-                e.target.style.height = Math.min(e.target.scrollHeight, height * 0.4) + 'px';
-              }}
-            />
-          ) : (
-            stat.label && (
-              <p className="font-semibold uppercase tracking-wider px-2 text-center break-words" style={{ color: 'white', fontSize: `${labelFontSize}px`, maxWidth: '100%', wordWrap: 'break-word', fontFamily: '"Instrument Sans", sans-serif', margin: 0, marginTop: '16px' }}>
-                {stat.label}
-              </p>
-            )
-          )}
         </div>
-      </div>
+      )}
 
       {editable && (
         <div

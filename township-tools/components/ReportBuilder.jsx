@@ -1016,19 +1016,26 @@ const ImageFrame = ({ imageData, onUpdate, onDelete, onMove, targetSections, the
         {imageData.src ? (
           <>
             <div className={`absolute inset-0 overflow-hidden ${editable ? 'pointer-events-none' : ''}`}>
+              {/* Hidden img for dimension measurement */}
               <img
                 src={imageData.src}
                 alt=""
-                className="absolute w-full select-none pointer-events-none"
-                style={{
-                  top: '50%',
-                  left: '0',
-                  transform: `translateY(calc(-50% + ${imageOffsetY}px))`,
-                  minHeight: '100%',
-                  objectFit: 'cover',
-                }}
                 onLoad={handleImageLoad}
-                draggable={false}
+                style={{ position: 'absolute', width: 0, height: 0, opacity: 0, pointerEvents: 'none' }}
+              />
+              {/* Visible image using background-image for html2canvas compatibility */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  backgroundImage: `url(${imageData.src})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: `center calc(50% + ${imageOffsetY}px)`,
+                  backgroundRepeat: 'no-repeat',
+                }}
               />
             </div>
             {/* Loading overlay when replacing image */}
@@ -1414,7 +1421,7 @@ const InfoCard = ({ card, onUpdate, onDelete, onMove, targetSections, themeColor
           />
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}>
+        <div style={{ position: 'absolute', top: '50%', left: '0', right: '0', transform: 'translateY(-50%)', padding: '0 24px' }}>
           {/* Title - preview */}
           {card.title && (
             <h3 style={{
@@ -1573,12 +1580,8 @@ const StatBox = ({ stat, onUpdate, onDelete, onMove, targetSections, themeColors
 
   return (
     <div 
-      className={`absolute rounded-xl flex flex-col items-center justify-center text-center transition-shadow ${editable ? 'group cursor-move' : ''}`}
+      className={`absolute rounded-xl text-center transition-shadow ${editable ? 'group cursor-move' : ''}`}
       style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
         backgroundColor: 'rgba(255, 255, 255, 0.1)',
         border: `3px solid ${themeColors?.gold || '#D4B896'}`,
         backdropFilter: 'blur(10px)',
@@ -1608,49 +1611,59 @@ const StatBox = ({ stat, onUpdate, onDelete, onMove, targetSections, themeColors
         </div>
       )}
 
-      {/* Number */}
-      {editable ? (
-        <input
-          type="text"
-          value={stat.number || ''}
-          onChange={(e) => onUpdate({ ...stat, number: e.target.value })}
-          placeholder="0"
-          className="font-bold bg-transparent border-none text-center w-full focus:outline-none placeholder-white/50"
-          style={{ color: themeColors?.gold || '#D4B896', fontSize: `${numberFontSize}px`, lineHeight: 1.1, fontFamily: '"Instrument Sans", sans-serif' }}
-          onMouseDown={(e) => e.stopPropagation()}
-        />
-      ) : (
-        <p className="font-bold" style={{ color: themeColors?.gold || '#D4B896', fontSize: `${numberFontSize}px`, lineHeight: 1.1, fontFamily: '"Instrument Sans", sans-serif' }}>
-          {stat.number || ''}
-        </p>
-      )}
-
-      {/* Label */}
-      {editable ? (
-        <textarea
-          value={stat.label || ''}
-          onChange={(e) => {
-            onUpdate({ ...stat, label: e.target.value });
-            e.target.style.height = 'auto';
-            e.target.style.height = Math.min(e.target.scrollHeight, height * 0.4) + 'px';
-          }}
-          placeholder="LABEL"
-          className="font-semibold uppercase tracking-wider bg-transparent border-none text-center w-full focus:outline-none placeholder-white/50 mt-2 px-2 resize-none overflow-hidden"
-          style={{ color: 'white', fontSize: `${labelFontSize}px`, minHeight: `${labelFontSize + 8}px`, maxHeight: `${height * 0.4}px`, fontFamily: '"Instrument Sans", sans-serif' }}
-          onMouseDown={(e) => e.stopPropagation()}
-          rows={1}
-          onFocus={(e) => {
-            e.target.style.height = 'auto';
-            e.target.style.height = Math.min(e.target.scrollHeight, height * 0.4) + 'px';
-          }}
-        />
-      ) : (
-        stat.label && (
-          <p className="font-semibold uppercase tracking-wider mt-4 px-2 text-center break-words" style={{ color: 'white', fontSize: `${labelFontSize}px`, maxWidth: '100%', wordWrap: 'break-word', fontFamily: '"Instrument Sans", sans-serif' }}>
-            {stat.label}
+      {/* Content wrapper - absolute centering for html2canvas compatibility */}
+      <div style={{
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        textAlign: 'center',
+        width: '90%',
+      }}>
+        {/* Number */}
+        {editable ? (
+          <input
+            type="text"
+            value={stat.number || ''}
+            onChange={(e) => onUpdate({ ...stat, number: e.target.value })}
+            placeholder="0"
+            className="font-bold bg-transparent border-none text-center w-full focus:outline-none placeholder-white/50"
+            style={{ color: themeColors?.gold || '#D4B896', fontSize: `${numberFontSize}px`, lineHeight: 1.1, fontFamily: '"Instrument Sans", sans-serif' }}
+            onMouseDown={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <p className="font-bold" style={{ color: themeColors?.gold || '#D4B896', fontSize: `${numberFontSize}px`, lineHeight: 1.1, fontFamily: '"Instrument Sans", sans-serif', margin: 0 }}>
+            {stat.number || ''}
           </p>
-        )
-      )}
+        )}
+
+        {/* Label */}
+        {editable ? (
+          <textarea
+            value={stat.label || ''}
+            onChange={(e) => {
+              onUpdate({ ...stat, label: e.target.value });
+              e.target.style.height = 'auto';
+              e.target.style.height = Math.min(e.target.scrollHeight, height * 0.4) + 'px';
+            }}
+            placeholder="LABEL"
+            className="font-semibold uppercase tracking-wider bg-transparent border-none text-center w-full focus:outline-none placeholder-white/50 mt-2 px-2 resize-none overflow-hidden"
+            style={{ color: 'white', fontSize: `${labelFontSize}px`, minHeight: `${labelFontSize + 8}px`, maxHeight: `${height * 0.4}px`, fontFamily: '"Instrument Sans", sans-serif' }}
+            onMouseDown={(e) => e.stopPropagation()}
+            rows={1}
+            onFocus={(e) => {
+              e.target.style.height = 'auto';
+              e.target.style.height = Math.min(e.target.scrollHeight, height * 0.4) + 'px';
+            }}
+          />
+        ) : (
+          stat.label && (
+            <p className="font-semibold uppercase tracking-wider px-2 text-center break-words" style={{ color: 'white', fontSize: `${labelFontSize}px`, maxWidth: '100%', wordWrap: 'break-word', fontFamily: '"Instrument Sans", sans-serif', margin: 0, marginTop: '16px' }}>
+              {stat.label}
+            </p>
+          )
+        )}
+      </div>
 
       {editable && (
         <div
@@ -1930,17 +1943,26 @@ const TextBlock = ({ textBlock, onUpdate, onDelete, onMove, targetSections, them
       ) : (
         textBlock.content && (
           <div
-            className="w-full h-full p-3 overflow-hidden text-white textblock-content"
+            className="w-full h-full overflow-hidden text-white textblock-content"
             style={{
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
+              position: 'relative',
               fontSize: '16px',
               lineHeight: 1.6,
               fontFamily: '"Instrument Sans", sans-serif'
             }}
-            dangerouslySetInnerHTML={{ __html: textBlock.content || '' }}
-          />
+          >
+            <div
+              style={{
+                position: 'absolute',
+                top: '50%',
+                left: 0,
+                right: 0,
+                transform: 'translateY(-50%)',
+                padding: '12px',
+              }}
+              dangerouslySetInnerHTML={{ __html: textBlock.content || '' }}
+            />
+          </div>
         )
       )}
 
@@ -3109,17 +3131,28 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
             <div
               className="prose prose-lg max-w-none h-full letter-content-preview"
               style={{
+                position: 'relative',
                 direction: 'ltr',
                 textAlign: 'left',
                 fontSize: '14px',
                 lineHeight: section.lineSpacing || 1.15,
                 maxHeight: contentHeight ? `${contentHeight}px` : `${maxContentHeight}px`,
-                overflowY: 'auto',
+                overflow: 'hidden',
                 color: '#1e293b',
                 fontFamily: '"Instrument Sans", sans-serif'
               }}
-              dangerouslySetInnerHTML={{ __html: section.content || '' }}
-            />
+            >
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: 0,
+                  right: 0,
+                  transform: 'translateY(-50%)',
+                }}
+                dangerouslySetInnerHTML={{ __html: section.content || '' }}
+              />
+            </div>
           </>
         ) : isEditingContent ? (
           <div className="h-full flex flex-col" style={{ overflow: 'visible' }}>

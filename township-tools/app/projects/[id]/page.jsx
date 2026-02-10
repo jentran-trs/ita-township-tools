@@ -25,6 +25,7 @@ import {
   Lock,
   Unlock,
 } from 'lucide-react';
+import Link from 'next/link';
 
 function SubmissionCard({ submission, isExpanded, onToggle, onDelete, isDeleting }) {
   const sections = submission.report_sections || [];
@@ -68,6 +69,14 @@ function SubmissionCard({ submission, isExpanded, onToggle, onDelete, isDeleting
               <p>{new Date(submission.created_at).toLocaleDateString()}</p>
               <p>{totalImages} images, {sections.length} sections</p>
             </div>
+            <Link
+              href={`/submissions/${submission.id}`}
+              onClick={(e) => e.stopPropagation()}
+              className="p-2 text-slate-400 hover:text-amber-400 hover:bg-amber-500/10 rounded-lg transition-colors"
+              title="View submission"
+            >
+              <Eye className="w-4 h-4" />
+            </Link>
             <button
               onClick={handleDeleteClick}
               disabled={isDeleting}

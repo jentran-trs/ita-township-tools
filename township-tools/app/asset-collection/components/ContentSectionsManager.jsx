@@ -561,7 +561,7 @@ function ContentSection({ section, index, onChange, onRemove, canRemove, isExpan
               {/* Element counter */}
               {totalElements > 0 && (
                 <div className="text-xs text-center space-y-0.5">
-                  <p className="text-slate-400">{totalElements} element{totalElements !== 1 ? 's' : ''} added — recommended 7–9 per page</p>
+                  <p className="text-slate-400">{totalElements} element{totalElements !== 1 ? 's' : ''} added — recommended 5–9 per page</p>
                   {totalElements > 9 && (
                     <p className="text-amber-600">Extra elements might be added to an additional page</p>
                   )}

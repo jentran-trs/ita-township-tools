@@ -1371,23 +1371,34 @@ const InfoCard = ({ card, onUpdate, onDelete, onMove, targetSections, themeColor
       {/* Card Content Container */}
       {editable ? (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-          {/* Title - editable */}
+          {/* Title - editable with auto-resize */}
           <textarea
             value={card.title || ''}
-            onChange={(e) => onUpdate({ ...card, title: e.target.value })}
+            onChange={(e) => {
+              // Auto-resize height
+              e.target.style.height = 'auto';
+              e.target.style.height = e.target.scrollHeight + 'px';
+              onUpdate({ ...card, title: e.target.value });
+            }}
+            ref={(el) => {
+              // Auto-resize on mount
+              if (el) {
+                el.style.height = 'auto';
+                el.style.height = el.scrollHeight + 'px';
+              }
+            }}
             placeholder="Card Title"
             className="text-xl font-semibold w-full bg-transparent border-none focus:outline-none placeholder-white/50 cursor-text resize-none"
             style={{
               color: themeColors?.gold || '#D4B896',
-              minHeight: '24px',
-              maxHeight: '60px',
+              minHeight: '28px',
               overflow: 'hidden',
               whiteSpace: 'pre-wrap',
               wordWrap: 'break-word',
               fontFamily: '"Instrument Sans", sans-serif',
               flexShrink: 0,
               lineHeight: 1.2,
-              marginBottom: '8px',
+              marginBottom: '12px',
               padding: 0
             }}
             onMouseDown={(e) => e.stopPropagation()}
@@ -1415,7 +1426,7 @@ const InfoCard = ({ card, onUpdate, onDelete, onMove, targetSections, themeColor
               overflowWrap: 'break-word',
               fontFamily: '"Instrument Sans", sans-serif',
               margin: 0,
-              marginBottom: '8px',
+              marginBottom: '12px',
               padding: 0
             }}>
               {card.title.trim()}

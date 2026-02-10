@@ -504,35 +504,28 @@ export default function ProjectDetailPage() {
           {/* Actions */}
           <div className="flex flex-wrap gap-3">
             {/* Status Toggle - Lock/Unlock submissions */}
-            {isCollecting ? (
-              <button
-                onClick={() => updateProjectStatus('designing')}
-                disabled={updatingStatus}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-500 transition-colors disabled:opacity-50"
-                title="Lock submissions and start designing"
+            <button
+              onClick={() => updateProjectStatus(isCollecting ? 'designing' : 'collecting_assets')}
+              disabled={updatingStatus}
+              className="flex items-center gap-2 text-sm text-slate-300 disabled:opacity-50"
+              title={isCollecting ? 'Lock submissions and start designing' : 'Unlock submissions for editing'}
+            >
+              {updatingStatus ? (
+                <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+              ) : isCollecting ? (
+                <Unlock className="w-4 h-4" />
+              ) : (
+                <Lock className="w-4 h-4" />
+              )}
+              <span className="text-xs text-slate-400 mr-1">{isCollecting ? 'Unlocked' : 'Locked'}</span>
+              <div
+                className={`relative w-10 h-5 rounded-full transition-colors ${isCollecting ? 'bg-slate-600' : 'bg-purple-600'}`}
               >
-                {updatingStatus ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Lock className="w-4 h-4" />
-                )}
-                Lock & Start Designing
-              </button>
-            ) : (
-              <button
-                onClick={() => updateProjectStatus('collecting_assets')}
-                disabled={updatingStatus}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-500 transition-colors disabled:opacity-50"
-                title="Unlock submissions for editing"
-              >
-                {updatingStatus ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Unlock className="w-4 h-4" />
-                )}
-                Unlock Submissions
-              </button>
-            )}
+                <div
+                  className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${isCollecting ? 'left-0.5' : 'left-[22px]'}`}
+                />
+              </div>
+            </button>
 
             {/* Continue Editing - shown when a saved draft exists */}
             {savedDraft && (

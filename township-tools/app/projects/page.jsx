@@ -18,6 +18,7 @@ import {
   Send,
   Eye,
   Lock,
+  Unlock,
 } from 'lucide-react';
 
 export default function ProjectsPage() {
@@ -259,7 +260,12 @@ export default function ProjectsPage() {
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <h3 className="text-lg font-semibold text-white">{project.name}</h3>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(project.derived_status)}`}>
+                        <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(project.derived_status)}`}>
+                          {project.derived_status === 'designing' || project.derived_status === 'completed' ? (
+                            <Lock className="w-3 h-3" />
+                          ) : (
+                            <Unlock className="w-3 h-3" />
+                          )}
                           {getStatusLabel(project.derived_status)}
                         </span>
                       </div>

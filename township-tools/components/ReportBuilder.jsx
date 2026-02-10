@@ -1403,7 +1403,7 @@ const InfoCard = ({ card, onUpdate, onDelete, onMove, targetSections, themeColor
           />
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', margin: 0, padding: 0 }}>
+        <>
           {/* Title - preview */}
           {card.title && (
             <h3 style={{
@@ -1416,9 +1416,7 @@ const InfoCard = ({ card, onUpdate, onDelete, onMove, targetSections, themeColor
               fontFamily: '"Instrument Sans", sans-serif',
               margin: 0,
               marginBottom: '8px',
-              padding: 0,
-              display: 'block',
-              flexShrink: 0
+              padding: 0
             }}>
               {card.title.trim()}
             </h3>
@@ -1432,14 +1430,12 @@ const InfoCard = ({ card, onUpdate, onDelete, onMove, targetSections, themeColor
               whiteSpace: 'pre-wrap',
               fontFamily: '"Instrument Sans", sans-serif',
               margin: 0,
-              padding: 0,
-              display: 'block',
-              overflow: 'hidden'
+              padding: 0
             }}>
               {card.content.trim().replace(/^[\s\n\r]+/, '').replace(/[\s\n\r]+$/, '')}
             </p>
           )}
-        </div>
+        </>
       )}
 
       {/* Resize Handle - only in edit mode */}

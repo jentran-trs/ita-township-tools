@@ -205,9 +205,11 @@ export default function ProjectsPage() {
                 <Building2 className="w-8 h-8 text-amber-500" />
                 <div>
                   <h1 className="text-xl font-bold text-white">
-                    {isMember ? 'Submit Assets' : 'Report Projects'}
+                    {isMember ? 'Submit Report Assets' : 'View Report Assets'}
                   </h1>
-                  <p className="text-sm text-slate-400">{organization.name}</p>
+                  <p className="text-sm text-slate-400">
+                    {isMember ? organization.name : 'Generate and design reports from submitted assets.'}
+                  </p>
                 </div>
               </div>
             </div>

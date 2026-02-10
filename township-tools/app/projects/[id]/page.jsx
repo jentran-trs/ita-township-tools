@@ -340,7 +340,7 @@ export default function ProjectDetailPage() {
   const updateProjectStatus = async (newStatus) => {
     setUpdatingStatus(true);
     try {
-      const isLocking = newStatus === 'designing';
+      const isLocking = newStatus === 'in_progress';
       const response = await fetch(`/api/projects/${params.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -408,23 +408,18 @@ export default function ProjectDetailPage() {
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'collecting_assets': return 'bg-blue-100 text-blue-700';
-      case 'designing': return 'bg-purple-100 text-purple-700';
-      case 'completed': return 'bg-emerald-100 text-emerald-700';
-      default: return 'bg-slate-100 text-slate-700';
-    }
+  const getStatusColor = (status, submissionCount) => {
+    if (status === 'in_progress') return 'bg-purple-100 text-purple-700';
+    if (status === 'completed') return 'bg-emerald-100 text-emerald-700';
+    if (submissionCount > 0) return 'bg-blue-100 text-blue-700';
+    return 'bg-slate-100 text-slate-600';
   };
 
-  const getStatusLabel = (status) => {
-    switch (status) {
-      case 'collecting_assets': return 'Collecting Assets';
-      case 'collecting': return 'Collecting Assets';
-      case 'designing': return 'Designing';
-      case 'completed': return 'Completed';
-      default: return status;
-    }
+  const getStatusLabel = (status, submissionCount) => {
+    if (status === 'in_progress') return 'Locked for Designing';
+    if (status === 'completed') return 'Completed';
+    if (submissionCount > 0) return 'Collecting Assets';
+    return 'Not Started';
   };
 
   if (loading) {
@@ -463,7 +458,7 @@ export default function ProjectDetailPage() {
 
   const totalSections = submissions.reduce((acc, s) => acc + (s.report_sections?.length || 0), 0);
 
-  const currentStatus = project.derived_status || project.status || 'collecting_assets';
+  const currentStatus = project.derived_status || project.status || 'collecting';
   const isCollecting = currentStatus === 'collecting_assets' || currentStatus === 'collecting';
 
   return (
@@ -481,8 +476,8 @@ export default function ProjectDetailPage() {
             <div className="flex-1">
               <div className="flex items-center gap-3">
                 <h1 className="text-xl font-bold text-white">{project.name}</h1>
-                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(currentStatus)}`}>
-                  {getStatusLabel(currentStatus)}
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(currentStatus, submissions.length)}`}>
+                  {getStatusLabel(currentStatus, submissions.length)}
                 </span>
               </div>
               <p className="text-sm text-slate-400">{project.organization_name}</p>
@@ -509,7 +504,7 @@ export default function ProjectDetailPage() {
           <div className="flex flex-wrap gap-3">
             {/* Status Toggle - Lock/Unlock submissions */}
             <button
-              onClick={() => updateProjectStatus(isCollecting ? 'designing' : 'collecting_assets')}
+              onClick={() => updateProjectStatus(isCollecting ? 'in_progress' : 'collecting')}
               disabled={updatingStatus}
               className="flex items-center gap-2 text-sm text-slate-300 disabled:opacity-50"
               title={isCollecting ? 'Lock submissions and start designing' : 'Unlock submissions for editing'}

@@ -150,23 +150,34 @@ export default function ProjectsPage() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'not started': return 'bg-slate-100 text-slate-600';
-      case 'collecting_assets': return 'bg-blue-100 text-blue-700';
-      case 'designing': return 'bg-purple-100 text-purple-700';
-      case 'completed': return 'bg-emerald-100 text-emerald-700';
-      default: return 'bg-slate-100 text-slate-700';
-    }
+  // Admin status display
+  const getAdminStatusColor = (projectStatus, submissionCount) => {
+    if (projectStatus === 'in_progress') return 'bg-purple-100 text-purple-700';
+    if (projectStatus === 'completed') return 'bg-emerald-100 text-emerald-700';
+    // Unlocked states
+    if (submissionCount > 0) return 'bg-blue-100 text-blue-700';
+    return 'bg-slate-100 text-slate-600';
   };
 
-  const getStatusLabel = (status) => {
-    switch (status) {
-      case 'collecting_assets': return 'Collecting Assets';
-      case 'designing': return 'Designing';
-      case 'completed': return 'Completed';
-      default: return status;
-    }
+  const getAdminStatusLabel = (projectStatus, submissionCount) => {
+    if (projectStatus === 'in_progress') return 'Locked for Designing';
+    if (projectStatus === 'completed') return 'Completed';
+    // Unlocked states
+    if (submissionCount > 0) return 'Collecting Assets';
+    return 'Not Started';
+  };
+
+  // Member status display
+  const getMemberStatusColor = (projectStatus, hasSubmission) => {
+    if (projectStatus === 'in_progress' || projectStatus === 'completed') return 'bg-purple-100 text-purple-700';
+    if (hasSubmission) return 'bg-blue-100 text-blue-700';
+    return 'bg-slate-100 text-slate-600';
+  };
+
+  const getMemberStatusLabel = (projectStatus, hasSubmission) => {
+    if (projectStatus === 'in_progress' || projectStatus === 'completed') return 'Assets Received & Designing Started';
+    if (hasSubmission) return 'In Progress';
+    return 'Not Started';
   };
 
   if (!organization) {
@@ -260,14 +271,23 @@ export default function ProjectsPage() {
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <h3 className="text-lg font-semibold text-white">{project.name}</h3>
-                        <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(project.derived_status)}`}>
-                          {project.derived_status === 'designing' || project.derived_status === 'completed' ? (
-                            <Lock className="w-3 h-3" />
-                          ) : (
-                            <Unlock className="w-3 h-3" />
-                          )}
-                          {getStatusLabel(project.derived_status)}
-                        </span>
+                        {isAdmin ? (
+                          <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${getAdminStatusColor(project.derived_status, project.submission_count)}`}>
+                            {project.derived_status === 'in_progress' || project.derived_status === 'completed' ? (
+                              <Lock className="w-3 h-3" />
+                            ) : (
+                              <Unlock className="w-3 h-3" />
+                            )}
+                            {getAdminStatusLabel(project.derived_status, project.submission_count)}
+                          </span>
+                        ) : (
+                          <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${getMemberStatusColor(project.derived_status, !!userSubmission)}`}>
+                            {project.derived_status === 'in_progress' || project.derived_status === 'completed' ? (
+                              <Lock className="w-3 h-3" />
+                            ) : null}
+                            {getMemberStatusLabel(project.derived_status, !!userSubmission)}
+                          </span>
+                        )}
                       </div>
                       <p className="text-slate-400 text-sm mb-3">{project.organization_name}</p>
                       {project.description && isAdmin && (

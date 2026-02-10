@@ -52,7 +52,7 @@ export async function GET(request) {
 
       const projectsWithStatus = (projects || []).map(project => ({
         ...project,
-        derived_status: project.status || 'collecting_assets',
+        derived_status: project.status || 'collecting',
         submission_count: project.report_submissions?.[0]?.count || 0,
       }));
 

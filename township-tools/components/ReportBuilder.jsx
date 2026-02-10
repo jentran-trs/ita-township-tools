@@ -1651,6 +1651,12 @@ const StatBox = ({ stat, onUpdate, onDelete, onMove, targetSections, themeColors
             e.target.style.height = 'auto';
             e.target.style.height = Math.min(e.target.scrollHeight, height * 0.4) + 'px';
           }}
+          ref={(el) => {
+            if (el) {
+              el.style.height = 'auto';
+              el.style.height = Math.min(el.scrollHeight, height * 0.4) + 'px';
+            }
+          }}
           placeholder="LABEL"
           className="font-semibold uppercase tracking-wider bg-transparent border-none text-center w-full focus:outline-none placeholder-white/50 mt-2 px-2 resize-none overflow-hidden"
           style={{ color: 'white', fontSize: `${labelFontSize}px`, minHeight: `${labelFontSize + 8}px`, maxHeight: `${height * 0.4}px`, fontFamily: '"Instrument Sans", sans-serif' }}

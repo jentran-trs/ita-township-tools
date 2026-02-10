@@ -347,11 +347,15 @@ export default function ProjectDetailPage() {
         body: JSON.stringify({
           status: newStatus,
           allow_public_submissions: !isLocking,
+          orgId: project.org_id,
         }),
       });
 
       if (response.ok) {
         setProject({ ...project, status: newStatus, derived_status: newStatus, allow_public_submissions: !isLocking });
+      } else {
+        const data = await response.json();
+        console.error('Failed to update project status:', data);
       }
     } catch (error) {
       console.error('Error updating status:', error);

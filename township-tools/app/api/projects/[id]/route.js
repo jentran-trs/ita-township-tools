@@ -71,14 +71,15 @@ export async function PATCH(request, { params }) {
     const body = await request.json();
 
     // Use orgId from auth, fallback to request body, allow without auth for now
-    const orgId = authData?.orgId || body.orgId;
+    const { orgId: bodyOrgId, ...updateFields } = body;
+    const orgId = authData?.orgId || bodyOrgId;
 
     const supabase = createServerSupabaseClient();
 
     const { data: project, error } = await supabase
       .from('report_projects')
       .update({
-        ...body,
+        ...updateFields,
         updated_at: new Date().toISOString(),
       })
       .eq('id', id)

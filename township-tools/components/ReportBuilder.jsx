@@ -839,11 +839,21 @@ const ImageFrame = ({ imageData, onUpdate, onDelete, onMove, targetSections, the
   // Calculate max offset when image dimensions or frame size changes
   useEffect(() => {
     if (imageDimensions.width > 0 && imageDimensions.height > 0) {
-      const imgAspectRatio = imageDimensions.height / imageDimensions.width;
-      const displayedHeight = frameWidth * imgAspectRatio;
-      const overflow = Math.max(0, displayedHeight - frameHeight);
+      const imgAspect = imageDimensions.width / imageDimensions.height;
+      const frameAspect = frameWidth / frameHeight;
+      // For cover: image fills width when it's taller relative to frame (imgAspect <= frameAspect)
+      const fillsWidth = imgAspect <= frameAspect;
+
+      let overflow = 0;
+      if (fillsWidth) {
+        // Image fills width, height overflows → vertical panning available
+        const displayedHeight = frameWidth * (imageDimensions.height / imageDimensions.width);
+        overflow = Math.max(0, displayedHeight - frameHeight);
+      }
+      // When image fills height (wider image), no vertical overflow
+
       setMaxOffsetY(overflow / 2);
-      
+
       // Clamp current offset if it exceeds new max
       if (Math.abs(imageOffsetY) > overflow / 2) {
         const clampedOffset = Math.max(-overflow / 2, Math.min(overflow / 2, imageOffsetY));
@@ -1021,8 +1031,10 @@ const ImageFrame = ({ imageData, onUpdate, onDelete, onMove, targetSections, the
                 const hasValidDimensions = imageDimensions.width > 0 && imageDimensions.height > 0;
                 const imgAspect = hasValidDimensions ? imageDimensions.width / imageDimensions.height : 1;
                 const frameAspect = frameWidth / frameHeight;
-                // "Cover" = fill the smaller dimension, overflow the larger
-                const fillWidth = !hasValidDimensions || imgAspect >= frameAspect;
+                // "Cover" = fill so image always covers the frame completely
+                // Taller image (imgAspect <= frameAspect): fill width, height overflows
+                // Wider image (imgAspect > frameAspect): fill height, width overflows
+                const fillWidth = !hasValidDimensions || imgAspect <= frameAspect;
                 return (
                   <img
                     src={imageData.src}
@@ -1951,21 +1963,13 @@ const TextBlock = ({ textBlock, onUpdate, onDelete, onMove, targetSections, them
           <div
             className="w-full h-full overflow-hidden text-white textblock-content"
             style={{
-              display: 'table',
               fontSize: '16px',
               lineHeight: 1.6,
+              padding: '12px',
               fontFamily: '"Instrument Sans", sans-serif'
             }}
-          >
-            <div
-              style={{
-                display: 'table-cell',
-                verticalAlign: 'middle',
-                padding: '12px',
-              }}
-              dangerouslySetInnerHTML={{ __html: textBlock.content || '' }}
-            />
-          </div>
+            dangerouslySetInnerHTML={{ __html: textBlock.content || '' }}
+          />
         )
       )}
 

@@ -6,7 +6,7 @@ import { Upload, X, FileText, Image, Loader2 } from 'lucide-react';
 export default function FileUpload({
   label,
   accept = "image/*",
-  maxSize = 10, // MB
+  maxSize = 4, // MB - Vercel limit is 4.5MB
   required = false,
   multiple = false,
   value,
@@ -156,9 +156,12 @@ export default function FileUpload({
               </button>
             </div>
           ) : (
-            <div className="flex items-center justify-center gap-2 text-slate-500">
-              <Upload className="w-5 h-5" />
-              <span className="text-sm">Click or drop image</span>
+            <div className="flex flex-col items-center justify-center gap-1 text-slate-500">
+              <div className="flex items-center gap-2">
+                <Upload className="w-5 h-5" />
+                <span className="text-sm">Click or drop image</span>
+              </div>
+              <span className="text-xs text-slate-400">Max {maxSize}MB</span>
             </div>
           )}
           <input

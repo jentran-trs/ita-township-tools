@@ -248,6 +248,8 @@ export default function ProjectDetailPage() {
   const [savedDraft, setSavedDraft] = useState(null);
   const [loadingDraft, setLoadingDraft] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [editingField, setEditingField] = useState(null); // 'name' or 'organization_name'
+  const [editValue, setEditValue] = useState('');
 
   // Role checks - using organization membership
   const isAdmin = membership?.role === 'org:admin' || orgRole === 'org:admin';
@@ -364,6 +366,35 @@ export default function ProjectDetailPage() {
     }
   };
 
+  const startEditing = (field) => {
+    setEditingField(field);
+    setEditValue(project[field] || '');
+  };
+
+  const saveField = async () => {
+    if (!editValue.trim() || editValue === project[editingField]) {
+      setEditingField(null);
+      return;
+    }
+    try {
+      const response = await fetch(`/api/projects/${params.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          [editingField]: editValue.trim(),
+          orgId: project.org_id,
+        }),
+      });
+      if (response.ok) {
+        setProject({ ...project, [editingField]: editValue.trim() });
+      }
+    } catch (error) {
+      console.error('Error updating project:', error);
+    } finally {
+      setEditingField(null);
+    }
+  };
+
   const handleDelete = async () => {
     setDeleting(true);
     setDeleteError('');
@@ -475,12 +506,46 @@ export default function ProjectDetailPage() {
             </button>
             <div className="flex-1">
               <div className="flex items-center gap-3">
-                <h1 className="text-xl font-bold text-white">{project.name}</h1>
+                {editingField === 'name' ? (
+                  <input
+                    autoFocus
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    onBlur={saveField}
+                    onKeyDown={(e) => { if (e.key === 'Enter') saveField(); if (e.key === 'Escape') setEditingField(null); }}
+                    className="text-xl font-bold text-white bg-slate-700 border border-slate-600 rounded px-2 py-0.5 outline-none focus:border-amber-500"
+                  />
+                ) : (
+                  <h1
+                    className="text-xl font-bold text-white cursor-pointer hover:text-amber-400 transition-colors"
+                    onClick={() => startEditing('name')}
+                    title="Click to edit project name"
+                  >
+                    {project.name}
+                  </h1>
+                )}
                 <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(currentStatus, submissions.length)}`}>
                   {getStatusLabel(currentStatus, submissions.length)}
                 </span>
               </div>
-              <p className="text-sm text-slate-400">{project.organization_name}</p>
+              {editingField === 'organization_name' ? (
+                <input
+                  autoFocus
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                  onBlur={saveField}
+                  onKeyDown={(e) => { if (e.key === 'Enter') saveField(); if (e.key === 'Escape') setEditingField(null); }}
+                  className="text-sm text-slate-300 bg-slate-700 border border-slate-600 rounded px-2 py-0.5 outline-none focus:border-amber-500 mt-1"
+                />
+              ) : (
+                <p
+                  className="text-sm text-slate-400 cursor-pointer hover:text-amber-400 transition-colors"
+                  onClick={() => startEditing('organization_name')}
+                  title="Click to edit client name"
+                >
+                  {project.organization_name}
+                </p>
+              )}
             </div>
           </div>
 

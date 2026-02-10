@@ -169,12 +169,12 @@ export async function POST(request, { params }) {
     // Helper to convert plain text to HTML paragraphs (preserving line breaks)
     const textToHtml = (text) => {
       if (!text) return '';
-      // Split by double newlines (paragraph breaks) or single newlines
+      // Split by double newlines (paragraph breaks)
       const paragraphs = text.split(/\n\n+/);
       return paragraphs
         .map(p => {
-          // Convert single newlines within paragraphs to <br>
-          const withBreaks = p.trim().replace(/\n/g, '<br>');
+          // Convert single newlines within paragraphs to <br>, preserve all content
+          const withBreaks = p.replace(/\n/g, '<br>');
           return withBreaks ? `<p>${withBreaks}</p>` : '';
         })
         .filter(p => p)
@@ -247,8 +247,8 @@ export async function POST(request, { params }) {
     // Helper to get plain text content (excluding [CARD] blocks)
     const getTextContent = (rawContent) => {
       if (!rawContent) return '';
-      // Remove all [CARD]...[/CARD] blocks
-      return rawContent.replace(/\[CARD\][\s\S]*?\[\/CARD\]/g, '').trim();
+      // Remove all [CARD]...[/CARD] blocks, preserve remaining text
+      return rawContent.replace(/\[CARD\][\s\S]*?\[\/CARD\]/g, '');
     };
 
     // Collect all content sections from all submissions
@@ -388,9 +388,19 @@ export async function POST(request, { params }) {
       }
     }
 
-    // Sort all sections and add to report
+    // Helper to convert number to word
+    const numberToWord = (num) => {
+      const words = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
+        'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen', 'Twenty'];
+      return num <= 20 ? words[num] : num.toString();
+    };
+
+    // Sort all sections and add to report with section numbers
     allSections.sort((a, b) => a.order - b.order);
+    let contentSectionIndex = 0;
     for (const section of allSections) {
+      contentSectionIndex++;
+      section.data.sectionNumber = `Section ${numberToWord(contentSectionIndex)}`;
       reportData.sections.push(section.data);
     }
 

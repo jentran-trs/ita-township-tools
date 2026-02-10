@@ -1432,7 +1432,7 @@ const InfoCard = ({ card, onUpdate, onDelete, onMove, targetSections, themeColor
               margin: 0,
               padding: 0
             }}>
-              {card.content.trim().replace(/^[\s\n\r]+/, '').replace(/[\s\n\r]+$/, '')}
+              {card.content.replace(/[\s\n\r]+$/, '')}
             </p>
           )}
         </>
@@ -1921,7 +1921,7 @@ const TextBlock = ({ textBlock, onUpdate, onDelete, onMove, targetSections, them
               lineHeight: 1.6,
               fontFamily: '"Instrument Sans", sans-serif'
             }}
-            dangerouslySetInnerHTML={{ __html: textBlock.content.trim() }}
+            dangerouslySetInnerHTML={{ __html: textBlock.content || '' }}
           />
         )
       )}
@@ -3355,7 +3355,14 @@ const MoveToDropdown = ({ targetSections, onMove }) => {
 };
 
 // Content Section Component
-const ContentSection = ({ section, onUpdate, onDelete, onMoveElement, contentSections, themeColors, logo, isPreview }) => {
+// Helper to convert number to word for section numbers
+const numberToWord = (num) => {
+  const words = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
+    'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen', 'Twenty'];
+  return num <= 20 ? words[num] : num.toString();
+};
+
+const ContentSection = ({ section, onUpdate, onDelete, onMoveElement, contentSections, contentIndex, themeColors, logo, isPreview }) => {
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [canvasWidth, setCanvasWidth] = useState(1200);
   const canvasRef = useRef(null);
@@ -3951,9 +3958,9 @@ const ContentSection = ({ section, onUpdate, onDelete, onMoveElement, contentSec
       <div className="text-center mb-12">
         {isPreview ? (
           <>
-            {section.sectionNumber && (
+            {contentIndex > 0 && (
               <p className="text-sm uppercase tracking-widest mb-2" style={{ color: themeColors?.gold || '#D4B896' }}>
-                {section.sectionNumber}
+                Section {numberToWord(contentIndex)}
               </p>
             )}
             {section.title && (
@@ -3962,14 +3969,12 @@ const ContentSection = ({ section, onUpdate, onDelete, onMoveElement, contentSec
           </>
         ) : (
           <>
-            <input
-              type="text"
-              value={section.sectionNumber || ''}
-              onChange={(e) => onUpdate({ ...section, sectionNumber: e.target.value })}
-              placeholder="Section One"
-              className="text-sm uppercase tracking-widest bg-transparent border-none text-center w-full focus:outline-none mb-2 placeholder:text-white/50"
+            <p
+              className="text-sm uppercase tracking-widest mb-2"
               style={{ color: themeColors?.gold || '#D4B896' }}
-            />
+            >
+              Section {numberToWord(contentIndex)}
+            </p>
             <input
               type="text"
               value={section.title || ''}
@@ -5009,12 +5014,16 @@ export default function ReportBuilder() {
       case 'footer':
         return <FooterSection {...commonProps} />;
       case 'content':
+        // Calculate which content section this is (1-based index)
+        const contentSections = sections.filter(s => s.type === 'content');
+        const contentIndex = contentSections.findIndex(s => s.id === section.id) + 1;
         return (
           <ContentSection
             {...commonProps}
             onDelete={() => deleteSection(section.id)}
             onMoveElement={moveElementToSection}
-            contentSections={sections.filter(s => s.type === 'content')}
+            contentSections={contentSections}
+            contentIndex={contentIndex}
           />
         );
       default:

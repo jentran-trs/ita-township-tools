@@ -1663,7 +1663,7 @@ const StatBox = ({ stat, onUpdate, onDelete, onMove, targetSections, themeColors
         />
       ) : (
         stat.label && (
-          <p className="font-semibold uppercase tracking-wider mt-2 px-2 text-center w-full break-words" style={{ color: 'white', fontSize: `${labelFontSize}px`, wordWrap: 'break-word', fontFamily: '"Instrument Sans", sans-serif' }}>
+          <p className="font-semibold uppercase tracking-wider mt-4 px-2 text-center w-full break-words" style={{ color: 'white', fontSize: `${labelFontSize}px`, wordWrap: 'break-word', fontFamily: '"Instrument Sans", sans-serif' }}>
             {stat.label}
           </p>
         )

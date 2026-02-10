@@ -3085,7 +3085,7 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
           {isPreview ? (
             <>
               {section.heading && (
-                <h1 className="text-4xl font-semibold" style={{ color: themeColors?.primary || '#2B3E50', whiteSpace: 'pre-wrap' }}>
+                <h1 className="text-4xl font-semibold" style={{ color: themeColors?.primary || '#2B3E50', whiteSpace: 'pre-wrap', wordSpacing: '0.05em', fontFamily: '"Instrument Sans", sans-serif' }}>
                   {section.heading}
                 </h1>
               )}

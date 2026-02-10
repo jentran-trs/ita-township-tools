@@ -1370,7 +1370,7 @@ const InfoCard = ({ card, onUpdate, onDelete, onMove, targetSections, themeColor
 
       {/* Card Content Container */}
       {editable ? (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'center' }}>
           {/* Title - editable with auto-resize */}
           <textarea
             value={card.title || ''}
@@ -1414,7 +1414,7 @@ const InfoCard = ({ card, onUpdate, onDelete, onMove, targetSections, themeColor
           />
         </div>
       ) : (
-        <>
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}>
           {/* Title - preview */}
           {card.title && (
             <h3 style={{
@@ -1446,7 +1446,7 @@ const InfoCard = ({ card, onUpdate, onDelete, onMove, targetSections, themeColor
               {card.content.replace(/[\s\n\r]+$/, '')}
             </p>
           )}
-        </>
+        </div>
       )}
 
       {/* Resize Handle - only in edit mode */}

@@ -282,7 +282,7 @@ function AddElementDropdown({ onAdd, imageCount, chartCount, textCount, cardCoun
         ref={buttonRef}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full py-3 border-2 border-dashed border-slate-300 rounded-xl text-slate-600 hover:border-[#1e3a5f] hover:text-[#1e3a5f] transition-colors flex items-center justify-center gap-2"
+        className="px-6 py-3 bg-[#D4B896] text-[#1e3a5f] rounded-xl hover:bg-[#c4a886] transition-colors flex items-center justify-center gap-2 font-medium shadow-md"
       >
         <Plus className="w-4 h-4" />
         Add Element

@@ -3055,12 +3055,12 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
           {isPreview ? (
             <>
               {section.heading && (
-                <h1 className="text-4xl font-semibold" style={{ color: themeColors?.primary || '#2B3E50', wordSpacing: '0.1em', whiteSpace: 'pre-wrap' }}>
+                <h1 className="text-4xl font-semibold" style={{ color: themeColors?.primary || '#2B3E50', whiteSpace: 'pre-wrap' }}>
                   {section.heading}
                 </h1>
               )}
               {section.subheading && (
-                <p className="text-xl font-semibold mt-2" style={{ color: themeColors?.accent || '#C1272D', wordSpacing: '0.1em', whiteSpace: 'pre-wrap' }}>
+                <p className="text-xl font-semibold mt-2" style={{ color: themeColors?.accent || '#C1272D', whiteSpace: 'pre-wrap' }}>
                   {section.subheading}
                 </p>
               )}

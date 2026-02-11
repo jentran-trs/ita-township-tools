@@ -4984,7 +4984,7 @@ export default function ReportBuilder() {
         statBoxes.forEach((box) => {
           originalStatBoxStyles.push(box.style.paddingBottom);
           const boxHeight = box.offsetHeight;
-          box.style.paddingBottom = `${boxHeight * 0.15}px`;
+          box.style.paddingBottom = `${boxHeight * 0.2}px`;
         });
 
         const canvas = await window.html2canvas(section, {

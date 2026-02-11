@@ -1594,7 +1594,7 @@ const StatBox = ({ stat, onUpdate, onDelete, onMove, targetSections, themeColors
 
   return (
     <div
-      className={`absolute rounded-xl flex flex-col items-center justify-center text-center transition-shadow ${editable ? 'group cursor-move' : ''}`}
+      className={`absolute rounded-xl flex flex-col items-center text-center transition-shadow ${editable ? 'group cursor-move' : ''}`}
       style={{
         backgroundColor: 'rgba(255, 255, 255, 0.1)',
         border: `3px solid ${themeColors?.gold || '#D4B896'}`,
@@ -1603,7 +1603,8 @@ const StatBox = ({ stat, onUpdate, onDelete, onMove, targetSections, themeColors
         height: `${height}px`,
         left: `${position.x}px`,
         top: `${position.y}px`,
-        paddingBottom: `${labelFontSize * 2}px`,
+        boxSizing: 'border-box',
+        padding: `${height * 0.15}px 0`,
         zIndex: isDragging ? 100 : 1
       }}
       onMouseDown={handleDragStart}

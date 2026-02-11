@@ -1603,7 +1603,7 @@ const StatBox = ({ stat, onUpdate, onDelete, onMove, targetSections, themeColors
         height: `${height}px`,
         left: `${position.x}px`,
         top: `${position.y}px`,
-        paddingBottom: `${labelFontSize}px`,
+        paddingBottom: `${labelFontSize * 2}px`,
         zIndex: isDragging ? 100 : 1
       }}
       onMouseDown={handleDragStart}

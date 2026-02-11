@@ -1594,7 +1594,8 @@ const StatBox = ({ stat, onUpdate, onDelete, onMove, targetSections, themeColors
 
   return (
     <div
-      className={`absolute rounded-xl flex flex-col items-center text-center transition-shadow ${editable ? 'group cursor-move' : ''}`}
+      className={`absolute rounded-xl flex flex-col items-center justify-center text-center transition-shadow ${editable ? 'group cursor-move' : ''}`}
+      data-statbox
       style={{
         backgroundColor: 'rgba(255, 255, 255, 0.1)',
         border: `3px solid ${themeColors?.gold || '#D4B896'}`,
@@ -1603,8 +1604,6 @@ const StatBox = ({ stat, onUpdate, onDelete, onMove, targetSections, themeColors
         height: `${height}px`,
         left: `${position.x}px`,
         top: `${position.y}px`,
-        boxSizing: 'border-box',
-        padding: `${height * 0.15}px 0`,
         zIndex: isDragging ? 100 : 1
       }}
       onMouseDown={handleDragStart}
@@ -4979,6 +4978,15 @@ export default function ReportBuilder() {
         section.style.width = '990px';
         section.style.minWidth = '990px';
 
+        // Temporarily add padding-bottom to StatBoxes to compensate for html2canvas misrendering justify-center
+        const statBoxes = section.querySelectorAll('[data-statbox]');
+        const originalStatBoxStyles = [];
+        statBoxes.forEach((box) => {
+          originalStatBoxStyles.push(box.style.paddingBottom);
+          const boxHeight = box.offsetHeight;
+          box.style.paddingBottom = `${boxHeight * 0.15}px`;
+        });
+
         const canvas = await window.html2canvas(section, {
           scale: 2, // Higher quality
           useCORS: true,
@@ -4989,9 +4997,12 @@ export default function ReportBuilder() {
           windowWidth: 990
         });
 
-        // Restore original dimensions
+        // Restore original dimensions and StatBox styles
         section.style.width = originalWidth;
         section.style.minWidth = originalMinWidth;
+        statBoxes.forEach((box, idx) => {
+          box.style.paddingBottom = originalStatBoxStyles[idx];
+        });
         
         console.log(`Section ${i + 1} captured: ${canvas.width}x${canvas.height}`);
         

@@ -253,8 +253,6 @@ function StatInput({ stat, onChange, onRemove }) {
 // Add element dropdown
 function AddElementDropdown({ onAdd, imageCount, chartCount, textCount, cardCount, statCount }) {
   const [isOpen, setIsOpen] = useState(false);
-  const buttonRef = useRef(null);
-  const [dropdownStyle, setDropdownStyle] = useState({});
 
   const options = [
     { type: 'image', label: 'Image with Caption', icon: Image, count: imageCount, recommended: 3 },
@@ -264,25 +262,9 @@ function AddElementDropdown({ onAdd, imageCount, chartCount, textCount, cardCoun
     { type: 'stat', label: 'Statistic', icon: Hash, count: statCount, recommended: 3 },
   ];
 
-  useEffect(() => {
-    if (isOpen && buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      const dropdownWidth = 280;
-      const buttonCenter = rect.left + rect.width / 2;
-      const dropdownLeft = buttonCenter - dropdownWidth / 2;
-      setDropdownStyle({
-        position: 'fixed',
-        bottom: window.innerHeight - rect.top + 8,
-        left: Math.max(8, dropdownLeft), // Ensure it doesn't go off-screen
-        width: dropdownWidth,
-      });
-    }
-  }, [isOpen]);
-
   return (
     <div className="relative flex justify-center">
       <button
-        ref={buttonRef}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="px-12 py-3 bg-[#D4B896] text-[#1e3a5f] rounded-xl hover:bg-[#c4a886] transition-colors flex items-center justify-center gap-2 font-medium shadow-md"
@@ -294,8 +276,7 @@ function AddElementDropdown({ onAdd, imageCount, chartCount, textCount, cardCoun
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
           <div
-            style={dropdownStyle}
-            className="bg-white border border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden"
+            className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-[280px] bg-white border border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden"
           >
             {options.map((option) => (
               <button

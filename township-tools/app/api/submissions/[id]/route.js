@@ -325,6 +325,9 @@ export async function DELETE(request, { params }) {
       if (section.image_urls && Array.isArray(section.image_urls)) {
         imageUrls.push(...section.image_urls);
       }
+      if (section.chart_link && section.chart_link.includes('report-assets')) {
+        imageUrls.push(section.chart_link);
+      }
     }
 
     // Delete stats first (foreign key constraint)

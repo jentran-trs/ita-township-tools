@@ -109,9 +109,10 @@ export default function ViewSubmissionPage() {
           <div className="flex items-center gap-4">
             <button
               onClick={() => router.push('/projects')}
-              className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors text-sm font-medium"
             >
-              <ArrowLeft className="w-5 h-5 text-slate-400" />
+              <ArrowLeft className="w-4 h-4" />
+              Back to Projects
             </button>
             <div>
               <h1 className="text-xl font-bold text-white">

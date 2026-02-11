@@ -191,15 +191,16 @@ export default function ProjectsPage() {
   return (
     <div className="min-h-screen bg-slate-900">
       {/* Header */}
-      <header className="border-b border-slate-700 bg-slate-800">
+      <header className="sticky top-0 z-50 border-b border-slate-700 bg-slate-800">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => router.push('/dashboard')}
-                className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+                className="flex items-center gap-2 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors text-sm font-medium"
               >
-                <ArrowLeft className="w-5 h-5 text-slate-400" />
+                <ArrowLeft className="w-4 h-4" />
+                Back to Dashboard
               </button>
               <div className="flex items-center gap-3">
                 <Building2 className="w-8 h-8 text-amber-500" />

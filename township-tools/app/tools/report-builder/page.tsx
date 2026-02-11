@@ -66,25 +66,25 @@ export default function ReportBuilderPage() {
   return (
     <div className="min-h-screen bg-slate-900">
       {/* Compact Header */}
-      <header className="border-b border-slate-700 bg-slate-800">
-        <div className="max-w-[1800px] mx-auto px-4 py-2 flex justify-between items-center">
+      <header className="fixed top-0 left-0 right-0 z-[100] border-b border-slate-700 bg-slate-800">
+        <div className="max-w-[1800px] mx-auto px-4 py-3 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <button
               onClick={() => router.push("/dashboard")}
-              className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors text-sm font-medium"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span className="text-sm">Back</span>
+              Back to Dashboard
             </button>
-            
+
             <div className="border-l border-slate-600 pl-4 flex items-center gap-2">
               <Building2 className="w-5 h-5 text-amber-500" />
               <span className="text-white font-medium">{organization.name}</span>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-4">
-            <OrganizationSwitcher 
+            <OrganizationSwitcher
               appearance={{
                 elements: {
                   rootBox: "flex items-center",
@@ -98,7 +98,7 @@ export default function ReportBuilderPage() {
       </header>
 
       {/* Report Builder */}
-      <div className="report-builder-container">
+      <div className="report-builder-container pt-12">
         <ReportBuilder />
       </div>
     </div>

@@ -245,14 +245,16 @@ export default function AdminPage() {
       )}
 
       {/* Header */}
-      <header className="border-b border-slate-700 bg-slate-800">
+      <header className="sticky top-0 z-50 border-b border-slate-700 bg-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center">
           <div className="flex items-center gap-2 sm:gap-4">
             <button
               onClick={() => router.push("/dashboard")}
-              className="p-1.5 sm:p-2 hover:bg-slate-700 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors text-sm font-medium"
             >
-              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400" />
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden sm:inline">Back to Dashboard</span>
+              <span className="sm:hidden">Back</span>
             </button>
             <div className="flex items-center gap-2 sm:gap-3">
               <ShieldCheck className="w-6 h-6 sm:w-8 sm:h-8 text-amber-500" />

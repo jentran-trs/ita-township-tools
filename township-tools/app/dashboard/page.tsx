@@ -137,25 +137,27 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Organization Management */}
-            <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 sm:p-6">
-              <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-                <Users className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500" />
-                <h2 className="text-lg sm:text-xl font-bold text-white">Organization Members</h2>
+            {/* Organization Management - Admin only */}
+            {isAdmin && (
+              <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 sm:p-6">
+                <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                  <Users className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500" />
+                  <h2 className="text-lg sm:text-xl font-bold text-white">Organization Members</h2>
+                </div>
+                <p className="text-sm sm:text-base text-slate-400 mb-3 sm:mb-4">
+                  Manage your township&apos;s team members and their access.
+                </p>
+                <OrganizationSwitcher
+                  appearance={{
+                    elements: {
+                      rootBox: "flex",
+                      organizationSwitcherTrigger: "bg-amber-500 text-slate-900 rounded-lg px-3 sm:px-4 py-2 font-medium hover:bg-amber-400 text-sm sm:text-base",
+                    }
+                  }}
+                  organizationProfileMode="modal"
+                />
               </div>
-              <p className="text-sm sm:text-base text-slate-400 mb-3 sm:mb-4">
-                Manage your township&apos;s team members and their access.
-              </p>
-              <OrganizationSwitcher
-                appearance={{
-                  elements: {
-                    rootBox: "flex",
-                    organizationSwitcherTrigger: "bg-amber-500 text-slate-900 rounded-lg px-3 sm:px-4 py-2 font-medium hover:bg-amber-400 text-sm sm:text-base",
-                  }
-                }}
-                organizationProfileMode="modal"
-              />
-            </div>
+            )}
           </>
         ) : (
           /* No Organization - Prompt to Create */

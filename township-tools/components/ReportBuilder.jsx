@@ -3994,7 +3994,7 @@ const ContentSection = ({ section, onUpdate, onDelete, onMoveElement, contentSec
         maxHeight: '1400px',
         height: '1400px',
         width: '990px',
-        padding: '64px 64px 70px 64px'
+        padding: '64px 64px 50px 64px'
       }}
     >
       {!isPreview && (

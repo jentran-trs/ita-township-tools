@@ -2803,7 +2803,7 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
 
   // Calculate available height for content area
   const totalFixedHeight = headerHeight + topPadding + bottomPadding + bottomImagesHeight;
-  const maxContentHeight = pageHeight - totalFixedHeight - 50; // 50px bottom padding on container
+  const maxContentHeight = pageHeight - totalFixedHeight - 70; // 70px bottom padding on container
 
   // Content box resize handlers
   const handleContentResizeStart = (e) => {
@@ -3000,7 +3000,7 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
         height: '1400px',
         width: '990px',
         overflow: 'hidden',
-        padding: '64px 64px 50px 64px'
+        padding: '64px 64px 70px 64px'
       }}
     >
       <div 
@@ -3994,7 +3994,7 @@ const ContentSection = ({ section, onUpdate, onDelete, onMoveElement, contentSec
         maxHeight: '1400px',
         height: '1400px',
         width: '990px',
-        padding: '64px 64px 50px 64px'
+        padding: '64px 64px 70px 64px'
       }}
     >
       {!isPreview && (

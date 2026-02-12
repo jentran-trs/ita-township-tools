@@ -307,7 +307,7 @@ export default function ProjectsPage() {
                           )}
                           <span className="flex items-center gap-1">
                             <FileText className="w-4 h-4" />
-                            {project.submission_count || 0} submissions
+                            {project.submission_count || 0} {(project.submission_count || 0) === 1 ? 'submission' : 'submissions'}
                           </span>
                         </div>
                       )}

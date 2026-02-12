@@ -1,12 +1,34 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 const STORAGE_KEY = 'asset-collection-form-draft';
+
+function buildSavePayload(data) {
+  return {
+    cover: { ...data.cover, logo: null },
+    letter: {
+      ...data.letter,
+      headshot: null,
+      letterImage1: null,
+      letterImage2: null,
+    },
+    footer: data.footer,
+    sections: data.sections.map(s => ({
+      ...s,
+      images: [], // Don't save file objects
+    })),
+    review: data.review,
+    currentStep: data.currentStep,
+  };
+}
 
 export function useFormPersistence(initialData) {
   const [data, setData] = useState(initialData);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const dataRef = useRef(data);
+  dataRef.current = data;
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -14,8 +36,6 @@ export function useFormPersistence(initialData) {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        // Don't restore file objects (they can't be serialized)
-        // But keep other form data
         setData(prev => ({
           ...prev,
           cover: { ...prev.cover, ...parsed.cover, logo: null },
@@ -29,7 +49,7 @@ export function useFormPersistence(initialData) {
           footer: { ...prev.footer, ...parsed.footer },
           sections: (parsed.sections || []).map(s => ({
             ...s,
-            images: [], // Clear file objects
+            images: [],
           })),
           review: { ...prev.review, ...parsed.review },
           currentStep: parsed.currentStep || 1,
@@ -47,35 +67,36 @@ export function useFormPersistence(initialData) {
 
     const timer = setTimeout(() => {
       try {
-        // Don't save file objects
-        const toSave = {
-          cover: { ...data.cover, logo: null },
-          letter: {
-            ...data.letter,
-            headshot: null,
-            letterImage1: null,
-            letterImage2: null,
-          },
-          footer: data.footer,
-          sections: data.sections.map(s => ({
-            ...s,
-            images: [], // Don't save file objects
-          })),
-          review: data.review,
-          currentStep: data.currentStep,
-        };
+        const toSave = buildSavePayload(data);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+        setSaveError('');
       } catch (e) {
         console.error('Error saving form draft:', e);
+        if (e.name === 'QuotaExceededError' || e.code === 22) {
+          setSaveError('Auto-save failed: browser storage is full. Your progress may not be saved if you leave this page.');
+        } else {
+          setSaveError('Auto-save failed. Your progress may not be saved if you leave this page.');
+        }
       }
     }, 1000);
 
     return () => clearTimeout(timer);
   }, [data, isLoaded]);
 
+  // Force an immediate save (call before submit so latest data is persisted)
+  const saveNow = useCallback(() => {
+    try {
+      const toSave = buildSavePayload(dataRef.current);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+      setSaveError('');
+    } catch (e) {
+      console.error('Error saving form draft:', e);
+    }
+  }, []);
+
   const clearDraft = () => {
     localStorage.removeItem(STORAGE_KEY);
   };
 
-  return { data, setData, isLoaded, clearDraft };
+  return { data, setData, isLoaded, clearDraft, saveNow, saveError };
 }

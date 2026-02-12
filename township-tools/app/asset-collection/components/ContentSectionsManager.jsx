@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import FileUpload from './FileUpload';
 import { Layers, Plus, Trash2, ChevronDown, ChevronUp, BarChart3, Info, X, Image, FileText, CreditCard, Hash, ExternalLink, MessageSquare } from 'lucide-react';
 
@@ -250,9 +251,32 @@ function StatInput({ stat, onChange, onRemove }) {
   );
 }
 
-// Add element dropdown
+// Add element dropdown — uses portal to avoid overflow-hidden clipping
 function AddElementDropdown({ onAdd, imageCount, chartCount, textCount, cardCount, statCount }) {
   const [isOpen, setIsOpen] = useState(false);
+  const buttonRef = useRef(null);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+
+  const updatePosition = () => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setPos({
+        top: rect.top + window.scrollY,
+        left: rect.left + rect.width / 2,
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (!isOpen) return;
+    window.addEventListener('resize', updatePosition);
+    return () => window.removeEventListener('resize', updatePosition);
+  }, [isOpen]);
+
+  const handleToggle = () => {
+    if (!isOpen) updatePosition();
+    setIsOpen(!isOpen);
+  };
 
   const options = [
     { type: 'image', label: 'Image with Caption', icon: Image, count: imageCount, recommended: 3 },
@@ -263,20 +287,26 @@ function AddElementDropdown({ onAdd, imageCount, chartCount, textCount, cardCoun
   ];
 
   return (
-    <div className="relative flex justify-center">
+    <div className="flex justify-center">
       <button
+        ref={buttonRef}
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleToggle}
         className="px-12 py-3 bg-[#D4B896] text-[#1e3a5f] rounded-xl hover:bg-[#c4a886] transition-colors flex items-center justify-center gap-2 font-medium shadow-md"
       >
         <Plus className="w-4 h-4" />
         Add Element
       </button>
-      {isOpen && (
+      {isOpen && typeof document !== 'undefined' && createPortal(
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+          <div className="fixed inset-0 z-[9998]" onClick={() => setIsOpen(false)} />
           <div
-            className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-[280px] bg-white border border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden"
+            className="absolute w-[280px] bg-white border border-slate-200 rounded-xl shadow-lg z-[9999] overflow-hidden"
+            style={{
+              top: pos.top,
+              left: pos.left,
+              transform: 'translate(-50%, -100%) translateY(-8px)',
+            }}
           >
             {options.map((option) => (
               <button
@@ -296,7 +326,8 @@ function AddElementDropdown({ onAdd, imageCount, chartCount, textCount, cardCoun
               </button>
             ))}
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );

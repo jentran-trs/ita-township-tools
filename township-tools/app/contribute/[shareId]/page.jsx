@@ -12,6 +12,7 @@ import OpeningLetterSection from '../../asset-collection/components/OpeningLette
 import FooterSection from '../../asset-collection/components/FooterSection';
 import ContentSectionsManager from '../../asset-collection/components/ContentSectionsManager';
 import ReviewSection from '../../asset-collection/components/ReviewSection';
+import FormTransferBar from '../../asset-collection/components/FormTransferBar';
 
 const initialFormData = {
   cover: {
@@ -493,6 +494,19 @@ export default function ContributePage() {
     goToStep(currentStep - 1);
   };
 
+  const handleImport = (importedData) => {
+    // Preserve project's pre-filled org/report names if the imported data is empty
+    if (!importedData.cover.organizationName && project?.organization_name) {
+      importedData.cover.organizationName = project.organization_name;
+    }
+    if (!importedData.cover.reportName && project?.name) {
+      importedData.cover.reportName = project.name;
+    }
+    setFormData(importedData);
+    setCompletedSteps([]);
+    setFormError('');
+  };
+
   const uploadFile = async (fileData, path, oldUrl = null) => {
     if (!fileData?.file) return null;
     const formDataUpload = new FormData();
@@ -528,6 +542,11 @@ export default function ContributePage() {
     })));
 
     if (!validateStep(5)) return;
+
+    // Force a server draft save so progress is safe if submission fails
+    if (!isEditMode) {
+      saveServerDraft();
+    }
 
     setSubmitting(true);
     setFormError('');
@@ -736,7 +755,11 @@ export default function ContributePage() {
 
     } catch (err) {
       console.error('Submission error:', err);
-      setFormError(err.message || 'An error occurred. Please try again.');
+      if (err instanceof TypeError && err.message === 'Failed to fetch') {
+        setFormError('Network error — could not reach the server. Please check your internet connection and try again. Your text progress has been saved.');
+      } else {
+        setFormError(err.message || 'An error occurred. Please try again.');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -917,6 +940,13 @@ export default function ContributePage() {
             </div>
           )}
         </div>
+
+        <FormTransferBar
+          formData={formData}
+          onImport={handleImport}
+          source="contribute"
+          hideImport={isEditMode}
+        />
 
         <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
           {currentStep === 1 && (

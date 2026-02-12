@@ -8,6 +8,7 @@ import OpeningLetterSection from './components/OpeningLetterSection';
 import FooterSection from './components/FooterSection';
 import ContentSectionsManager from './components/ContentSectionsManager';
 import ReviewSection from './components/ReviewSection';
+import FormTransferBar from './components/FormTransferBar';
 import { useFormPersistence } from './hooks/useFormPersistence';
 
 const initialFormData = {
@@ -47,7 +48,7 @@ const initialFormData = {
 };
 
 export default function AssetCollectionPage() {
-  const { data: formData, setData: setFormData, isLoaded, clearDraft } = useFormPersistence(initialFormData);
+  const { data: formData, setData: setFormData, isLoaded, clearDraft, saveNow, saveError } = useFormPersistence(initialFormData);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submissionId, setSubmissionId] = useState(null);
@@ -159,6 +160,12 @@ export default function AssetCollectionPage() {
     goToStep(currentStep - 1);
   };
 
+  const handleImport = (importedData) => {
+    setFormData(importedData);
+    setCompletedSteps([]);
+    setError('');
+  };
+
   const uploadFile = async (fileData, path) => {
     if (!fileData?.file) return null;
 
@@ -181,6 +188,9 @@ export default function AssetCollectionPage() {
 
   const handleSubmit = async () => {
     if (!validateStep(5)) return;
+
+    // Force-save to localStorage before starting so progress is safe
+    saveNow();
 
     setSubmitting(true);
     setError('');
@@ -274,7 +284,11 @@ export default function AssetCollectionPage() {
 
     } catch (err) {
       console.error('Submission error:', err);
-      setError(err.message || 'An error occurred while submitting. Please try again.');
+      if (err instanceof TypeError && err.message === 'Failed to fetch') {
+        setError('Network error — could not reach the server. Please check your internet connection and try again. Your text progress has been saved.');
+      } else {
+        setError(err.message || 'An error occurred while submitting. Please try again.');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -380,6 +394,12 @@ export default function AssetCollectionPage() {
           )}
         </div>
 
+        <FormTransferBar
+          formData={formData}
+          onImport={handleImport}
+          source="asset-collection"
+        />
+
         <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
           {currentStep === 1 && (
             <CoverSection
@@ -472,10 +492,16 @@ export default function AssetCollectionPage() {
           </div>
         </div>
 
-        {/* Draft indicator */}
-        <p className="text-center text-sm text-slate-400 mt-4">
-          Text content is automatically saved. Images are saved on submit.
-        </p>
+        {/* Save status */}
+        {saveError ? (
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm text-center">
+            {saveError}
+          </div>
+        ) : (
+          <p className="text-center text-sm text-slate-400 mt-4">
+            Text content is automatically saved. Images are saved on submit.
+          </p>
+        )}
       </main>
     </div>
   );

@@ -33,6 +33,21 @@ const getBrightness = (r, g, b) => {
   return (r * 299 + g * 587 + b * 114) / 1000;
 };
 
+// Calculate saturation (0-1)
+const getSaturation = (r, g, b) => {
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  if (max === 0) return 0;
+  return (max - min) / max;
+};
+
+// Color distance (Euclidean in RGB space)
+const getColorDistance = (c1, c2) => {
+  return Math.sqrt(
+    (c1.r - c2.r) ** 2 + (c1.g - c2.g) ** 2 + (c1.b - c2.b) ** 2
+  );
+};
+
 // Extract colors from logo URL using node-vibrant
 async function extractColorsFromLogo(logoUrl) {
   if (!logoUrl) return DEFAULT_THEME_COLORS;
@@ -40,50 +55,80 @@ async function extractColorsFromLogo(logoUrl) {
   try {
     const palette = await Vibrant.from(logoUrl).getPalette();
 
-    // Collect all available colors from the palette
-    const allColors = [];
-    const paletteKeys = ['Vibrant', 'DarkVibrant', 'LightVibrant', 'Muted', 'DarkMuted', 'LightMuted'];
+    // Helper to convert a swatch to our internal format
+    const toColor = (swatch) => {
+      if (!swatch) return null;
+      return {
+        r: swatch.r, g: swatch.g, b: swatch.b,
+        hex: swatch.hex,
+        brightness: getBrightness(swatch.r, swatch.g, swatch.b),
+        saturation: getSaturation(swatch.r, swatch.g, swatch.b),
+        population: swatch.population,
+      };
+    };
 
-    for (const key of paletteKeys) {
-      const swatch = palette[key];
-      if (swatch) {
-        allColors.push({
-          r: swatch.r,
-          g: swatch.g,
-          b: swatch.b,
-          brightness: getBrightness(swatch.r, swatch.g, swatch.b),
-          hex: rgbToHex(swatch.r, swatch.g, swatch.b)
-        });
-      }
-    }
+    const swatches = {
+      Vibrant: toColor(palette.Vibrant),
+      DarkVibrant: toColor(palette.DarkVibrant),
+      LightVibrant: toColor(palette.LightVibrant),
+      Muted: toColor(palette.Muted),
+      DarkMuted: toColor(palette.DarkMuted),
+      LightMuted: toColor(palette.LightMuted),
+    };
 
-    // Sort by brightness (darkest first)
-    allColors.sort((a, b) => a.brightness - b.brightness);
+    const all = Object.values(swatches).filter(Boolean);
+    if (all.length < 2) return DEFAULT_THEME_COLORS;
 
-    if (allColors.length < 2) {
-      return DEFAULT_THEME_COLORS;
-    }
+    const MIN_DISTANCE = 40;
 
-    // Primary = darkest color
-    const primaryColor = allColors[0];
+    // --- PRIMARY: dark, brand-like color ---
+    // Prefer DarkVibrant (dark + colorful), fallback to DarkMuted, then darkest overall
+    const primaryColor =
+      swatches.DarkVibrant ||
+      swatches.DarkMuted ||
+      [...all].sort((a, b) => a.brightness - b.brightness)[0];
+
+    // --- ACCENT: most vibrant/saturated color, distinct from primary ---
+    // Prefer Vibrant, fallback to Muted, then most saturated that's distinct from primary
+    const accentCandidates = [
+      swatches.Vibrant,
+      swatches.Muted,
+      ...[...all].sort((a, b) => b.saturation - a.saturation),
+    ].filter(Boolean);
+
+    const accentColor = accentCandidates.find(
+      c => c !== primaryColor && getColorDistance(c, primaryColor) > MIN_DISTANCE
+    ) || accentCandidates.find(c => c !== primaryColor) || primaryColor;
+
+    // --- GOLD/HIGHLIGHT: bright accent color, distinct from primary & accent ---
+    // Prefer LightVibrant (bright + colorful), fallback to LightMuted, then brightest distinct
+    const goldCandidates = [
+      swatches.LightVibrant,
+      swatches.LightMuted,
+      ...[...all].sort((a, b) => b.brightness - a.brightness),
+    ].filter(Boolean);
+
+    const goldColor = goldCandidates.find(
+      c => c !== primaryColor && c !== accentColor &&
+           getColorDistance(c, primaryColor) > MIN_DISTANCE &&
+           getColorDistance(c, accentColor) > MIN_DISTANCE
+    ) || goldCandidates.find(
+      c => c !== primaryColor && c !== accentColor
+    ) || { r: 212, g: 184, b: 150, hex: '#d4b896' }; // warm gold fallback
+
     const primary = primaryColor.hex;
-
-    // Primary Dark = even darker version of primary
     const primaryDark = rgbToHex(
       Math.max(0, primaryColor.r - 20),
       Math.max(0, primaryColor.g - 20),
       Math.max(0, primaryColor.b - 20)
     );
-
-    // Accent = second darkest color
-    const accentColor = allColors[1];
     const accent = accentColor.hex;
-
-    // Gold/Highlight = brightest color (last in sorted array)
-    const goldColor = allColors[allColors.length - 1];
     const gold = goldColor.hex;
 
     console.log('Extracted colors from logo:', { primary, primaryDark, accent, gold });
+    console.log('Palette swatches:', Object.fromEntries(
+      Object.entries(swatches).map(([k, v]) => [k, v ? v.hex : null])
+    ));
 
     return { primary, primaryDark, accent, gold };
   } catch (error) {

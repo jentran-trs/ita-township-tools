@@ -1017,10 +1017,10 @@ const ImageFrame = ({ imageData, onUpdate, onDelete, onMove, targetSections, the
         zIndex: isDragging || isRepositioning ? 100 : 1
       }}
     >
-      <div 
+      <div
         ref={frameRef}
-        style={getFrameStyle()} 
-        className={`relative bg-slate-100 ${editable ? 'cursor-move' : ''}`}
+        className={`relative ${imageData.src ? '' : 'bg-slate-100'} ${editable ? 'cursor-move' : ''}`}
+        style={{ ...getFrameStyle(), background: imageData.src ? 'transparent' : undefined }}
         onMouseDown={handleDragStart}
       >
         {imageData.src ? (
@@ -1041,6 +1041,7 @@ const ImageFrame = ({ imageData, onUpdate, onDelete, onMove, targetSections, the
                     alt=""
                     className="absolute select-none pointer-events-none"
                     style={{
+                      background: 'transparent',
                       ...(fillWidth
                         ? { width: '100%', height: 'auto', left: '0', top: '50%', transform: `translateY(calc(-50% + ${imageOffsetY}px))` }
                         : { height: '100%', width: 'auto', top: '50%', left: '50%', transform: `translate(-50%, calc(-50% + ${imageOffsetY}px))` }
@@ -2383,11 +2384,12 @@ const ChartContainer = ({ chart, onUpdate, onDelete, onMove, targetSections, the
       }}
     >
       <div
-        className={`relative ${chart.chartImage ? '' : 'bg-white/95'} rounded-xl p-4 ${chart.chartImage ? '' : 'shadow-lg'} ${editable ? 'group cursor-move' : ''}`}
+        className={`relative ${chart.chartImage ? '' : 'bg-white/95 rounded-xl shadow-lg'} ${chart.chartImage ? '' : 'p-4'} ${editable ? 'group cursor-move' : ''}`}
         style={{
           border: chart.chartImage ? 'none' : `2px solid ${themeColors?.gold || '#D4B896'}`,
           width: `${width}px`,
           height: `${height}px`,
+          background: chart.chartImage ? 'transparent' : undefined,
           boxShadow: isDragging ? '0 10px 40px rgba(0,0,0,0.3)' : undefined,
         }}
         onMouseDown={handleDragStart}
@@ -2400,11 +2402,11 @@ const ChartContainer = ({ chart, onUpdate, onDelete, onMove, targetSections, the
         )}
 
         {chart.chartImage ? (
-          <div className="w-full h-full relative px-6" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="w-full h-full relative" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent' }}>
             <img
               src={chart.chartImage}
               alt="Chart"
-              style={{ maxWidth: '100%', maxHeight: '100%', width: 'auto', height: 'auto' }}
+              style={{ maxWidth: '100%', maxHeight: '100%', width: 'auto', height: 'auto', background: 'transparent' }}
             />
             {/* Loading overlay when replacing chart */}
             {isLoading && (

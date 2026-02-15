@@ -2382,10 +2382,10 @@ const ChartContainer = ({ chart, onUpdate, onDelete, onMove, targetSections, the
         zIndex: isDragging ? 100 : 1
       }}
     >
-      <div 
-        className={`relative bg-white/95 rounded-xl p-4 shadow-lg ${editable ? 'group cursor-move' : ''}`}
-        style={{ 
-          border: `2px solid ${themeColors?.gold || '#D4B896'}`,
+      <div
+        className={`relative ${chart.chartImage ? '' : 'bg-white/95'} rounded-xl p-4 ${chart.chartImage ? '' : 'shadow-lg'} ${editable ? 'group cursor-move' : ''}`}
+        style={{
+          border: chart.chartImage ? 'none' : `2px solid ${themeColors?.gold || '#D4B896'}`,
           width: `${width}px`,
           height: `${height}px`,
           boxShadow: isDragging ? '0 10px 40px rgba(0,0,0,0.3)' : undefined,

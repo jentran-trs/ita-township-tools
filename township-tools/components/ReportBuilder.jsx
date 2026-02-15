@@ -989,21 +989,23 @@ const ImageFrame = ({ imageData, onUpdate, onDelete, onMove, targetSections, the
     }
   };
 
+  const frameless = imageData.frameless || false;
+
   const getFrameStyle = () => {
     const base = {
       width: `${frameWidth}px`,
       height: `${frameHeight}px`,
-      border: `3px solid ${themeColors?.gold || '#D4B896'}`,
+      border: frameless ? 'none' : `3px solid ${themeColors?.gold || '#D4B896'}`,
       overflow: 'hidden',
     };
-    
+
     switch (imageData.shape) {
       case 'circle':
-        return { ...base, borderRadius: '50%', width: `${Math.min(frameWidth, frameHeight)}px`, height: `${Math.min(frameWidth, frameHeight)}px` };
+        return { ...base, borderRadius: frameless ? '0' : '50%', width: `${Math.min(frameWidth, frameHeight)}px`, height: `${Math.min(frameWidth, frameHeight)}px` };
       case 'rectangle':
-        return { ...base, borderRadius: '8px' };
+        return { ...base, borderRadius: frameless ? '0' : '8px' };
       default:
-        return { ...base, borderRadius: '8px', aspectRatio: '1/1' };
+        return { ...base, borderRadius: frameless ? '0' : '8px', aspectRatio: '1/1' };
     }
   };
 
@@ -1019,8 +1021,8 @@ const ImageFrame = ({ imageData, onUpdate, onDelete, onMove, targetSections, the
     >
       <div
         ref={frameRef}
-        className={`relative ${imageData.src ? '' : 'bg-slate-100'} ${editable ? 'cursor-move' : ''}`}
-        style={{ ...getFrameStyle(), background: imageData.src ? 'transparent' : undefined }}
+        className={`relative ${imageData.src && frameless ? '' : imageData.src ? '' : 'bg-slate-100'} ${editable ? 'cursor-move' : ''}`}
+        style={{ ...getFrameStyle(), background: frameless ? 'transparent' : undefined }}
         onMouseDown={handleDragStart}
       >
         {imageData.src ? (
@@ -1196,6 +1198,14 @@ const ImageFrame = ({ imageData, onUpdate, onDelete, onMove, targetSections, the
               <option value="rectangle">Rectangle</option>
               <option value="circle">Circle</option>
             </select>
+            <button
+              onClick={(e) => { e.stopPropagation(); onUpdate({ ...imageData, frameless: !frameless }); }}
+              onMouseDown={(e) => e.stopPropagation()}
+              className={`px-2 py-1 text-xs rounded shadow-sm border ${frameless ? 'bg-amber-500 text-white border-amber-600' : 'bg-white/90 text-black border-slate-300'}`}
+              title={frameless ? 'Frame off — click to turn on' : 'Frame on — click to turn off'}
+            >
+              {frameless ? 'Frameless' : 'Framed'}
+            </button>
             <div className="flex items-center gap-1 text-xs text-slate-600 bg-white/90 px-2 py-1 rounded shadow-sm">
               {Math.round(frameWidth)} × {Math.round(frameHeight)}
             </div>
@@ -2384,12 +2394,11 @@ const ChartContainer = ({ chart, onUpdate, onDelete, onMove, targetSections, the
       }}
     >
       <div
-        className={`relative ${chart.chartImage ? '' : 'bg-white/95 rounded-xl shadow-lg'} ${chart.chartImage ? '' : 'p-4'} ${editable ? 'group cursor-move' : ''}`}
+        className={`relative bg-white/95 rounded-xl p-4 shadow-lg ${editable ? 'group cursor-move' : ''}`}
         style={{
-          border: chart.chartImage ? 'none' : `2px solid ${themeColors?.gold || '#D4B896'}`,
+          border: `2px solid ${themeColors?.gold || '#D4B896'}`,
           width: `${width}px`,
           height: `${height}px`,
-          background: chart.chartImage ? 'transparent' : undefined,
           boxShadow: isDragging ? '0 10px 40px rgba(0,0,0,0.3)' : undefined,
         }}
         onMouseDown={handleDragStart}
@@ -2402,11 +2411,11 @@ const ChartContainer = ({ chart, onUpdate, onDelete, onMove, targetSections, the
         )}
 
         {chart.chartImage ? (
-          <div className="w-full h-full relative" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent' }}>
+          <div className="w-full h-full relative px-6" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <img
               src={chart.chartImage}
               alt="Chart"
-              style={{ maxWidth: '100%', maxHeight: '100%', width: 'auto', height: 'auto', background: 'transparent' }}
+              style={{ maxWidth: '100%', maxHeight: '100%', width: 'auto', height: 'auto' }}
             />
             {/* Loading overlay when replacing chart */}
             {isLoading && (

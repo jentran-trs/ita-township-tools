@@ -903,6 +903,12 @@ const ImageFrame = ({ imageData, onUpdate, onDelete, onMove, targetSections, the
       // Constrain height so bottom of frame doesn't exceed page (captions can overflow)
       const maxHeight = Math.max(100, canvasMaxHeight - position.y);
       newHeight = Math.min(newHeight, maxHeight);
+      // Circle and square shapes: maintain 1:1 aspect ratio
+      if (imageData.shape === 'circle' || imageData.shape === 'square' || !imageData.shape) {
+        const size = Math.min(newWidth, newHeight);
+        newWidth = size;
+        newHeight = size;
+      }
       setFrameWidth(snapToGrid(newWidth));
       setFrameHeight(snapToGrid(newHeight));
     };
@@ -1173,18 +1179,6 @@ const ImageFrame = ({ imageData, onUpdate, onDelete, onMove, targetSections, the
           className="hidden"
         />
         
-        {/* Resize Handle */}
-        {editable && (
-          <div
-            onMouseDown={handleResizeStart}
-            className="absolute bottom-0 right-0 w-6 h-6 cursor-se-resize opacity-50 group-hover:opacity-100 transition-opacity z-20"
-            style={{
-              background: `linear-gradient(135deg, transparent 50%, ${themeColors?.gold || '#D4B896'} 50%)`,
-            }}
-            title="Drag to resize"
-          />
-        )}
-
         {/* Shape selector and dimension indicator - inside frame, bottom left */}
         {editable && (
           <div className="absolute bottom-2 left-2 flex items-center gap-2 z-20">
@@ -1212,6 +1206,20 @@ const ImageFrame = ({ imageData, onUpdate, onDelete, onMove, targetSections, the
           </div>
         )}
       </div>
+
+      {/* Resize Handle - outside the frame so circle borderRadius doesn't clip it */}
+      {editable && (
+        <div
+          onMouseDown={handleResizeStart}
+          className="absolute w-6 h-6 cursor-se-resize opacity-50 group-hover:opacity-100 transition-opacity z-20"
+          style={{
+            top: (imageData.shape === 'circle' ? Math.min(frameWidth, frameHeight) : frameHeight) - 6,
+            left: (imageData.shape === 'circle' ? Math.min(frameWidth, frameHeight) : frameWidth) - 6,
+            background: `linear-gradient(135deg, transparent 50%, ${themeColors?.gold || '#D4B896'} 50%)`,
+          }}
+          title="Drag to resize"
+        />
+      )}
 
       {/* Caption input - only in edit mode */}
       {editable && (

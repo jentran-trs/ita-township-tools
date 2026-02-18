@@ -299,10 +299,10 @@ const renderSection = (section, colors) => {
     case 'footer':
       return `
         <tr>
-          <td style="background-color: ${c.primaryDark}; padding: 25px 40px; text-align: center;">
+          <td style="background-color: ${c.primary}; padding: 25px 40px; text-align: center;">
             ${data.orgName ? `<p style="margin: 0; font-size: 14px; font-weight: bold; color: #ffffff; font-family: Arial, sans-serif;">${escapeHtml(data.orgName)}</p>` : ''}
             ${data.website ? `<p style="margin: 6px 0 0 0;"><a href="${escapeHtml(data.website)}" style="color: ${c.gold}; text-decoration: none; font-size: 13px; font-family: Arial, sans-serif;">${escapeHtml(data.website)}</a></p>` : ''}
-            ${data.tagline ? `<p style="margin: 8px 0 0 0; font-size: 12px; color: ${lightenColor(c.primaryDark, 0.5)}; font-family: Arial, sans-serif;">${escapeHtml(data.tagline)}</p>` : ''}
+            ${data.tagline ? `<p style="margin: 8px 0 0 0; font-size: 12px; color: ${lightenColor(c.primary, 0.5)}; font-family: Arial, sans-serif;">${escapeHtml(data.tagline)}</p>` : ''}
           </td>
         </tr>`;
 
@@ -311,13 +311,13 @@ const renderSection = (section, colors) => {
   }
 };
 
-export const generateEmailHtml = (sections, colors, logo) => {
+export const generateEmailHtml = (sections, colors, logo, logoWidth = 120) => {
   const sectionHtml = sections.map(s => renderSection(s, colors)).join('');
 
   const logoHtml = logo ? `
     <tr>
       <td style="background-color: ${colors.primary}; padding: 20px 40px 0 40px; text-align: center;">
-        <img src="${logo}" alt="Logo" width="120" style="display: inline-block; max-width: 120px; height: auto;" />
+        <img src="${logo}" alt="Logo" width="${logoWidth}" style="display: inline-block; max-width: ${logoWidth}px; height: auto;" />
       </td>
     </tr>` : '';
 
@@ -328,7 +328,7 @@ export const generateEmailHtml = (sections, colors, logo) => {
     const headerWithLogo = `
       <tr>
         <td style="background-color: ${colors.primary}; padding: 25px 40px; text-align: center;">
-          <img src="${logo}" alt="Logo" width="100" style="display: inline-block; max-width: 100px; height: auto; margin-bottom: 15px;" />
+          <img src="${logo}" alt="Logo" width="${logoWidth}" style="display: inline-block; max-width: ${logoWidth}px; height: auto; margin-bottom: 15px;" />
           ${firstSection.data.title ? `<h1 style="margin: 0; font-size: 28px; font-weight: bold; color: #ffffff; font-family: Arial, sans-serif;">${escapeHtml(firstSection.data.title)}</h1>` : ''}
           ${firstSection.data.subtitle ? `<p style="margin: 8px 0 0 0; font-size: 16px; color: ${lightenColor(colors.primary, 0.6)}; font-family: Arial, sans-serif;">${escapeHtml(firstSection.data.subtitle)}</p>` : ''}
         </td>

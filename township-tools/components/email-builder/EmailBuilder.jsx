@@ -72,6 +72,7 @@ const EmailBuilder = () => {
   const [templateType, setTemplateType] = useState('email');
   const [logo, setLogo] = useState(null);
   const [logoUrl, setLogoUrl] = useState('');
+  const [logoWidth, setLogoWidth] = useState(120);
   const [themeColors, setThemeColors] = useState(DEFAULT_EMAIL_COLORS);
   const [sections, setSections] = useState(() => createDefaultSections('email'));
   const [generatedHtml, setGeneratedHtml] = useState('');
@@ -112,6 +113,7 @@ const EmailBuilder = () => {
         if (parsed.templateType) setTemplateType(parsed.templateType);
         if (parsed.logo) setLogo(parsed.logo);
         if (parsed.logoUrl) setLogoUrl(parsed.logoUrl);
+        if (parsed.logoWidth) setLogoWidth(parsed.logoWidth);
         if (parsed.themeColors) setThemeColors(parsed.themeColors);
         if (parsed.sections) setSections(parsed.sections);
         setHasDraft(true);
@@ -120,6 +122,8 @@ const EmailBuilder = () => {
 
       const savedLogoUrl = localStorage.getItem(`${LS_PREFIX}logoUrl`);
       if (savedLogoUrl) setLogoUrl(savedLogoUrl);
+      const savedLogoWidth = localStorage.getItem(`${LS_PREFIX}logoWidth`);
+      if (savedLogoWidth) setLogoWidth(parseInt(savedLogoWidth));
       const savedLogo = localStorage.getItem(`${LS_PREFIX}logo`);
       const savedColors = localStorage.getItem(`${LS_PREFIX}colors`);
       const savedSignature = localStorage.getItem(`${LS_PREFIX}signature`);
@@ -145,6 +149,7 @@ const EmailBuilder = () => {
     try {
       if (logo) localStorage.setItem(`${LS_PREFIX}logo`, logo);
       if (logoUrl) localStorage.setItem(`${LS_PREFIX}logoUrl`, logoUrl);
+      localStorage.setItem(`${LS_PREFIX}logoWidth`, String(logoWidth));
       localStorage.setItem(`${LS_PREFIX}colors`, JSON.stringify(themeColors));
       const sig = sections.find(s => s.type === 'signature');
       const foot = sections.find(s => s.type === 'footer');
@@ -155,7 +160,7 @@ const EmailBuilder = () => {
     } catch (e) {
       // Ignore
     }
-  }, [logo, logoUrl, themeColors, sections]);
+  }, [logo, logoUrl, logoWidth, themeColors, sections]);
 
   const handleClearDefaults = useCallback(() => {
     try {
@@ -167,7 +172,7 @@ const EmailBuilder = () => {
 
   const handleSaveDraft = useCallback(() => {
     try {
-      const draft = { templateType, logo, logoUrl, themeColors, sections };
+      const draft = { templateType, logo, logoUrl, logoWidth, themeColors, sections };
       localStorage.setItem(`${LS_PREFIX}draft`, JSON.stringify(draft));
       setHasDraft(true);
       setSavedFeedback(true);
@@ -175,7 +180,7 @@ const EmailBuilder = () => {
     } catch (e) {
       // Ignore
     }
-  }, [templateType, logo, logoUrl, themeColors, sections]);
+  }, [templateType, logo, logoUrl, logoWidth, themeColors, sections]);
 
   const handleClearDraft = useCallback(() => {
     try {
@@ -184,6 +189,31 @@ const EmailBuilder = () => {
     } catch (e) {
       // Ignore
     }
+  }, []);
+
+  const handleNew = useCallback(() => {
+    setTemplateType('email');
+    setLogo(null);
+    setLogoUrl('');
+    setLogoWidth(120);
+    setThemeColors(DEFAULT_EMAIL_COLORS);
+    setSections(createDefaultSections('email'));
+    setGeneratedHtml('');
+    setShowPreview(false);
+    setHasGenerated(false);
+    setActiveSectionId(null);
+    setActiveTemplateId(null);
+    // Load saved defaults if any
+    try {
+      const savedLogo = localStorage.getItem(`${LS_PREFIX}logo`);
+      const savedLogoUrl = localStorage.getItem(`${LS_PREFIX}logoUrl`);
+      const savedLogoWidth = localStorage.getItem(`${LS_PREFIX}logoWidth`);
+      const savedColors = localStorage.getItem(`${LS_PREFIX}colors`);
+      if (savedLogo) setLogo(savedLogo);
+      if (savedLogoUrl) setLogoUrl(savedLogoUrl);
+      if (savedLogoWidth) setLogoWidth(parseInt(savedLogoWidth));
+      if (savedColors) setThemeColors(JSON.parse(savedColors));
+    } catch (e) {}
   }, []);
 
   const handleSaveTemplate = useCallback((name) => {
@@ -196,6 +226,7 @@ const EmailBuilder = () => {
         templateType,
         logo,
         logoUrl,
+        logoWidth,
         themeColors,
         sections,
         savedAt: new Date().toLocaleDateString(),
@@ -209,12 +240,13 @@ const EmailBuilder = () => {
     } catch (e) {
       // Ignore
     }
-  }, [templateType, logo, logoUrl, themeColors, sections, savedTemplates]);
+  }, [templateType, logo, logoUrl, logoWidth, themeColors, sections, savedTemplates]);
 
   const handleLoadTemplate = useCallback((template) => {
     setTemplateType(template.templateType || 'email');
     setLogo(template.logo || null);
     setLogoUrl(template.logoUrl || '');
+    setLogoWidth(template.logoWidth || 120);
     setThemeColors(template.themeColors || DEFAULT_EMAIL_COLORS);
     setSections(template.sections || createDefaultSections(template.templateType || 'email'));
     setGeneratedHtml('');
@@ -229,7 +261,7 @@ const EmailBuilder = () => {
     try {
       const updated = savedTemplates.map(t =>
         t.id === activeTemplateId
-          ? { ...t, templateType, logo, logoUrl, themeColors, sections, savedAt: new Date().toLocaleDateString() }
+          ? { ...t, templateType, logo, logoUrl, logoWidth, themeColors, sections, savedAt: new Date().toLocaleDateString() }
           : t
       );
       localStorage.setItem(`${LS_PREFIX}templates`, JSON.stringify(updated));
@@ -239,7 +271,7 @@ const EmailBuilder = () => {
     } catch (e) {
       // Ignore
     }
-  }, [activeTemplateId, savedTemplates, templateType, logo, logoUrl, themeColors, sections]);
+  }, [activeTemplateId, savedTemplates, templateType, logo, logoUrl, logoWidth, themeColors, sections]);
 
   const handleDeleteTemplate = useCallback((id) => {
     try {
@@ -295,12 +327,12 @@ const EmailBuilder = () => {
     // Use logoUrl for the generated HTML (email-client safe), fall back to base64 for preview only
     const emailLogo = logoUrl || logo;
     const html = templateType === 'newsletter'
-      ? generateNewsletterHtml(sections, themeColors, emailLogo)
-      : generateEmailHtml(sections, themeColors, emailLogo);
+      ? generateNewsletterHtml(sections, themeColors, emailLogo, logoWidth)
+      : generateEmailHtml(sections, themeColors, emailLogo, logoWidth);
     setGeneratedHtml(html);
     setShowPreview(true);
     setHasGenerated(true);
-  }, [templateType, sections, themeColors, logo, logoUrl]);
+  }, [templateType, sections, themeColors, logo, logoUrl, logoWidth]);
 
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(generatedHtml);
@@ -453,6 +485,13 @@ const EmailBuilder = () => {
           </h2>
           <div className="flex items-center gap-3">
             <button
+              onClick={handleNew}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-slate-300 rounded-lg font-medium hover:bg-slate-600 hover:text-white transition-colors text-sm"
+            >
+              <Plus className="w-4 h-4" />
+              New
+            </button>
+            <button
               onClick={handleSaveDraft}
               className="flex items-center gap-2 px-4 py-2 bg-slate-600 text-white rounded-lg font-medium hover:bg-slate-500 transition-colors text-sm"
             >
@@ -547,6 +586,8 @@ const EmailBuilder = () => {
               setLogo={setLogo}
               logoUrl={logoUrl}
               setLogoUrl={setLogoUrl}
+              logoWidth={logoWidth}
+              setLogoWidth={setLogoWidth}
               themeColors={themeColors}
               setThemeColors={setThemeColors}
               onSaveDefaults={handleSaveDefaults}

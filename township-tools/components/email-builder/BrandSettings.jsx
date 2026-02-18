@@ -150,9 +150,10 @@ const COLOR_LABELS = {
   gold: 'Highlight / Gold',
 };
 
-const BrandSettings = ({ logo, setLogo, logoUrl, setLogoUrl, themeColors, setThemeColors, onSaveDefaults, onClearDefaults }) => {
+const BrandSettings = ({ logo, setLogo, logoUrl, setLogoUrl, logoWidth, setLogoWidth, themeColors, setThemeColors, onSaveDefaults, onClearDefaults }) => {
   const [expanded, setExpanded] = useState(true);
   const [defaultsSaved, setDefaultsSaved] = useState(false);
+  const [logoUploading, setLogoUploading] = useState(false);
 
   const handleSaveWithFeedback = () => {
     onSaveDefaults();
@@ -163,6 +164,7 @@ const BrandSettings = ({ logo, setLogo, logoUrl, setLogoUrl, themeColors, setThe
   const handleLogoUpload = (e) => {
     const file = e.target.files?.[0];
     if (file) {
+      setLogoUploading(true);
       const reader = new FileReader();
       reader.onload = (event) => {
         const img = new window.Image();
@@ -170,9 +172,12 @@ const BrandSettings = ({ logo, setLogo, logoUrl, setLogoUrl, themeColors, setThe
           const colors = extractColorsFromImage(img);
           setThemeColors(colors);
           setLogo(event.target.result);
+          setLogoUploading(false);
         };
+        img.onerror = () => setLogoUploading(false);
         img.src = event.target.result;
       };
+      reader.onerror = () => setLogoUploading(false);
       reader.readAsDataURL(file);
     }
   };
@@ -200,7 +205,7 @@ const BrandSettings = ({ logo, setLogo, logoUrl, setLogoUrl, themeColors, setThe
             <div className="flex items-center gap-3">
               {logo ? (
                 <div className="relative">
-                  <img src={logo} alt="Logo" className="w-16 h-16 object-contain bg-white rounded-lg border border-slate-600 p-1" />
+                  <img src={logoUrl || logo} alt="Logo" className="w-16 h-16 object-contain bg-white rounded-lg border border-slate-600 p-1" />
                   <button
                     onClick={() => setLogo(null)}
                     className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white hover:bg-red-400"
@@ -209,10 +214,19 @@ const BrandSettings = ({ logo, setLogo, logoUrl, setLogoUrl, themeColors, setThe
                   </button>
                 </div>
               ) : (
-                <label className="flex items-center gap-2 px-4 py-3 bg-slate-700 border border-dashed border-slate-500 rounded-lg cursor-pointer hover:bg-slate-600 transition-colors">
-                  <Upload className="w-4 h-4 text-slate-400" />
-                  <span className="text-sm text-slate-400">Upload Logo</span>
-                  <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+                <label className={`flex items-center gap-2 px-4 py-3 bg-slate-700 border border-dashed border-slate-500 rounded-lg transition-colors ${logoUploading ? 'opacity-50 cursor-wait' : 'cursor-pointer hover:bg-slate-600'}`}>
+                  {logoUploading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+                      <span className="text-sm text-slate-400">Uploading...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4 text-slate-400" />
+                      <span className="text-sm text-slate-400">Upload Logo</span>
+                    </>
+                  )}
+                  <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" disabled={logoUploading} />
                 </label>
               )}
               {logo && (
@@ -224,23 +238,40 @@ const BrandSettings = ({ logo, setLogo, logoUrl, setLogoUrl, themeColors, setThe
             </div>
           </div>
 
-          {/* Logo URL for email clients */}
+          {/* Logo URL & Size */}
           {logo && (
-            <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">Logo URL (for email clients)</label>
-              <input
-                type="url"
-                value={logoUrl || ''}
-                onChange={(e) => setLogoUrl(e.target.value)}
-                placeholder="https://example.com/logo.png"
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:border-amber-500"
-              />
-              <p className="text-xs text-slate-500 mt-1">
-                {logoUrl
-                  ? 'Logo URL will be used in the generated HTML.'
-                  : 'Email clients block embedded images. Paste a hosted URL for your logo to display correctly in emails.'}
-              </p>
-            </div>
+            <>
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1">Logo URL (for email clients)</label>
+                <input
+                  type="url"
+                  value={logoUrl || ''}
+                  onChange={(e) => setLogoUrl(e.target.value)}
+                  placeholder="https://example.com/logo.png"
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  {logoUrl
+                    ? 'Logo URL will be used in the generated HTML.'
+                    : 'Email clients block embedded images. Paste a hosted URL for your logo to display correctly in emails.'}
+                </p>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1">Logo Size: {logoWidth}px</label>
+                <input
+                  type="range"
+                  min="40"
+                  max="300"
+                  value={logoWidth}
+                  onChange={(e) => setLogoWidth(parseInt(e.target.value))}
+                  className="w-full accent-amber-500"
+                />
+                <div className="flex justify-between text-xs text-slate-500 mt-0.5">
+                  <span>40px</span>
+                  <span>300px</span>
+                </div>
+              </div>
+            </>
           )}
 
           {/* Color Overrides */}

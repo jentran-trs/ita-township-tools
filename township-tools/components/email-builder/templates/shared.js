@@ -10,6 +10,18 @@ export const escapeHtml = (str) => {
     .replace(/'/g, '&#039;');
 };
 
+// Auto-link plain-text URLs that aren't already inside an <a> tag
+const linkifyUrls = (html) => {
+  // Split HTML into tags and text segments so we only process text nodes
+  const parts = html.split(/(<a\s[^>]*>[\s\S]*?<\/a>|<[^>]+>)/gi);
+  const urlRegex = /(https?:\/\/[^\s<>"')+,]+(?:\([^\s<>"']*\))?[^\s<>"').,;:!?]*)/g;
+  return parts.map((part, i) => {
+    // Skip HTML tags and existing <a> elements
+    if (part.startsWith('<')) return part;
+    return part.replace(urlRegex, '<a href="$1" style="color: inherit; text-decoration: underline;">$1</a>');
+  }).join('');
+};
+
 // Sanitize rich text HTML for email compatibility
 // Strips non-email-safe elements but keeps basic formatting
 export const sanitizeHtmlForEmail = (html) => {
@@ -27,6 +39,8 @@ export const sanitizeHtmlForEmail = (html) => {
   clean = clean.replace(/<div>/gi, '<p>').replace(/<\/div>/gi, '</p>');
   // Clean up empty paragraphs with just br
   clean = clean.replace(/<p><br\s*\/?><\/p>/gi, '');
+  // Auto-link plain-text URLs
+  clean = linkifyUrls(clean);
   return clean;
 };
 

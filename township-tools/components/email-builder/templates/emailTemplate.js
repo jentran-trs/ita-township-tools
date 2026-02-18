@@ -22,10 +22,10 @@ const renderSection = (section, colors) => {
         <tr>
           <td style="padding: 15px 40px 5px 40px;">
             ${greetingText ? `<p style="margin: 0 0 12px 0; font-size: 16px; font-weight: bold; color: ${c.accent}; font-family: Arial, sans-serif;">${escapeHtml(greetingText)}</p>` : ''}
-            ${data.content ? `<div style="font-size: 15px; line-height: 1.5; color: #333333; font-family: Arial, sans-serif; margin-bottom: ${hasSignOff ? '16px' : '0'};">${sanitizeHtmlForEmail(data.content)}</div>` : ''}
-            ${data.signOffLine ? `<p style="margin: 0 0 8px 0; font-size: 15px; color: #333333; font-family: Arial, sans-serif;">${escapeHtml(data.signOffLine)}</p>` : ''}
+            ${data.content ? `<div style="font-size: 16px; line-height: 1.6; color: #333333; font-family: Arial, sans-serif; margin-bottom: ${hasSignOff ? '16px' : '0'};">${sanitizeHtmlForEmail(data.content)}</div>` : ''}
+            ${data.signOffLine ? `<p style="margin: 0 0 8px 0; font-size: 16px; color: #333333; font-family: Arial, sans-serif;">${escapeHtml(data.signOffLine)}</p>` : ''}
             ${signOffs.filter(s => s.name).map(s => `
-              <p style="margin: 0; font-size: 15px; font-family: Arial, sans-serif;">
+              <p style="margin: 0; font-size: 16px; font-family: Arial, sans-serif;">
                 <strong style="color: #333333;">${escapeHtml(s.name)}</strong>${s.title ? `<span style="color: #666666;">, ${escapeHtml(s.title)}</span>` : ''}
               </p>`).join('')}
             ${data.org ? `<p style="margin: 4px 0 0 0; font-size: 14px; color: ${c.primary}; font-style: italic; font-family: Arial, sans-serif;">${escapeHtml(data.org)}</p>` : ''}
@@ -59,7 +59,7 @@ const renderSection = (section, colors) => {
       return `
         <tr>
           <td style="padding: 8px 40px;">
-            <div style="font-size: 15px; line-height: 1.4; color: #333333; font-family: Arial, sans-serif;">
+            <div style="font-size: 16px; line-height: 1.6; color: #333333; font-family: Arial, sans-serif;">
               ${sanitizeHtmlForEmail(data.content)}
             </div>
           </td>
@@ -73,7 +73,7 @@ const renderSection = (section, colors) => {
               <tr>
                 <td style="border-left: 4px solid ${c.accent}; padding: 15px 20px; background-color: ${lightenColor(c.accent, 0.95)};">
                   ${data.heading ? `<h3 style="margin: 0 0 10px 0; font-size: 18px; font-weight: bold; color: ${c.accent}; font-family: Arial, sans-serif;">${escapeHtml(data.heading)}</h3>` : ''}
-                  <div style="font-size: 15px; line-height: 1.6; color: #333333; font-family: Arial, sans-serif;">
+                  <div style="font-size: 16px; line-height: 1.6; color: #333333; font-family: Arial, sans-serif;">
                     ${sanitizeHtmlForEmail(data.content)}
                   </div>
                 </td>
@@ -274,7 +274,7 @@ const renderSection = (section, colors) => {
       return `
         <tr>
           <td style="padding: 8px 40px;">
-            <div style="font-size: 15px; line-height: 1.6; color: #333333; font-family: Arial, sans-serif;">
+            <div style="font-size: 16px; line-height: 1.6; color: #333333; font-family: Arial, sans-serif;">
               ${sanitizeHtmlForEmail(data.content)}
             </div>
           </td>

@@ -150,7 +150,7 @@ const COLOR_LABELS = {
   gold: 'Highlight / Gold',
 };
 
-const BrandSettings = ({ logo, setLogo, themeColors, setThemeColors, onSaveDefaults, onClearDefaults }) => {
+const BrandSettings = ({ logo, setLogo, logoUrl, setLogoUrl, themeColors, setThemeColors, onSaveDefaults, onClearDefaults }) => {
   const [expanded, setExpanded] = useState(true);
   const [defaultsSaved, setDefaultsSaved] = useState(false);
 
@@ -223,6 +223,25 @@ const BrandSettings = ({ logo, setLogo, themeColors, setThemeColors, onSaveDefau
               )}
             </div>
           </div>
+
+          {/* Logo URL for email clients */}
+          {logo && (
+            <div>
+              <label className="block text-xs font-medium text-slate-400 mb-1">Logo URL (for email clients)</label>
+              <input
+                type="url"
+                value={logoUrl || ''}
+                onChange={(e) => setLogoUrl(e.target.value)}
+                placeholder="https://example.com/logo.png"
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:border-amber-500"
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                {logoUrl
+                  ? 'Logo URL will be used in the generated HTML.'
+                  : 'Email clients block embedded images. Paste a hosted URL for your logo to display correctly in emails.'}
+              </p>
+            </div>
+          )}
 
           {/* Color Overrides */}
           <div>

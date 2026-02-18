@@ -71,6 +71,7 @@ const LS_PREFIX = 'email-builder-';
 const EmailBuilder = () => {
   const [templateType, setTemplateType] = useState('email');
   const [logo, setLogo] = useState(null);
+  const [logoUrl, setLogoUrl] = useState('');
   const [themeColors, setThemeColors] = useState(DEFAULT_EMAIL_COLORS);
   const [sections, setSections] = useState(() => createDefaultSections('email'));
   const [generatedHtml, setGeneratedHtml] = useState('');
@@ -110,12 +111,15 @@ const EmailBuilder = () => {
         const parsed = JSON.parse(draft);
         if (parsed.templateType) setTemplateType(parsed.templateType);
         if (parsed.logo) setLogo(parsed.logo);
+        if (parsed.logoUrl) setLogoUrl(parsed.logoUrl);
         if (parsed.themeColors) setThemeColors(parsed.themeColors);
         if (parsed.sections) setSections(parsed.sections);
         setHasDraft(true);
         return;
       }
 
+      const savedLogoUrl = localStorage.getItem(`${LS_PREFIX}logoUrl`);
+      if (savedLogoUrl) setLogoUrl(savedLogoUrl);
       const savedLogo = localStorage.getItem(`${LS_PREFIX}logo`);
       const savedColors = localStorage.getItem(`${LS_PREFIX}colors`);
       const savedSignature = localStorage.getItem(`${LS_PREFIX}signature`);
@@ -140,6 +144,7 @@ const EmailBuilder = () => {
   const handleSaveDefaults = useCallback(() => {
     try {
       if (logo) localStorage.setItem(`${LS_PREFIX}logo`, logo);
+      if (logoUrl) localStorage.setItem(`${LS_PREFIX}logoUrl`, logoUrl);
       localStorage.setItem(`${LS_PREFIX}colors`, JSON.stringify(themeColors));
       const sig = sections.find(s => s.type === 'signature');
       const foot = sections.find(s => s.type === 'footer');
@@ -150,7 +155,7 @@ const EmailBuilder = () => {
     } catch (e) {
       // Ignore
     }
-  }, [logo, themeColors, sections]);
+  }, [logo, logoUrl, themeColors, sections]);
 
   const handleClearDefaults = useCallback(() => {
     try {
@@ -162,7 +167,7 @@ const EmailBuilder = () => {
 
   const handleSaveDraft = useCallback(() => {
     try {
-      const draft = { templateType, logo, themeColors, sections };
+      const draft = { templateType, logo, logoUrl, themeColors, sections };
       localStorage.setItem(`${LS_PREFIX}draft`, JSON.stringify(draft));
       setHasDraft(true);
       setSavedFeedback(true);
@@ -170,7 +175,7 @@ const EmailBuilder = () => {
     } catch (e) {
       // Ignore
     }
-  }, [templateType, logo, themeColors, sections]);
+  }, [templateType, logo, logoUrl, themeColors, sections]);
 
   const handleClearDraft = useCallback(() => {
     try {
@@ -190,6 +195,7 @@ const EmailBuilder = () => {
         name: name.trim(),
         templateType,
         logo,
+        logoUrl,
         themeColors,
         sections,
         savedAt: new Date().toLocaleDateString(),
@@ -203,11 +209,12 @@ const EmailBuilder = () => {
     } catch (e) {
       // Ignore
     }
-  }, [templateType, logo, themeColors, sections, savedTemplates]);
+  }, [templateType, logo, logoUrl, themeColors, sections, savedTemplates]);
 
   const handleLoadTemplate = useCallback((template) => {
     setTemplateType(template.templateType || 'email');
     setLogo(template.logo || null);
+    setLogoUrl(template.logoUrl || '');
     setThemeColors(template.themeColors || DEFAULT_EMAIL_COLORS);
     setSections(template.sections || createDefaultSections(template.templateType || 'email'));
     setGeneratedHtml('');
@@ -222,7 +229,7 @@ const EmailBuilder = () => {
     try {
       const updated = savedTemplates.map(t =>
         t.id === activeTemplateId
-          ? { ...t, templateType, logo, themeColors, sections, savedAt: new Date().toLocaleDateString() }
+          ? { ...t, templateType, logo, logoUrl, themeColors, sections, savedAt: new Date().toLocaleDateString() }
           : t
       );
       localStorage.setItem(`${LS_PREFIX}templates`, JSON.stringify(updated));
@@ -232,7 +239,7 @@ const EmailBuilder = () => {
     } catch (e) {
       // Ignore
     }
-  }, [activeTemplateId, savedTemplates, templateType, logo, themeColors, sections]);
+  }, [activeTemplateId, savedTemplates, templateType, logo, logoUrl, themeColors, sections]);
 
   const handleDeleteTemplate = useCallback((id) => {
     try {
@@ -285,13 +292,15 @@ const EmailBuilder = () => {
   }, []);
 
   const handleGenerate = useCallback(() => {
+    // Use logoUrl for the generated HTML (email-client safe), fall back to base64 for preview only
+    const emailLogo = logoUrl || logo;
     const html = templateType === 'newsletter'
-      ? generateNewsletterHtml(sections, themeColors, logo)
-      : generateEmailHtml(sections, themeColors, logo);
+      ? generateNewsletterHtml(sections, themeColors, emailLogo)
+      : generateEmailHtml(sections, themeColors, emailLogo);
     setGeneratedHtml(html);
     setShowPreview(true);
     setHasGenerated(true);
-  }, [templateType, sections, themeColors, logo]);
+  }, [templateType, sections, themeColors, logo, logoUrl]);
 
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(generatedHtml);
@@ -536,6 +545,8 @@ const EmailBuilder = () => {
             <BrandSettings
               logo={logo}
               setLogo={setLogo}
+              logoUrl={logoUrl}
+              setLogoUrl={setLogoUrl}
               themeColors={themeColors}
               setThemeColors={setThemeColors}
               onSaveDefaults={handleSaveDefaults}

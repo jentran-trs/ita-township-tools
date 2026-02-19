@@ -1,11 +1,13 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Mail, Newspaper, Eye, Copy, Check, RotateCw, ChevronDown, ChevronRight, X, Save, Trash2, FolderOpen, Plus, FileText } from 'lucide-react';
+import { Mail, Newspaper, Eye, Copy, Check, RotateCw, ChevronDown, ChevronRight, X, Save, Trash2, FolderOpen, Plus, FileText, BookOpen, HelpCircle } from 'lucide-react';
 import BrandSettings from './BrandSettings';
 import SectionList from './SectionList';
 import SectionMenu from './SectionMenu';
 import PreviewPanel from './PreviewPanel';
 import { generateEmailHtml } from './templates/emailTemplate';
 import { generateNewsletterHtml } from './templates/newsletterTemplate';
+import EXAMPLE_TEMPLATES from './exampleTemplates';
+import OnboardingGuide from './OnboardingGuide';
 
 // Section editor imports
 import HeaderSection from './sections/HeaderSection';
@@ -24,6 +26,11 @@ import HighlightBannerSection from './sections/HighlightBannerSection';
 import MemberResourcesSection from './sections/MemberResourcesSection';
 import MeetingDetailsSection from './sections/MeetingDetailsSection';
 import ImageSection from './sections/ImageSection';
+import AlertBoxSection from './sections/AlertBoxSection';
+import TwoColumnSection from './sections/TwoColumnSection';
+import ListSection from './sections/ListSection';
+import GreetingSection from './sections/GreetingSection';
+import ClosingSection from './sections/ClosingSection';
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
@@ -44,6 +51,11 @@ const SECTION_EDITORS = {
   highlightBanner: HighlightBannerSection,
   memberResources: MemberResourcesSection,
   image: ImageSection,
+  alertBox: AlertBoxSection,
+  twoColumn: TwoColumnSection,
+  list: ListSection,
+  greeting: GreetingSection,
+  closing: ClosingSection,
 };
 
 const DEFAULT_EMAIL_COLORS = {
@@ -90,6 +102,8 @@ const EmailBuilder = () => {
   const [topBarTemplateName, setTopBarTemplateName] = useState('');
   const [templateSavedFeedback, setTemplateSavedFeedback] = useState(false);
   const [activeTemplateId, setActiveTemplateId] = useState(null);
+  const [showExamples, setShowExamples] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   const handleSelectSection = useCallback((id) => {
     setActiveSectionId(id);
@@ -103,6 +117,11 @@ const EmailBuilder = () => {
   // Load saved draft or defaults on mount
   useEffect(() => {
     try {
+      // Show onboarding for first-time users
+      if (!localStorage.getItem(`${LS_PREFIX}onboarding-complete`)) {
+        setShowOnboarding(true);
+      }
+
       // Always load saved templates library
       const templates = localStorage.getItem(`${LS_PREFIX}templates`);
       if (templates) setSavedTemplates(JSON.parse(templates));
@@ -247,13 +266,16 @@ const EmailBuilder = () => {
     setLogo(template.logo || null);
     setLogoUrl(template.logoUrl || '');
     setLogoHeight(template.logoHeight || 90);
-    setThemeColors(template.themeColors || DEFAULT_EMAIL_COLORS);
-    setSections(template.sections || createDefaultSections(template.templateType || 'email'));
+    setThemeColors(template.themeColors ? { ...template.themeColors } : DEFAULT_EMAIL_COLORS);
+    // Deep-clone sections for built-in templates so edits don't mutate originals
+    const clonedSections = (template.sections || createDefaultSections(template.templateType || 'email'))
+      .map(s => ({ ...s, id: generateId(), data: JSON.parse(JSON.stringify(s.data)) }));
+    setSections(clonedSections);
     setGeneratedHtml('');
     setShowPreview(false);
     setHasGenerated(false);
     setActiveSectionId(null);
-    setActiveTemplateId(template.id);
+    setActiveTemplateId(template.builtIn ? null : template.id);
   }, []);
 
   const handleUpdateTemplate = useCallback(() => {
@@ -351,7 +373,7 @@ const EmailBuilder = () => {
       {/* Left Sidebar - Section List */}
       <div className="w-64 bg-slate-800 border-r border-slate-700 flex flex-col overflow-hidden">
         {/* Template Type Toggle */}
-        <div className="p-3 border-b border-slate-700">
+        <div className="p-3 border-b border-slate-700" data-tour="template-type">
           <div className="flex bg-slate-700 rounded-lg p-0.5">
             <button
               onClick={() => handleTemplateSwitch('email')}
@@ -374,8 +396,41 @@ const EmailBuilder = () => {
           </div>
         </div>
 
+        {/* Example Templates */}
+        <div className="border-b border-slate-700" data-tour="examples">
+          <button
+            onClick={() => setShowExamples(!showExamples)}
+            className="w-full flex items-center justify-between px-3 py-2.5 text-xs font-semibold text-amber-500/80 uppercase tracking-wider hover:text-amber-400 transition-colors"
+          >
+            <span className="flex items-center gap-1.5">
+              <BookOpen className="w-3.5 h-3.5" />
+              Example Templates
+            </span>
+            {showExamples ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+          </button>
+          {showExamples && (
+            <div className="px-3 pb-3 space-y-2">
+              {EXAMPLE_TEMPLATES.map(t => (
+                <div key={t.id} className="flex items-center gap-1.5">
+                  <BookOpen className="w-3.5 h-3.5 text-amber-500/60 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-slate-300 truncate">{t.name}</p>
+                    <p className="text-[10px] text-amber-500/50">{t.templateType} &middot; {t.sections.length} sections</p>
+                  </div>
+                  <button
+                    onClick={() => handleLoadTemplate(t)}
+                    className="px-2 py-1 bg-amber-500/20 text-amber-500 rounded text-[10px] font-medium hover:bg-amber-500 hover:text-slate-900 transition-colors"
+                  >
+                    Load
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Saved Templates */}
-        <div className="border-b border-slate-700">
+        <div className="border-b border-slate-700" data-tour="templates">
           <button
             onClick={() => setShowTemplates(!showTemplates)}
             className="w-full flex items-center justify-between px-3 py-2.5 text-xs font-semibold text-slate-400 uppercase tracking-wider hover:text-white transition-colors"
@@ -460,7 +515,7 @@ const EmailBuilder = () => {
         </div>
 
         {/* Sections */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto" data-tour="section-list">
           <SectionList
             sections={sections}
             activeSectionId={activeSectionId}
@@ -471,7 +526,7 @@ const EmailBuilder = () => {
         </div>
 
         {/* Add Section */}
-        <div className="p-3 border-t border-slate-700">
+        <div className="p-3 border-t border-slate-700" data-tour="add-section">
           <SectionMenu templateType={templateType} onAdd={addSection} />
         </div>
       </div>
@@ -479,7 +534,7 @@ const EmailBuilder = () => {
       {/* Main Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar */}
-        <div className="flex items-center justify-between px-6 py-3 bg-slate-800 border-b border-slate-700">
+        <div className="flex items-center justify-between px-6 py-3 bg-slate-800 border-b border-slate-700" data-tour="top-bar">
           <h2 className="text-lg font-bold text-white">
             {templateType === 'newsletter' ? 'Newsletter' : 'Email'} Template Builder
           </h2>
@@ -559,6 +614,7 @@ const EmailBuilder = () => {
             )}
             <button
               onClick={handleGenerate}
+              data-tour="generate"
               className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-slate-900 rounded-lg font-medium hover:bg-amber-400 transition-colors text-sm"
             >
               {hasGenerated ? <RotateCw className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -573,26 +629,35 @@ const EmailBuilder = () => {
                 {copiedFeedback ? 'Copied!' : 'Copy Template HTML'}
               </button>
             )}
+            <button
+              onClick={() => setShowOnboarding(true)}
+              className="p-2 text-slate-400 hover:text-amber-400 transition-colors"
+              title="Start guided tour"
+            >
+              <HelpCircle className="w-5 h-5" />
+            </button>
           </div>
         </div>
 
         {/* Content Area - Split between editor and preview */}
         <div className="flex-1 flex overflow-hidden">
           {/* Editor Panel */}
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto p-6" data-tour="editor">
             {/* Brand Settings */}
-            <BrandSettings
-              logo={logo}
-              setLogo={setLogo}
-              logoUrl={logoUrl}
-              setLogoUrl={setLogoUrl}
-              logoHeight={logoHeight}
-              setLogoHeight={setLogoHeight}
-              themeColors={themeColors}
-              setThemeColors={setThemeColors}
-              onSaveDefaults={handleSaveDefaults}
-              onClearDefaults={handleClearDefaults}
-            />
+            <div data-tour="brand-settings">
+              <BrandSettings
+                logo={logo}
+                setLogo={setLogo}
+                logoUrl={logoUrl}
+                setLogoUrl={setLogoUrl}
+                logoHeight={logoHeight}
+                setLogoHeight={setLogoHeight}
+                themeColors={themeColors}
+                setThemeColors={setThemeColors}
+                onSaveDefaults={handleSaveDefaults}
+                onClearDefaults={handleClearDefaults}
+              />
+            </div>
 
             {/* Header - always visible */}
             {HeaderEditor && headerSection && (
@@ -652,12 +717,24 @@ const EmailBuilder = () => {
 
           {/* Preview Panel */}
           {showPreview && generatedHtml && (
-            <div className="w-[45%] border-l border-slate-700">
+            <div className="w-[45%] border-l border-slate-700" data-tour="preview">
               <PreviewPanel html={generatedHtml} onClose={() => setShowPreview(false)} />
             </div>
           )}
         </div>
       </div>
+
+      {/* Onboarding Guide */}
+      {showOnboarding && (
+        <OnboardingGuide
+          onComplete={() => {
+            setShowOnboarding(false);
+            try {
+              localStorage.setItem(`${LS_PREFIX}onboarding-complete`, 'true');
+            } catch (e) {}
+          }}
+        />
+      )}
     </div>
   );
 };

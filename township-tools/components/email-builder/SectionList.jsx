@@ -18,6 +18,11 @@ const SECTION_LABELS = {
   newsSection: 'News Section',
   highlightBanner: 'Highlight Banner',
   memberResources: 'Member Resources',
+  alertBox: 'Alert Box',
+  twoColumn: 'Two Column',
+  list: 'List',
+  greeting: 'Greeting',
+  closing: 'Closing',
 };
 
 const SECTION_COLORS = {
@@ -37,6 +42,11 @@ const SECTION_COLORS = {
   newsSection: 'bg-blue-500/20 text-blue-500',
   highlightBanner: 'bg-emerald-500/20 text-emerald-500',
   memberResources: 'bg-green-500/20 text-green-500',
+  alertBox: 'bg-red-500/20 text-red-500',
+  twoColumn: 'bg-teal-500/20 text-teal-500',
+  list: 'bg-orange-500/20 text-orange-500',
+  greeting: 'bg-emerald-500/20 text-emerald-500',
+  closing: 'bg-rose-500/20 text-rose-500',
 };
 
 const SectionList = ({ sections, activeSectionId, onSelect, onMove, onDelete }) => {

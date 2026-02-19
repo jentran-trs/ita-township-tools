@@ -10,6 +10,11 @@ const SHARED_SECTIONS = [
   { type: 'meetingDetails', label: 'Meeting Details', desc: 'Date, time, ID, passcode & join link', icon: '📋' },
   { type: 'resourceLinks', label: 'Resource Links', desc: 'List of clickable links', icon: '🔗' },
   { type: 'signature', label: 'Signature', desc: 'Name, title, organization', icon: 'S' },
+  { type: 'alertBox', label: 'Alert Box', desc: 'Red-bordered alert/warning box', icon: '⚠' },
+  { type: 'twoColumn', label: 'Two Column', desc: 'Side-by-side content columns', icon: '⫼' },
+  { type: 'list', label: 'List', desc: 'Bullet or numbered list', icon: '☰' },
+  { type: 'greeting', label: 'Greeting', desc: 'Opening greeting with sign-offs', icon: 'G' },
+  { type: 'closing', label: 'Closing', desc: 'Closing remarks', icon: '✉' },
 ];
 
 const NEWSLETTER_SECTIONS = [

@@ -4407,7 +4407,7 @@ export default function ReportBuilder() {
   // IndexedDB helper functions for large data storage
   const openDB = () => {
     return new Promise((resolve, reject) => {
-      const request = indexedDB.open('ReportBuilderDB', 1);
+      const request = indexedDB.open('ReportBuilderDB', 2);
       request.onerror = () => reject(request.error);
       request.onsuccess = () => resolve(request.result);
       request.onupgradeneeded = (event) => {
@@ -4415,7 +4415,43 @@ export default function ReportBuilder() {
         if (!db.objectStoreNames.contains('versions')) {
           db.createObjectStore('versions', { keyPath: 'id' });
         }
+        if (!db.objectStoreNames.contains('drafts')) {
+          db.createObjectStore('drafts', { keyPath: 'key' });
+        }
       };
+    });
+  };
+
+  const saveDraftToDB = async (draft) => {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['drafts'], 'readwrite');
+      const store = transaction.objectStore('drafts');
+      const request = store.put({ key: 'current', ...draft });
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  };
+
+  const loadDraftFromDB = async () => {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['drafts'], 'readonly');
+      const store = transaction.objectStore('drafts');
+      const request = store.get('current');
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+  };
+
+  const deleteDraftFromDB = async () => {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['drafts'], 'readwrite');
+      const store = transaction.objectStore('drafts');
+      const request = store.delete('current');
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
     });
   };
 
@@ -4477,17 +4513,46 @@ export default function ReportBuilder() {
     loadVersions();
   }, []);
 
-  // Check for saved draft on mount
+  // Check for saved draft on mount (IndexedDB primary, localStorage fallback for migration)
   useEffect(() => {
-    const savedDraft = localStorage.getItem('reportBuilderDraft');
-    if (savedDraft) {
-      setHasSavedDraft(true);
-      setShowDraftNotification(true);
-      const draft = JSON.parse(savedDraft);
-      if (draft.lastSaved) {
-        setLastSaved(new Date(draft.lastSaved));
+    const checkDraft = async () => {
+      try {
+        // Try IndexedDB first
+        const dbDraft = await loadDraftFromDB();
+        if (dbDraft) {
+          setHasSavedDraft(true);
+          setShowDraftNotification(true);
+          if (dbDraft.lastSaved) {
+            setLastSaved(new Date(dbDraft.lastSaved));
+          }
+          return;
+        }
+      } catch (e) {
+        // IndexedDB failed, fall through to localStorage
       }
-    }
+      // Fallback: check localStorage (migrates old drafts)
+      try {
+        const savedDraft = localStorage.getItem('reportBuilderDraft');
+        if (savedDraft) {
+          setHasSavedDraft(true);
+          setShowDraftNotification(true);
+          const draft = JSON.parse(savedDraft);
+          if (draft.lastSaved) {
+            setLastSaved(new Date(draft.lastSaved));
+          }
+          // Migrate to IndexedDB and clean up localStorage
+          try {
+            await saveDraftToDB(draft);
+            localStorage.removeItem('reportBuilderDraft');
+          } catch (e) {
+            // Migration failed, draft stays in localStorage
+          }
+        }
+      } catch (e) {
+        // Ignore
+      }
+    };
+    checkDraft();
   }, []);
 
   // Check for generated report from project (sessionStorage)
@@ -4546,19 +4611,22 @@ export default function ReportBuilder() {
     }
   }, []);
 
-  // Auto-save every 30 seconds
+  // Auto-save every 30 seconds (uses IndexedDB to avoid localStorage quota issues)
   useEffect(() => {
     const autoSaveInterval = setInterval(async () => {
-      // Save directly in the interval to avoid stale closure issues
       const draft = {
         logo,
         themeColors,
         sections,
         lastSaved: new Date().toISOString(),
       };
-      localStorage.setItem('reportBuilderDraft', JSON.stringify(draft));
-      setHasSavedDraft(true);
-      setLastSaved(new Date());
+      try {
+        await saveDraftToDB(draft);
+        setHasSavedDraft(true);
+        setLastSaved(new Date());
+      } catch (error) {
+        console.error('Auto-save to IndexedDB failed:', error);
+      }
 
       // Also auto-save to server if working on a project
       if (currentProjectId) {
@@ -4620,8 +4688,16 @@ export default function ReportBuilder() {
       lastSaved: new Date().toISOString(),
     };
 
-    // Save to localStorage
-    localStorage.setItem('reportBuilderDraft', JSON.stringify(draft));
+    // Save to IndexedDB (no quota issues with large reports)
+    try {
+      await saveDraftToDB(draft);
+    } catch (error) {
+      console.error('Failed to save draft to IndexedDB:', error);
+      if (!silent) {
+        alert('Failed to save draft. Please try saving as a version instead.');
+      }
+      return;
+    }
     setHasSavedDraft(true);
     setLastSaved(new Date());
 
@@ -4635,17 +4711,29 @@ export default function ReportBuilder() {
     }
   };
 
-  const loadDraft = (skipConfirm = false) => {
-    const savedDraft = localStorage.getItem('reportBuilderDraft');
-    if (savedDraft) {
+  const loadDraft = async (skipConfirm = false) => {
+    let draft = null;
+    // Try IndexedDB first, fall back to localStorage
+    try {
+      draft = await loadDraftFromDB();
+    } catch (e) {
+      // IndexedDB failed
+    }
+    if (!draft) {
+      try {
+        const savedDraft = localStorage.getItem('reportBuilderDraft');
+        if (savedDraft) draft = JSON.parse(savedDraft);
+      } catch (e) {
+        // localStorage failed
+      }
+    }
+    if (draft) {
       if (!skipConfirm) {
         const confirmLoad = confirm('This will replace your current work with the saved draft. Continue?');
         if (!confirmLoad) return;
       }
-      const draft = JSON.parse(savedDraft);
       if (draft.logo) setLogo(draft.logo);
       if (draft.themeColors) {
-        // Ensure all colors are valid hex format
         setThemeColors({
           primary: ensureHexColor(draft.themeColors.primary, DEFAULT_THEME_COLORS.primary),
           primaryDark: ensureHexColor(draft.themeColors.primaryDark, DEFAULT_THEME_COLORS.primaryDark),
@@ -4659,14 +4747,15 @@ export default function ReportBuilder() {
         alert('Draft loaded successfully!');
       }
     } else {
-      alert('No saved draft found.');
+      if (!skipConfirm) alert('No saved draft found.');
     }
   };
 
-  const clearDraft = () => {
+  const clearDraft = async () => {
     const confirmClear = confirm('This will permanently delete your saved draft. Continue?');
     if (confirmClear) {
-      localStorage.removeItem('reportBuilderDraft');
+      try { await deleteDraftFromDB(); } catch (e) {}
+      try { localStorage.removeItem('reportBuilderDraft'); } catch (e) {}
       setHasSavedDraft(false);
       setLastSaved(null);
       alert('Draft cleared.');

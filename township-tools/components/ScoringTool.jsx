@@ -352,7 +352,7 @@ const ScoringTool = () => {
                 <div className="space-y-3">
                   {q.subQuestions.map((sub) => (
                     <div key={sub.name}>
-                      <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">{sub.yearLabel}</div>
+                      <div className="inline-block text-xs font-bold text-amber-500 bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded-full uppercase tracking-wide mb-1.5">{sub.yearLabel}</div>
                       {renderOptions(sub.options, sub.name)}
                     </div>
                   ))}

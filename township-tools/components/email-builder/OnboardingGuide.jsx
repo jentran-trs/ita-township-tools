@@ -82,16 +82,21 @@ const OnboardingGuide = ({ onComplete }) => {
           borderTop: '1px solid rgba(245,158,11,0.4)',
         };
         break;
-      case 'bottom':
+      case 'bottom': {
         top = rect.bottom + pad + 16;
         left = rect.left + rect.width / 2 - tooltipWidth / 2;
         if (left < 8) left = 8;
         if (left + tooltipWidth > window.innerWidth - 8) left = window.innerWidth - tooltipWidth - 8;
+        let arrowOnTop = true;
         if (top + tooltipHeight > window.innerHeight - 8) {
           // Fall back to above
           top = rect.top - pad - 16 - tooltipHeight;
+          arrowOnTop = false;
         }
-        arrowPos = {
+        // Clamp to viewport
+        if (top < 8) top = 8;
+        if (top + tooltipHeight > window.innerHeight - 8) top = window.innerHeight - tooltipHeight - 8;
+        arrowPos = arrowOnTop ? {
           position: 'absolute',
           top: '-6px',
           left: '50%',
@@ -101,11 +106,24 @@ const OnboardingGuide = ({ onComplete }) => {
           background: '#1e293b',
           borderLeft: '1px solid rgba(245,158,11,0.4)',
           borderTop: '1px solid rgba(245,158,11,0.4)',
+        } : {
+          position: 'absolute',
+          bottom: '-6px',
+          left: '50%',
+          transform: 'translateX(-50%) rotate(45deg)',
+          width: '12px',
+          height: '12px',
+          background: '#1e293b',
+          borderRight: '1px solid rgba(245,158,11,0.4)',
+          borderBottom: '1px solid rgba(245,158,11,0.4)',
         };
         break;
+      }
       default:
         top = rect.bottom + pad + 16;
         left = rect.left + rect.width / 2 - tooltipWidth / 2;
+        if (top < 8) top = 8;
+        if (top + tooltipHeight > window.innerHeight - 8) top = window.innerHeight - tooltipHeight - 8;
     }
 
     setTooltipStyle({

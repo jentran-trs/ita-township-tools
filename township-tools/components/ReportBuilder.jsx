@@ -2929,7 +2929,6 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
     const controlsHeight = 120; // Space for controls below image
     const totalItemHeight = imageHeight + controlsHeight;
     const maxCanvasWidth = Math.max(canvasWidth - 40, 600); // Account for padding
-    const maxCanvasHeight = 800; // Available height in the letter image area
 
     const images = section.images || [];
 

@@ -2120,6 +2120,8 @@ const FooterElement = ({ footer, onUpdate, onDelete, themeColors, logo, editable
     };
   }, [isResizing, isDragging, resizeStart, dragStart, width, height, position, footer, onUpdate, canvasWidth, canvasMaxHeight]);
 
+  const footerBgColor = footer.bgColor || themeColors?.primaryDark || '#1a2d3d';
+
   return (
     <div
       className={`absolute rounded-lg transition-shadow ${editable ? 'group' : ''}`}
@@ -2129,7 +2131,7 @@ const FooterElement = ({ footer, onUpdate, onDelete, themeColors, logo, editable
         left: `${position.x}px`,
         top: `${position.y}px`,
         zIndex: isDragging ? 100 : 1,
-        backgroundColor: themeColors?.primaryDark || '#1a2d3d',
+        backgroundColor: footerBgColor,
         border: editable ? '2px dashed rgba(255,255,255,0.3)' : 'none'
       }}
     >
@@ -2148,6 +2150,18 @@ const FooterElement = ({ footer, onUpdate, onDelete, themeColors, logo, editable
           onMouseDown={handleDragStart}
         >
           <Move className="w-4 h-4 text-white/70" />
+        </div>
+      )}
+
+      {editable && (
+        <div className="absolute top-2 left-10 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-10 bg-black/30 px-2 py-1 rounded">
+          <label className="text-[10px] text-white">BG:</label>
+          <input
+            type="color"
+            value={footerBgColor}
+            onChange={(e) => onUpdate({ ...footer, bgColor: e.target.value })}
+            className="w-6 h-6 rounded cursor-pointer"
+          />
         </div>
       )}
 

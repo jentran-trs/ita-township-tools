@@ -2647,10 +2647,10 @@ const BannerSection = ({ section, onUpdate, themeColors, logo, isPreview }) => {
             </h1>
           )}
           {section.subtitle && (
-            <h2 className="text-3xl font-semibold mt-4 text-white" style={{ wordSpacing: '0.15em' }}>{section.subtitle}</h2>
+            <h2 className="text-3xl font-semibold mt-4 text-white" style={{ letterSpacing: '0.5px' }}>{section.subtitle}</h2>
           )}
           {section.tagline && (
-            <p className="text-xl italic mt-6" style={{ color: themeColors?.gold || '#D4B896', wordSpacing: '0.15em' }}>
+            <p className="text-xl italic mt-6" style={{ color: themeColors?.gold || '#D4B896', letterSpacing: '0.5px' }}>
               {section.tagline}
             </p>
           )}

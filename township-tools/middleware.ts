@@ -10,6 +10,7 @@ const isPublicRoute = createRouteMatcher([
   '/api/asset-collection(.*)',
   '/api/submissions(.*)',
   '/api/projects(.*)',
+  '/tools/scoring-tool',
   '/',
 ]);
 

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from 'react';
-import { Calculator, RotateCcw, ChevronDown, ChevronUp, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
+import { Calculator, RotateCcw, AlertTriangle, CheckCircle2, XCircle, Building2, User, Mail, FileText, Palette, Send } from 'lucide-react';
 
 const FIELDS = [
   { name: 'assist_none_2324', label: 'Township Assistance (2023–2024)' },
@@ -149,6 +149,8 @@ const QUESTIONS = [
 
 const ScoringTool = () => {
   const [answers, setAnswers] = useState({});
+  const [townshipName, setTownshipName] = useState('');
+  const [personName, setPersonName] = useState('');
   const [showResult, setShowResult] = useState(false);
   const [warning, setWarning] = useState(false);
   const resultRef = useRef(null);
@@ -161,6 +163,17 @@ const ScoringTool = () => {
     return FIELDS.every(f => answers[f.name] !== undefined);
   };
 
+  const trackScore = (score, status) => {
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', 'sb270_score_calculated', {
+        township_name: townshipName || 'Not provided',
+        person_name: personName || 'Not provided',
+        total_score: score,
+        designation_status: status,
+      });
+    }
+  };
+
   const calculate = () => {
     setWarning(false);
     if (!allAnswered()) {
@@ -170,12 +183,18 @@ const ScoringTool = () => {
       return;
     }
 
+    const score = FIELDS.reduce((sum, f) => sum + (answers[f.name] || 0), 0);
+    const status = score >= 4 ? 'Designated' : 'Recipient';
+    trackScore(score, status);
+
     setShowResult(true);
     setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
   };
 
   const resetAll = () => {
     setAnswers({});
+    setTownshipName('');
+    setPersonName('');
     setShowResult(false);
     setWarning(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -232,6 +251,39 @@ const ScoringTool = () => {
         </p>
       </div>
 
+      {/* Township Info */}
+      <div className="bg-slate-800 border border-slate-700 rounded-xl p-4 mb-5 shadow-sm">
+        <h2 className="text-base font-semibold text-white mb-3">Your Information</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="flex items-center gap-2 text-sm text-slate-400 mb-1.5">
+              <Building2 className="w-3.5 h-3.5" />
+              Township Name
+            </label>
+            <input
+              type="text"
+              value={townshipName}
+              onChange={(e) => setTownshipName(e.target.value)}
+              placeholder="e.g. Vernon Township"
+              className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors"
+            />
+          </div>
+          <div>
+            <label className="flex items-center gap-2 text-sm text-slate-400 mb-1.5">
+              <User className="w-3.5 h-3.5" />
+              Your Name
+            </label>
+            <input
+              type="text"
+              value={personName}
+              onChange={(e) => setPersonName(e.target.value)}
+              placeholder="e.g. Jane Smith"
+              className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors"
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Questions Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {QUESTIONS.map((q) => (
@@ -284,6 +336,9 @@ const ScoringTool = () => {
             <>
               <div className="flex flex-wrap gap-4 items-center justify-between mb-4">
                 <div>
+                  {townshipName && (
+                    <div className="text-sm text-slate-400 mb-1">{townshipName}</div>
+                  )}
                   <div className="text-4xl font-black text-white">{totalScore}</div>
                   <div className="text-sm text-slate-400 font-semibold -mt-0.5">Total Points</div>
                 </div>
@@ -325,6 +380,55 @@ const ScoringTool = () => {
           )}
         </div>
       )}
+
+      {/* Township Tools Promo */}
+      <div className="mt-8 bg-gradient-to-br from-slate-800 to-slate-800/80 border border-slate-600 rounded-xl p-6 shadow-lg">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-8 h-8 bg-amber-500/20 rounded-lg flex items-center justify-center">
+            <Building2 className="w-4 h-4 text-amber-500" />
+          </div>
+          <h2 className="text-lg font-bold text-white">Township Tools for Indiana Townships</h2>
+        </div>
+        <p className="text-sm text-slate-400 leading-relaxed mb-4">
+          We offer professional tools built specifically for Indiana townships. Subscribing townships get access to:
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+          <div className="bg-slate-900/60 border border-slate-700 rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-1.5">
+              <FileText className="w-4 h-4 text-amber-500" />
+              <span className="text-sm font-semibold text-white">Annual Report Builder</span>
+            </div>
+            <p className="text-xs text-slate-400 leading-snug">
+              Create professional annual reports with a drag-and-drop builder. Export as PDF ready to print and share.
+            </p>
+          </div>
+          <div className="bg-slate-900/60 border border-slate-700 rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-1.5">
+              <Palette className="w-4 h-4 text-blue-500" />
+              <span className="text-sm font-semibold text-white">Report Design Service</span>
+            </div>
+            <p className="text-xs text-slate-400 leading-snug">
+              Submit your assets and let our team design your annual report for you. Professional results with minimal effort.
+            </p>
+          </div>
+          <div className="bg-slate-900/60 border border-slate-700 rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-1.5">
+              <Mail className="w-4 h-4 text-emerald-500" />
+              <span className="text-sm font-semibold text-white">Email Template Builder</span>
+            </div>
+            <p className="text-xs text-slate-400 leading-snug">
+              Build professional email and newsletter templates with a form-based builder. Copy HTML and paste into any email client.
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-slate-700">
+          <Send className="w-4 h-4 text-amber-500 flex-shrink-0" />
+          <p className="text-sm text-slate-300">
+            Interested? Contact <a href="mailto:jentran@my-trs.com" className="text-amber-500 font-semibold hover:text-amber-400 underline underline-offset-2 transition-colors">Jen Tran</a> at{' '}
+            <a href="mailto:jentran@my-trs.com" className="text-amber-500 font-semibold hover:text-amber-400 underline underline-offset-2 transition-colors">jentran@my-trs.com</a> for more information.
+          </p>
+        </div>
+      </div>
     </div>
   );
 };

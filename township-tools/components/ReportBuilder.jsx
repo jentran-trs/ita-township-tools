@@ -3284,23 +3284,37 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
 
 // Footer Section Component
 const FooterSection = ({ section, onUpdate, themeColors, logo, isPreview }) => {
+  const footerBgColor = section.bgColor || themeColors?.primary || '#2B3E50';
+
   return (
-    <div 
+    <div
       data-section="footer"
-      className="p-12 text-center text-white flex flex-col items-center justify-center"
+      className="relative p-12 text-center text-white flex flex-col items-center justify-center"
       style={{
-        backgroundColor: themeColors?.primary || '#2B3E50',
+        backgroundColor: footerBgColor,
         minHeight: isPreview ? '400px' : '500px',
         height: isPreview ? 'auto' : '500px',
         width: '990px'
       }}
     >
+      {!isPreview && (
+        <div className="absolute top-4 left-4 flex items-center gap-2 z-10 bg-black/30 px-2 py-1 rounded">
+          <label className="text-xs text-white">Background:</label>
+          <input
+            type="color"
+            value={footerBgColor}
+            onChange={(e) => onUpdate({ ...section, bgColor: e.target.value })}
+            className="w-8 h-8 rounded cursor-pointer"
+          />
+        </div>
+      )}
+
       {logo && (
         <div className="w-28 h-28 mx-auto mb-6">
           <img src={logo} alt="Logo" className="w-full h-full object-contain" />
         </div>
       )}
-      
+
       {isPreview ? (
         <>
           {section.name && <h2 className="text-2xl font-bold">{section.name}</h2>}

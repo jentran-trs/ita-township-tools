@@ -2929,9 +2929,10 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
     const controlsHeight = 120; // Space for controls below image
     const totalItemHeight = imageHeight + controlsHeight;
     const maxCanvasWidth = Math.max(canvasWidth - 40, 600); // Account for padding
-    
+    const maxCanvasHeight = 800; // Available height in the letter image area
+
     const images = section.images || [];
-    
+
     // Check if there's room for a new image at all
     if (totalItemHeight > maxCanvasHeight) {
       alert('Canvas is too small for images.');
@@ -3628,7 +3629,7 @@ const ContentSection = ({ section, onUpdate, onDelete, onMoveElement, contentSec
     return null;
   };
 
-  const maxCanvasHeight = 1100;
+  const maxCanvasHeight = 1200;
   
   // Calculate actual canvas height needed for preview
   const actualCanvasHeight = (() => {

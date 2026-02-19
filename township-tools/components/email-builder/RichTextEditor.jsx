@@ -34,7 +34,7 @@ const RichTextEditor = ({ content, onChange, placeholder }) => {
   const [showColorMenu, setShowColorMenu] = useState(false);
   const [showSizeMenu, setShowSizeMenu] = useState(false);
   const [currentFont, setCurrentFont] = useState(FONTS[0]);
-  const [fontSize, setFontSize] = useState(16);
+  const [fontSize, setFontSize] = useState(14);
   const isInitialized = useRef(false);
   const savedSelection = useRef(null);
 
@@ -281,7 +281,7 @@ const RichTextEditor = ({ content, onChange, placeholder }) => {
         contentEditable
         dir="ltr"
         className="min-h-32 p-4 focus:outline-none text-slate-900"
-        style={{ direction: 'ltr', textAlign: 'left', fontSize: '16px', lineHeight: 1.5, color: '#0f172a', fontFamily: '"Instrument Sans", sans-serif' }}
+        style={{ direction: 'ltr', textAlign: 'left', fontSize: '14px', lineHeight: 1.5, color: '#0f172a', fontFamily: '"Instrument Sans", sans-serif' }}
         onInput={handleInput}
         onBlur={saveSelection}
         onMouseUp={handleSelectionChange}

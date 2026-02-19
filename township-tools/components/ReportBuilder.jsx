@@ -904,7 +904,7 @@ const ImageFrame = ({ imageData, onUpdate, onDelete, onMove, targetSections, the
       const maxHeight = Math.max(100, canvasMaxHeight - position.y);
       newHeight = Math.min(newHeight, maxHeight);
       // Circle and square shapes: maintain 1:1 aspect ratio
-      if (imageData.shape === 'circle' || imageData.shape === 'square' || !imageData.shape) {
+      if (imageData.shape === 'circle' || imageData.shape === 'square') {
         const size = Math.min(newWidth, newHeight);
         newWidth = size;
         newHeight = size;

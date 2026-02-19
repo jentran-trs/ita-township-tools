@@ -1,6 +1,5 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { Building2, ArrowLeft } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -18,7 +17,6 @@ const ScoringTool = dynamic(() => import("@/components/ScoringTool"), {
 });
 
 export default function ScoringToolPage() {
-  const { user } = useUser();
   const router = useRouter();
 
   return (
@@ -27,11 +25,11 @@ export default function ScoringToolPage() {
         <div className="max-w-[1800px] mx-auto px-4 py-3 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => router.push(user ? "/dashboard" : "/")}
+              onClick={() => router.push("/")}
               className="flex items-center gap-2 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors text-sm font-medium"
             >
               <ArrowLeft className="w-4 h-4" />
-              {user ? "Back to Dashboard" : "Home"}
+              Home
             </button>
             <div className="border-l border-slate-600 pl-4 flex items-center gap-2">
               <Building2 className="w-5 h-5 text-amber-500" />

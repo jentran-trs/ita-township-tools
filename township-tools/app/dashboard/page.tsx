@@ -42,7 +42,7 @@ export default function Dashboard() {
                   </button>
                 </>
               )}
-              <span className="hidden md:inline text-slate-400 text-sm">
+              <span className="hidden md:inline text-slate-300 text-sm">
                 Welcome, {user?.firstName || user?.emailAddresses[0]?.emailAddress}
               </span>
               <UserButton afterSignOutUrl="/sign-in" />
@@ -78,7 +78,7 @@ export default function Dashboard() {
               <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1 sm:mb-2">
                 {organization.name}
               </h1>
-              <p className="text-sm sm:text-base text-slate-400">
+              <p className="text-sm sm:text-base text-slate-300">
                 Your township tools and resources
               </p>
             </div>
@@ -95,7 +95,7 @@ export default function Dashboard() {
                     <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-amber-500" />
                   </div>
                   <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Annual Report Builder</h3>
-                  <p className="text-sm sm:text-base text-slate-400 mb-3 sm:mb-4">
+                  <p className="text-sm sm:text-base text-slate-300 mb-3 sm:mb-4">
                     Create professional annual reports with our drag-and-drop builder.
                   </p>
                   <div className="flex items-center text-amber-500 font-medium text-sm sm:text-base">
@@ -115,7 +115,7 @@ export default function Dashboard() {
                 <h3 className="text-lg sm:text-xl font-bold text-white mb-2">
                   {isAdmin ? 'View Report Assets' : 'Submit Report Assets'}
                 </h3>
-                <p className="text-sm sm:text-base text-slate-400 mb-3 sm:mb-4">
+                <p className="text-sm sm:text-base text-slate-300 mb-3 sm:mb-4">
                   {isAdmin
                     ? 'Generate and design reports from submitted assets.'
                     : 'Submit your report assets and let us handle the design.'}
@@ -134,7 +134,7 @@ export default function Dashboard() {
                   <Mail className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-500" />
                 </div>
                 <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Email Builder</h3>
-                <p className="text-sm sm:text-base text-slate-400 mb-3 sm:mb-4">
+                <p className="text-sm sm:text-base text-slate-300 mb-3 sm:mb-4">
                   Create professional email and newsletter templates with a form-based builder.
                 </p>
                 <div className="flex items-center text-emerald-500 font-medium text-sm sm:text-base">
@@ -151,7 +151,7 @@ export default function Dashboard() {
                   <ClipboardCheck className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500" />
                 </div>
                 <h3 className="text-lg sm:text-xl font-bold text-white mb-2">SB 270 Scoring Tool</h3>
-                <p className="text-sm sm:text-base text-slate-400 mb-3 sm:mb-4">
+                <p className="text-sm sm:text-base text-slate-300 mb-3 sm:mb-4">
                   Self-score your township under SB 270 to determine Designated or Recipient status.
                 </p>
                 <div className="flex items-center text-purple-500 font-medium text-sm sm:text-base">
@@ -167,7 +167,7 @@ export default function Dashboard() {
                   <Users className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500" />
                   <h2 className="text-lg sm:text-xl font-bold text-white">Organization Members</h2>
                 </div>
-                <p className="text-sm sm:text-base text-slate-400 mb-3 sm:mb-4">
+                <p className="text-sm sm:text-base text-slate-300 mb-3 sm:mb-4">
                   Manage your township&apos;s team members and their access.
                 </p>
                 <OrganizationSwitcher
@@ -191,7 +191,7 @@ export default function Dashboard() {
             <h1 className="text-2xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">
               Create Your Township Organization
             </h1>
-            <p className="text-sm sm:text-base text-slate-400 mb-6 sm:mb-8 max-w-md mx-auto">
+            <p className="text-sm sm:text-base text-slate-300 mb-6 sm:mb-8 max-w-md mx-auto">
               Set up your township to start using the tools. You can invite trustees,
               clerks, and staff to collaborate.
             </p>

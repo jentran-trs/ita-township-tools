@@ -31,7 +31,7 @@ export default function PublicLanding() {
           <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
             Professional Tools for Indiana Townships
           </h1>
-          <p className="text-sm sm:text-base text-slate-400 max-w-2xl">
+          <p className="text-sm sm:text-base text-slate-300 max-w-2xl">
             Everything your township needs — from SB 270 compliance scoring to annual report creation and email templates.
           </p>
         </div>
@@ -52,7 +52,7 @@ export default function PublicLanding() {
               </span>
             </div>
             <h3 className="text-lg sm:text-xl font-bold text-white mb-2">SB 270 Scoring Tool</h3>
-            <p className="text-sm sm:text-base text-slate-400 mb-3 sm:mb-4">
+            <p className="text-sm sm:text-base text-slate-300 mb-3 sm:mb-4">
               Self-score your township under SB 270 to determine if you are a Designated or Recipient township.
             </p>
             <div className="flex items-center text-purple-500 font-medium text-sm sm:text-base">
@@ -72,7 +72,7 @@ export default function PublicLanding() {
               </div>
             </div>
             <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Annual Report Builder</h3>
-            <p className="text-sm sm:text-base text-slate-400 mb-3 sm:mb-4">
+            <p className="text-sm sm:text-base text-slate-300 mb-3 sm:mb-4">
               Create professional annual reports with a drag-and-drop builder. Export as print-ready PDF.
             </p>
             <button
@@ -96,7 +96,7 @@ export default function PublicLanding() {
               </div>
             </div>
             <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Report Design Service</h3>
-            <p className="text-sm sm:text-base text-slate-400 mb-3 sm:mb-4">
+            <p className="text-sm sm:text-base text-slate-300 mb-3 sm:mb-4">
               Submit your report assets and let our team design your annual report. Professional results with minimal effort.
             </p>
             <button
@@ -120,7 +120,7 @@ export default function PublicLanding() {
               </div>
             </div>
             <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Email Template Builder</h3>
-            <p className="text-sm sm:text-base text-slate-400 mb-3 sm:mb-4">
+            <p className="text-sm sm:text-base text-slate-300 mb-3 sm:mb-4">
               Build professional email and newsletter templates with a form-based builder. Copy HTML and paste into any email client.
             </p>
             <button
@@ -136,7 +136,7 @@ export default function PublicLanding() {
         {/* Contact CTA */}
         <div className="mt-8 sm:mt-10 bg-slate-800 border border-slate-700 rounded-xl p-5 sm:p-6 text-center">
           <h2 className="text-lg font-bold text-white mb-2">Want to subscribe?</h2>
-          <p className="text-sm text-slate-400 mb-4 max-w-lg mx-auto">
+          <p className="text-sm text-slate-300 mb-4">
             Get access to all Township Tools for your organization. Contact us to get started.
           </p>
           <a

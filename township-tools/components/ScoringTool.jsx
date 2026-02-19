@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from 'react';
-import { Calculator, RotateCcw, AlertTriangle, CheckCircle2, XCircle, Building2, User } from 'lucide-react';
+import { Calculator, RotateCcw, AlertTriangle, Building2, User } from 'lucide-react';
 
 const FIELDS = [
   { name: 'assist_none_2324', label: 'Township Assistance (2023–2024)' },
@@ -280,7 +280,7 @@ const ScoringTool = () => {
       {/* Header */}
       <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 mb-5 shadow-lg">
         <h1 className="text-xl font-bold text-white mb-1.5">SB 270 Township Self-Scoring Tool</h1>
-        <p className="text-sm text-slate-400 leading-relaxed">
+        <p className="text-sm text-slate-300 leading-relaxed">
           Answer each question, then select <strong className="text-slate-200">Calculate Score</strong>. A total of{' '}
           <strong className="text-amber-500">4+ points</strong> indicates &ldquo;Designated Township&rdquo; under SB 270.
         </p>
@@ -291,7 +291,7 @@ const ScoringTool = () => {
         <h2 className="text-base font-semibold text-white mb-3">Your Information</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="flex items-center gap-2 text-sm text-slate-400 mb-1.5">
+            <label className="flex items-center gap-2 text-sm text-slate-300 mb-1.5">
               <Building2 className="w-3.5 h-3.5" />
               Township Name
             </label>
@@ -304,7 +304,7 @@ const ScoringTool = () => {
             />
           </div>
           <div>
-            <label className="flex items-center gap-2 text-sm text-slate-400 mb-1.5">
+            <label className="flex items-center gap-2 text-sm text-slate-300 mb-1.5">
               <User className="w-3.5 h-3.5" />
               Your Name
             </label>
@@ -340,7 +340,7 @@ const ScoringTool = () => {
                   {q.badge}
                 </span>
               </div>
-              <p className="text-xs text-slate-400 leading-snug mb-3">{q.description}</p>
+              <p className="text-xs text-slate-300 leading-snug mb-3">{q.description}</p>
               {q.checkboxItems && (
                 <p className="text-xs text-amber-500/80 font-medium mb-2">Select all that apply</p>
               )}
@@ -390,7 +390,7 @@ const ScoringTool = () => {
                 <AlertTriangle className="w-5 h-5 flex-shrink-0" />
                 Please answer all questions before calculating.
               </div>
-              <div className="text-xs text-slate-400">
+              <div className="text-xs text-slate-300">
                 <span className="text-slate-500">Missing answers for: </span>
                 {getUnanswered().map(f => f.label).join(', ')}
               </div>
@@ -400,23 +400,18 @@ const ScoringTool = () => {
               <div className="flex flex-wrap gap-4 items-center justify-between mb-4">
                 <div>
                   {townshipName && (
-                    <div className="text-sm text-slate-400 mb-1">{townshipName}</div>
+                    <div className="text-sm text-slate-300 mb-1">{townshipName}</div>
                   )}
                   <div className="text-4xl font-black text-white">{totalScore}</div>
-                  <div className="text-sm text-slate-400 font-semibold -mt-0.5">Total Points</div>
+                  <div className="text-sm text-slate-300 font-semibold -mt-0.5">Total Points</div>
                 </div>
                 <div
-                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm border ${
+                  className={`inline-flex items-center px-4 py-2 rounded-full font-bold text-sm border ${
                     isDesignated
-                      ? 'bg-red-500/10 text-red-400 border-red-500/30'
-                      : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                      ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+                      : 'bg-blue-500/20 text-blue-400 border-blue-500/40'
                   }`}
                 >
-                  {isDesignated ? (
-                    <XCircle className="w-4 h-4" />
-                  ) : (
-                    <CheckCircle2 className="w-4 h-4" />
-                  )}
                   {isDesignated ? 'Designated Township (4+)' : 'Recipient Township (0\u20133)'}
                 </div>
               </div>
@@ -428,14 +423,14 @@ const ScoringTool = () => {
                     key={i}
                     className="flex items-center justify-between gap-3 px-3 py-2 border border-dashed border-slate-600 rounded-xl bg-slate-900/50 text-sm"
                   >
-                    <span className="text-slate-400">{item.label}</span>
+                    <span className="text-slate-300">{item.label}</span>
                     <strong className={item.points > 0 ? 'text-amber-500' : 'text-slate-500'}>{item.points}</strong>
                   </div>
                 ))}
               </div>
 
               <p className="mt-4 text-xs text-slate-500 leading-relaxed">
-                <strong className="text-slate-400">Note:</strong> This tool is for education/self-check. Official point
+                <strong className="text-slate-300">Note:</strong> This tool is for education/self-check. Official point
                 assignments and any reconsideration process are determined by the Department of Local Government Finance
                 as provided in SB 270.
               </p>

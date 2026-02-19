@@ -90,7 +90,7 @@ const renderSection = (section, colors) => {
               <tr>
                 <td style="border-left: 4px solid ${c.gold}; padding: 15px 20px; background-color: #fffbeb;">
                   ${data.heading ? `<h3 style="margin: 0 0 10px 0; font-size: 16px; font-weight: bold; color: #92400e; font-family: Arial, sans-serif;">&#9888; ${escapeHtml(data.heading)}</h3>` : ''}
-                  <div style="font-size: 14px; line-height: 1.6; color: #78350f; font-family: Arial, sans-serif;">
+                  <div style="font-size: 16px; line-height: 1.6; color: #78350f; font-family: Arial, sans-serif;">
                     ${sanitizeHtmlForEmail(data.content)}
                   </div>
                 </td>
@@ -107,7 +107,7 @@ const renderSection = (section, colors) => {
               <tr>
                 <td style="border-left: 4px solid ${c.accent}; padding: 15px 20px; background-color: #fef2f2;">
                   ${data.heading ? `<h3 style="margin: 0 0 10px 0; font-size: 16px; font-weight: bold; color: #991b1b; font-family: Arial, sans-serif;">&#9888; ${escapeHtml(data.heading)}</h3>` : ''}
-                  <div style="font-size: 14px; line-height: 1.6; color: #7f1d1d; font-family: Arial, sans-serif;">
+                  <div style="font-size: 16px; line-height: 1.6; color: #7f1d1d; font-family: Arial, sans-serif;">
                     ${sanitizeHtmlForEmail(data.content)}
                   </div>
                 </td>
@@ -227,11 +227,11 @@ const renderSection = (section, colors) => {
               <tr>
                 <td valign="top" width="48%" style="padding-right: 2%;">
                   ${data.leftHeading ? `<h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: bold; color: ${c.primary}; font-family: Arial, sans-serif;">${escapeHtml(data.leftHeading)}</h3>` : ''}
-                  <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #555555; font-family: Arial, sans-serif;">${escapeHtml(data.leftText)}</p>
+                  <p style="margin: 0; font-size: 16px; line-height: 1.6; color: #555555; font-family: Arial, sans-serif;">${escapeHtml(data.leftText)}</p>
                 </td>
                 <td valign="top" width="48%" style="padding-left: 2%;">
                   ${data.rightHeading ? `<h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: bold; color: ${c.primary}; font-family: Arial, sans-serif;">${escapeHtml(data.rightHeading)}</h3>` : ''}
-                  <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #555555; font-family: Arial, sans-serif;">${escapeHtml(data.rightText)}</p>
+                  <p style="margin: 0; font-size: 16px; line-height: 1.6; color: #555555; font-family: Arial, sans-serif;">${escapeHtml(data.rightText)}</p>
                 </td>
               </tr>
             </table>
@@ -248,7 +248,7 @@ const renderSection = (section, colors) => {
               ${links.filter(l => l.text).map(link => `
               <tr>
                 <td style="padding: 6px 0;">
-                  <a href="${escapeHtml(link.url || '#')}" style="color: ${c.gold}; text-decoration: none; font-size: 15px; font-weight: 600; font-family: Arial, sans-serif;">&#8594; ${escapeHtml(link.text)}</a>
+                  <a href="${escapeHtml(link.url || '#')}" style="color: ${c.gold}; text-decoration: none; font-size: 16px; font-weight: 600; font-family: Arial, sans-serif;">&#8594; ${escapeHtml(link.text)}</a>
                 </td>
               </tr>`).join('')}
             </table>
@@ -263,7 +263,7 @@ const renderSection = (section, colors) => {
         <tr>
           <td style="padding: 8px 40px;">
             ${data.heading ? `<h3 style="margin: 0 0 10px 0; font-size: 18px; font-weight: bold; color: ${c.primary}; font-family: Arial, sans-serif;">${escapeHtml(data.heading)}</h3>` : ''}
-            <${tag} style="margin: 0; padding-left: 20px; font-size: 15px; line-height: 1.6; color: #333333; font-family: Arial, sans-serif;">
+            <${tag} style="margin: 0; padding-left: 20px; font-size: 16px; line-height: 1.6; color: #333333; font-family: Arial, sans-serif;">
               ${items.map(item => `<li style="margin-bottom: 6px;">${escapeHtml(item)}</li>`).join('')}
             </${tag}>
           </td>

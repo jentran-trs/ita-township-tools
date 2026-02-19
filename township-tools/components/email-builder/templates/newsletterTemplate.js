@@ -30,7 +30,7 @@ const renderSection = (section, colors) => {
               <tr>
                 <td style="border-top: 4px solid ${c.gold}; padding: 25px;">
                   ${data.heading ? `<h2 style="margin: 0 0 15px 0; font-size: 22px; font-weight: bold; color: ${c.primary}; font-family: Georgia, serif;">${escapeHtml(data.heading)}</h2>` : ''}
-                  <div style="font-size: 15px; line-height: 1.7; color: #333333; font-family: Arial, sans-serif;">
+                  <div style="font-size: 16px; line-height: 1.6; color: #333333; font-family: Arial, sans-serif;">
                     ${sanitizeHtmlForEmail(data.content)}
                   </div>
                   ${data.ctaText ? `
@@ -59,7 +59,7 @@ const renderSection = (section, colors) => {
                 </td>
               </tr>
             </table>` : ''}
-            <div style="font-size: 15px; line-height: 1.7; color: #333333; font-family: Arial, sans-serif;">
+            <div style="font-size: 16px; line-height: 1.6; color: #333333; font-family: Arial, sans-serif;">
               ${sanitizeHtmlForEmail(data.content)}
             </div>
           </td>
@@ -96,7 +96,7 @@ const renderSection = (section, colors) => {
                 </td>
                 <td valign="top">
                   <h3 style="margin: 0 0 4px 0; font-size: 16px; font-weight: bold; color: #333333; font-family: Arial, sans-serif;">${escapeHtml(ev.title)}</h3>
-                  ${ev.description ? `<p style="margin: 0 0 4px 0; font-size: 14px; color: #666666; line-height: 1.5; font-family: Arial, sans-serif;">${escapeHtml(ev.description)}</p>` : ''}
+                  ${ev.description ? `<p style="margin: 0 0 4px 0; font-size: 16px; color: #666666; line-height: 1.6; font-family: Arial, sans-serif;">${escapeHtml(ev.description)}</p>` : ''}
                   ${ev.link ? `<a href="${escapeHtml(ev.link)}" style="color: ${c.gold}; text-decoration: none; font-size: 13px; font-weight: 600; font-family: Arial, sans-serif;">Learn more &rarr;</a>` : ''}
                   ${calLinksHtml}
                 </td>
@@ -115,7 +115,7 @@ const renderSection = (section, colors) => {
               <tr>
                 <td style="padding: 30px; text-align: left;">
                   ${data.heading ? `<h2 style="margin: 0 0 10px 0; font-size: 22px; font-weight: bold; color: #ffffff; font-family: Georgia, serif;">${escapeHtml(data.heading)}</h2>` : ''}
-                  ${data.text ? `<p style="margin: 0 0 20px 0; font-size: 15px; color: ${lightenColor(c.primary, 0.7)}; font-family: Arial, sans-serif;">${escapeHtml(data.text)}</p>` : ''}
+                  ${data.text ? `<p style="margin: 0 0 20px 0; font-size: 16px; color: ${lightenColor(c.primary, 0.7)}; font-family: Arial, sans-serif;">${escapeHtml(data.text)}</p>` : ''}
                   ${data.buttonText ? `
                   <table cellpadding="0" cellspacing="0" border="0">
                     <tr>
@@ -143,7 +143,7 @@ const renderSection = (section, colors) => {
                 </td>
               </tr>
             </table>` : ''}
-            <ul style="margin: 0; padding-left: 20px; font-size: 15px; line-height: 1.8; color: #333333; font-family: Arial, sans-serif;">
+            <ul style="margin: 0; padding-left: 20px; font-size: 16px; line-height: 1.6; color: #333333; font-family: Arial, sans-serif;">
               ${items.map(item => `<li>${escapeHtml(item)}</li>`).join('')}
             </ul>
           </td>
@@ -227,7 +227,7 @@ const renderSection = (section, colors) => {
               <tr>
                 <td style="border-left: 4px solid ${c.gold}; padding: 15px 20px; background-color: #fffbeb;">
                   ${data.heading ? `<h3 style="margin: 0 0 10px 0; font-size: 16px; font-weight: bold; color: #92400e; font-family: Arial, sans-serif;">&#9888; ${escapeHtml(data.heading)}</h3>` : ''}
-                  <div style="font-size: 14px; line-height: 1.6; color: #78350f; font-family: Arial, sans-serif;">
+                  <div style="font-size: 16px; line-height: 1.6; color: #78350f; font-family: Arial, sans-serif;">
                     ${sanitizeHtmlForEmail(data.content)}
                   </div>
                 </td>
@@ -244,7 +244,7 @@ const renderSection = (section, colors) => {
               <tr>
                 <td style="border-left: 4px solid ${c.accent}; padding: 15px 20px; background-color: #fef2f2;">
                   ${data.heading ? `<h3 style="margin: 0 0 10px 0; font-size: 16px; font-weight: bold; color: #991b1b; font-family: Arial, sans-serif;">&#9888; ${escapeHtml(data.heading)}</h3>` : ''}
-                  <div style="font-size: 14px; line-height: 1.6; color: #7f1d1d; font-family: Arial, sans-serif;">
+                  <div style="font-size: 16px; line-height: 1.6; color: #7f1d1d; font-family: Arial, sans-serif;">
                     ${sanitizeHtmlForEmail(data.content)}
                   </div>
                 </td>
@@ -260,7 +260,7 @@ const renderSection = (section, colors) => {
               <table cellpadding="0" cellspacing="0" border="0" align="center" style="display: inline-block; vertical-align: top; margin: 4px;">
                 <tr>
                   <td style="background-color: ${c.gold}; border-radius: 5px; padding: 12px 28px;">
-                    <a href="${escapeHtml(btn.url || '#')}" style="color: ${getContrastColor(c.gold)}; text-decoration: none; font-size: 15px; font-weight: bold; font-family: Arial, sans-serif; display: inline-block;">${escapeHtml(btn.text)}</a>
+                    <a href="${escapeHtml(btn.url || '#')}" style="color: ${getContrastColor(c.gold)}; text-decoration: none; font-size: 16px; font-weight: bold; font-family: Arial, sans-serif; display: inline-block;">${escapeHtml(btn.text)}</a>
                   </td>
                 </tr>
               </table>
@@ -364,11 +364,11 @@ const renderSection = (section, colors) => {
               <tr>
                 <td valign="top" width="48%" style="padding-right: 2%;">
                   ${data.leftHeading ? `<h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: bold; color: ${c.primary}; font-family: Georgia, serif;">${escapeHtml(data.leftHeading)}</h3>` : ''}
-                  <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #555555; font-family: Arial, sans-serif;">${escapeHtml(data.leftText)}</p>
+                  <p style="margin: 0; font-size: 16px; line-height: 1.6; color: #555555; font-family: Arial, sans-serif;">${escapeHtml(data.leftText)}</p>
                 </td>
                 <td valign="top" width="48%" style="padding-left: 2%;">
                   ${data.rightHeading ? `<h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: bold; color: ${c.primary}; font-family: Georgia, serif;">${escapeHtml(data.rightHeading)}</h3>` : ''}
-                  <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #555555; font-family: Arial, sans-serif;">${escapeHtml(data.rightText)}</p>
+                  <p style="margin: 0; font-size: 16px; line-height: 1.6; color: #555555; font-family: Arial, sans-serif;">${escapeHtml(data.rightText)}</p>
                 </td>
               </tr>
             </table>
@@ -385,7 +385,7 @@ const renderSection = (section, colors) => {
               ${links.filter(l => l.text).map(link => `
               <tr>
                 <td style="padding: 6px 0;">
-                  <a href="${escapeHtml(link.url || '#')}" style="color: ${c.gold}; text-decoration: none; font-size: 15px; font-weight: 600; font-family: Arial, sans-serif;">&#8594; ${escapeHtml(link.text)}</a>
+                  <a href="${escapeHtml(link.url || '#')}" style="color: ${c.gold}; text-decoration: none; font-size: 16px; font-weight: 600; font-family: Arial, sans-serif;">&#8594; ${escapeHtml(link.text)}</a>
                 </td>
               </tr>`).join('')}
             </table>
@@ -400,7 +400,7 @@ const renderSection = (section, colors) => {
         <tr>
           <td style="padding: 8px 40px;">
             ${data.heading ? `<h3 style="margin: 0 0 10px 0; font-size: 18px; font-weight: bold; color: ${c.primary}; font-family: Georgia, serif;">${escapeHtml(data.heading)}</h3>` : ''}
-            <${tag} style="margin: 0; padding-left: 20px; font-size: 15px; line-height: 1.7; color: #333333; font-family: Arial, sans-serif;">
+            <${tag} style="margin: 0; padding-left: 20px; font-size: 16px; line-height: 1.6; color: #333333; font-family: Arial, sans-serif;">
               ${items.map(item => `<li style="margin-bottom: 6px;">${escapeHtml(item)}</li>`).join('')}
             </${tag}>
           </td>

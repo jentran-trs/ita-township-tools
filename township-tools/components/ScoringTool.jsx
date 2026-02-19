@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from 'react';
-import { Calculator, RotateCcw, AlertTriangle, CheckCircle2, XCircle, Building2, User, Mail, FileText, Palette, Send } from 'lucide-react';
+import { Calculator, RotateCcw, AlertTriangle, CheckCircle2, XCircle, Building2, User } from 'lucide-react';
 
 const FIELDS = [
   { name: 'assist_none_2324', label: 'Township Assistance (2023–2024)' },
@@ -43,44 +43,20 @@ const QUESTIONS = [
     id: 'afr',
     title: 'Annual Finance Report Filing',
     badge: '0–2 points',
-    description: 'For each year, select whether your township did not file the Annual Finance Report (AFR).',
-    subQuestions: [
-      {
-        name: 'afr_2023',
-        options: [
-          { value: 1, label: '2023 AFR NOT filed', hint: '1 point if not filed.' },
-          { value: 0, label: '2023 AFR filed', hint: '0 points.' },
-        ],
-      },
-      {
-        name: 'afr_2024',
-        options: [
-          { value: 1, label: '2024 AFR NOT filed', hint: '1 point if not filed.' },
-          { value: 0, label: '2024 AFR filed', hint: '0 points.' },
-        ],
-      },
+    description: 'Select all years where your township did not file the Annual Finance Report (AFR).',
+    checkboxItems: [
+      { name: 'afr_2023', label: '2023 AFR NOT filed', hint: '1 point if not filed.' },
+      { name: 'afr_2024', label: '2024 AFR NOT filed', hint: '1 point if not filed.' },
     ],
   },
   {
     id: 'uploads',
     title: 'Monthly Upload Reports',
     badge: '0–2 points',
-    description: 'For each year, select whether your township did not file all required monthly upload reports.',
-    subQuestions: [
-      {
-        name: 'uploads_2024',
-        options: [
-          { value: 1, label: '2024 uploads incomplete / not all filed', hint: '1 point if incomplete.' },
-          { value: 0, label: '2024 uploads complete', hint: '0 points.' },
-        ],
-      },
-      {
-        name: 'uploads_2025',
-        options: [
-          { value: 1, label: '2025 uploads incomplete / not all filed', hint: '1 point if incomplete.' },
-          { value: 0, label: '2025 uploads complete', hint: '0 points.' },
-        ],
-      },
+    description: 'Select all years where your township did not file all required monthly upload reports.',
+    checkboxItems: [
+      { name: 'uploads_2024', label: '2024 uploads incomplete / not all filed', hint: '1 point if incomplete.' },
+      { name: 'uploads_2025', label: '2025 uploads incomplete / not all filed', hint: '1 point if incomplete.' },
     ],
   },
   {
@@ -91,6 +67,7 @@ const QUESTIONS = [
     subQuestions: [
       {
         name: 'budget_cont_2024',
+        yearLabel: '2024',
         options: [
           { value: 1, label: 'Yes — 2024 budget continued from 2023', hint: '1 point.' },
           { value: 0, label: 'No — 2024 budget not continued', hint: '0 points.' },
@@ -98,6 +75,7 @@ const QUESTIONS = [
       },
       {
         name: 'budget_cont_2025',
+        yearLabel: '2025',
         options: [
           { value: 1, label: 'Yes — 2025 budget continued from 2024', hint: '1 point.' },
           { value: 0, label: 'No — 2025 budget not continued', hint: '0 points.' },
@@ -153,14 +131,25 @@ const ScoringTool = () => {
   const [personName, setPersonName] = useState('');
   const [showResult, setShowResult] = useState(false);
   const [warning, setWarning] = useState(false);
+  const [showMissing, setShowMissing] = useState(false);
   const resultRef = useRef(null);
 
   const handleChange = (name, value) => {
     setAnswers(prev => ({ ...prev, [name]: value }));
   };
 
-  const allAnswered = () => {
-    return FIELDS.every(f => answers[f.name] !== undefined);
+  // Checkbox field names don't require explicit answers (unchecked = 0)
+  const CHECKBOX_FIELDS = new Set(
+    QUESTIONS.filter(q => q.checkboxItems).flatMap(q => q.checkboxItems.map(item => item.name))
+  );
+
+  const getUnanswered = () => {
+    return FIELDS.filter(f => !CHECKBOX_FIELDS.has(f.name) && answers[f.name] === undefined);
+  };
+
+  const isFieldAnswered = (name) => {
+    if (CHECKBOX_FIELDS.has(name)) return true;
+    return answers[name] !== undefined;
   };
 
   const trackScore = (score, status) => {
@@ -176,13 +165,16 @@ const ScoringTool = () => {
 
   const calculate = () => {
     setWarning(false);
-    if (!allAnswered()) {
+    const unanswered = getUnanswered();
+    if (unanswered.length > 0) {
       setShowResult(true);
       setWarning(true);
+      setShowMissing(true);
       setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
       return;
     }
 
+    setShowMissing(false);
     const score = FIELDS.reduce((sum, f) => sum + (answers[f.name] || 0), 0);
     const status = score >= 4 ? 'Designated' : 'Recipient';
     trackScore(score, status);
@@ -197,6 +189,7 @@ const ScoringTool = () => {
     setPersonName('');
     setShowResult(false);
     setWarning(false);
+    setShowMissing(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -208,37 +201,79 @@ const ScoringTool = () => {
     points: answers[f.name] || 0,
   }));
 
-  const renderOptions = (options, name) => (
-    <div className="flex flex-wrap gap-3">
-      {options.map((opt, i) => {
-        const isSelected = answers[name] === opt.value;
+  const isCardComplete = (q) => {
+    if (q.checkboxItems) return true;
+    if (q.options) return isFieldAnswered(q.id);
+    return q.subQuestions.every(sub => isFieldAnswered(sub.name));
+  };
+
+  const handleCheckbox = (name, checked) => {
+    setAnswers(prev => ({ ...prev, [name]: checked ? 1 : 0 }));
+  };
+
+  const renderCheckboxes = (items) => (
+    <div className="space-y-2.5">
+      {items.map((item) => {
+        const isChecked = answers[item.name] === 1;
         return (
           <label
-            key={i}
-            className={`flex-1 min-w-[220px] border rounded-xl p-3 cursor-pointer transition-all ${
-              isSelected
+            key={item.name}
+            className={`flex items-start gap-3 border rounded-xl p-3 cursor-pointer transition-all ${
+              isChecked
                 ? 'border-amber-500 bg-amber-500/10'
                 : 'border-slate-600 bg-slate-800/50 hover:border-slate-500'
             }`}
           >
-            <div className="flex gap-3 items-start">
-              <input
-                type="radio"
-                name={name}
-                checked={isSelected}
-                onChange={() => handleChange(name, opt.value)}
-                className="mt-0.5 w-4 h-4 accent-amber-500"
-              />
-              <div>
-                <span className="text-sm text-slate-200 leading-snug">{opt.label}</span>
-                <span className="block text-xs text-slate-500 mt-1">{opt.hint}</span>
-              </div>
+            <input
+              type="checkbox"
+              checked={isChecked}
+              onChange={(e) => handleCheckbox(item.name, e.target.checked)}
+              className="mt-0.5 w-4 h-4 accent-amber-500 rounded"
+            />
+            <div>
+              <span className="text-sm text-slate-200 leading-snug">{item.label}</span>
+              <span className="block text-xs text-slate-500 mt-1">{item.hint}</span>
             </div>
           </label>
         );
       })}
     </div>
   );
+
+  const renderOptions = (options, name) => {
+    const unanswered = showMissing && !isFieldAnswered(name);
+    return (
+      <div className={`flex flex-wrap gap-3 ${unanswered ? 'rounded-lg ring-2 ring-red-500/50 p-1 -m-1' : ''}`}>
+        {options.map((opt, i) => {
+          const isSelected = answers[name] === opt.value;
+          return (
+            <label
+              key={`${name}-${i}`}
+              className={`flex-1 min-w-[220px] border rounded-xl p-3 cursor-pointer transition-all ${
+                isSelected
+                  ? 'border-amber-500 bg-amber-500/10'
+                  : 'border-slate-600 bg-slate-800/50 hover:border-slate-500'
+              }`}
+            >
+              <div className="flex gap-3 items-start">
+                <input
+                  type="radio"
+                  name={name}
+                  checked={isSelected}
+                  onChange={() => handleChange(name, opt.value)}
+                  className="mt-0.5 w-4 h-4 accent-amber-500"
+                />
+                <div>
+                  <span className="text-sm text-slate-200 leading-snug">{opt.label}</span>
+                  <span className="block text-xs text-slate-500 mt-1">{opt.hint}</span>
+                </div>
+              </div>
+            </label>
+          );
+        })}
+      </div>
+    );
+  };
 
   return (
     <div className="max-w-[980px] mx-auto px-4 py-6 pb-16">
@@ -286,24 +321,46 @@ const ScoringTool = () => {
 
       {/* Questions Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {QUESTIONS.map((q) => (
-          <div key={q.id} className="bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-sm">
-            <div className="flex items-center justify-between gap-3 mb-2">
-              <h2 className="text-base font-semibold text-white">{q.title}</h2>
-              <span className="inline-flex items-center gap-1.5 bg-amber-500/15 text-amber-500 border border-amber-500/30 px-2.5 py-1 rounded-full font-bold text-xs whitespace-nowrap">
-                {q.badge}
-              </span>
-            </div>
-            <p className="text-xs text-slate-400 leading-snug mb-3">{q.description}</p>
-            {q.options ? (
-              renderOptions(q.options, q.id)
-            ) : (
-              <div className="space-y-3">
-                {q.subQuestions.map((sub) => renderOptions(sub.options, sub.name))}
+        {QUESTIONS.map((q) => {
+          const complete = isCardComplete(q);
+          const showIncomplete = showMissing && !complete;
+          return (
+            <div
+              key={q.id}
+              className={`bg-slate-800 border rounded-xl p-4 shadow-sm transition-colors ${
+                showIncomplete ? 'border-red-500/60' : 'border-slate-700'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-3 mb-2">
+                <h2 className="text-base font-semibold text-white flex items-center gap-2">
+                  {q.title}
+                  {showIncomplete && <span className="text-red-400 text-xs font-normal">(answer required)</span>}
+                </h2>
+                <span className="inline-flex items-center gap-1.5 bg-amber-500/15 text-amber-500 border border-amber-500/30 px-2.5 py-1 rounded-full font-bold text-xs whitespace-nowrap">
+                  {q.badge}
+                </span>
               </div>
-            )}
-          </div>
-        ))}
+              <p className="text-xs text-slate-400 leading-snug mb-3">{q.description}</p>
+              {q.checkboxItems && (
+                <p className="text-xs text-amber-500/80 font-medium mb-2">Select all that apply</p>
+              )}
+              {q.options ? (
+                renderOptions(q.options, q.id)
+              ) : q.checkboxItems ? (
+                renderCheckboxes(q.checkboxItems)
+              ) : (
+                <div className="space-y-3">
+                  {q.subQuestions.map((sub) => (
+                    <div key={sub.name}>
+                      <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">{sub.yearLabel}</div>
+                      {renderOptions(sub.options, sub.name)}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
 
         {/* Actions */}
         <div className="lg:col-span-2 flex flex-wrap gap-3 items-center mt-2">
@@ -328,9 +385,15 @@ const ScoringTool = () => {
       {showResult && (
         <div ref={resultRef} className="mt-5 bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg">
           {warning ? (
-            <div className="flex items-center gap-3 text-amber-500 font-bold text-sm">
-              <AlertTriangle className="w-5 h-5 flex-shrink-0" />
-              Please answer all questions before calculating.
+            <div>
+              <div className="flex items-center gap-3 text-amber-500 font-bold text-sm mb-3">
+                <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+                Please answer all questions before calculating.
+              </div>
+              <div className="text-xs text-slate-400">
+                <span className="text-slate-500">Missing answers for: </span>
+                {getUnanswered().map(f => f.label).join(', ')}
+              </div>
             </div>
           ) : (
             <>
@@ -381,54 +444,6 @@ const ScoringTool = () => {
         </div>
       )}
 
-      {/* Township Tools Promo */}
-      <div className="mt-8 bg-gradient-to-br from-slate-800 to-slate-800/80 border border-slate-600 rounded-xl p-6 shadow-lg">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-8 h-8 bg-amber-500/20 rounded-lg flex items-center justify-center">
-            <Building2 className="w-4 h-4 text-amber-500" />
-          </div>
-          <h2 className="text-lg font-bold text-white">Township Tools for Indiana Townships</h2>
-        </div>
-        <p className="text-sm text-slate-400 leading-relaxed mb-4">
-          We offer professional tools built specifically for Indiana townships. Subscribing townships get access to:
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
-          <div className="bg-slate-900/60 border border-slate-700 rounded-lg p-3">
-            <div className="flex items-center gap-2 mb-1.5">
-              <FileText className="w-4 h-4 text-amber-500" />
-              <span className="text-sm font-semibold text-white">Annual Report Builder</span>
-            </div>
-            <p className="text-xs text-slate-400 leading-snug">
-              Create professional annual reports with a drag-and-drop builder. Export as PDF ready to print and share.
-            </p>
-          </div>
-          <div className="bg-slate-900/60 border border-slate-700 rounded-lg p-3">
-            <div className="flex items-center gap-2 mb-1.5">
-              <Palette className="w-4 h-4 text-blue-500" />
-              <span className="text-sm font-semibold text-white">Report Design Service</span>
-            </div>
-            <p className="text-xs text-slate-400 leading-snug">
-              Submit your assets and let our team design your annual report for you. Professional results with minimal effort.
-            </p>
-          </div>
-          <div className="bg-slate-900/60 border border-slate-700 rounded-lg p-3">
-            <div className="flex items-center gap-2 mb-1.5">
-              <Mail className="w-4 h-4 text-emerald-500" />
-              <span className="text-sm font-semibold text-white">Email Template Builder</span>
-            </div>
-            <p className="text-xs text-slate-400 leading-snug">
-              Build professional email and newsletter templates with a form-based builder. Copy HTML and paste into any email client.
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-slate-700">
-          <Send className="w-4 h-4 text-amber-500 flex-shrink-0" />
-          <p className="text-sm text-slate-300">
-            Interested? Contact <a href="mailto:jentran@my-trs.com" className="text-amber-500 font-semibold hover:text-amber-400 underline underline-offset-2 transition-colors">Jen Tran</a> at{' '}
-            <a href="mailto:jentran@my-trs.com" className="text-amber-500 font-semibold hover:text-amber-400 underline underline-offset-2 transition-colors">jentran@my-trs.com</a> for more information.
-          </p>
-        </div>
-      </div>
     </div>
   );
 };

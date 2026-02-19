@@ -3249,34 +3249,27 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
       </div>
 
       {/* Two bottom images */}
-      <div className="flex gap-6 mt-4" ref={bottomCanvasRef}>
-        {/* Bottom Image 1 */}
-        <div className="flex-1 relative" style={{ minHeight: '240px' }}>
-          <ImageFrame
-            imageData={bottomImage1}
-            onUpdate={(updated) => onUpdate({ ...section, bottomImage1: updated })}
-            onDelete={() => onUpdate({ ...section, bottomImage1: { id: 'bottom1', width: 400, height: 240, posX: 0, posY: 0 } })}
-            themeColors={themeColors}
-            editable={!isPreview}
-            canvasWidth={bottomCanvasWidth / 2 - 12}
-            canvasMaxHeight={600}
-            lightBackground={true}
-          />
-        </div>
-
-        {/* Bottom Image 2 */}
-        <div className="flex-1 relative" style={{ minHeight: '240px' }}>
-          <ImageFrame
-            imageData={bottomImage2}
-            onUpdate={(updated) => onUpdate({ ...section, bottomImage2: updated })}
-            onDelete={() => onUpdate({ ...section, bottomImage2: { id: 'bottom2', width: 400, height: 240, posX: 0, posY: 0 } })}
-            themeColors={themeColors}
-            editable={!isPreview}
-            canvasWidth={bottomCanvasWidth / 2 - 12}
-            canvasMaxHeight={600}
-            lightBackground={true}
-          />
-        </div>
+      <div className="relative mt-4" ref={bottomCanvasRef} style={{ minHeight: '240px' }}>
+        <ImageFrame
+          imageData={bottomImage1}
+          onUpdate={(updated) => onUpdate({ ...section, bottomImage1: updated })}
+          onDelete={() => onUpdate({ ...section, bottomImage1: { id: 'bottom1', width: 400, height: 240, posX: 0, posY: 0 } })}
+          themeColors={themeColors}
+          editable={!isPreview}
+          canvasWidth={bottomCanvasWidth}
+          canvasMaxHeight={600}
+          lightBackground={true}
+        />
+        <ImageFrame
+          imageData={bottomImage2}
+          onUpdate={(updated) => onUpdate({ ...section, bottomImage2: updated })}
+          onDelete={() => onUpdate({ ...section, bottomImage2: { id: 'bottom2', width: 400, height: 240, posX: 0, posY: 0 } })}
+          themeColors={themeColors}
+          editable={!isPreview}
+          canvasWidth={bottomCanvasWidth}
+          canvasMaxHeight={600}
+          lightBackground={true}
+        />
       </div>
     </div>
   );

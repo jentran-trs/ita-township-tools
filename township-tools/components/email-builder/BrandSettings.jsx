@@ -150,7 +150,7 @@ const COLOR_LABELS = {
   gold: 'Highlight / Gold',
 };
 
-const BrandSettings = ({ logo, setLogo, logoUrl, setLogoUrl, logoWidth, setLogoWidth, themeColors, setThemeColors, onSaveDefaults, onClearDefaults }) => {
+const BrandSettings = ({ logo, setLogo, logoUrl, setLogoUrl, logoHeight, setLogoHeight, themeColors, setThemeColors, onSaveDefaults, onClearDefaults }) => {
   const [expanded, setExpanded] = useState(true);
   const [defaultsSaved, setDefaultsSaved] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
@@ -257,18 +257,18 @@ const BrandSettings = ({ logo, setLogo, logoUrl, setLogoUrl, logoWidth, setLogoW
                 </p>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">Logo Size: {logoWidth}px</label>
+                <label className="block text-xs font-medium text-slate-400 mb-1">Logo Height: {logoHeight}px</label>
                 <input
                   type="range"
-                  min="40"
-                  max="300"
-                  value={logoWidth}
-                  onChange={(e) => setLogoWidth(parseInt(e.target.value))}
+                  min="30"
+                  max="200"
+                  value={logoHeight}
+                  onChange={(e) => setLogoHeight(parseInt(e.target.value))}
                   className="w-full accent-amber-500"
                 />
                 <div className="flex justify-between text-xs text-slate-500 mt-0.5">
-                  <span>40px</span>
-                  <span>300px</span>
+                  <span>30px</span>
+                  <span>200px</span>
                 </div>
               </div>
             </>

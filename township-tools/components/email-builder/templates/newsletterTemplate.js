@@ -448,7 +448,7 @@ const renderSection = (section, colors) => {
   }
 };
 
-export const generateNewsletterHtml = (sections, colors, logo, logoWidth = 120) => {
+export const generateNewsletterHtml = (sections, colors, logo, logoHeight = 90) => {
   const firstSection = sections[0];
   let bodyHtml;
 
@@ -456,7 +456,7 @@ export const generateNewsletterHtml = (sections, colors, logo, logoWidth = 120) 
     const headerWithLogo = `
       <tr>
         <td style="background-color: ${colors.primary}; padding: 25px 40px; text-align: center;">
-          <img src="${logo}" alt="Logo" width="${logoWidth}" style="display: inline-block; max-width: ${logoWidth}px; height: auto; margin-bottom: 12px;" />
+          <img src="${logo}" alt="Logo" height="${logoHeight}" style="display: inline-block; height: ${logoHeight}px; width: auto; margin-bottom: 12px;" />
           ${firstSection.data.name ? `<h1 style="margin: 0; font-size: 32px; font-weight: bold; color: #ffffff; font-family: Georgia, serif; letter-spacing: 1px;">${escapeHtml(firstSection.data.name)}</h1>` : ''}
           <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin-top: 12px;">
             <tr>

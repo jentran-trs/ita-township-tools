@@ -311,13 +311,13 @@ const renderSection = (section, colors) => {
   }
 };
 
-export const generateEmailHtml = (sections, colors, logo, logoWidth = 120) => {
+export const generateEmailHtml = (sections, colors, logo, logoHeight = 90) => {
   const sectionHtml = sections.map(s => renderSection(s, colors)).join('');
 
   const logoHtml = logo ? `
     <tr>
       <td style="background-color: ${colors.primary}; padding: 20px 40px 0 40px; text-align: center;">
-        <img src="${logo}" alt="Logo" width="${logoWidth}" style="display: inline-block; max-width: ${logoWidth}px; height: auto;" />
+        <img src="${logo}" alt="Logo" height="${logoHeight}" style="display: inline-block; height: ${logoHeight}px; width: auto;" />
       </td>
     </tr>` : '';
 
@@ -328,7 +328,7 @@ export const generateEmailHtml = (sections, colors, logo, logoWidth = 120) => {
     const headerWithLogo = `
       <tr>
         <td style="background-color: ${colors.primary}; padding: 25px 40px; text-align: center;">
-          <img src="${logo}" alt="Logo" width="${logoWidth}" style="display: inline-block; max-width: ${logoWidth}px; height: auto; margin-bottom: 15px;" />
+          <img src="${logo}" alt="Logo" height="${logoHeight}" style="display: inline-block; height: ${logoHeight}px; width: auto; margin-bottom: 15px;" />
           ${firstSection.data.title ? `<h1 style="margin: 0; font-size: 28px; font-weight: bold; color: #ffffff; font-family: Arial, sans-serif;">${escapeHtml(firstSection.data.title)}</h1>` : ''}
           ${firstSection.data.subtitle ? `<p style="margin: 8px 0 0 0; font-size: 16px; color: ${lightenColor(colors.primary, 0.6)}; font-family: Arial, sans-serif;">${escapeHtml(firstSection.data.subtitle)}</p>` : ''}
         </td>

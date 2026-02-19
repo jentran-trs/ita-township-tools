@@ -2,7 +2,7 @@
 
 import { UserButton, OrganizationSwitcher, useUser, useOrganization, useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { Building2, FileText, Users, ArrowRight, Plus, ShieldCheck, FolderOpen, Mail } from "lucide-react";
+import { Building2, FileText, Users, ArrowRight, Plus, ShieldCheck, FolderOpen, Mail, ClipboardCheck } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
 export default function Dashboard() {
@@ -138,6 +138,23 @@ export default function Dashboard() {
                   Create professional email and newsletter templates with a form-based builder.
                 </p>
                 <div className="flex items-center text-emerald-500 font-medium text-sm sm:text-base">
+                  Open Tool <ArrowRight className="w-4 h-4 ml-2" />
+                </div>
+              </div>
+
+              {/* SB 270 Scoring Tool */}
+              <div
+                onClick={() => router.push("/tools/scoring-tool")}
+                className="bg-slate-800 border border-slate-700 rounded-xl p-5 sm:p-6 hover:border-amber-500/50 transition-colors cursor-pointer group"
+              >
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-500/20 rounded-lg flex items-center justify-center mb-3 sm:mb-4 group-hover:bg-purple-500/30 transition-colors">
+                  <ClipboardCheck className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500" />
+                </div>
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-2">SB 270 Scoring Tool</h3>
+                <p className="text-sm sm:text-base text-slate-400 mb-3 sm:mb-4">
+                  Self-score your township under SB 270 to determine Designated or Recipient status.
+                </p>
+                <div className="flex items-center text-purple-500 font-medium text-sm sm:text-base">
                   Open Tool <ArrowRight className="w-4 h-4 ml-2" />
                 </div>
               </div>

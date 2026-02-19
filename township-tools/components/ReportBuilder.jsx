@@ -3248,10 +3248,10 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
         )}
       </div>
 
-      {/* Two fixed bottom images */}
+      {/* Two bottom images */}
       <div className="flex gap-6 mt-4" ref={bottomCanvasRef}>
         {/* Bottom Image 1 */}
-        <div className="flex-1 relative" style={{ height: '240px' }}>
+        <div className="flex-1 relative" style={{ minHeight: '240px' }}>
           <ImageFrame
             imageData={bottomImage1}
             onUpdate={(updated) => onUpdate({ ...section, bottomImage1: updated })}
@@ -3259,13 +3259,13 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
             themeColors={themeColors}
             editable={!isPreview}
             canvasWidth={bottomCanvasWidth / 2 - 12}
-            canvasMaxHeight={240}
+            canvasMaxHeight={600}
             lightBackground={true}
           />
         </div>
 
         {/* Bottom Image 2 */}
-        <div className="flex-1 relative" style={{ height: '240px' }}>
+        <div className="flex-1 relative" style={{ minHeight: '240px' }}>
           <ImageFrame
             imageData={bottomImage2}
             onUpdate={(updated) => onUpdate({ ...section, bottomImage2: updated })}
@@ -3273,7 +3273,7 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
             themeColors={themeColors}
             editable={!isPreview}
             canvasWidth={bottomCanvasWidth / 2 - 12}
-            canvasMaxHeight={240}
+            canvasMaxHeight={600}
             lightBackground={true}
           />
         </div>

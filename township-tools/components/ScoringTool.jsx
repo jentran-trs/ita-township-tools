@@ -33,7 +33,9 @@ const QUESTIONS = [
     id: 'fire_ems_not_active',
     title: 'Fire / EMS Management',
     badge: '1 point',
-    description: 'As of Jan 1, 2025: does your township actively manage fire protection or EMS? (e.g. funds allocated, serving as a provider unit, or less than 75% paid out to other units)',
+    description: 'As of Jan 1, 2025: does your township actively manage fire protection or EMS?',
+    statuteNote: 'One (1) point if a township government does not actively manage fire protection or emergency medical services within the township on January 1, 2025.',
+    statuteLink: 'https://iga.in.gov/pdf-documents/124/2026/senate/bills/SB0270/SB0270.05.COMH.pdf',
     options: [
       { value: 0, label: 'Yes — Actively managing fire/EMS', hint: '0 points.' },
       { value: 1, label: 'No — Not actively managing fire/EMS', hint: '1 point.' },
@@ -401,6 +403,14 @@ const ScoringTool = () => {
                 </span>
               </div>
               <p className="text-xs text-slate-300 leading-snug mb-3">{q.description}</p>
+              {q.statuteNote && (
+                <p className="text-xs text-slate-400 leading-snug mb-3 italic">
+                  {q.statuteNote}{' '}
+                  <a href={q.statuteLink} target="_blank" rel="noopener noreferrer" className="text-amber-500 underline hover:text-amber-400 not-italic">
+                    Click here to see definition.
+                  </a>
+                </p>
+              )}
               {q.checkboxItems && (
                 <p className="text-xs text-amber-500/80 font-medium mb-2">Check each year that applies</p>
               )}

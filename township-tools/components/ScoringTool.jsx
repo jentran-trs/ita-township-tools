@@ -94,16 +94,6 @@ const QUESTIONS = [
     ],
   },
   {
-    id: 'budget_under_100k',
-    title: 'Certified Budget Under $100,000',
-    badge: '1 point',
-    description: "Is the township\u2019s certified budget for calendar year 2025 under $100,000?",
-    options: [
-      { value: 1, label: 'Yes — 2025 certified budget under $100,000', hint: '1 point.' },
-      { value: 0, label: 'No — 2025 certified budget is $100,000 or more', hint: '0 points.' },
-    ],
-  },
-  {
     id: 'trustee_issue',
     title: 'Trustee Ballot / Vacancy',
     badge: 'max 1 point',
@@ -121,6 +111,16 @@ const QUESTIONS = [
     options: [
       { value: 1, label: 'Yes — qualifies for a point', hint: '1 point.' },
       { value: 0, label: 'No — does not qualify', hint: '0 points.' },
+    ],
+  },
+  {
+    id: 'budget_under_100k',
+    title: 'Certified Budget Under $100,000',
+    badge: '1 point',
+    description: "Is the township\u2019s certified budget for calendar year 2025 under $100,000?",
+    options: [
+      { value: 1, label: 'Yes — 2025 certified budget under $100,000', hint: '1 point.' },
+      { value: 0, label: 'No — 2025 certified budget is $100,000 or more', hint: '0 points.' },
     ],
   },
 ];

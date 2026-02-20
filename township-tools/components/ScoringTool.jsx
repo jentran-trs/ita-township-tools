@@ -12,8 +12,8 @@ const FIELDS = [
   { name: 'uploads_2025', label: 'Monthly Uploads – 2025' },
   { name: 'budget_cont_2024', label: 'Budget Continued – 2024' },
   { name: 'budget_cont_2025', label: 'Budget Continued – 2025' },
-  { name: 'apps_lt_24', label: 'Assistance Applications < 24' },
-  { name: 'budget_under_100k', label: 'Certified Budget < $100k (2025)' },
+  { name: 'apps_lt_24', label: 'Assistance Applications (fewer than 24)' },
+  { name: 'budget_under_100k', label: 'Certified Budget under $100k (2025)' },
   { name: 'trustee_issue', label: 'Trustee Ballot/Vacancy (max 1)' },
   { name: 'board_issue', label: 'Board Ballot/Vacancy (max 1)' },
 ];
@@ -23,40 +23,40 @@ const QUESTIONS = [
     id: 'assist_none_2324',
     title: 'Township Assistance',
     badge: '2 points',
-    description: 'Did your township provide no township assistance in both calendar years 2023 and 2024?',
+    description: 'Did your township provide township assistance in 2023 or 2024?',
     options: [
-      { value: 2, label: 'Yes — No assistance in 2023 & 2024', hint: 'Counts as 2 points.' },
-      { value: 0, label: 'No — Assistance was provided in at least one year', hint: 'Counts as 0 points.' },
+      { value: 0, label: 'Yes — Provided assistance in at least one year', hint: '0 points.' },
+      { value: 2, label: 'No — No assistance in 2023 or 2024', hint: '2 points.' },
     ],
   },
   {
     id: 'fire_ems_not_active',
     title: 'Fire / EMS Management',
     badge: '1 point',
-    description: 'As of Jan 1, 2025: does the township not actively manage fire protection or EMS?',
+    description: 'As of Jan 1, 2025: does your township actively manage fire protection or EMS?',
     options: [
-      { value: 1, label: 'Yes — Not actively managing fire/EMS', hint: 'Examples: no funds allocated; not a provider unit; or 75%+ paid out to other units.' },
-      { value: 0, label: 'No — Actively managing fire/EMS', hint: 'Counts as 0 points.' },
+      { value: 0, label: 'Yes — Actively managing fire/EMS', hint: '0 points.' },
+      { value: 1, label: 'No — Not actively managing fire/EMS', hint: 'Examples: no funds allocated; not a provider unit; or 75%+ paid out to other units.' },
     ],
   },
   {
     id: 'afr',
     title: 'Annual Finance Report Filing',
     badge: '0–2 points',
-    description: 'Select all years where your township did not file the Annual Finance Report (AFR).',
+    description: 'Did your township file the Annual Finance Report (AFR) for these years? Leave unchecked if not filed.',
     checkboxItems: [
-      { name: 'afr_2023', label: '2023 AFR NOT filed', hint: '1 point if not filed.' },
-      { name: 'afr_2024', label: '2024 AFR NOT filed', hint: '1 point if not filed.' },
+      { name: 'afr_2023', label: '2023 AFR filed', hint: '1 point if not filed.', inverse: true },
+      { name: 'afr_2024', label: '2024 AFR filed', hint: '1 point if not filed.', inverse: true },
     ],
   },
   {
     id: 'uploads',
     title: 'Monthly Upload Reports',
     badge: '0–2 points',
-    description: 'Select all years where your township did not file all required monthly upload reports.',
+    description: 'Did your township file all required monthly upload reports for these years? Leave unchecked if not filed.',
     checkboxItems: [
-      { name: 'uploads_2024', label: '2024 uploads incomplete / not all filed', hint: '1 point if incomplete.' },
-      { name: 'uploads_2025', label: '2025 uploads incomplete / not all filed', hint: '1 point if incomplete.' },
+      { name: 'uploads_2024', label: '2024 uploads complete', hint: '1 point if incomplete.', inverse: true },
+      { name: 'uploads_2025', label: '2025 uploads complete', hint: '1 point if incomplete.', inverse: true },
     ],
   },
   {
@@ -87,10 +87,10 @@ const QUESTIONS = [
     id: 'apps_lt_24',
     title: 'Low Assistance Applications',
     badge: '1 point',
-    description: 'Were total township assistance applications received in 2023 + 2024 less than 24?',
+    description: 'Were total township assistance applications received in 2023 + 2024 fewer than 24?',
     options: [
-      { value: 1, label: 'Yes — Total applications < 24', hint: '1 point.' },
-      { value: 0, label: 'No — Total applications \u2265 24', hint: '0 points.' },
+      { value: 1, label: 'Yes — Fewer than 24 total applications', hint: '1 point.' },
+      { value: 0, label: 'No — 24 or more total applications', hint: '0 points.' },
     ],
   },
   {
@@ -99,17 +99,17 @@ const QUESTIONS = [
     badge: '1 point',
     description: "Is the township\u2019s certified budget for calendar year 2025 under $100,000?",
     options: [
-      { value: 1, label: 'Yes — 2025 certified budget < $100,000', hint: '1 point.' },
-      { value: 0, label: 'No — 2025 certified budget \u2265 $100,000', hint: '0 points.' },
+      { value: 1, label: 'Yes — 2025 certified budget under $100,000', hint: '1 point.' },
+      { value: 0, label: 'No — 2025 certified budget is $100,000 or more', hint: '0 points.' },
     ],
   },
   {
     id: 'trustee_issue',
     title: 'Trustee Ballot / Vacancy',
     badge: 'max 1 point',
-    description: 'Select the one option that best describes your situation (max 1 point total).',
+    description: 'Was there no trustee candidate on the ballot in 2018 or 2022, OR has there been a trustee vacancy of 30+ days as of July 1, 2026?',
     options: [
-      { value: 1, label: 'Yes — qualifies for a point', hint: 'No trustee candidate (2018 or 2022) OR trustee vacancy \u2265 30 days (as of July 1, 2026).' },
+      { value: 1, label: 'Yes — qualifies for a point', hint: '1 point.' },
       { value: 0, label: 'No — does not qualify', hint: '0 points.' },
     ],
   },
@@ -117,9 +117,9 @@ const QUESTIONS = [
     id: 'board_issue',
     title: 'Township Board Ballot / Vacancy',
     badge: 'max 1 point',
-    description: 'Select the one option that best describes your situation (max 1 point total).',
+    description: 'Was there no board candidate on the ballot in 2018 or 2022, OR has there been a board vacancy of 30+ days as of July 1, 2026?',
     options: [
-      { value: 1, label: 'Yes — qualifies for a point', hint: 'No board candidates (2018 or 2022) OR a board vacancy \u2265 30 days (as of July 1, 2026).' },
+      { value: 1, label: 'Yes — qualifies for a point', hint: '1 point.' },
       { value: 0, label: 'No — does not qualify', hint: '0 points.' },
     ],
   },
@@ -138,9 +138,14 @@ const ScoringTool = () => {
     setAnswers(prev => ({ ...prev, [name]: value }));
   };
 
-  // Checkbox field names don't require explicit answers (unchecked = 0)
+  // Checkbox field names don't require explicit answers
   const CHECKBOX_FIELDS = new Set(
     QUESTIONS.filter(q => q.checkboxItems).flatMap(q => q.checkboxItems.map(item => item.name))
+  );
+
+  // Inverse checkbox fields: unchecked = 1 point (not filed), checked = 0 points (filed)
+  const INVERSE_CHECKBOX_FIELDS = new Set(
+    QUESTIONS.filter(q => q.checkboxItems).flatMap(q => q.checkboxItems.filter(item => item.inverse).map(item => item.name))
   );
 
   const getUnanswered = () => {
@@ -175,7 +180,10 @@ const ScoringTool = () => {
     }
 
     setShowMissing(false);
-    const score = FIELDS.reduce((sum, f) => sum + (answers[f.name] || 0), 0);
+    const score = FIELDS.reduce((sum, f) => {
+      if (answers[f.name] !== undefined) return sum + answers[f.name];
+      return sum + (INVERSE_CHECKBOX_FIELDS.has(f.name) ? 1 : 0);
+    }, 0);
     const status = score >= 4 ? 'Designated' : 'Recipient';
     trackScore(score, status);
 
@@ -193,12 +201,17 @@ const ScoringTool = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const totalScore = FIELDS.reduce((sum, f) => sum + (answers[f.name] || 0), 0);
+  const getFieldScore = (name) => {
+    if (answers[name] !== undefined) return answers[name];
+    return INVERSE_CHECKBOX_FIELDS.has(name) ? 1 : 0;
+  };
+
+  const totalScore = FIELDS.reduce((sum, f) => sum + getFieldScore(f.name), 0);
   const isDesignated = totalScore >= 4;
 
   const breakdown = FIELDS.map(f => ({
     label: f.label,
-    points: answers[f.name] || 0,
+    points: getFieldScore(f.name),
   }));
 
   const isCardComplete = (q) => {
@@ -207,14 +220,18 @@ const ScoringTool = () => {
     return q.subQuestions.every(sub => isFieldAnswered(sub.name));
   };
 
-  const handleCheckbox = (name, checked) => {
-    setAnswers(prev => ({ ...prev, [name]: checked ? 1 : 0 }));
+  const handleCheckbox = (name, checked, inverse) => {
+    if (inverse) {
+      setAnswers(prev => ({ ...prev, [name]: checked ? 0 : 1 }));
+    } else {
+      setAnswers(prev => ({ ...prev, [name]: checked ? 1 : 0 }));
+    }
   };
 
   const renderCheckboxes = (items) => (
     <div className="space-y-2.5">
       {items.map((item) => {
-        const isChecked = answers[item.name] === 1;
+        const isChecked = item.inverse ? answers[item.name] === 0 : answers[item.name] === 1;
         return (
           <label
             key={item.name}
@@ -227,7 +244,7 @@ const ScoringTool = () => {
             <input
               type="checkbox"
               checked={isChecked}
-              onChange={(e) => handleCheckbox(item.name, e.target.checked)}
+              onChange={(e) => handleCheckbox(item.name, e.target.checked, item.inverse)}
               className="mt-0.5 w-4 h-4 accent-amber-500 rounded"
             />
             <div>
@@ -342,7 +359,7 @@ const ScoringTool = () => {
               </div>
               <p className="text-xs text-slate-300 leading-snug mb-3">{q.description}</p>
               {q.checkboxItems && (
-                <p className="text-xs text-amber-500/80 font-medium mb-2">Select all that apply</p>
+                <p className="text-xs text-amber-500/80 font-medium mb-2">Check each year that applies</p>
               )}
               {q.options ? (
                 renderOptions(q.options, q.id)

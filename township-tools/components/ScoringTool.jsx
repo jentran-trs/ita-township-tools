@@ -23,22 +23,22 @@ const QUESTIONS = [
     id: 'assist_none_2324',
     title: 'Township Assistance',
     badge: '2 points',
-    description: 'Did your township provide township assistance in 2023 or 2024?',
+    description: <>Did your township provide township assistance in 2023 <span className="underline font-bold">OR</span> 2024?</>,
     options: [
       { value: 0, label: 'Yes — Provided assistance in at least one year', hint: '0 points.' },
-      { value: 2, label: <>No — <span className="underline font-bold">No</span> assistance in 2023 or 2024</>, hint: '2 points.' },
+      { value: 2, label: <>No — <span className="underline font-bold">NO</span> assistance in 2023 <span className="underline font-bold">OR</span> 2024</>, hint: '2 points.' },
     ],
   },
   {
     id: 'fire_ems_not_active',
     title: 'Fire / EMS Management',
     badge: '1 point',
-    description: 'As of Jan 1, 2025: does your township actively manage fire protection or EMS?',
-    statuteNote: 'One (1) point if a township government does not actively manage fire protection or emergency medical services within the township on January 1, 2025.',
+    description: <>As of Jan 1, 2025: does your township actively manage fire protection <span className="underline font-bold">OR</span> EMS?</>,
+    statuteNote: 'One (1) point if a township government does NOT actively manage fire protection OR emergency medical services within the township on January 1, 2025.',
     statuteLink: 'https://iga.in.gov/pdf-documents/124/2026/senate/bills/SB0270/SB0270.05.COMH.pdf',
     options: [
       { value: 0, label: <>Yes — Actively managing fire/EMS</>, hint: '0 points.' },
-      { value: 1, label: <>No — <span className="underline font-bold">Not</span> actively managing fire/EMS</>, hint: '1 point.' },
+      { value: 1, label: <>No — <span className="underline font-bold">NOT</span> actively managing fire/EMS</>, hint: '1 point.' },
     ],
   },
   {
@@ -52,7 +52,7 @@ const QUESTIONS = [
         yearLabel: '2023',
         options: [
           { value: 0, label: 'Yes — 2023 AFR was filed', hint: '0 points.' },
-          { value: 1, label: <>No — 2023 AFR was <span className="underline font-bold">not</span> filed</>, hint: '1 point.' },
+          { value: 1, label: <>No — 2023 AFR was <span className="underline font-bold">NOT</span> filed</>, hint: '1 point.' },
         ],
       },
       {
@@ -60,7 +60,7 @@ const QUESTIONS = [
         yearLabel: '2024',
         options: [
           { value: 0, label: 'Yes — 2024 AFR was filed', hint: '0 points.' },
-          { value: 1, label: <>No — 2024 AFR was <span className="underline font-bold">not</span> filed</>, hint: '1 point.' },
+          { value: 1, label: <>No — 2024 AFR was <span className="underline font-bold">NOT</span> filed</>, hint: '1 point.' },
         ],
       },
     ],
@@ -76,7 +76,7 @@ const QUESTIONS = [
         yearLabel: '2024',
         options: [
           { value: 0, label: 'Yes — All 2024 uploads were filed', hint: '0 points.' },
-          { value: 1, label: <>No — 2024 uploads were <span className="underline font-bold">not</span> all filed</>, hint: '1 point.' },
+          { value: 1, label: <>No — 2024 uploads were <span className="underline font-bold">NOT</span> all filed</>, hint: '1 point.' },
         ],
       },
       {
@@ -84,7 +84,7 @@ const QUESTIONS = [
         yearLabel: '2025',
         options: [
           { value: 0, label: 'Yes — All 2025 uploads were filed', hint: '0 points.' },
-          { value: 1, label: <>No — 2025 uploads were <span className="underline font-bold">not</span> all filed</>, hint: '1 point.' },
+          { value: 1, label: <>No — 2025 uploads were <span className="underline font-bold">NOT</span> all filed</>, hint: '1 point.' },
         ],
       },
     ],
@@ -100,7 +100,7 @@ const QUESTIONS = [
         yearLabel: '2024',
         options: [
           { value: 1, label: 'Yes — 2024 budget continued from 2023', hint: '1 point.' },
-          { value: 0, label: <>No — 2024 budget <span className="underline font-bold">not</span> continued</>, hint: '0 points.' },
+          { value: 0, label: <>No — 2024 budget <span className="underline font-bold">NOT</span> continued</>, hint: '0 points.' },
         ],
       },
       {
@@ -108,7 +108,7 @@ const QUESTIONS = [
         yearLabel: '2025',
         options: [
           { value: 1, label: 'Yes — 2025 budget continued from 2024', hint: '1 point.' },
-          { value: 0, label: <>No — 2025 budget <span className="underline font-bold">not</span> continued</>, hint: '0 points.' },
+          { value: 0, label: <>No — 2025 budget <span className="underline font-bold">NOT</span> continued</>, hint: '0 points.' },
         ],
       },
     ],
@@ -120,7 +120,7 @@ const QUESTIONS = [
     description: <>Were total township assistance applications received in 2023 <span className="font-bold underline">AND</span> 2024 fewer than 24?</>,
     options: [
       { value: 1, label: <>Yes — Fewer than 24 total applications in 2023 <span className="font-bold underline">AND</span> 2024</>, hint: '1 point.' },
-      { value: 0, label: <>No — 24 or <span className="underline font-bold">MORE</span> total applications in 2023 <span className="font-bold underline">AND</span> 2024</>, hint: '0 points.' },
+      { value: 0, label: <>No — 24 <span className="underline font-bold">OR</span> <span className="underline font-bold">MORE</span> total applications in 2023 <span className="font-bold underline">AND</span> 2024</>, hint: '0 points.' },
     ],
   },
   {
@@ -130,27 +130,27 @@ const QUESTIONS = [
     description: "Is the township\u2019s certified budget for calendar year 2025 less than $100,000?",
     options: [
       { value: 1, label: 'Yes — 2025 certified budget is less than $100,000', hint: '1 point.' },
-      { value: 0, label: 'No — 2025 certified budget is $100,000 or more', hint: '0 points.' },
+      { value: 0, label: <>No — 2025 certified budget is $100,000 <span className="underline font-bold">OR</span> more</>, hint: '0 points.' },
     ],
   },
   {
     id: 'trustee_issue',
     title: 'Trustee Ballot / Vacancy',
     badge: 'max 1 point',
-    description: 'Was there no trustee candidate on the ballot in 2018 or 2022, OR has there been a trustee vacancy of 30+ days as of July 1, 2026?',
+    description: <>Was there no Trustee candidate on the ballot in 2018 <span className="underline font-bold">OR</span> 2022, <span className="underline font-bold">OR</span> has there been a Trustee vacancy of 30+ days as of July 1, 2026?</>,
     options: [
-      { value: 1, label: 'No trustee — qualifies for a point', hint: '1 point.' },
-      { value: 0, label: <>No — does <span className="underline font-bold">not</span> qualify</>, hint: '0 points.' },
+      { value: 1, label: 'No Trustee — qualifies for a point', hint: '1 point.' },
+      { value: 0, label: <>Yes Trustee — does <span className="underline font-bold">NOT</span> qualify</>, hint: '0 points.' },
     ],
   },
   {
     id: 'board_issue',
     title: 'Township Board Ballot / Vacancy',
     badge: 'max 1 point',
-    description: 'Was there a candidate for all offices of the township board in 2018 or 2022, OR has there been a board vacancy of 30+ days as of July 1, 2026?',
+    description: <>Was there a candidate for all offices of the township board in 2018 <span className="underline font-bold">OR</span> 2022, <span className="underline font-bold">OR</span> has there been a board vacancy of 30+ days as of July 1, 2026?</>,
     options: [
-      { value: 1, label: 'Yes — we had at least 1 open candidate slot or a 30+ day vacancy', hint: '1 point.' },
-      { value: 0, label: <>No — we did <span className="underline font-bold">NOT</span> have an open candidate slot or 30+ day vacancy</>, hint: '0 points.' },
+      { value: 1, label: <>Yes — we had at least 1 open candidate slot <span className="underline font-bold">OR</span> a 30+ day vacancy</>, hint: '1 point.' },
+      { value: 0, label: <>No — we did <span className="underline font-bold">NOT</span> have an open candidate slot <span className="underline font-bold">OR</span> 30+ day vacancy</>, hint: '0 points.' },
     ],
   },
 ];

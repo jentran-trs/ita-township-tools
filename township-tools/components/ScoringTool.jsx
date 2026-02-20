@@ -43,20 +43,20 @@ const QUESTIONS = [
     id: 'afr',
     title: 'Annual Finance Report Filing',
     badge: '0–2 points',
-    description: 'Did your township file the Annual Finance Report (AFR) for these years? Leave unchecked if not filed.',
+    description: 'Check each year where your township did not file the Annual Finance Report (AFR).',
     checkboxItems: [
-      { name: 'afr_2023', label: '2023 AFR filed', hint: '1 point if not filed.', inverse: true },
-      { name: 'afr_2024', label: '2024 AFR filed', hint: '1 point if not filed.', inverse: true },
+      { name: 'afr_2023', label: '2023 AFR was NOT filed', hint: '1 point if not filed.' },
+      { name: 'afr_2024', label: '2024 AFR was NOT filed', hint: '1 point if not filed.' },
     ],
   },
   {
     id: 'uploads',
     title: 'Monthly Upload Reports',
     badge: '0–2 points',
-    description: 'Did your township file all required monthly upload reports for these years? Leave unchecked if not filed.',
+    description: 'Check each year where your township did not file all required monthly upload reports.',
     checkboxItems: [
-      { name: 'uploads_2024', label: '2024 uploads complete', hint: '1 point if incomplete.', inverse: true },
-      { name: 'uploads_2025', label: '2025 uploads complete', hint: '1 point if incomplete.', inverse: true },
+      { name: 'uploads_2024', label: '2024 uploads were NOT all filed', hint: '1 point if incomplete.' },
+      { name: 'uploads_2025', label: '2025 uploads were NOT all filed', hint: '1 point if incomplete.' },
     ],
   },
   {
@@ -138,14 +138,9 @@ const ScoringTool = () => {
     setAnswers(prev => ({ ...prev, [name]: value }));
   };
 
-  // Checkbox field names don't require explicit answers
+  // Checkbox field names don't require explicit answers (unchecked = 0)
   const CHECKBOX_FIELDS = new Set(
     QUESTIONS.filter(q => q.checkboxItems).flatMap(q => q.checkboxItems.map(item => item.name))
-  );
-
-  // Inverse checkbox fields: unchecked = 1 point (not filed), checked = 0 points (filed)
-  const INVERSE_CHECKBOX_FIELDS = new Set(
-    QUESTIONS.filter(q => q.checkboxItems).flatMap(q => q.checkboxItems.filter(item => item.inverse).map(item => item.name))
   );
 
   const getUnanswered = () => {
@@ -180,10 +175,7 @@ const ScoringTool = () => {
     }
 
     setShowMissing(false);
-    const score = FIELDS.reduce((sum, f) => {
-      if (answers[f.name] !== undefined) return sum + answers[f.name];
-      return sum + (INVERSE_CHECKBOX_FIELDS.has(f.name) ? 1 : 0);
-    }, 0);
+    const score = FIELDS.reduce((sum, f) => sum + (answers[f.name] || 0), 0);
     const status = score >= 4 ? 'Designated' : 'Recipient';
     trackScore(score, status);
 
@@ -201,17 +193,12 @@ const ScoringTool = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const getFieldScore = (name) => {
-    if (answers[name] !== undefined) return answers[name];
-    return INVERSE_CHECKBOX_FIELDS.has(name) ? 1 : 0;
-  };
-
-  const totalScore = FIELDS.reduce((sum, f) => sum + getFieldScore(f.name), 0);
+  const totalScore = FIELDS.reduce((sum, f) => sum + (answers[f.name] || 0), 0);
   const isDesignated = totalScore >= 4;
 
   const breakdown = FIELDS.map(f => ({
     label: f.label,
-    points: getFieldScore(f.name),
+    points: answers[f.name] || 0,
   }));
 
   const isCardComplete = (q) => {
@@ -220,18 +207,14 @@ const ScoringTool = () => {
     return q.subQuestions.every(sub => isFieldAnswered(sub.name));
   };
 
-  const handleCheckbox = (name, checked, inverse) => {
-    if (inverse) {
-      setAnswers(prev => ({ ...prev, [name]: checked ? 0 : 1 }));
-    } else {
-      setAnswers(prev => ({ ...prev, [name]: checked ? 1 : 0 }));
-    }
+  const handleCheckbox = (name, checked) => {
+    setAnswers(prev => ({ ...prev, [name]: checked ? 1 : 0 }));
   };
 
   const renderCheckboxes = (items) => (
     <div className="space-y-2.5">
       {items.map((item) => {
-        const isChecked = item.inverse ? answers[item.name] === 0 : answers[item.name] === 1;
+        const isChecked = answers[item.name] === 1;
         return (
           <label
             key={item.name}
@@ -244,7 +227,7 @@ const ScoringTool = () => {
             <input
               type="checkbox"
               checked={isChecked}
-              onChange={(e) => handleCheckbox(item.name, e.target.checked, item.inverse)}
+              onChange={(e) => handleCheckbox(item.name, e.target.checked)}
               className="mt-0.5 w-4 h-4 accent-amber-500 rounded"
             />
             <div>

@@ -407,7 +407,7 @@ const ScoringTool = () => {
                 <p className="text-xs text-slate-400 leading-snug mb-3 italic">
                   {q.statuteNote}{' '}
                   <a href={q.statuteLink} target="_blank" rel="noopener noreferrer" className="text-amber-500 underline hover:text-amber-400 not-italic">
-                    Click here to view definition on page 19.
+                    Click here to view definition on page 17.
                   </a>
                 </p>
               )}

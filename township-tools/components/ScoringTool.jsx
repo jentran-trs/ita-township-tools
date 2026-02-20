@@ -94,6 +94,16 @@ const QUESTIONS = [
     ],
   },
   {
+    id: 'budget_under_100k',
+    title: 'Certified Budget Under $100,000',
+    badge: '1 point',
+    description: "Is the township\u2019s certified budget for calendar year 2025 under $100,000?",
+    options: [
+      { value: 1, label: 'Yes — 2025 certified budget under $100,000', hint: '1 point.' },
+      { value: 0, label: 'No — 2025 certified budget is $100,000 or more', hint: '0 points.' },
+    ],
+  },
+  {
     id: 'trustee_issue',
     title: 'Trustee Ballot / Vacancy',
     badge: 'max 1 point',
@@ -111,16 +121,6 @@ const QUESTIONS = [
     options: [
       { value: 1, label: 'Yes — qualifies for a point', hint: '1 point.' },
       { value: 0, label: 'No — does not qualify', hint: '0 points.' },
-    ],
-  },
-  {
-    id: 'budget_under_100k',
-    title: 'Certified Budget Under $100,000',
-    badge: '1 point',
-    description: "Is the township\u2019s certified budget for calendar year 2025 under $100,000?",
-    options: [
-      { value: 1, label: 'Yes — 2025 certified budget under $100,000', hint: '1 point.' },
-      { value: 0, label: 'No — 2025 certified budget is $100,000 or more', hint: '0 points.' },
     ],
   },
 ];
@@ -337,16 +337,17 @@ const ScoringTool = () => {
       </div>
 
       {/* Questions Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {QUESTIONS.map((q) => {
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+        {QUESTIONS.map((q, idx) => {
           const complete = isCardComplete(q);
           const showIncomplete = showMissing && !complete;
+          const isLastOdd = idx === QUESTIONS.length - 1 && QUESTIONS.length % 2 === 1;
           return (
             <div
               key={q.id}
               className={`bg-slate-800 border rounded-xl p-4 shadow-sm transition-colors ${
                 showIncomplete ? 'border-red-500/60' : 'border-slate-700'
-              }`}
+              } ${isLastOdd ? 'lg:col-span-2' : ''}`}
             >
               <div className="flex items-center justify-between gap-3 mb-2">
                 <h2 className="text-base font-semibold text-white flex items-center gap-2">

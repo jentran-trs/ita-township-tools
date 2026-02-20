@@ -33,30 +33,58 @@ const QUESTIONS = [
     id: 'fire_ems_not_active',
     title: 'Fire / EMS Management',
     badge: '1 point',
-    description: 'As of Jan 1, 2025: does your township actively manage fire protection or EMS?',
+    description: 'As of Jan 1, 2025: does your township actively manage fire protection or EMS? (e.g. funds allocated, serving as a provider unit, or less than 75% paid out to other units)',
     options: [
       { value: 0, label: 'Yes — Actively managing fire/EMS', hint: '0 points.' },
-      { value: 1, label: 'No — Not actively managing fire/EMS', hint: 'Examples: no funds allocated; not a provider unit; or 75%+ paid out to other units.' },
+      { value: 1, label: 'No — Not actively managing fire/EMS', hint: '1 point.' },
     ],
   },
   {
     id: 'afr',
     title: 'Annual Finance Report Filing',
     badge: '0–2 points',
-    description: 'Check each year where your township did not file the Annual Finance Report (AFR).',
-    checkboxItems: [
-      { name: 'afr_2023', label: '2023 AFR was NOT filed', hint: '1 point if not filed.' },
-      { name: 'afr_2024', label: '2024 AFR was NOT filed', hint: '1 point if not filed.' },
+    description: 'Did your township file the Annual Finance Report (AFR) for the following years?',
+    subQuestions: [
+      {
+        name: 'afr_2023',
+        yearLabel: '2023',
+        options: [
+          { value: 0, label: 'Yes — 2023 AFR was filed', hint: '0 points.' },
+          { value: 1, label: 'No — 2023 AFR was not filed', hint: '1 point.' },
+        ],
+      },
+      {
+        name: 'afr_2024',
+        yearLabel: '2024',
+        options: [
+          { value: 0, label: 'Yes — 2024 AFR was filed', hint: '0 points.' },
+          { value: 1, label: 'No — 2024 AFR was not filed', hint: '1 point.' },
+        ],
+      },
     ],
   },
   {
     id: 'uploads',
     title: 'Monthly Upload Reports',
     badge: '0–2 points',
-    description: 'Check each year where your township did not file all required monthly upload reports.',
-    checkboxItems: [
-      { name: 'uploads_2024', label: '2024 uploads were NOT all filed', hint: '1 point if incomplete.' },
-      { name: 'uploads_2025', label: '2025 uploads were NOT all filed', hint: '1 point if incomplete.' },
+    description: 'Did your township file all required monthly upload reports for the following years?',
+    subQuestions: [
+      {
+        name: 'uploads_2024',
+        yearLabel: '2024',
+        options: [
+          { value: 0, label: 'Yes — All 2024 uploads were filed', hint: '0 points.' },
+          { value: 1, label: 'No — 2024 uploads were not all filed', hint: '1 point.' },
+        ],
+      },
+      {
+        name: 'uploads_2025',
+        yearLabel: '2025',
+        options: [
+          { value: 0, label: 'Yes — All 2025 uploads were filed', hint: '0 points.' },
+          { value: 1, label: 'No — 2025 uploads were not all filed', hint: '1 point.' },
+        ],
+      },
     ],
   },
   {
@@ -132,6 +160,7 @@ const ScoringTool = () => {
   const [showResult, setShowResult] = useState(false);
   const [warning, setWarning] = useState(false);
   const [showMissing, setShowMissing] = useState(false);
+  const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
   const resultRef = useRef(null);
 
   const handleChange = (name, value) => {
@@ -190,6 +219,7 @@ const ScoringTool = () => {
     setShowResult(false);
     setWarning(false);
     setShowMissing(false);
+    setDisclaimerAccepted(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -286,6 +316,35 @@ const ScoringTool = () => {
         </p>
       </div>
 
+      {/* Disclaimer */}
+      <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 mb-5 shadow-lg">
+        <h2 className="text-base font-bold text-amber-500 mb-3">Disclaimer — SB270 Scorecard on Township Mergers</h2>
+        <div className="text-sm text-slate-300 leading-relaxed space-y-3 mb-4">
+          <p>
+            This legislative scorecard has been prepared by the Indiana Township Association for informational purposes only. While every effort has been made to ensure accuracy, the Association cannot guarantee that the conclusions, ratings, or methodologies presented here will align with any analysis or scorecard produced by the Indiana Department of Local Government Finance.
+          </p>
+          <p>
+            The scorecard reflects the best available data, policy interpretations, and contextual information known to the Association at the time of publication. Legislative developments, administrative determinations, and additional data released after publication may affect outcomes, interpretations, or comparisons.
+          </p>
+          <p>
+            This document should not be construed as an official determination of fiscal impact, statutory compliance, or state policy for Indiana township government structure. Users are encouraged to consult official state sources and subsequent updates when evaluating township merger proposals or related legislation.
+          </p>
+        </div>
+        <label className="flex items-center gap-3 cursor-pointer group">
+          <input
+            type="checkbox"
+            checked={disclaimerAccepted}
+            onChange={(e) => setDisclaimerAccepted(e.target.checked)}
+            className="w-5 h-5 accent-amber-500 rounded flex-shrink-0"
+          />
+          <span className="text-sm text-slate-200 font-semibold group-hover:text-white transition-colors">
+            I have read and understand this disclaimer
+          </span>
+        </label>
+      </div>
+
+      {disclaimerAccepted && (
+      <>
       {/* Township Info */}
       <div className="bg-slate-800 border border-slate-700 rounded-xl p-4 mb-5 shadow-sm">
         <h2 className="text-base font-semibold text-white mb-3">Your Information</h2>
@@ -430,14 +489,11 @@ const ScoringTool = () => {
                 ))}
               </div>
 
-              <p className="mt-4 text-xs text-slate-500 leading-relaxed">
-                <strong className="text-slate-300">Note:</strong> This tool is for education/self-check. Official point
-                assignments and any reconsideration process are determined by the Department of Local Government Finance
-                as provided in SB 270.
-              </p>
             </>
           )}
         </div>
+      )}
+      </>
       )}
 
     </div>

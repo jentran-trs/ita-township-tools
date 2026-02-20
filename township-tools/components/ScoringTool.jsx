@@ -337,17 +337,17 @@ const ScoringTool = () => {
       </div>
 
       {/* Questions Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-        {QUESTIONS.map((q, idx) => {
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 grid-flow-row-dense">
+        {QUESTIONS.map((q) => {
           const complete = isCardComplete(q);
           const showIncomplete = showMissing && !complete;
-          const isLastOdd = idx === QUESTIONS.length - 1 && QUESTIONS.length % 2 === 1;
+          const isTall = !!q.subQuestions;
           return (
             <div
               key={q.id}
               className={`bg-slate-800 border rounded-xl p-4 shadow-sm transition-colors ${
                 showIncomplete ? 'border-red-500/60' : 'border-slate-700'
-              } ${isLastOdd ? 'lg:col-span-2' : ''}`}
+              } ${isTall ? 'lg:row-span-2' : ''}`}
             >
               <div className="flex items-center justify-between gap-3 mb-2">
                 <h2 className="text-base font-semibold text-white flex items-center gap-2">

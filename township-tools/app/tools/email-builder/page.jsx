@@ -65,7 +65,7 @@ export default function EmailBuilderPage() {
                 }
               }}
             />
-            <UserButton afterSignOutUrl="/sign-in" />
+            <UserButton afterSignOutUrl="/" />
           </div>
         </div>
       </header>

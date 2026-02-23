@@ -92,7 +92,7 @@ export default function ReportBuilderPage() {
                 }
               }}
             />
-            <UserButton afterSignOutUrl="/sign-in" />
+            <UserButton afterSignOutUrl="/" />
           </div>
         </div>
       </header>

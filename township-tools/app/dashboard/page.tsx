@@ -45,7 +45,7 @@ export default function Dashboard() {
               <span className="hidden md:inline text-slate-300 text-sm">
                 Welcome, {user?.firstName || user?.emailAddresses[0]?.emailAddress}
               </span>
-              <UserButton afterSignOutUrl="/sign-in" />
+              <UserButton afterSignOutUrl="/" />
             </div>
           </div>
 

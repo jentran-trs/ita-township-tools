@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Plus, Upload, Image, FileText, BarChart3, Trash2, Move, GripVertical, ChevronDown, ChevronUp, ArrowUp, ArrowDown, Eye, Pencil, Download, Save, FolderOpen, Type, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, List, ListOrdered, Palette, Square, Circle, RectangleHorizontal, ZoomIn, ZoomOut, RotateCw, Check, X, Settings, Layers, PanelTop, PanelBottom, Mail, Layout, Maximize2, Minimize2, Undo2, Redo2, Hash, Menu, ArrowRightLeft, MessageSquare } from 'lucide-react';
+import { Plus, Upload, Image, FileText, BarChart3, Trash2, Move, GripVertical, ChevronDown, ChevronUp, ArrowUp, ArrowDown, Eye, Pencil, Download, Save, FolderOpen, Type, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, List, ListOrdered, Palette, Square, Circle, RectangleHorizontal, ZoomIn, ZoomOut, RotateCw, Check, X, Settings, Layers, PanelTop, PanelBottom, Mail, Layout, Maximize2, Minimize2, Undo2, Redo2, Hash, Menu, ArrowRightLeft, MessageSquare, AlertTriangle } from 'lucide-react';
 
 // Color extraction utility - returns hex colors
 const rgbToHex = (r, g, b) => {
@@ -4302,12 +4302,14 @@ export default function ReportBuilder() {
   const [currentProjectId, setCurrentProjectId] = useState(null);
   const [isSavingToServer, setIsSavingToServer] = useState(false);
   const [isLogoLoading, setIsLogoLoading] = useState(false);
+  const [showSaveReminder, setShowSaveReminder] = useState(false);
   const logoInputRef = useRef(null);
+  const saveReminderRef = useRef(null);
   
   // Undo history state
   const [history, setHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
-  const MAX_HISTORY = 50;
+  const MAX_HISTORY = 15;
   const isUndoingRef = useRef(false);
   
   // Save current state to history
@@ -4668,6 +4670,14 @@ export default function ReportBuilder() {
     }, 30000);
     return () => clearInterval(autoSaveInterval);
   }, [sections, themeColors, logo, currentProjectId]);
+
+  // 5-minute save reminder
+  useEffect(() => {
+    saveReminderRef.current = setInterval(() => {
+      setShowSaveReminder(true);
+    }, 5 * 60 * 1000);
+    return () => clearInterval(saveReminderRef.current);
+  }, []);
 
   // Helper function to save draft to server
   const saveDraftToServer = async (draftData, silent = true) => {
@@ -5232,7 +5242,39 @@ export default function ReportBuilder() {
           <span className="font-medium">{feedbackMessage}</span>
         </div>
       )}
-      
+
+      {/* Save Reminder Popup */}
+      {showSaveReminder && (
+        <div className="fixed inset-0 bg-black/50 z-[10002] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 text-center">
+            <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="w-6 h-6 text-amber-600" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-800 mb-2">Time to Save Your Work!</h3>
+            <p className="text-sm text-slate-600 mb-5 leading-relaxed">
+              You&apos;ve been working for a while. Save a version of your report to make sure you don&apos;t lose any changes.
+            </p>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => {
+                  setShowSaveReminder(false);
+                  setShowVersionManager(true);
+                }}
+                className="px-5 py-2.5 bg-amber-500 text-white rounded-xl font-semibold text-sm hover:bg-amber-600 transition-colors shadow-lg"
+              >
+                Save a Version
+              </button>
+              <button
+                onClick={() => setShowSaveReminder(false)}
+                className="px-5 py-2.5 bg-slate-200 text-slate-700 rounded-xl font-semibold text-sm hover:bg-slate-300 transition-colors"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Google Fonts */}
       <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet" />
 

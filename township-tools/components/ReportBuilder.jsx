@@ -2698,6 +2698,7 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
   const [contentHeight, setContentHeight] = useState(section.contentHeight || null);
   const [isDraggingPhoto, setIsDraggingPhoto] = useState(false);
   const [photoDragStart, setPhotoDragStart] = useState({ y: 0, posY: 0 });
+  const [photoDimensions, setPhotoDimensions] = useState({ width: 0, height: 0 });
   const fileInputRef = useRef(null);
   const canvasRef = useRef(null);
   const contentRef = useRef(null);
@@ -3044,15 +3045,29 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
         {isPreview ? (
           section.photo && (
             <div
-              className="w-36 h-36 rounded-full flex-shrink-0 overflow-hidden"
+              className="w-36 h-36 rounded-full flex-shrink-0 overflow-hidden relative"
               style={{ border: `4px solid ${themeColors?.accent || '#C1272D'}` }}
             >
-              <img
-                src={section.photo}
-                alt="Author"
-                className="w-full h-full object-cover"
-                style={{ objectPosition: `center ${photoPositionY}%` }}
-              />
+              {(() => {
+                const hasValid = photoDimensions.width > 0 && photoDimensions.height > 0;
+                const imgAspect = hasValid ? photoDimensions.width / photoDimensions.height : 1;
+                // Circle is 1:1, so cover = fill the narrower dimension
+                const fillWidth = !hasValid || imgAspect <= 1;
+                return (
+                  <img
+                    src={section.photo}
+                    alt="Author"
+                    className="absolute select-none"
+                    style={{
+                      ...(fillWidth
+                        ? { width: '100%', height: 'auto', left: '0', top: `${photoPositionY}%`, transform: `translateY(-${photoPositionY}%)` }
+                        : { height: '100%', width: 'auto', top: `${photoPositionY}%`, left: '50%', transform: `translate(-50%, -${photoPositionY}%)` }
+                      ),
+                    }}
+                    onLoad={(e) => setPhotoDimensions({ width: e.target.naturalWidth, height: e.target.naturalHeight })}
+                  />
+                );
+              })()}
             </div>
           )
         ) : (
@@ -3066,14 +3081,27 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
               </div>
             ) : section.photo ? (
               <>
-                <img
-                  src={section.photo}
-                  alt="Author"
-                  className="w-full h-full object-cover cursor-move"
-                  style={{ objectPosition: `center ${photoPositionY}%` }}
-                  onMouseDown={handlePhotoDragStart}
-                  draggable={false}
-                />
+                {(() => {
+                  const hasValid = photoDimensions.width > 0 && photoDimensions.height > 0;
+                  const imgAspect = hasValid ? photoDimensions.width / photoDimensions.height : 1;
+                  const fillWidth = !hasValid || imgAspect <= 1;
+                  return (
+                    <img
+                      src={section.photo}
+                      alt="Author"
+                      className="absolute select-none cursor-move"
+                      style={{
+                        ...(fillWidth
+                          ? { width: '100%', height: 'auto', left: '0', top: `${photoPositionY}%`, transform: `translateY(-${photoPositionY}%)` }
+                          : { height: '100%', width: 'auto', top: `${photoPositionY}%`, left: '50%', transform: `translate(-50%, -${photoPositionY}%)` }
+                        ),
+                      }}
+                      onMouseDown={handlePhotoDragStart}
+                      onLoad={(e) => setPhotoDimensions({ width: e.target.naturalWidth, height: e.target.naturalHeight })}
+                      draggable={false}
+                    />
+                  );
+                })()}
                 <div
                   className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-opacity pointer-events-none"
                 >

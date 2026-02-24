@@ -22,7 +22,7 @@ const QUESTIONS = [
   {
     id: 'assist_none_2324',
     title: 'Township Assistance',
-    badge: '2 points',
+    badge: '0–2 points',
     description: <>Did your township provide township assistance in 2023 <span className="underline font-bold">OR</span> 2024?</>,
     options: [
       { value: 0, label: 'Yes — Provided assistance in at least one year', hint: '0 points.' },
@@ -32,7 +32,7 @@ const QUESTIONS = [
   {
     id: 'fire_ems_not_active',
     title: 'Fire / EMS Management',
-    badge: '1 point',
+    badge: '0–1 points',
     description: <>As of Jan 1, 2025: does your township actively manage fire protection <span className="underline font-bold">OR</span> EMS?</>,
     statuteNote: 'One (1) point if a township government does NOT actively manage fire protection OR emergency medical services within the township on January 1, 2025.',
     statuteLink: 'https://iga.in.gov/pdf-documents/124/2026/senate/bills/SB0270/SB0270.05.COMH.pdf',
@@ -116,7 +116,7 @@ const QUESTIONS = [
   {
     id: 'apps_lt_24',
     title: 'Low Assistance Applications',
-    badge: '1 point',
+    badge: '0–1 points',
     description: <>Were total township assistance applications received in 2023 <span className="font-bold underline">AND</span> 2024 fewer than 24?</>,
     options: [
       { value: 1, label: <>Yes — Fewer than 24 total applications in 2023 <span className="font-bold underline">AND</span> 2024</>, hint: '1 point.' },
@@ -126,7 +126,7 @@ const QUESTIONS = [
   {
     id: 'budget_under_100k',
     title: 'Certified Budget Less Than $100,000',
-    badge: '1 point',
+    badge: '0–1 points',
     description: "Is the township\u2019s certified budget for calendar year 2025 less than $100,000?",
     options: [
       { value: 1, label: 'Yes — 2025 certified budget is less than $100,000', hint: '1 point.' },
@@ -136,7 +136,7 @@ const QUESTIONS = [
   {
     id: 'trustee_issue',
     title: 'Trustee Ballot / Vacancy',
-    badge: 'max 1 point',
+    badge: '0–1 points',
     description: <>Was there no Trustee candidate on the ballot in 2018 <span className="underline font-bold">OR</span> 2022, <span className="underline font-bold">OR</span> has there been a Trustee vacancy of 30+ days as of July 1, 2026?</>,
     options: [
       { value: 1, label: 'No Trustee — qualifies for a point', hint: '1 point.' },
@@ -146,7 +146,7 @@ const QUESTIONS = [
   {
     id: 'board_issue',
     title: 'Township Board Ballot / Vacancy',
-    badge: 'max 1 point',
+    badge: '0–1 points',
     description: <>Was there a candidate for all offices of the township board in 2018 <span className="underline font-bold">OR</span> 2022, <span className="underline font-bold">OR</span> has there been a board vacancy of 30+ days as of July 1, 2026?</>,
     options: [
       { value: 1, label: <>Yes — we had at least 1 open candidate slot <span className="underline font-bold">OR</span> a 30+ day vacancy</>, hint: '1 point.' },
@@ -389,8 +389,8 @@ const ScoringTool = () => {
           return (
             <div
               key={q.id}
-              className={`bg-slate-800 border rounded-xl p-4 shadow-sm transition-colors ${
-                showIncomplete ? 'border-red-500/60' : 'border-slate-700'
+              className={`bg-slate-700 border rounded-xl p-4 shadow-sm transition-colors ${
+                showIncomplete ? 'border-red-500/60' : 'border-slate-600'
               } ${isTall ? 'lg:row-span-2' : ''}`}
             >
               <div className="flex items-center justify-between gap-3 mb-2">

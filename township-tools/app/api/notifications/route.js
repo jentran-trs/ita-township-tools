@@ -34,8 +34,8 @@ export async function GET(request) {
       .limit(50);
 
     if (error) {
-      // If table doesn't exist, return empty array
-      if (error.code === 'PGRST204' || error.code === '42P01') {
+      // If table doesn't exist, return empty array silently
+      if (error.code === 'PGRST204' || error.code === 'PGRST205' || error.code === '42P01') {
         return NextResponse.json({ notifications: [], unreadCount: 0 });
       }
       console.error('Error fetching notifications:', error);

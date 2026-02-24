@@ -35,7 +35,7 @@ const QUESTIONS = [
     badge: '0–1 points',
     description: <>As of Jan 1, 2025: does your township actively manage fire protection <span className="underline font-bold">OR</span> EMS?</>,
     statuteNote: 'One (1) point if a township government does NOT actively manage fire protection OR emergency medical services within the township on January 1, 2025.',
-    statuteLink: 'https://iga.in.gov/pdf-documents/124/2026/senate/bills/SB0270/SB0270.05.COMH.pdf',
+    statuteLink: 'https://iga.in.gov/pdf-documents/124/2026/senate/bills/SB0270/SB0270.05.COMH.pdf#page=19',
     options: [
       { value: 0, label: <>Yes — Actively managing fire/EMS</>, hint: '0 points.' },
       { value: 1, label: <>No — <span className="underline font-bold">NOT</span> actively managing fire/EMS</>, hint: '1 point.' },

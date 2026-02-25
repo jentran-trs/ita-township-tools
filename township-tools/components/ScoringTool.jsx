@@ -32,7 +32,7 @@ const QUESTIONS = [
   {
     id: 'fire_ems_not_active',
     title: 'Fire / EMS Management',
-    badge: '0–1 points',
+    badge: '0–1 point',
     description: <>As of Jan 1, 2025: does your township actively manage fire protection <span className="underline font-bold">OR</span> EMS?</>,
     statuteNote: 'One (1) point if a township government does NOT actively manage fire protection OR emergency medical services within the township on January 1, 2025.',
     statuteLink: 'https://iga.in.gov/pdf-documents/124/2026/senate/bills/SB0270/SB0270.05.COMH.pdf#page=19',
@@ -116,7 +116,7 @@ const QUESTIONS = [
   {
     id: 'apps_lt_24',
     title: 'Low Assistance Applications',
-    badge: '0–1 points',
+    badge: '0–1 point',
     description: <>Were total township assistance applications received in 2023 <span className="font-bold underline">AND</span> 2024 fewer than 24?</>,
     options: [
       { value: 1, label: <>Yes — Fewer than 24 total applications in 2023 <span className="font-bold underline">AND</span> 2024</>, hint: '1 point.' },
@@ -126,7 +126,7 @@ const QUESTIONS = [
   {
     id: 'budget_under_100k',
     title: 'Certified Budget Less Than $100,000',
-    badge: '0–1 points',
+    badge: '0–1 point',
     description: "Is the township\u2019s certified budget for calendar year 2025 less than $100,000?",
     options: [
       { value: 1, label: 'Yes — 2025 certified budget is less than $100,000', hint: '1 point.' },
@@ -136,7 +136,7 @@ const QUESTIONS = [
   {
     id: 'trustee_issue',
     title: 'Trustee Ballot / Vacancy',
-    badge: '0–1 points',
+    badge: '0–1 point',
     description: <>Was there no Trustee candidate on the ballot in 2018 <span className="underline font-bold">OR</span> 2022, <span className="underline font-bold">OR</span> has there been a Trustee vacancy of 30+ days as of July 1, 2026?</>,
     options: [
       { value: 1, label: 'No Trustee — qualifies for a point', hint: '1 point.' },
@@ -146,7 +146,7 @@ const QUESTIONS = [
   {
     id: 'board_issue',
     title: 'Township Board Ballot / Vacancy',
-    badge: '0–1 points',
+    badge: '0–1 point',
     description: <>Was there a candidate for all offices of the township board in 2018 <span className="underline font-bold">OR</span> 2022, <span className="underline font-bold">OR</span> has there been a board vacancy of 30+ days as of July 1, 2026?</>,
     options: [
       { value: 1, label: <>Yes — we had at least 1 open candidate slot <span className="underline font-bold">OR</span> a 30+ day vacancy</>, hint: '1 point.' },

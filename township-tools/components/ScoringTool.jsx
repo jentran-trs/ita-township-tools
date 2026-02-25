@@ -196,6 +196,12 @@ const ScoringTool = () => {
 
   const calculate = () => {
     setWarning(false);
+    if (!townshipName.trim() || !personName.trim()) {
+      setShowResult(true);
+      setWarning(true);
+      setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+      return;
+    }
     const unanswered = getUnanswered();
     if (unanswered.length > 0) {
       setShowResult(true);
@@ -354,12 +360,13 @@ const ScoringTool = () => {
           <div>
             <label className="flex items-center gap-2 text-sm text-slate-300 mb-1.5">
               <Building2 className="w-3.5 h-3.5" />
-              Township Name
+              Township Name <span className="text-red-400">*</span>
             </label>
             <input
               type="text"
               value={townshipName}
               onChange={(e) => setTownshipName(e.target.value)}
+              required
               placeholder="e.g. Vernon Township"
               className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors"
             />
@@ -367,12 +374,13 @@ const ScoringTool = () => {
           <div>
             <label className="flex items-center gap-2 text-sm text-slate-300 mb-1.5">
               <User className="w-3.5 h-3.5" />
-              Your Name
+              Your Name <span className="text-red-400">*</span>
             </label>
             <input
               type="text"
               value={personName}
               onChange={(e) => setPersonName(e.target.value)}
+              required
               placeholder="e.g. Jane Smith"
               className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors"
             />
@@ -458,11 +466,19 @@ const ScoringTool = () => {
             <div>
               <div className="flex items-center gap-3 text-amber-500 font-bold text-sm mb-3">
                 <AlertTriangle className="w-5 h-5 flex-shrink-0" />
-                Please answer all questions before calculating.
+                Please complete all required fields before calculating.
               </div>
-              <div className="text-xs text-slate-300">
-                <span className="text-slate-500">Missing answers for: </span>
-                {getUnanswered().map(f => f.label).join(', ')}
+              <div className="text-xs text-slate-300 space-y-1">
+                {(!townshipName.trim() || !personName.trim()) && (
+                  <div><span className="text-slate-500">Missing required fields: </span>
+                    {[!townshipName.trim() && 'Township Name', !personName.trim() && 'Your Name'].filter(Boolean).join(', ')}
+                  </div>
+                )}
+                {getUnanswered().length > 0 && (
+                  <div><span className="text-slate-500">Missing answers for: </span>
+                    {getUnanswered().map(f => f.label).join(', ')}
+                  </div>
+                )}
               </div>
             </div>
           ) : (

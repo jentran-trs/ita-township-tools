@@ -8,7 +8,7 @@ import "./globals.css";
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
 export const metadata: Metadata = {
-  title: "Township Tools - Professional Reports for Indiana Townships",
+  title: "Township Tools - Professional Apps for Townships",
   description: "Create stunning annual reports, manage township data, and streamline your workflow.",
 };
 

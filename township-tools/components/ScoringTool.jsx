@@ -329,7 +329,7 @@ const ScoringTool = () => {
             The scorecard reflects the best available data, policy interpretations, and contextual information known to the Association at the time of publication. Legislative developments, administrative determinations, and additional data released after publication may affect outcomes, interpretations, or comparisons.
           </p>
           <p>
-            This document should not be construed as an official determination of fiscal impact, statutory compliance, or state policy for Indiana township government structure. Users are encouraged to consult official state sources and subsequent updates when evaluating township merger proposals or related legislation.
+            This document should not be construed as an official determination of fiscal impact, statutory compliance, or state policy for Indiana township government structure. Users are encouraged to consult official state sources, and subsequent updates, attorneys, and financial advisors when evaluating township merger proposals or related legislation.
           </p>
         </div>
         <label className="flex items-center gap-3 cursor-pointer group">

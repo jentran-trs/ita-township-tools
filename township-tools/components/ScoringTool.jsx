@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Calculator, RotateCcw, AlertTriangle, Building2, User } from 'lucide-react';
 
 const FIELDS = [
@@ -164,6 +164,27 @@ const ScoringTool = () => {
   const [showMissing, setShowMissing] = useState(false);
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
   const resultRef = useRef(null);
+  const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
+  const questionRefs = useRef([]);
+
+  // Auto-advance to next incomplete question when active question is completed
+  useEffect(() => {
+    const activeQ = QUESTIONS[activeQuestionIndex];
+    if (!activeQ || !isCardComplete(activeQ)) return;
+
+    const nextIncomplete = QUESTIONS.findIndex(
+      (q, i) => i > activeQuestionIndex && !isCardComplete(q)
+    );
+    if (nextIncomplete !== -1) {
+      setActiveQuestionIndex(nextIncomplete);
+      setTimeout(() => {
+        questionRefs.current[nextIncomplete]?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }, 100);
+    }
+  }, [answers, activeQuestionIndex]);
 
   const handleChange = (name, value) => {
     setAnswers(prev => ({ ...prev, [name]: value }));
@@ -228,6 +249,7 @@ const ScoringTool = () => {
     setWarning(false);
     setShowMissing(false);
     setDisclaimerAccepted(false);
+    setActiveQuestionIndex(0);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -243,6 +265,12 @@ const ScoringTool = () => {
     if (q.checkboxItems) return true;
     if (q.options) return isFieldAnswered(q.id);
     return q.subQuestions.every(sub => isFieldAnswered(sub.name));
+  };
+
+  const getQuestionOpacity = (qIndex) => {
+    if (qIndex === activeQuestionIndex) return 'opacity-100';
+    if (isCardComplete(QUESTIONS[qIndex])) return 'opacity-50';
+    return 'opacity-70';
   };
 
   const handleCheckbox = (name, checked) => {
@@ -388,18 +416,19 @@ const ScoringTool = () => {
         </div>
       </div>
 
-      {/* Questions Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 grid-flow-row-dense">
-        {QUESTIONS.map((q) => {
+      {/* Questions */}
+      <div className="flex flex-col gap-4">
+        {QUESTIONS.map((q, qIndex) => {
           const complete = isCardComplete(q);
           const showIncomplete = showMissing && !complete;
-          const isTall = !!q.subQuestions;
           return (
             <div
               key={q.id}
-              className={`bg-slate-700 border rounded-xl p-4 shadow-sm transition-colors ${
+              ref={(el) => (questionRefs.current[qIndex] = el)}
+              onClick={() => setActiveQuestionIndex(qIndex)}
+              className={`bg-slate-700 border rounded-xl p-4 shadow-sm transition-all duration-300 cursor-pointer ${
                 showIncomplete ? 'border-red-500/60' : 'border-slate-600'
-              } ${isTall ? 'lg:row-span-2' : ''}`}
+              } ${getQuestionOpacity(qIndex)}`}
             >
               <div className="flex items-center justify-between gap-3 mb-2">
                 <h2 className="text-base font-semibold text-white flex items-center gap-2">
@@ -441,7 +470,7 @@ const ScoringTool = () => {
         })}
 
         {/* Actions */}
-        <div className="lg:col-span-2 flex flex-wrap gap-3 items-center mt-2">
+        <div className="flex flex-wrap gap-3 items-center mt-2">
           <button
             onClick={calculate}
             className="flex items-center gap-2 px-5 py-3 bg-amber-500 text-slate-900 rounded-xl font-bold text-sm hover:bg-amber-400 transition-colors shadow-lg shadow-amber-500/20"

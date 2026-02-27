@@ -164,11 +164,26 @@ const ScoringTool = () => {
   const [showMissing, setShowMissing] = useState(false);
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
   const resultRef = useRef(null);
-  const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
+  const [activeQuestionIndex, setActiveQuestionIndex] = useState(-1); // -1 = Your Information section
   const questionRefs = useRef([]);
+  const infoRef = useRef(null);
 
-  // Auto-advance to next incomplete question when active question is completed
+  // Auto-advance: info section → first question, then question → next incomplete question
   useEffect(() => {
+    // Advance from info section to first question when both names are filled
+    if (activeQuestionIndex === -1) {
+      if (townshipName.trim() && personName.trim()) {
+        setActiveQuestionIndex(0);
+        setTimeout(() => {
+          questionRefs.current[0]?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          });
+        }, 100);
+      }
+      return;
+    }
+
     const activeQ = QUESTIONS[activeQuestionIndex];
     if (!activeQ || !isCardComplete(activeQ)) return;
 
@@ -184,7 +199,7 @@ const ScoringTool = () => {
         });
       }, 100);
     }
-  }, [answers, activeQuestionIndex]);
+  }, [answers, activeQuestionIndex, townshipName, personName]);
 
   const handleChange = (name, value) => {
     setAnswers(prev => ({ ...prev, [name]: value }));
@@ -249,7 +264,7 @@ const ScoringTool = () => {
     setWarning(false);
     setShowMissing(false);
     setDisclaimerAccepted(false);
-    setActiveQuestionIndex(0);
+    setActiveQuestionIndex(-1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -393,7 +408,15 @@ const ScoringTool = () => {
       {disclaimerAccepted && (
       <>
       {/* Township Info */}
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-4 mb-5 shadow-sm">
+      <div
+        ref={infoRef}
+        onClick={() => setActiveQuestionIndex(-1)}
+        className={`bg-slate-800 border rounded-xl p-4 mb-5 shadow-sm transition-all duration-300 cursor-pointer ${
+          activeQuestionIndex === -1
+            ? 'border-amber-500 ring-1 ring-amber-500/30 opacity-100'
+            : 'border-slate-700 opacity-50'
+        }`}
+      >
         <h2 className="text-base font-semibold text-white mb-3">Your Information</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>

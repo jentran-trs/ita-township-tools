@@ -256,9 +256,20 @@ const ScoringTool = () => {
   const totalScore = FIELDS.reduce((sum, f) => sum + (answers[f.name] || 0), 0);
   const isDesignated = totalScore >= 4;
 
+  // Map each field name to its parent question number (1-indexed)
+  const fieldToQuestionNum = {};
+  QUESTIONS.forEach((q, qi) => {
+    if (q.subQuestions) {
+      q.subQuestions.forEach(sub => { fieldToQuestionNum[sub.name] = qi + 1; });
+    } else {
+      fieldToQuestionNum[q.id] = qi + 1;
+    }
+  });
+
   const breakdown = FIELDS.map(f => ({
     label: f.label,
     points: answers[f.name] || 0,
+    questionNum: fieldToQuestionNum[f.name],
   }));
 
   const isCardComplete = (q) => {
@@ -427,11 +438,16 @@ const ScoringTool = () => {
               ref={(el) => (questionRefs.current[qIndex] = el)}
               onClick={() => setActiveQuestionIndex(qIndex)}
               className={`bg-slate-700 border rounded-xl p-4 shadow-sm transition-all duration-300 cursor-pointer ${
-                showIncomplete ? 'border-red-500/60' : 'border-slate-600'
+                showIncomplete
+                  ? 'border-red-500/60'
+                  : qIndex === activeQuestionIndex
+                    ? 'border-amber-500 ring-1 ring-amber-500/30'
+                    : 'border-slate-600'
               } ${getQuestionOpacity(qIndex)}`}
             >
               <div className="flex items-center justify-between gap-3 mb-2">
                 <h2 className="text-base font-semibold text-white flex items-center gap-2">
+                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-500/15 text-amber-500 text-xs font-bold flex-shrink-0">{qIndex + 1}</span>
                   {q.title}
                   {showIncomplete && <span className="text-red-400 text-xs font-normal">(answer required)</span>}
                 </h2>
@@ -538,7 +554,10 @@ const ScoringTool = () => {
                     key={i}
                     className="flex items-center justify-between gap-3 px-3 py-2 border border-dashed border-slate-600 rounded-xl bg-slate-900/50 text-sm"
                   >
-                    <span className="text-slate-300">{item.label}</span>
+                    <span className="text-slate-300">
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-500/15 text-amber-500 text-[10px] font-bold mr-2 align-middle">{item.questionNum}</span>
+                      {item.label}
+                    </span>
                     <strong className={item.points > 0 ? 'text-amber-500' : 'text-slate-500'}>{item.points}</strong>
                   </div>
                 ))}

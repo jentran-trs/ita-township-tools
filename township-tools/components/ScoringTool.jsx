@@ -139,8 +139,8 @@ const QUESTIONS = [
     badge: '0–1 point',
     description: <>Was there no Trustee candidate on the ballot in 2018 <span className="underline font-bold">OR</span> 2022, <span className="underline font-bold">OR</span> has there been a Trustee vacancy of 30+ days as of July 1, 2026?</>,
     options: [
-      { value: 1, label: 'No Trustee — qualifies for a point', hint: '1 point.' },
-      { value: 0, label: <>Yes Trustee — does <span className="underline font-bold">NOT</span> qualify</>, hint: '0 points.' },
+      { value: 1, label: "No, we didn't have a Trustee Candidate", hint: '1 point.' },
+      { value: 0, label: 'Yes, we had a Trustee Candidate', hint: '0 points.' },
     ],
   },
   {

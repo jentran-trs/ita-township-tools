@@ -392,33 +392,7 @@ const ScoringTool = () => {
             This document should not be construed as an official determination of fiscal impact, statutory compliance, or state policy for Indiana township government structure. Users are encouraged to consult official state sources, subsequent updates, attorneys, and financial advisors when evaluating township merger proposals or related legislation.
           </p>
         </div>
-        <label className="flex items-center gap-3 cursor-pointer group">
-          <input
-            type="checkbox"
-            checked={disclaimerAccepted}
-            onChange={(e) => setDisclaimerAccepted(e.target.checked)}
-            className="w-5 h-5 accent-amber-500 rounded flex-shrink-0"
-          />
-          <span className="text-sm text-slate-200 font-semibold group-hover:text-white transition-colors">
-            I have read and understand this disclaimer
-          </span>
-        </label>
-      </div>
-
-      {disclaimerAccepted && (
-      <>
-      {/* Township Info */}
-      <div
-        ref={infoRef}
-        onClick={() => setActiveQuestionIndex(-1)}
-        className={`bg-slate-800 border rounded-xl p-4 mb-5 shadow-sm transition-all duration-300 cursor-pointer ${
-          activeQuestionIndex === -1
-            ? 'border-amber-500 ring-1 ring-amber-500/30 opacity-100'
-            : 'border-slate-700 opacity-50'
-        }`}
-      >
-        <h2 className="text-base font-semibold text-white mb-3">Your Information</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div ref={infoRef} className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
           <div>
             <label className="flex items-center gap-2 text-sm text-slate-300 mb-1.5">
               <Building2 className="w-3.5 h-3.5" />
@@ -448,7 +422,21 @@ const ScoringTool = () => {
             />
           </div>
         </div>
+        <label className="flex items-center gap-3 cursor-pointer group">
+          <input
+            type="checkbox"
+            checked={disclaimerAccepted}
+            onChange={(e) => setDisclaimerAccepted(e.target.checked)}
+            className="w-5 h-5 accent-amber-500 rounded flex-shrink-0"
+          />
+          <span className="text-sm text-slate-200 font-semibold group-hover:text-white transition-colors">
+            I have read and understand this disclaimer
+          </span>
+        </label>
       </div>
+
+      {disclaimerAccepted && (
+      <>
 
       {/* Questions */}
       <div className="flex flex-col gap-4">

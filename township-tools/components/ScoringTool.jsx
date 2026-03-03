@@ -172,7 +172,7 @@ const ScoringTool = () => {
   useEffect(() => {
     // Advance from info section to first question when both names are filled
     if (activeQuestionIndex === -1) {
-      if (townshipName.trim() && personName.trim()) {
+      if (townshipName.trim() && personName.trim().split(/\s+/).length >= 2) {
         setActiveQuestionIndex(0);
         setTimeout(() => {
           questionRefs.current[0]?.scrollIntoView({
@@ -232,7 +232,7 @@ const ScoringTool = () => {
 
   const calculate = () => {
     setWarning(false);
-    if (!townshipName.trim() || !personName.trim()) {
+    if (!townshipName.trim() || personName.trim().split(/\s+/).length < 2) {
       setShowResult(true);
       setWarning(true);
       setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
@@ -436,7 +436,7 @@ const ScoringTool = () => {
           <div>
             <label className="flex items-center gap-2 text-sm text-slate-300 mb-1.5">
               <User className="w-3.5 h-3.5" />
-              Your Name <span className="text-red-400">*</span>
+              Your Full Name (First &amp; Last) <span className="text-red-400">*</span>
             </label>
             <input
               type="text"
@@ -539,7 +539,7 @@ const ScoringTool = () => {
               <div className="text-xs text-slate-300 space-y-1">
                 {(!townshipName.trim() || !personName.trim()) && (
                   <div><span className="text-slate-500">Missing required fields: </span>
-                    {[!townshipName.trim() && 'Township Name', !personName.trim() && 'Your Name'].filter(Boolean).join(', ')}
+                    {[!townshipName.trim() && 'Township Name', personName.trim().split(/\s+/).length < 2 && 'Full Name (First & Last)'].filter(Boolean).join(', ')}
                   </div>
                 )}
                 {getUnanswered().length > 0 && (

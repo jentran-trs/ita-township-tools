@@ -163,6 +163,7 @@ const ScoringTool = () => {
   const [warning, setWarning] = useState(false);
   const [showMissing, setShowMissing] = useState(false);
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
+  const [infoWarning, setInfoWarning] = useState(false);
   const resultRef = useRef(null);
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(-1); // -1 = Your Information section
   const questionRefs = useRef([]);
@@ -264,6 +265,7 @@ const ScoringTool = () => {
     setWarning(false);
     setShowMissing(false);
     setDisclaimerAccepted(false);
+    setInfoWarning(false);
     setActiveQuestionIndex(-1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -404,7 +406,9 @@ const ScoringTool = () => {
               onChange={(e) => setTownshipName(e.target.value)}
               required
               placeholder="e.g. Vernon Township"
-              className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors"
+              className={`w-full px-3 py-2 bg-slate-900 border rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors ${
+                infoWarning && !townshipName.trim() ? 'border-red-500' : 'border-slate-600'
+              }`}
             />
           </div>
           <div>
@@ -418,15 +422,31 @@ const ScoringTool = () => {
               onChange={(e) => setPersonName(e.target.value)}
               required
               placeholder="e.g. Jane Smith"
-              className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors"
+              className={`w-full px-3 py-2 bg-slate-900 border rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors ${
+                infoWarning && personName.trim().split(/\s+/).length < 2 ? 'border-red-500' : 'border-slate-600'
+              }`}
             />
           </div>
         </div>
+        {infoWarning && (
+          <div className="flex items-center gap-2 text-amber-500 text-sm font-medium mb-3">
+            <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+            Please fill in your Township Name and Full Name before proceeding.
+          </div>
+        )}
         <label className="flex items-center gap-3 cursor-pointer group">
           <input
             type="checkbox"
             checked={disclaimerAccepted}
-            onChange={(e) => setDisclaimerAccepted(e.target.checked)}
+            onChange={(e) => {
+              if (e.target.checked && (!townshipName.trim() || personName.trim().split(/\s+/).length < 2)) {
+                setInfoWarning(true);
+                e.preventDefault();
+                return;
+              }
+              setInfoWarning(false);
+              setDisclaimerAccepted(e.target.checked);
+            }}
             className="w-5 h-5 accent-amber-500 rounded flex-shrink-0"
           />
           <span className="text-sm text-slate-200 font-semibold group-hover:text-white transition-colors">

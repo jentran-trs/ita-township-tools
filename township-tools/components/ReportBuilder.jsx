@@ -202,7 +202,7 @@ const generateId = () => Math.random().toString(36).substr(2, 9);
 
 // Image Editor Component
 // Rich Text Editor Component
-const RichTextEditor = ({ content, onChange, themeColors, maxHeight, defaultFontSize, initialLineSpacing, initialParagraphSpacing, onSpacingChange }) => {
+const RichTextEditor = ({ content, onChange, themeColors, maxHeight, defaultFontSize, initialLineSpacing, initialParagraphSpacing, onSpacingChange, lightBackground = true }) => {
   const editorRef = useRef(null);
   const [showFontMenu, setShowFontMenu] = useState(false);
   const [showColorMenu, setShowColorMenu] = useState(false);
@@ -214,7 +214,8 @@ const RichTextEditor = ({ content, onChange, themeColors, maxHeight, defaultFont
   const [paragraphSpacing, setParagraphSpacing] = useState(initialParagraphSpacing || 2);
   const isInitialized = useRef(false);
   const savedSelection = useRef(null);
-  
+  const [scopeId] = useState(() => `rte-${Math.random().toString(36).substr(2, 8)}`);
+
   // Track active formatting states
   const [isBold, setIsBold] = useState(false);
   const [isItalic, setIsItalic] = useState(false);
@@ -430,39 +431,47 @@ const RichTextEditor = ({ content, onChange, themeColors, maxHeight, defaultFont
     e.preventDefault();
   };
 
+  const btnClass = lightBackground ? 'text-slate-700 hover:bg-slate-200' : 'text-white/80 hover:bg-white/20';
+  const btnActiveClass = lightBackground ? 'bg-slate-700 text-white' : 'bg-white/30 text-white';
+  const dropdownBtnClass = lightBackground ? 'bg-white border border-slate-300 text-slate-900 hover:bg-slate-100' : 'bg-white/10 border border-white/30 text-white hover:bg-white/20';
+  const dropdownMenuClass = lightBackground ? 'bg-white border border-slate-200' : 'bg-slate-800 border border-slate-600';
+  const dropdownItemClass = lightBackground ? 'hover:bg-slate-100 text-slate-900' : 'hover:bg-white/10 text-white';
+  const dividerClass = lightBackground ? 'bg-slate-300' : 'bg-white/30';
+  const selectClass = lightBackground ? 'px-2 py-1 bg-white border border-slate-300 rounded text-sm text-slate-900' : 'px-2 py-1 bg-white/10 border border-white/30 rounded text-sm text-white';
+
   return (
-    <div className="bg-white rounded-xl border-2 border-slate-200">
-      <div 
-        className="rich-text-toolbar flex flex-wrap items-center gap-1 p-2 bg-slate-50 border-b border-slate-200 overflow-visible"
+    <div className={scopeId + ' ' + (lightBackground ? 'bg-white rounded-xl border-2 border-slate-200' : 'bg-slate-900/90 rounded-xl border border-white/20')}>
+      <div
+        className={`rich-text-toolbar flex flex-wrap items-center gap-1 p-2 overflow-visible ${lightBackground ? 'bg-slate-50 border-b border-slate-200' : 'bg-slate-800/90 border-b border-white/20'}`}
         onMouseDown={handleToolbarMouseDown}
       >
         {/* Font selector */}
         <div className="relative">
           <button
-            onMouseDown={(e) => { 
-              e.preventDefault(); 
+            onMouseDown={(e) => {
+              e.preventDefault();
               e.stopPropagation();
-              setShowFontMenu(!showFontMenu); 
+              setShowFontMenu(!showFontMenu);
               setShowColorMenu(false);
               setShowSizeMenu(false); setShowSpacingMenu(false);
             }}
-            className="flex items-center gap-1 px-2 py-1 bg-white border border-slate-300 rounded text-sm hover:bg-slate-100 text-slate-900"
+            className={`flex items-center gap-1 px-2 py-1 rounded text-sm ${dropdownBtnClass}`}
           >
             <Type className="w-4 h-4" />
-            <span className="max-w-20 truncate text-slate-900">{currentFont.name}</span>
+            <span className="max-w-20 truncate">{currentFont.name}</span>
             <ChevronDown className="w-3 h-3" />
           </button>
           {showFontMenu && (
-            <div 
-              className="absolute top-full left-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-20 max-h-48 overflow-y-auto"
+            <div
+              className={`absolute top-full left-0 mt-1 rounded-lg shadow-lg z-20 max-h-48 overflow-y-auto ${dropdownMenuClass}`}
               onMouseDown={(e) => e.stopPropagation()}
             >
               {FONTS.map((font) => (
                 <button
                   key={font.name}
                   onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleFontChange(font); }}
-                  className="block w-full text-left px-3 py-2 hover:bg-slate-100 text-sm text-slate-900"
-                  style={{ fontFamily: font.value, color: '#0f172a' }}
+                  className={`block w-full text-left px-3 py-2 text-sm ${dropdownItemClass}`}
+                  style={{ fontFamily: font.value }}
                 >
                   {font.name}
                 </button>
@@ -474,29 +483,28 @@ const RichTextEditor = ({ content, onChange, themeColors, maxHeight, defaultFont
         {/* Font size */}
         <div className="relative">
           <button
-            onMouseDown={(e) => { 
-              e.preventDefault(); 
+            onMouseDown={(e) => {
+              e.preventDefault();
               e.stopPropagation();
-              setShowSizeMenu(!showSizeMenu); 
+              setShowSizeMenu(!showSizeMenu);
               setShowFontMenu(false);
               setShowColorMenu(false);
             }}
-            className="flex items-center gap-1 px-2 py-1 bg-white border border-slate-300 rounded text-sm hover:bg-slate-100 text-slate-900"
+            className={`flex items-center gap-1 px-2 py-1 rounded text-sm ${dropdownBtnClass}`}
           >
-            <span className="text-slate-900">{fontSize}px</span>
+            <span>{fontSize}px</span>
             <ChevronDown className="w-3 h-3" />
           </button>
           {showSizeMenu && (
-            <div 
-              className="absolute top-full left-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-20"
+            <div
+              className={`absolute top-full left-0 mt-1 rounded-lg shadow-lg z-20 ${dropdownMenuClass}`}
               onMouseDown={(e) => e.stopPropagation()}
             >
               {[12, 14, 16, 18, 20, 24, 28, 32, 36, 48].map((size) => (
                 <button
                   key={size}
                   onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); handleSizeChange(size); }}
-                  className="block w-full text-left px-3 py-2 hover:bg-slate-100 text-sm text-slate-900"
-                  style={{ color: '#0f172a' }}
+                  className={`block w-full text-left px-3 py-2 text-sm ${dropdownItemClass}`}
                 >
                   {size}px
                 </button>
@@ -505,68 +513,68 @@ const RichTextEditor = ({ content, onChange, themeColors, maxHeight, defaultFont
           )}
         </div>
 
-        <div className="w-px h-6 bg-slate-300 mx-1" />
+        <div className={`w-px h-6 mx-1 ${dividerClass}`} />
 
         {/* Formatting buttons */}
-        <button 
-          onMouseDown={(e) => { 
-            e.preventDefault(); 
+        <button
+          onMouseDown={(e) => {
+            e.preventDefault();
             setShowFontMenu(false);
             setShowColorMenu(false);
             setShowSizeMenu(false); setShowSpacingMenu(false);
-            handleFormat('bold'); 
-          }} 
-          className={`p-1.5 rounded transition-colors ${isBold ? 'bg-slate-700 text-white' : 'text-slate-700 hover:bg-slate-200'}`}
+            handleFormat('bold');
+          }}
+          className={`p-1.5 rounded transition-colors ${isBold ? btnActiveClass : btnClass}`}
           title="Bold"
         >
           <Bold className="w-4 h-4" />
         </button>
-        <button 
-          onMouseDown={(e) => { 
-            e.preventDefault(); 
+        <button
+          onMouseDown={(e) => {
+            e.preventDefault();
             setShowFontMenu(false);
             setShowColorMenu(false);
             setShowSizeMenu(false); setShowSpacingMenu(false);
-            handleFormat('italic'); 
-          }} 
-          className={`p-1.5 rounded transition-colors ${isItalic ? 'bg-slate-700 text-white' : 'text-slate-700 hover:bg-slate-200'}`}
+            handleFormat('italic');
+          }}
+          className={`p-1.5 rounded transition-colors ${isItalic ? btnActiveClass : btnClass}`}
           title="Italic"
         >
           <Italic className="w-4 h-4" />
         </button>
-        <button 
-          onMouseDown={(e) => { 
-            e.preventDefault(); 
+        <button
+          onMouseDown={(e) => {
+            e.preventDefault();
             setShowFontMenu(false);
             setShowColorMenu(false);
             setShowSizeMenu(false); setShowSpacingMenu(false);
-            handleFormat('underline'); 
-          }} 
-          className={`p-1.5 rounded transition-colors ${isUnderline ? 'bg-slate-700 text-white' : 'text-slate-700 hover:bg-slate-200'}`}
+            handleFormat('underline');
+          }}
+          className={`p-1.5 rounded transition-colors ${isUnderline ? btnActiveClass : btnClass}`}
           title="Underline"
         >
           <Underline className="w-4 h-4" />
         </button>
 
-        <div className="w-px h-6 bg-slate-300 mx-1" />
+        <div className={`w-px h-6 mx-1 ${dividerClass}`} />
 
         {/* Color picker */}
         <div className="relative">
           <button
-            onMouseDown={(e) => { 
-              e.preventDefault(); 
+            onMouseDown={(e) => {
+              e.preventDefault();
               e.stopPropagation();
-              setShowColorMenu(!showColorMenu); 
+              setShowColorMenu(!showColorMenu);
               setShowFontMenu(false);
               setShowSizeMenu(false); setShowSpacingMenu(false);
             }}
-            className="p-1.5 text-slate-700 hover:bg-slate-200 rounded flex items-center gap-1"
+            className={`p-1.5 rounded flex items-center gap-1 ${btnClass}`}
           >
             <Palette className="w-4 h-4" />
           </button>
           {showColorMenu && (
-            <div 
-              className="absolute top-full left-0 mt-1 p-2 bg-white border border-slate-200 rounded-lg shadow-lg z-20"
+            <div
+              className={`absolute top-full left-0 mt-1 p-2 rounded-lg shadow-lg z-20 ${dropdownMenuClass}`}
               onMouseDown={(e) => e.stopPropagation()}
             >
               <div className="grid grid-cols-4 gap-1.5" style={{ width: '140px' }}>
@@ -584,118 +592,116 @@ const RichTextEditor = ({ content, onChange, themeColors, maxHeight, defaultFont
           )}
         </div>
 
-        <div className="w-px h-6 bg-slate-300 mx-1" />
+        <div className={`w-px h-6 mx-1 ${dividerClass}`} />
 
         {/* Alignment */}
-        <button 
-          onMouseDown={(e) => { 
-            e.preventDefault(); 
+        <button
+          onMouseDown={(e) => {
+            e.preventDefault();
             setShowFontMenu(false);
             setShowColorMenu(false);
             setShowSizeMenu(false); setShowSpacingMenu(false);
-            handleFormat('justifyLeft'); 
-          }} 
-          className="p-1.5 text-slate-700 hover:bg-slate-200 rounded"
+            handleFormat('justifyLeft');
+          }}
+          className={`p-1.5 rounded ${btnClass}`}
           title="Align Left"
         >
           <AlignLeft className="w-4 h-4" />
         </button>
-        <button 
-          onMouseDown={(e) => { 
-            e.preventDefault(); 
+        <button
+          onMouseDown={(e) => {
+            e.preventDefault();
             setShowFontMenu(false);
             setShowColorMenu(false);
             setShowSizeMenu(false); setShowSpacingMenu(false);
-            handleFormat('justifyCenter'); 
-          }} 
-          className="p-1.5 text-slate-700 hover:bg-slate-200 rounded"
+            handleFormat('justifyCenter');
+          }}
+          className={`p-1.5 rounded ${btnClass}`}
           title="Align Center"
         >
           <AlignCenter className="w-4 h-4" />
         </button>
-        <button 
-          onMouseDown={(e) => { 
-            e.preventDefault(); 
+        <button
+          onMouseDown={(e) => {
+            e.preventDefault();
             setShowFontMenu(false);
             setShowColorMenu(false);
             setShowSizeMenu(false); setShowSpacingMenu(false);
-            handleFormat('justifyRight'); 
-          }} 
-          className="p-1.5 text-slate-700 hover:bg-slate-200 rounded"
+            handleFormat('justifyRight');
+          }}
+          className={`p-1.5 rounded ${btnClass}`}
           title="Align Right"
         >
           <AlignRight className="w-4 h-4" />
         </button>
 
-        <div className="w-px h-6 bg-slate-300 mx-1" />
+        <div className={`w-px h-6 mx-1 ${dividerClass}`} />
 
         {/* Lists and headings */}
-        <button 
-          onMouseDown={(e) => { 
-            e.preventDefault(); 
+        <button
+          onMouseDown={(e) => {
+            e.preventDefault();
             setShowFontMenu(false);
             setShowColorMenu(false);
             setShowSizeMenu(false); setShowSpacingMenu(false);
-            handleFormat('insertUnorderedList'); 
-          }} 
-          className="p-1.5 text-slate-700 hover:bg-slate-200 rounded"
+            handleFormat('insertUnorderedList');
+          }}
+          className={`p-1.5 rounded ${btnClass}`}
           title="Bullet List"
         >
           <List className="w-4 h-4" />
         </button>
-        <button 
-          onMouseDown={(e) => { 
-            e.preventDefault(); 
+        <button
+          onMouseDown={(e) => {
+            e.preventDefault();
             setShowFontMenu(false);
             setShowColorMenu(false);
             setShowSizeMenu(false); setShowSpacingMenu(false);
-            handleFormat('insertOrderedList'); 
-          }} 
-          className="p-1.5 text-slate-700 hover:bg-slate-200 rounded"
+            handleFormat('insertOrderedList');
+          }}
+          className={`p-1.5 rounded ${btnClass}`}
           title="Numbered List"
         >
           <ListOrdered className="w-4 h-4" />
         </button>
         <select
-          onMouseDown={(e) => { 
-            e.stopPropagation(); 
+          onMouseDown={(e) => {
+            e.stopPropagation();
             setShowFontMenu(false);
             setShowColorMenu(false);
             setShowSizeMenu(false); setShowSpacingMenu(false);
-            setShowSpacingMenu(false);
           }}
-          onChange={(e) => { 
+          onChange={(e) => {
             if (e.target.value) {
-              execCommand('formatBlock', e.target.value); 
+              execCommand('formatBlock', e.target.value);
               e.target.value = '';
             }
           }}
-          className="px-2 py-1 bg-white border border-slate-300 rounded text-sm text-slate-900"
+          className={selectClass}
           defaultValue=""
-          style={{ color: '#0f172a' }}
         >
-          <option value="" disabled style={{ color: '#0f172a' }}>Format</option>
-          <option value="p" style={{ color: '#0f172a' }}>Paragraph</option>
-          <option value="h1" style={{ color: '#0f172a' }}>Heading 1</option>
-          <option value="h2" style={{ color: '#0f172a' }}>Heading 2</option>
-          <option value="h3" style={{ color: '#0f172a' }}>Heading 3</option>
-          <option value="h4" style={{ color: '#0f172a' }}>Heading 4</option>
+          <option value="" disabled>Format</option>
+          <option value="p">Paragraph</option>
+          <option value="h1">Heading 1</option>
+          <option value="h2">Heading 2</option>
+          <option value="h3">Heading 3</option>
+          <option value="h4">Heading 4</option>
         </select>
 
-        <div className="w-px h-6 bg-slate-300 mx-1" />
+        <div className={`w-px h-6 mx-1 ${dividerClass}`} />
 
         {/* Spacing controls */}
         <div className="relative" style={{ overflow: 'visible' }}>
           <button
-            onMouseDown={(e) => { 
-              e.preventDefault(); 
+            onMouseDown={(e) => {
+              e.preventDefault();
               e.stopPropagation();
-              setShowSpacingMenu(!showSpacingMenu); 
+              setShowSpacingMenu(!showSpacingMenu);
               setShowFontMenu(false);
               setShowColorMenu(false);
               setShowSizeMenu(false);
             }}
-            className="px-2 py-1 text-slate-700 hover:bg-slate-200 rounded flex items-center gap-1 text-sm"
+            className={`px-2 py-1 rounded flex items-center gap-1 text-sm ${btnClass}`}
             title="Line & Paragraph Spacing"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -707,39 +713,37 @@ const RichTextEditor = ({ content, onChange, themeColors, maxHeight, defaultFont
             <ChevronDown className="w-3 h-3" />
           </button>
           {showSpacingMenu && (
-            <div 
-              className="absolute top-full right-0 mt-1 p-3 bg-white border border-slate-200 rounded-lg shadow-xl w-48"
+            <div
+              className={`absolute top-full right-0 mt-1 p-3 rounded-lg shadow-xl w-48 ${dropdownMenuClass}`}
               style={{ zIndex: 9999 }}
               onMouseDown={(e) => e.stopPropagation()}
             >
               <div className="mb-3">
-                <label className="text-xs font-medium text-slate-600 block mb-1">Line Spacing</label>
+                <label className={`text-xs font-medium block mb-1 ${lightBackground ? 'text-slate-600' : 'text-white/70'}`}>Line Spacing</label>
                 <select
                   value={lineSpacing}
                   onChange={(e) => setLineSpacing(parseFloat(e.target.value))}
-                  className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-sm text-slate-900"
-                  style={{ color: '#0f172a' }}
+                  className={`w-full ${selectClass}`}
                 >
-                  <option value="1" style={{ color: '#0f172a' }}>Single (1.0)</option>
-                  <option value="1.15" style={{ color: '#0f172a' }}>1.15</option>
-                  <option value="1.4" style={{ color: '#0f172a' }}>1.4</option>
-                  <option value="1.5" style={{ color: '#0f172a' }}>1.5</option>
-                  <option value="2" style={{ color: '#0f172a' }}>Double (2.0)</option>
+                  <option value="1">Single (1.0)</option>
+                  <option value="1.15">1.15</option>
+                  <option value="1.4">1.4</option>
+                  <option value="1.5">1.5</option>
+                  <option value="2">Double (2.0)</option>
                 </select>
               </div>
               <div>
-                <label className="text-xs font-medium text-slate-600 block mb-1">Paragraph Spacing</label>
+                <label className={`text-xs font-medium block mb-1 ${lightBackground ? 'text-slate-600' : 'text-white/70'}`}>Paragraph Spacing</label>
                 <select
                   value={paragraphSpacing}
                   onChange={(e) => setParagraphSpacing(parseInt(e.target.value))}
-                  className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-sm text-slate-900"
-                  style={{ color: '#0f172a' }}
+                  className={`w-full ${selectClass}`}
                 >
-                  <option value="0" style={{ color: '#0f172a' }}>None</option>
-                  <option value="2" style={{ color: '#0f172a' }}>Compact</option>
-                  <option value="4" style={{ color: '#0f172a' }}>Small</option>
-                  <option value="8" style={{ color: '#0f172a' }}>Medium</option>
-                  <option value="12" style={{ color: '#0f172a' }}>Large</option>
+                  <option value="0">None</option>
+                  <option value="2">Compact</option>
+                  <option value="4">Small</option>
+                  <option value="8">Medium</option>
+                  <option value="12">Large</option>
                 </select>
               </div>
             </div>
@@ -751,7 +755,7 @@ const RichTextEditor = ({ content, onChange, themeColors, maxHeight, defaultFont
         ref={editorRef}
         contentEditable
         dir="ltr"
-        className="min-h-32 p-4 focus:outline-none text-slate-900"
+        className={`min-h-32 p-4 focus:outline-none ${lightBackground ? 'text-slate-900' : 'text-white'}`}
         style={{
           direction: 'ltr',
           textAlign: 'left',
@@ -759,7 +763,7 @@ const RichTextEditor = ({ content, onChange, themeColors, maxHeight, defaultFont
           lineHeight: lineSpacing,
           maxHeight: maxHeight ? `${maxHeight}px` : 'none',
           overflowY: maxHeight ? 'auto' : 'visible',
-          color: '#0f172a',
+          color: lightBackground ? '#0f172a' : '#ffffff',
           fontFamily: '"Instrument Sans", sans-serif'
         }}
         onInput={handleInput}
@@ -776,19 +780,19 @@ const RichTextEditor = ({ content, onChange, themeColors, maxHeight, defaultFont
         suppressContentEditableWarning={true}
       />
       <style>{`
-        [contenteditable] { line-height: ${lineSpacing}; font-family: "Instrument Sans", sans-serif; }
-        [contenteditable] h1 { font-size: 32px; font-weight: bold; margin: ${paragraphSpacing * 2}px 0 ${paragraphSpacing}px 0; }
-        [contenteditable] h2 { font-size: 26px; font-weight: bold; margin: ${paragraphSpacing * 1.5}px 0 ${paragraphSpacing * 0.75}px 0; }
-        [contenteditable] h3 { font-size: 22px; font-weight: bold; margin: ${paragraphSpacing}px 0 ${paragraphSpacing * 0.5}px 0; }
-        [contenteditable] h4 { font-size: 18px; font-weight: bold; margin: ${paragraphSpacing * 0.75}px 0 ${paragraphSpacing * 0.375}px 0; }
-        [contenteditable] p { margin: ${paragraphSpacing}px 0; }
-        [contenteditable] ul { list-style-type: disc; padding-left: 24px; margin: ${paragraphSpacing}px 0; }
-        [contenteditable] ol { list-style-type: decimal; padding-left: 24px; margin: ${paragraphSpacing}px 0; }
-        [contenteditable] li { margin: ${Math.max(1, paragraphSpacing / 2)}px 0; }
-        [contenteditable] b, [contenteditable] strong { font-weight: bold !important; }
-        [contenteditable] i, [contenteditable] em { font-style: italic !important; }
-        [contenteditable] u { text-decoration: underline !important; }
-        [contenteditable] span[style*="underline"] { text-decoration: underline !important; }
+        .${scopeId} [contenteditable] { line-height: ${lineSpacing}; font-family: "Instrument Sans", sans-serif; }
+        .${scopeId} [contenteditable] h1 { font-size: 32px; font-weight: bold; margin: ${paragraphSpacing * 2}px 0 ${paragraphSpacing}px 0; }
+        .${scopeId} [contenteditable] h2 { font-size: 26px; font-weight: bold; margin: ${paragraphSpacing * 1.5}px 0 ${paragraphSpacing * 0.75}px 0; }
+        .${scopeId} [contenteditable] h3 { font-size: 22px; font-weight: bold; margin: ${paragraphSpacing}px 0 ${paragraphSpacing * 0.5}px 0; }
+        .${scopeId} [contenteditable] h4 { font-size: 18px; font-weight: bold; margin: ${paragraphSpacing * 0.75}px 0 ${paragraphSpacing * 0.375}px 0; }
+        .${scopeId} [contenteditable] p { margin: ${paragraphSpacing}px 0; }
+        .${scopeId} [contenteditable] ul { list-style-type: disc; padding-left: 24px; margin: ${paragraphSpacing}px 0; }
+        .${scopeId} [contenteditable] ol { list-style-type: decimal; padding-left: 24px; margin: ${paragraphSpacing}px 0; }
+        .${scopeId} [contenteditable] li { margin: ${Math.max(1, paragraphSpacing / 2)}px 0; }
+        .${scopeId} [contenteditable] b, .${scopeId} [contenteditable] strong { font-weight: bold !important; }
+        .${scopeId} [contenteditable] i, .${scopeId} [contenteditable] em { font-style: italic !important; }
+        .${scopeId} [contenteditable] u { text-decoration: underline !important; }
+        .${scopeId} [contenteditable] span[style*="underline"] { text-decoration: underline !important; }
       `}</style>
     </div>
   );
@@ -1714,8 +1718,8 @@ const StatBox = ({ stat, onUpdate, onDelete, onMove, targetSections, themeColors
   );
 };
 
-// Text Block Component - paragraph text on dark background with formatting
-const TextBlock = ({ textBlock, onUpdate, onDelete, onMove, targetSections, themeColors, editable = true, canvasWidth = 1000, canvasMaxHeight = 1100 }) => {
+// Text Block Component - paragraph text with full rich text editor
+const TextBlock = ({ textBlock, onUpdate, onDelete, onMove, targetSections, themeColors, editable = true, canvasWidth = 1000, canvasMaxHeight = 1100, lightBackground = false }) => {
   const [width, setWidth] = useState(textBlock.width || 600);
   const [height, setHeight] = useState(textBlock.height || 200);
   const [isResizing, setIsResizing] = useState(false);
@@ -1723,18 +1727,7 @@ const TextBlock = ({ textBlock, onUpdate, onDelete, onMove, targetSections, them
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0, posX: 0, posY: 0 });
   const [position, setPosition] = useState({ x: textBlock.posX || 0, y: textBlock.posY || 0 });
-  const [isBold, setIsBold] = useState(false);
-  const [isItalic, setIsItalic] = useState(false);
-  const [isUnderline, setIsUnderline] = useState(false);
-  const editorRef = useRef(null);
-  const isInitialized = useRef(false);
-
-  const TEXT_COLORS = [
-    { name: 'White', value: '#FFFFFF' },
-    { name: 'Primary', value: themeColors?.primary || '#1e3a5f' },
-    { name: 'Accent', value: themeColors?.accent || '#8B0000' },
-    { name: 'Gold/Highlight', value: themeColors?.gold || '#D4B896' },
-  ];
+  const [isEditing, setIsEditing] = useState(false);
 
   const GRID_SIZE = 20;
   const snapToGrid = (value) => Math.round(value / GRID_SIZE) * GRID_SIZE;
@@ -1751,61 +1744,6 @@ const TextBlock = ({ textBlock, onUpdate, onDelete, onMove, targetSections, them
       setPosition({ x: textBlock.posX || 0, y: textBlock.posY || 0 });
     }
   }, [textBlock.posX, textBlock.posY, isDragging]);
-
-  // Initialize content when entering edit mode
-  useEffect(() => {
-    if (editorRef.current && editable) {
-      editorRef.current.innerHTML = textBlock.content || '';
-    }
-  }, [editable]);
-
-  // Reset initialized flag when leaving edit mode
-  useEffect(() => {
-    if (!editable) {
-      isInitialized.current = false;
-    }
-  }, [editable]);
-
-  // Check formatting state
-  const checkFormatting = () => {
-    setIsBold(document.queryCommandState('bold'));
-    setIsItalic(document.queryCommandState('italic'));
-    setIsUnderline(document.queryCommandState('underline'));
-  };
-
-  // Listen for selection changes
-  useEffect(() => {
-    const handleSelectionChange = () => {
-      if (editorRef.current && editorRef.current.contains(document.activeElement)) {
-        checkFormatting();
-      }
-    };
-    document.addEventListener('selectionchange', handleSelectionChange);
-    return () => document.removeEventListener('selectionchange', handleSelectionChange);
-  }, []);
-
-  const handleFormat = (command) => {
-    if (editorRef.current) {
-      editorRef.current.focus();
-      document.execCommand(command, false, null);
-      onUpdate({ ...textBlock, content: editorRef.current.innerHTML });
-      checkFormatting();
-    }
-  };
-
-  const handleColorChange = (color) => {
-    if (editorRef.current) {
-      editorRef.current.focus();
-      document.execCommand('foreColor', false, color);
-      onUpdate({ ...textBlock, content: editorRef.current.innerHTML });
-    }
-  };
-
-  const handleContentChange = () => {
-    if (editorRef.current) {
-      onUpdate({ ...textBlock, content: editorRef.current.innerHTML });
-    }
-  };
 
   const handleResizeStart = (e) => {
     if (!editable) return;
@@ -1877,107 +1815,104 @@ const TextBlock = ({ textBlock, onUpdate, onDelete, onMove, targetSections, them
     };
   }, [isResizing, isDragging, resizeStart, dragStart, width, height, position, textBlock, onUpdate, canvasWidth, canvasMaxHeight]);
 
+  const textColor = lightBackground ? '#1e293b' : '#ffffff';
+  const borderStyle = lightBackground
+    ? (editable ? '1px dashed rgba(0,0,0,0.2)' : 'none')
+    : (editable ? '1px dashed rgba(255,255,255,0.3)' : 'none');
+
   return (
-    <div 
+    <div
       className={`absolute rounded-lg transition-shadow ${editable ? 'group' : ''}`}
-      style={{ 
+      style={{
         width: `${width}px`,
         height: `${height}px`,
         left: `${position.x}px`,
         top: `${position.y}px`,
-        zIndex: isDragging ? 100 : 1,
-        border: editable ? '1px dashed rgba(255,255,255,0.3)' : 'none',
+        zIndex: isDragging || isEditing ? 100 : 1,
+        border: borderStyle,
         backgroundColor: 'transparent'
       }}
     >
-      {editable && (
-        <div className="absolute top-0 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+      {/* Slim control bar - inside the block */}
+      {editable && !isEditing && (
+        <div className={`absolute top-0 left-0 right-0 flex items-center gap-1 px-2 h-7 opacity-0 group-hover:opacity-100 transition-opacity z-10 ${lightBackground ? 'bg-slate-200/90 rounded-t' : 'bg-black/40 rounded-t'}`}>
+          <div
+            className={`cursor-move p-1 rounded mr-1 ${lightBackground ? 'hover:bg-slate-300' : 'hover:bg-white/20'}`}
+            onMouseDown={handleDragStart}
+          >
+            <Move className={`w-3.5 h-3.5 ${lightBackground ? 'text-slate-600' : 'text-white/70'}`} />
+          </div>
           {onMove && <MoveToDropdown targetSections={targetSections || []} onMove={onMove} />}
+          <div className="flex-1" />
           <button
             onClick={onDelete}
             className="p-1 text-red-400 hover:bg-red-500/20 rounded"
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
 
-      {/* Toolbar with drag handle and formatting buttons */}
-      {editable && (
-        <div className="absolute top-0 left-0 right-16 h-8 flex items-center gap-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity z-10 bg-black/40 rounded-t-lg">
-          {/* Drag Handle */}
-          <div 
-            className="cursor-move p-1 hover:bg-white/20 rounded mr-2"
-            onMouseDown={handleDragStart}
-          >
-            <Move className="w-4 h-4 text-white/70" />
-          </div>
-          
-          <div className="w-px h-5 bg-white/30" />
-          
-          {/* Formatting buttons */}
-          <button
-            onMouseDown={(e) => { e.preventDefault(); handleFormat('bold'); }}
-            className={`p-1 rounded transition-colors ${isBold ? 'bg-white/30 text-white' : 'text-white/70 hover:bg-white/20'}`}
-            title="Bold"
-          >
-            <Bold className="w-4 h-4" />
-          </button>
-          <button
-            onMouseDown={(e) => { e.preventDefault(); handleFormat('italic'); }}
-            className={`p-1 rounded transition-colors ${isItalic ? 'bg-white/30 text-white' : 'text-white/70 hover:bg-white/20'}`}
-            title="Italic"
-          >
-            <Italic className="w-4 h-4" />
-          </button>
-          <button
-            onMouseDown={(e) => { e.preventDefault(); handleFormat('underline'); }}
-            className={`p-1 rounded transition-colors ${isUnderline ? 'bg-white/30 text-white' : 'text-white/70 hover:bg-white/20'}`}
-            title="Underline"
-          >
-            <Underline className="w-4 h-4" />
-          </button>
-
-          <div className="w-px h-5 bg-white/30" />
-
-          {/* Color options */}
-          {TEXT_COLORS.map((color) => (
+      {editable && isEditing ? (
+        <div className="w-full h-full overflow-hidden">
+          <RichTextEditor
+            content={textBlock.content}
+            onChange={(content) => onUpdate({ ...textBlock, content })}
+            themeColors={themeColors}
+            maxHeight={height - 40}
+            defaultFontSize="16px"
+            initialLineSpacing={textBlock.lineSpacing || 1.6}
+            initialParagraphSpacing={textBlock.paragraphSpacing || 2}
+            onSpacingChange={(line, para) => onUpdate({ ...textBlock, lineSpacing: line, paragraphSpacing: para })}
+            lightBackground={lightBackground}
+          />
+          <div className="absolute bottom-2 left-2 z-20 flex items-center gap-2">
             <button
-              key={color.name}
-              onMouseDown={(e) => { e.preventDefault(); handleColorChange(color.value); }}
-              className="w-5 h-5 rounded border border-white/30 hover:scale-110 transition-transform"
-              style={{ backgroundColor: color.value }}
-              title={color.name}
-            />
-          ))}
+              onClick={() => setIsEditing(false)}
+              className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 text-sm shadow"
+            >
+              Done Editing
+            </button>
+            <button
+              onClick={onDelete}
+              className="p-1.5 text-red-400 hover:bg-red-500/20 rounded shadow bg-white/80"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
         </div>
-      )}
-
-      {editable ? (
+      ) : editable && !isEditing ? (
         <div
-          ref={editorRef}
-          contentEditable
-          onInput={handleContentChange}
-          onBlur={handleContentChange}
-          className="w-full overflow-auto focus:outline-none text-white p-3 pt-10 textblock-content"
-          style={{
-            fontSize: '16px',
-            lineHeight: 1.6,
-            height: '100%',
-            minHeight: '60px',
-            fontFamily: '"Instrument Sans", sans-serif'
-          }}
-          data-placeholder="Enter paragraph text..."
-          suppressContentEditableWarning
-        />
+          className={`w-full h-full cursor-pointer rounded-lg overflow-auto ${lightBackground ? 'border-2 border-dashed border-slate-200 hover:border-slate-400' : 'border border-dashed border-white/20 hover:border-white/40'} transition-colors`}
+          onClick={() => setIsEditing(true)}
+        >
+          {textBlock.content ? (
+            <div
+              className="w-full h-full p-3 textblock-content"
+              style={{
+                fontSize: '16px',
+                lineHeight: textBlock.lineSpacing || 1.6,
+                color: textColor,
+                fontFamily: '"Instrument Sans", sans-serif'
+              }}
+              dangerouslySetInnerHTML={{ __html: textBlock.content }}
+            />
+          ) : (
+            <div className={`flex items-center justify-center h-full ${lightBackground ? 'text-slate-400' : 'text-white/40'}`}>
+              <Type className="w-5 h-5 mr-2" />
+              <span className="text-sm">Click to edit text...</span>
+            </div>
+          )}
+        </div>
       ) : (
         textBlock.content && (
           <div
-            className="w-full h-full overflow-hidden text-white textblock-content"
+            className="w-full h-full overflow-hidden textblock-content"
             style={{
               fontSize: '16px',
-              lineHeight: 1.6,
+              lineHeight: textBlock.lineSpacing || 1.6,
               padding: '12px',
+              color: textColor,
               fontFamily: '"Instrument Sans", sans-serif'
             }}
             dangerouslySetInnerHTML={{ __html: textBlock.content || '' }}
@@ -1987,7 +1922,7 @@ const TextBlock = ({ textBlock, onUpdate, onDelete, onMove, targetSections, them
 
       <style>{`
         .textblock-content p {
-          margin: 0 0 1em 0;
+          margin: ${textBlock.paragraphSpacing || 2}px 0;
         }
         .textblock-content p:first-child {
           margin-top: 0;
@@ -1997,7 +1932,7 @@ const TextBlock = ({ textBlock, onUpdate, onDelete, onMove, targetSections, them
         }
       `}</style>
 
-      {editable && (
+      {editable && !isEditing && (
         <div
           onMouseDown={handleResizeStart}
           className="absolute bottom-0 right-0 w-6 h-6 cursor-se-resize opacity-50 group-hover:opacity-100 transition-opacity"
@@ -2006,20 +1941,12 @@ const TextBlock = ({ textBlock, onUpdate, onDelete, onMove, targetSections, them
           }}
         />
       )}
-      
+
       {editable && (
-        <div className="absolute bottom-1 left-2 text-xs text-white/50 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className={`absolute bottom-1 left-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity ${lightBackground ? 'text-slate-400' : 'text-white/50'}`}>
           {Math.round(width)} × {Math.round(height)}
         </div>
       )}
-      
-      <style>{`
-        [contenteditable]:empty:before {
-          content: attr(data-placeholder);
-          color: rgba(255, 255, 255, 0.5);
-          font-style: italic;
-        }
-      `}</style>
     </div>
   );
 };
@@ -2416,21 +2343,26 @@ const ChartContainer = ({ chart, onUpdate, onDelete, onMove, targetSections, the
       }}
     >
       <div
-        className={`relative bg-white/95 rounded-xl p-4 shadow-lg ${editable ? 'group cursor-move' : ''}`}
+        className={`relative bg-white/95 rounded-xl shadow-lg ${editable ? 'group' : ''}`}
         style={{
           border: `2px solid ${themeColors?.gold || '#D4B896'}`,
           width: `${width}px`,
           height: `${height}px`,
           boxShadow: isDragging ? '0 10px 40px rgba(0,0,0,0.3)' : undefined,
         }}
-        onMouseDown={handleDragStart}
       >
-        {/* Drag Handle Indicator - always visible */}
-        {editable && !isLoading && (
-          <div className="absolute top-2 left-2 bg-black/60 text-white p-1.5 rounded opacity-70 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-            <Move className="w-4 h-4" />
+        {/* Drag bar across the top */}
+        {editable && (
+          <div
+            className="absolute top-0 left-0 right-0 h-10 cursor-move z-10 flex items-center px-3 rounded-t-xl"
+            onMouseDown={handleDragStart}
+          >
+            <div className="bg-black/60 text-white p-1.5 rounded opacity-70 group-hover:opacity-100 transition-opacity pointer-events-none">
+              <Move className="w-4 h-4" />
+            </div>
           </div>
         )}
+        <div className="p-4 h-full">
 
         {chart.chartImage ? (
           <div className="w-full h-full relative px-6" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -2533,6 +2465,8 @@ const ChartContainer = ({ chart, onUpdate, onDelete, onMove, targetSections, the
             <p>No chart uploaded</p>
           </div>
         )}
+
+        </div>{/* close p-4 h-full wrapper */}
 
         {/* Resize Handle - only in edit mode */}
         {editable && (
@@ -2690,54 +2624,38 @@ const BannerSection = ({ section, onUpdate, themeColors, logo, isPreview }) => {
 
 // Opening Letter Section Component
 const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => {
-  const [isEditingContent, setIsEditingContent] = useState(false);
-  const [canvasWidth, setCanvasWidth] = useState(1000); // Conservative default
+  const [canvasWidth, setCanvasWidth] = useState(1000);
   const [isPhotoLoading, setIsPhotoLoading] = useState(false);
-  const [isResizingContent, setIsResizingContent] = useState(false);
-  const [resizeStart, setResizeStart] = useState({ y: 0, height: 0 });
-  const [contentHeight, setContentHeight] = useState(section.contentHeight || null);
   const [isDraggingPhoto, setIsDraggingPhoto] = useState(false);
   const [photoDragStart, setPhotoDragStart] = useState({ y: 0, posY: 0 });
   const [photoDimensions, setPhotoDimensions] = useState({ width: 0, height: 0 });
+  const [dragOverLetter, setDragOverLetter] = useState(false);
   const fileInputRef = useRef(null);
   const canvasRef = useRef(null);
-  const contentRef = useRef(null);
-  const bottomCanvasRef = useRef(null);
-  const [bottomCanvasWidth, setBottomCanvasWidth] = useState(400);
+  const letterPageRef = useRef(null);
 
   // Photo vertical position (0-100, where 50 is center)
   const photoPositionY = section.photoPositionY ?? 50;
 
-  // Initialize bottom images if they don't exist
-  const bottomImage1 = section.bottomImage1 || { id: 'bottom1', width: 400, height: 240, posX: 0, posY: 0 };
-  const bottomImage2 = section.bottomImage2 || { id: 'bottom2', width: 400, height: 240, posX: 0, posY: 0 };
-
-  // Measure bottom canvas width
+  // Migration: convert existing section.content into a textBlock
   useEffect(() => {
-    const measureBottomCanvas = () => {
-      if (bottomCanvasRef.current) {
-        const width = bottomCanvasRef.current.offsetWidth;
-        if (width > 0) {
-          setBottomCanvasWidth(width);
-        }
-      }
-    };
-
-    const timeoutId = setTimeout(measureBottomCanvas, 100);
-    window.addEventListener('resize', measureBottomCanvas);
-
-    return () => {
-      clearTimeout(timeoutId);
-      window.removeEventListener('resize', measureBottomCanvas);
-    };
-  }, []);
-
-  // Sync contentHeight with section data
-  useEffect(() => {
-    if (section.contentHeight && section.contentHeight !== contentHeight) {
-      setContentHeight(section.contentHeight);
+    if (section.content && (!section.textBlocks || section.textBlocks.length === 0)) {
+      onUpdate({
+        ...section,
+        textBlocks: [{
+          id: generateId(),
+          content: section.content,
+          width: 800,
+          height: 400,
+          posX: 20,
+          posY: 10,
+          lineSpacing: section.lineSpacing || 1.15,
+          paragraphSpacing: section.paragraphSpacing || 16
+        }],
+        content: ''
+      });
     }
-  }, [section.contentHeight]);
+  }, []);
 
   // Measure canvas width on mount, resize, and when element size changes
   useEffect(() => {
@@ -2825,217 +2743,79 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
     };
   }, [isDraggingPhoto, photoDragStart, section, onUpdate, photoPositionY]);
 
-  // Fixed layout heights for Opening Letter section
-  // Page: 1400px, Padding: 64px top and bottom for symmetry
-  // Header (photo + titles): ~200px
-  // Bottom images: 256px (h-64) + 24px gap + 24px padding
-  const headerHeight = 200;
-  const topPadding = 64;
-  const bottomPadding = 0; // Reduced - actual padding is on container
-  const bottomImagesHeight = 256 + 24; // h-64 images + gap (removed extra padding)
-  const pageHeight = 1400;
+  // Canvas max height for elements (below the header)
+  const canvasMaxHeight = 1050;
 
-  // Calculate available height for content area
-  const totalFixedHeight = headerHeight + topPadding + bottomPadding + bottomImagesHeight;
-  const maxContentHeight = pageHeight - totalFixedHeight - 70; // 70px bottom padding on container
-
-  // Content box resize handlers
-  const handleContentResizeStart = (e) => {
-    if (isPreview) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const currentHeight = contentHeight || (contentRef.current?.offsetHeight || 200);
-    setIsResizingContent(true);
-    setResizeStart({ y: e.clientY, height: currentHeight });
-  };
-
-  useEffect(() => {
-    const handleContentResizeMove = (e) => {
-      if (!isResizingContent) return;
-      const deltaY = e.clientY - resizeStart.y;
-      let newHeight = Math.max(100, resizeStart.height + deltaY); // Min 100px
-      // Constrain to max content height
-      newHeight = Math.min(newHeight, maxContentHeight);
-      // Snap to 10px grid
-      newHeight = Math.round(newHeight / 10) * 10;
-      setContentHeight(newHeight);
-    };
-
-    const handleContentResizeEnd = () => {
-      if (isResizingContent) {
-        setIsResizingContent(false);
-        // Save to section data
-        onUpdate({ ...section, contentHeight: contentHeight });
-      }
-    };
-
-    if (isResizingContent) {
-      document.addEventListener('mousemove', handleContentResizeMove);
-      document.addEventListener('mouseup', handleContentResizeEnd);
-    }
-
-    return () => {
-      document.removeEventListener('mousemove', handleContentResizeMove);
-      document.removeEventListener('mouseup', handleContentResizeEnd);
-    };
-  }, [isResizingContent, resizeStart, contentHeight, maxContentHeight, section, onUpdate]);
-
-  // Use custom height or auto
-  const actualContentHeight = contentHeight || 'auto';
-
-  // Reflow images in Opening Letter to fill gaps after deletion
-  const reflowLetterImages = (imagesToReflow) => {
-    if (!imagesToReflow || imagesToReflow.length === 0) return [];
-    
-    const controlsHeight = 120;
-    const gap = 20;
-    const maxCanvasWidth = Math.max(canvasWidth - 40, 600);
-    
-    // Sort images by Y position, then by X position
-    const sortedImages = [...imagesToReflow].sort((a, b) => {
-      const yDiff = (a.posY || 0) - (b.posY || 0);
-      if (yDiff !== 0) return yDiff;
-      return (a.posX || 0) - (b.posX || 0);
-    });
-    
-    // Reposition images row by row
-    const repositioned = [];
-    let currentY = 0;
-    let currentX = 0;
-    let rowHeight = 0;
-    
-    sortedImages.forEach(img => {
-      const imgWidth = img.width || 300;
-      const imgHeight = img.height || 200;
-      const totalItemHeight = imgHeight + controlsHeight;
-      
-      // Check if image fits in current row
-      if (currentX + imgWidth > maxCanvasWidth) {
-        // Move to next row
-        currentY += rowHeight + gap;
-        currentX = 0;
-        rowHeight = 0;
-      }
-      
-      repositioned.push({
-        ...img,
-        posX: currentX,
-        posY: currentY
-      });
-      
-      currentX += imgWidth + gap;
-      rowHeight = Math.max(rowHeight, totalItemHeight);
-    });
-    
-    return repositioned;
-  };
-
-  // Delete handler with reflow for Opening Letter
+  // Delete handler for Opening Letter images
   const deleteLetterImage = (idx) => {
-    const remainingImages = section.images.filter((_, i) => i !== idx);
-    const reflowedImages = reflowLetterImages(remainingImages);
-    onUpdate({ ...section, images: reflowedImages });
+    const remainingImages = (section.images || []).filter((_, i) => i !== idx);
+    onUpdate({ ...section, images: remainingImages });
   };
 
-  const addImage = () => {
-    const imageWidth = 300;
-    const imageHeight = 200;
-    const gap = 20;
-    const controlsHeight = 120; // Space for controls below image
-    const totalItemHeight = imageHeight + controlsHeight;
-    const maxCanvasWidth = Math.max(canvasWidth - 40, 600); // Account for padding
+  // Delete handler for Opening Letter text blocks
+  const deleteLetterTextBlock = (idx) => {
+    const remaining = (section.textBlocks || []).filter((_, i) => i !== idx);
+    onUpdate({ ...section, textBlocks: remaining });
+  };
 
-    const images = section.images || [];
+  // Handle drop on the letter page (images and text)
+  const handleLetterDrop = (e) => {
+    e.preventDefault();
+    setDragOverLetter(false);
+    if (isPreview) return;
+    const elementType = e.dataTransfer.getData('element-type');
+    if (!letterPageRef.current) return;
 
-    // Check if there's room for a new image at all
-    if (totalItemHeight > maxCanvasHeight) {
-      alert('Canvas is too small for images.');
-      return;
+    const canvasEl = canvasRef.current;
+    const canvasRect = canvasEl ? canvasEl.getBoundingClientRect() : letterPageRef.current.getBoundingClientRect();
+    const x = Math.max(0, e.clientX - canvasRect.left);
+    const y = Math.max(0, e.clientY - canvasRect.top);
+
+    if (elementType === 'image') {
+      onUpdate({
+        ...section,
+        images: [...(section.images || []), { id: generateId(), shape: 'rectangle', width: 300, height: 200, posX: Math.min(x, canvasWidth - 300), posY: Math.min(y, 400) }]
+      });
+    } else if (elementType === 'text') {
+      onUpdate({
+        ...section,
+        textBlocks: [...(section.textBlocks || []), {
+          id: generateId(),
+          content: '',
+          width: 800,
+          height: 300,
+          posX: Math.min(x, canvasWidth - 800),
+          posY: Math.min(y, canvasMaxHeight - 300),
+          lineSpacing: 1.15,
+          paragraphSpacing: 16
+        }]
+      });
     }
-    
-    // Helper to check if a rectangle overlaps with any existing image
-    const overlapsWithAny = (x, y) => {
-      for (const img of images) {
-        const imgX = img.posX || 0;
-        const imgY = img.posY || 0;
-        const imgW = img.width || 300;
-        const imgH = img.height || 200;
-        const imgTotalH = imgH + controlsHeight;
-        
-        // Check if rectangles overlap (with gap)
-        const horizontalOverlap = x < imgX + imgW + gap && x + imageWidth + gap > imgX;
-        const verticalOverlap = y < imgY + imgTotalH + gap && y + totalItemHeight + gap > imgY;
-        
-        if (horizontalOverlap && verticalOverlap) {
-          return true;
-        }
-      }
-      return false;
-    };
-    
-    // Check if position fits within canvas bounds
-    const fitsInCanvas = (x, y) => {
-      return x >= 0 && 
-             x + imageWidth <= maxCanvasWidth && 
-             y >= 0 && 
-             y + totalItemHeight <= maxCanvasHeight;
-    };
-    
-    // First try placing at 0,0 if empty
-    if (images.length === 0) {
-      if (fitsInCanvas(0, 0)) {
-        onUpdate({
-          ...section,
-          images: [{ id: generateId(), shape: 'rectangle', width: imageWidth, height: imageHeight, posX: 0, posY: 0 }]
-        });
-        return;
-      }
-    }
-    
-    // Try placing next to existing images on same row
-    for (const existingImg of images) {
-      const potentialX = (existingImg.posX || 0) + (existingImg.width || 300) + gap;
-      const potentialY = existingImg.posY || 0;
-      if (fitsInCanvas(potentialX, potentialY) && !overlapsWithAny(potentialX, potentialY)) {
-        onUpdate({
-          ...section,
-          images: [...images, { id: generateId(), shape: 'rectangle', width: imageWidth, height: imageHeight, posX: potentialX, posY: potentialY }]
-        });
-        return;
-      }
-    }
-    
-    // Then try grid positions starting from top-left with 20px grid
-    const gridStep = 20;
-    
-    for (let y = 0; y <= maxCanvasHeight - totalItemHeight; y += gridStep) {
-      for (let x = 0; x <= maxCanvasWidth - imageWidth; x += gridStep) {
-        if (!overlapsWithAny(x, y) && fitsInCanvas(x, y)) {
-          onUpdate({
-            ...section,
-            images: [...images, { id: generateId(), shape: 'rectangle', width: imageWidth, height: imageHeight, posX: x, posY: y }]
-          });
-          return;
-        }
-      }
-    }
-    
-    // No space found - alert user
-    alert('No more space available for images on this page. Please delete an existing image or resize them to make room.');
   };
 
   return (
     <div
+      ref={letterPageRef}
       data-section="letter"
-      className="bg-white flex flex-col"
+      className={`bg-white flex flex-col relative ${dragOverLetter && !isPreview ? 'ring-2 ring-amber-400/60 ring-inset' : ''}`}
       style={{
-        minHeight: '1400px',
-        maxHeight: '1400px',
-        height: '1400px',
+        minHeight: isPreview ? 'auto' : '1400px',
+        maxHeight: isPreview ? 'none' : '1400px',
+        height: isPreview ? 'auto' : '1400px',
         width: '990px',
         overflow: 'hidden',
-        padding: '64px 64px 70px 64px'
+        padding: '64px 64px 70px 64px',
+        transition: 'box-shadow 0.15s ease'
       }}
+      onDragOver={(e) => {
+        if (isPreview) return;
+        const type = e.dataTransfer.types.includes('element-type') || true;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+        setDragOverLetter(true);
+      }}
+      onDragLeave={() => setDragOverLetter(false)}
+      onDrop={handleLetterDrop}
     >
       <div 
         className="flex items-center gap-8 mb-2 pb-3 flex-shrink-0"
@@ -3171,147 +2951,64 @@ const OpeningLetterSection = ({ section, onUpdate, themeColors, isPreview }) => 
         </div>
       </div>
 
-      {/* Letter content - full width text box */}
+      {/* Unified canvas for text blocks and images */}
       <div
-        ref={contentRef}
-        className="flex-1 mt-4 relative"
+        ref={canvasRef}
+        className="relative mt-4"
         style={{
-          height: actualContentHeight === 'auto' ? 'auto' : `${actualContentHeight}px`,
-          minHeight: '100px',
-          maxHeight: `${maxContentHeight}px`,
-          overflow: isEditingContent ? 'visible' : 'hidden'
+          minHeight: (() => {
+            const allElements = [...(section.textBlocks || []), ...(section.images || [])];
+            if (allElements.length === 0) return '0px';
+            const maxBottom = Math.max(...allElements.map(el => (el.posY || 0) + (el.height || 200)));
+            return `${Math.min(maxBottom + 20, canvasMaxHeight)}px`;
+          })()
         }}
       >
-        {isPreview ? (
-          <>
-            <style>{`
-              .letter-content-preview p { margin: ${section.paragraphSpacing || 16}px 0; }
-              .letter-content-preview p:first-child { margin-top: 0; }
-              .letter-content-preview li { margin: ${Math.max(1, (section.paragraphSpacing || 16) / 2)}px 0; }
-            `}</style>
-            <div
-              className="prose prose-lg max-w-none h-full letter-content-preview"
-              style={{
-                position: 'relative',
-                direction: 'ltr',
-                textAlign: 'left',
-                fontSize: '14px',
-                lineHeight: section.lineSpacing || 1.15,
-                maxHeight: contentHeight ? `${contentHeight}px` : `${maxContentHeight}px`,
-                overflow: 'hidden',
-                color: '#1e293b',
-                fontFamily: '"Instrument Sans", sans-serif'
-              }}
-            >
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '50%',
-                  left: 0,
-                  right: 0,
-                  transform: 'translateY(-50%)',
-                }}
-                dangerouslySetInnerHTML={{ __html: section.content || '' }}
-              />
-            </div>
-          </>
-        ) : isEditingContent ? (
-          <div className="h-full flex flex-col" style={{ overflow: 'visible' }}>
-            <div className="flex-1" style={{ overflow: 'visible' }}>
-              <RichTextEditor
-                content={section.content}
-                onChange={(content) => onUpdate({ ...section, content })}
-                themeColors={themeColors}
-                maxHeight={contentHeight ? contentHeight - 80 : maxContentHeight - 80}
-                defaultFontSize="14pt"
-                initialLineSpacing={section.lineSpacing || 1.15}
-                initialParagraphSpacing={section.paragraphSpacing || 16}
-                onSpacingChange={(line, para) => onUpdate({ ...section, lineSpacing: line, paragraphSpacing: para })}
-              />
-            </div>
-            <button
-              onClick={() => setIsEditingContent(false)}
-              className="mt-3 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 self-start"
-            >
-              Done Editing
-            </button>
-          </div>
-        ) : (
-          <>
-            <style>{`
-              .letter-content-edit { color: #1e293b; }
-              .letter-content-edit p { margin: ${section.paragraphSpacing || 16}px 0; }
-              .letter-content-edit p:first-child { margin-top: 0; }
-              .letter-content-edit li { margin: ${Math.max(1, (section.paragraphSpacing || 16) / 2)}px 0; }
-            `}</style>
-            <div
-              className="prose prose-lg max-w-none cursor-pointer p-4 border-2 border-dashed border-slate-200 rounded-xl hover:border-slate-400 transition-colors h-full letter-content-edit"
-              style={{
-                direction: 'ltr',
-                textAlign: 'left',
-                fontSize: '14pt',
-                lineHeight: section.lineSpacing || 1.15,
-                minHeight: '100px',
-                maxHeight: contentHeight ? `${contentHeight}px` : `${maxContentHeight - 40}px`,
-                overflowY: 'auto',
-                fontFamily: '"Instrument Sans", sans-serif'
-              }}
-              onClick={() => setIsEditingContent(true)}
-            >
-              {section.content ? (
-                <div dangerouslySetInnerHTML={{ __html: section.content }} />
-              ) : (
-                <p><strong>Dear Residents,</strong></p>
-              )}
-              {!section.content && <p className="text-slate-400">Click here to write your opening letter...</p>}
-            </div>
-          </>
-        )}
+        {/* Text Blocks */}
+        {(section.textBlocks || []).map((tb, idx) => (
+          <TextBlock
+            key={tb.id}
+            textBlock={tb}
+            onUpdate={(updated) => {
+              const newTBs = [...(section.textBlocks || [])];
+              newTBs[idx] = updated;
+              onUpdate({ ...section, textBlocks: newTBs });
+            }}
+            onDelete={() => deleteLetterTextBlock(idx)}
+            themeColors={themeColors}
+            editable={!isPreview}
+            canvasWidth={canvasWidth}
+            canvasMaxHeight={canvasMaxHeight}
+            lightBackground={true}
+          />
+        ))}
 
-        {/* Resize handle - only in edit mode */}
-        {!isPreview && (
-          <div
-            onMouseDown={handleContentResizeStart}
-            className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-20 h-3 cursor-ns-resize flex items-center justify-center group"
-            title="Drag to resize"
-          >
-            <div 
-              className="w-12 h-1.5 rounded-full bg-slate-300 group-hover:bg-slate-500 transition-colors"
-              style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }}
-            />
+        {/* Images */}
+        {(section.images || []).map((img, idx) => (
+          <ImageFrame
+            key={img.id}
+            imageData={img}
+            onUpdate={(updated) => {
+              const newImages = [...(section.images || [])];
+              newImages[idx] = updated;
+              onUpdate({ ...section, images: newImages });
+            }}
+            onDelete={() => deleteLetterImage(idx)}
+            themeColors={themeColors}
+            editable={!isPreview}
+            canvasWidth={canvasWidth}
+            canvasMaxHeight={canvasMaxHeight}
+            lightBackground={true}
+          />
+        ))}
+
+        {/* Empty state hint */}
+        {!isPreview && (section.textBlocks || []).length === 0 && (section.images || []).length === 0 && (
+          <div className="flex items-center justify-center h-40 border-2 border-dashed border-slate-200 rounded-xl text-slate-400">
+            <Type className="w-5 h-5 mr-2" />
+            <span>Drag a Text Block or Image here</span>
           </div>
         )}
-
-        {/* Height indicator while resizing */}
-        {isResizingContent && (
-          <div className="absolute bottom-4 right-4 bg-black/70 text-white text-xs px-2 py-1 rounded">
-            {contentHeight}px / {maxContentHeight}px max
-          </div>
-        )}
-      </div>
-
-      {/* Two bottom images */}
-      <div className="relative mt-4" ref={bottomCanvasRef} style={{ minHeight: '240px' }}>
-        <ImageFrame
-          imageData={bottomImage1}
-          onUpdate={(updated) => onUpdate({ ...section, bottomImage1: updated })}
-          onDelete={() => onUpdate({ ...section, bottomImage1: { id: 'bottom1', width: 400, height: 240, posX: 0, posY: 0 } })}
-          themeColors={themeColors}
-          editable={!isPreview}
-          canvasWidth={bottomCanvasWidth}
-          canvasMaxHeight={600}
-          lightBackground={true}
-        />
-        <ImageFrame
-          imageData={bottomImage2}
-          onUpdate={(updated) => onUpdate({ ...section, bottomImage2: updated })}
-          onDelete={() => onUpdate({ ...section, bottomImage2: { id: 'bottom2', width: 400, height: 240, posX: 0, posY: 0 } })}
-          themeColors={themeColors}
-          editable={!isPreview}
-          canvasWidth={bottomCanvasWidth}
-          canvasMaxHeight={600}
-          lightBackground={true}
-        />
       </div>
     </div>
   );
@@ -3484,6 +3181,7 @@ const numberToWord = (num) => {
 const ContentSection = ({ section, onUpdate, onDelete, onMoveElement, contentSections, contentIndex, themeColors, logo, isPreview }) => {
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [canvasWidth, setCanvasWidth] = useState(1200);
+  const [dragOver, setDragOver] = useState(false);
   const canvasRef = useRef(null);
 
   // Measure canvas width on mount, resize, and when element size changes
@@ -3943,95 +3641,77 @@ const ContentSection = ({ section, onUpdate, onDelete, onMoveElement, contentSec
     onMoveElement(targetSectionId, arrayKey, movedElement);
   };
 
-  const addCard = () => {
+  const addCard = (dropPosition) => {
     const cardWidth = 350;
     const cardHeight = 200;
-    const position = findBestPosition(cardWidth, cardHeight, 40);
-    
-    if (!position) {
-      alert('No more space available on this page. Please delete or resize existing elements.');
-      return;
-    }
-    
+    const position = dropPosition || findBestPosition(cardWidth, cardHeight, 40);
+
+    if (!position) return;
+
     onUpdate({
       ...section,
       cards: [...(section.cards || []), { id: generateId(), title: '', content: '', width: cardWidth, height: cardHeight, posX: position.x, posY: position.y }]
     });
   };
 
-  const addChart = () => {
+  const addChart = (dropPosition) => {
     const chartWidth = 780;
     const chartHeight = 320;
-    const position = findBestPosition(chartWidth, chartHeight, 60);
-    
-    if (!position) {
-      alert('No more space available on this page. Please delete or resize existing elements.');
-      return;
-    }
-    
+    const position = dropPosition || findBestPosition(chartWidth, chartHeight, 60);
+
+    if (!position) return;
+
     onUpdate({
       ...section,
       charts: [...(section.charts || []), { id: generateId(), embedUrl: '', width: chartWidth, height: chartHeight, posX: position.x, posY: position.y }]
     });
   };
 
-  const addImage = () => {
+  const addImage = (dropPosition) => {
     const imageWidth = 300;
     const imageHeight = 200;
-    const position = findBestPosition(imageWidth, imageHeight, 60);
-    
-    if (!position) {
-      alert('No more space available on this page. Please delete or resize existing elements.');
-      return;
-    }
-    
+    const position = dropPosition || findBestPosition(imageWidth, imageHeight, 60);
+
+    if (!position) return;
+
     onUpdate({
       ...section,
       images: [...(section.images || []), { id: generateId(), shape: 'rectangle', width: imageWidth, height: imageHeight, posX: position.x, posY: position.y }]
     });
   };
 
-  const addStat = () => {
+  const addStat = (dropPosition) => {
     const statWidth = 300;
     const statHeight = 180;
-    const position = findBestPosition(statWidth, statHeight, 40);
-    
-    if (!position) {
-      alert('No more space available on this page. Please delete or resize existing elements.');
-      return;
-    }
-    
+    const position = dropPosition || findBestPosition(statWidth, statHeight, 40);
+
+    if (!position) return;
+
     onUpdate({
       ...section,
       stats: [...(section.stats || []), { id: generateId(), number: '', label: '', width: statWidth, height: statHeight, posX: position.x, posY: position.y }]
     });
   };
 
-  const addTextBlock = () => {
+  const addTextBlock = (dropPosition) => {
     const textWidth = 600;
     const textHeight = 200;
-    const position = findBestPosition(textWidth, textHeight, 40);
+    const position = dropPosition || findBestPosition(textWidth, textHeight, 40);
 
-    if (!position) {
-      alert('No more space available on this page. Please delete or resize existing elements.');
-      return;
-    }
+    if (!position) return;
 
     onUpdate({
       ...section,
-      textBlocks: [...(section.textBlocks || []), { id: generateId(), content: '', width: textWidth, height: textHeight, posX: position.x, posY: position.y }]
+      textBlocks: [...(section.textBlocks || []), { id: generateId(), content: '', width: textWidth, height: textHeight, posX: position.x, posY: position.y, lineSpacing: 1.6, paragraphSpacing: 2 }]
     });
   };
 
-  const addFooter = () => {
+  const addFooter = (dropPosition) => {
     const footerWidth = 860;
     const footerHeight = 280;
-    const position = findBestPosition(footerWidth, footerHeight, 40);
+    const position = dropPosition || findBestPosition(footerWidth, footerHeight, 40);
 
-    if (!position) {
-      alert('No more space available on this page. Please delete or resize existing elements.');
-      return;
-    }
+    if (!position) return;
 
     onUpdate({
       ...section,
@@ -4131,61 +3811,55 @@ const ContentSection = ({ section, onUpdate, onDelete, onMoveElement, contentSec
         </div>
       )}
 
-      {/* Add content buttons - only in edit mode */}
-      {!isPreview && (
-        <div className="flex justify-center gap-4 mb-8">
-          <button
-            onClick={addCard}
-            className="flex items-center gap-2 px-4 py-2 bg-black/40 text-white rounded-lg hover:bg-black/50 transition-colors border border-white/20"
-          >
-            <FileText className="w-4 h-4" />
-            Add Card
-          </button>
-          <button
-            onClick={addChart}
-            className="flex items-center gap-2 px-4 py-2 bg-black/40 text-white rounded-lg hover:bg-black/50 transition-colors border border-white/20"
-          >
-            <BarChart3 className="w-4 h-4" />
-            Add Chart
-          </button>
-          <button
-            onClick={addImage}
-            className="flex items-center gap-2 px-4 py-2 bg-black/40 text-white rounded-lg hover:bg-black/50 transition-colors border border-white/20"
-          >
-            <Image className="w-4 h-4" />
-            Add Image
-          </button>
-          <button
-            onClick={addStat}
-            className="flex items-center gap-2 px-4 py-2 bg-black/40 text-white rounded-lg hover:bg-black/50 transition-colors border border-white/20"
-          >
-            <Hash className="w-4 h-4" />
-            Add Stat
-          </button>
-          <button
-            onClick={addTextBlock}
-            className="flex items-center gap-2 px-4 py-2 bg-black/40 text-white rounded-lg hover:bg-black/50 transition-colors border border-white/20"
-          >
-            <Type className="w-4 h-4" />
-            Add Text
-          </button>
-          <button
-            onClick={addFooter}
-            className="flex items-center gap-2 px-4 py-2 bg-black/40 text-white rounded-lg hover:bg-black/50 transition-colors border border-white/20"
-          >
-            <PanelBottom className="w-4 h-4" />
-            Add Footer
-          </button>
-        </div>
-      )}
-
       {/* Canvas for draggable items */}
-      <div 
+      <div
         ref={canvasRef}
-        className="relative w-full"
-        style={{ 
+        className={`relative w-full ${dragOver && !isPreview ? 'ring-2 ring-amber-400/60 ring-inset' : ''}`}
+        style={{
           height: isPreview ? `${actualCanvasHeight}px` : `${maxCanvasHeight}px`,
-          minHeight: isPreview ? 'auto' : `${maxCanvasHeight}px`
+          minHeight: isPreview ? 'auto' : `${maxCanvasHeight}px`,
+          transition: 'box-shadow 0.15s ease'
+        }}
+        onDragOver={(e) => {
+          if (isPreview) return;
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'copy';
+          setDragOver(true);
+        }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragOver(false);
+          if (isPreview) return;
+          const elementType = e.dataTransfer.getData('element-type');
+          if (!elementType || !canvasRef.current) return;
+
+          const rect = canvasRef.current.getBoundingClientRect();
+          const rawX = e.clientX - rect.left;
+          const rawY = e.clientY - rect.top;
+
+          // Element default sizes for clamping
+          const sizes = {
+            card: { w: 350, h: 200 },
+            chart: { w: 780, h: 320 },
+            image: { w: 300, h: 200 },
+            stat: { w: 300, h: 180 },
+            text: { w: 600, h: 200 },
+            footer: { w: 860, h: 280 },
+          };
+          const size = sizes[elementType] || { w: 300, h: 200 };
+          const x = Math.max(0, Math.min(rawX, canvasWidth - size.w));
+          const y = Math.max(0, Math.min(rawY, maxCanvasHeight - size.h));
+          const pos = { x, y };
+
+          switch (elementType) {
+            case 'card': addCard(pos); break;
+            case 'chart': addChart(pos); break;
+            case 'image': addImage(pos); break;
+            case 'stat': addStat(pos); break;
+            case 'text': addTextBlock(pos); break;
+            case 'footer': addFooter(pos); break;
+          }
         }}
       >
         {/* Cards */}
@@ -5717,6 +5391,45 @@ export default function ReportBuilder() {
               {sections.map((section, idx) => renderSection(section, idx))}
             </div>
           </main>
+
+          {/* Right Sidebar - Element Palette (edit mode only, desktop only) */}
+          {!showPreview && (
+            <aside className="hidden lg:block lg:w-[180px] lg:flex-shrink-0">
+              <div className="fixed top-1/2 -translate-y-1/2 w-[180px]">
+                <div className="bg-slate-800/50 backdrop-blur rounded-2xl p-4 border border-slate-700/50">
+                  <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+                    Elements
+                  </h3>
+                  <div className="space-y-2">
+                    {[
+                      { type: 'card', icon: FileText, label: 'Card' },
+                      { type: 'chart', icon: BarChart3, label: 'Chart' },
+                      { type: 'image', icon: Image, label: 'Image' },
+                      { type: 'stat', icon: Hash, label: 'Stat' },
+                      { type: 'text', icon: Type, label: 'Text Block' },
+                      { type: 'footer', icon: PanelBottom, label: 'Footer' },
+                    ].map(({ type, icon: Icon, label }) => (
+                      <div
+                        key={type}
+                        draggable
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData('element-type', type);
+                          e.dataTransfer.effectAllowed = 'copy';
+                        }}
+                        className="flex items-center gap-2.5 px-3 py-2.5 bg-slate-700/50 text-slate-300 rounded-lg hover:bg-slate-600/50 hover:text-white transition-colors cursor-grab active:cursor-grabbing border border-slate-600/30 hover:border-slate-500/50 select-none"
+                      >
+                        <Icon className="w-4 h-4 flex-shrink-0" />
+                        <span className="text-sm font-medium">{label}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-3 leading-snug">
+                    Drag onto a page to add
+                  </p>
+                </div>
+              </div>
+            </aside>
+          )}
         </div>
       </div>
 

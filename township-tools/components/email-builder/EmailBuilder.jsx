@@ -1,62 +1,13 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Mail, Newspaper, Eye, Copy, Check, RotateCw, ChevronDown, ChevronRight, X, Save, Trash2, FolderOpen, Plus, FileText, BookOpen, HelpCircle } from 'lucide-react';
-import BrandSettings from './BrandSettings';
-import SectionList from './SectionList';
-import SectionMenu from './SectionMenu';
+import { Eye, Copy, Check, RotateCw, X, Save, Plus, HelpCircle } from 'lucide-react';
+import SectionCatalog from './SectionCatalog';
+import BuilderCanvas from './BuilderCanvas';
 import PreviewPanel from './PreviewPanel';
 import { generateEmailHtml } from './templates/emailTemplate';
 import { generateNewsletterHtml } from './templates/newsletterTemplate';
-import EXAMPLE_TEMPLATES from './exampleTemplates';
 import OnboardingGuide from './OnboardingGuide';
 
-// Section editor imports
-import HeaderSection from './sections/HeaderSection';
-import ContentBodySection from './sections/ContentBodySection';
-import HighlightedSection from './sections/HighlightedSection';
-import ImportantNoticeSection from './sections/ImportantNoticeSection';
-import CtaButtonSection from './sections/CtaButtonSection';
-import ResourceLinksSection from './sections/ResourceLinksSection';
-import SignatureSection from './sections/SignatureSection';
-import FooterSection from './sections/FooterSection';
-import NewsletterTitleSection from './sections/NewsletterTitleSection';
-import FeaturedArticleSection from './sections/FeaturedArticleSection';
-import EventListingSection from './sections/EventListingSection';
-import NewsSectionSection from './sections/NewsSectionSection';
-import HighlightBannerSection from './sections/HighlightBannerSection';
-import MemberResourcesSection from './sections/MemberResourcesSection';
-import MeetingDetailsSection from './sections/MeetingDetailsSection';
-import ImageSection from './sections/ImageSection';
-import AlertBoxSection from './sections/AlertBoxSection';
-import TwoColumnSection from './sections/TwoColumnSection';
-import ListSection from './sections/ListSection';
-import GreetingSection from './sections/GreetingSection';
-import ClosingSection from './sections/ClosingSection';
-
 const generateId = () => Math.random().toString(36).substr(2, 9);
-
-const SECTION_EDITORS = {
-  header: HeaderSection,
-  contentBody: ContentBodySection,
-  highlighted: HighlightedSection,
-  importantNotice: ImportantNoticeSection,
-  ctaButton: CtaButtonSection,
-  resourceLinks: ResourceLinksSection,
-  meetingDetails: MeetingDetailsSection,
-  signature: SignatureSection,
-  footer: FooterSection,
-  newsletterTitle: NewsletterTitleSection,
-  featuredArticle: FeaturedArticleSection,
-  eventListing: EventListingSection,
-  newsSection: NewsSectionSection,
-  highlightBanner: HighlightBannerSection,
-  memberResources: MemberResourcesSection,
-  image: ImageSection,
-  alertBox: AlertBoxSection,
-  twoColumn: TwoColumnSection,
-  list: ListSection,
-  greeting: GreetingSection,
-  closing: ClosingSection,
-};
 
 const DEFAULT_EMAIL_COLORS = {
   primary: '#2e5f7f',
@@ -93,36 +44,19 @@ const EmailBuilder = () => {
   const [savedFeedback, setSavedFeedback] = useState(false);
   const [activeSectionId, setActiveSectionId] = useState(null);
   const [hasGenerated, setHasGenerated] = useState(false);
-  const [hasDraft, setHasDraft] = useState(false);
   const [savedTemplates, setSavedTemplates] = useState([]);
-  const [showTemplates, setShowTemplates] = useState(false);
-  const [showSaveInput, setShowSaveInput] = useState(false);
-  const [newTemplateName, setNewTemplateName] = useState('');
+  const [activeTemplateId, setActiveTemplateId] = useState(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [templateSavedFeedback, setTemplateSavedFeedback] = useState(false);
   const [showTopBarSave, setShowTopBarSave] = useState(false);
   const [topBarTemplateName, setTopBarTemplateName] = useState('');
-  const [templateSavedFeedback, setTemplateSavedFeedback] = useState(false);
-  const [activeTemplateId, setActiveTemplateId] = useState(null);
-  const [showExamples, setShowExamples] = useState(true);
-  const [showOnboarding, setShowOnboarding] = useState(false);
-
-  const handleSelectSection = useCallback((id) => {
-    setActiveSectionId(id);
-    // Scroll to the section editor in the main panel
-    setTimeout(() => {
-      const el = document.getElementById(`section-${id}`);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }, 50);
-  }, []);
 
   // Load saved draft or defaults on mount
   useEffect(() => {
     try {
-      // Show onboarding for first-time users
       if (!localStorage.getItem(`${LS_PREFIX}onboarding-complete`)) {
         setShowOnboarding(true);
       }
-
-      // Always load saved templates library
       const templates = localStorage.getItem(`${LS_PREFIX}templates`);
       if (templates) setSavedTemplates(JSON.parse(templates));
 
@@ -135,7 +69,6 @@ const EmailBuilder = () => {
         if (parsed.logoHeight) setLogoHeight(parsed.logoHeight);
         if (parsed.themeColors) setThemeColors(parsed.themeColors);
         if (parsed.sections) setSections(parsed.sections);
-        setHasDraft(true);
         return;
       }
 
@@ -159,9 +92,7 @@ const EmailBuilder = () => {
           return s;
         }));
       }
-    } catch (e) {
-      // Ignore localStorage errors
-    }
+    } catch (e) {}
   }, []);
 
   const handleSaveDefaults = useCallback(() => {
@@ -176,39 +107,23 @@ const EmailBuilder = () => {
       if (sig) localStorage.setItem(`${LS_PREFIX}signature`, JSON.stringify(sig.data));
       if (foot) localStorage.setItem(`${LS_PREFIX}footer`, JSON.stringify(foot.data));
       if (head) localStorage.setItem(`${LS_PREFIX}header`, JSON.stringify(head.data));
-    } catch (e) {
-      // Ignore
-    }
+    } catch (e) {}
   }, [logo, logoUrl, logoHeight, themeColors, sections]);
 
   const handleClearDefaults = useCallback(() => {
     try {
       Object.keys(localStorage).filter(k => k.startsWith(LS_PREFIX)).forEach(k => localStorage.removeItem(k));
-    } catch (e) {
-      // Ignore
-    }
+    } catch (e) {}
   }, []);
 
   const handleSaveDraft = useCallback(() => {
     try {
       const draft = { templateType, logo, logoUrl, logoHeight, themeColors, sections };
       localStorage.setItem(`${LS_PREFIX}draft`, JSON.stringify(draft));
-      setHasDraft(true);
       setSavedFeedback(true);
       setTimeout(() => setSavedFeedback(false), 2000);
-    } catch (e) {
-      // Ignore
-    }
+    } catch (e) {}
   }, [templateType, logo, logoUrl, logoHeight, themeColors, sections]);
-
-  const handleClearDraft = useCallback(() => {
-    try {
-      localStorage.removeItem(`${LS_PREFIX}draft`);
-      setHasDraft(false);
-    } catch (e) {
-      // Ignore
-    }
-  }, []);
 
   const handleNew = useCallback(() => {
     setTemplateType('email');
@@ -222,7 +137,6 @@ const EmailBuilder = () => {
     setHasGenerated(false);
     setActiveSectionId(null);
     setActiveTemplateId(null);
-    // Load saved defaults if any
     try {
       const savedLogo = localStorage.getItem(`${LS_PREFIX}logo`);
       const savedLogoUrl = localStorage.getItem(`${LS_PREFIX}logoUrl`);
@@ -240,25 +154,14 @@ const EmailBuilder = () => {
     try {
       const newId = generateId();
       const template = {
-        id: newId,
-        name: name.trim(),
-        templateType,
-        logo,
-        logoUrl,
-        logoHeight,
-        themeColors,
-        sections,
-        savedAt: new Date().toLocaleDateString(),
+        id: newId, name: name.trim(), templateType, logo, logoUrl, logoHeight,
+        themeColors, sections, savedAt: new Date().toLocaleDateString(),
       };
       const updated = [...savedTemplates, template];
       localStorage.setItem(`${LS_PREFIX}templates`, JSON.stringify(updated));
       setSavedTemplates(updated);
-      setNewTemplateName('');
-      setShowSaveInput(false);
       setActiveTemplateId(newId);
-    } catch (e) {
-      // Ignore
-    }
+    } catch (e) {}
   }, [templateType, logo, logoUrl, logoHeight, themeColors, sections, savedTemplates]);
 
   const handleLoadTemplate = useCallback((template) => {
@@ -267,7 +170,6 @@ const EmailBuilder = () => {
     setLogoUrl(template.logoUrl || '');
     setLogoHeight(template.logoHeight || 90);
     setThemeColors(template.themeColors ? { ...template.themeColors } : DEFAULT_EMAIL_COLORS);
-    // Deep-clone sections for built-in templates so edits don't mutate originals
     const clonedSections = (template.sections || createDefaultSections(template.templateType || 'email'))
       .map(s => ({ ...s, id: generateId(), data: JSON.parse(JSON.stringify(s.data)) }));
     setSections(clonedSections);
@@ -290,9 +192,7 @@ const EmailBuilder = () => {
       setSavedTemplates(updated);
       setTemplateSavedFeedback(true);
       setTimeout(() => setTemplateSavedFeedback(false), 2000);
-    } catch (e) {
-      // Ignore
-    }
+    } catch (e) {}
   }, [activeTemplateId, savedTemplates, templateType, logo, logoUrl, logoHeight, themeColors, sections]);
 
   const handleDeleteTemplate = useCallback((id) => {
@@ -301,9 +201,7 @@ const EmailBuilder = () => {
       localStorage.setItem(`${LS_PREFIX}templates`, JSON.stringify(updated));
       setSavedTemplates(updated);
       if (activeTemplateId === id) setActiveTemplateId(null);
-    } catch (e) {
-      // Ignore
-    }
+    } catch (e) {}
   }, [savedTemplates, activeTemplateId]);
 
   const handleTemplateSwitch = useCallback((type) => {
@@ -320,12 +218,14 @@ const EmailBuilder = () => {
     setSections(prev => prev.map(s => s.id === id ? { ...s, data: { ...s.data, ...data } } : s));
   }, []);
 
-  const addSection = useCallback((type) => {
+  const addSectionAtIndex = useCallback((type, index) => {
     const newSection = { id: generateId(), type, data: {}, locked: false };
     setSections(prev => {
-      // Insert before the last section (footer)
       const copy = [...prev];
-      copy.splice(copy.length - 1, 0, newSection);
+      let insertAt = index;
+      if (insertAt <= 0) insertAt = 1;
+      if (insertAt >= copy.length) insertAt = copy.length - 1;
+      copy.splice(insertAt, 0, newSection);
       return copy;
     });
     setActiveSectionId(newSection.id);
@@ -333,8 +233,8 @@ const EmailBuilder = () => {
 
   const deleteSection = useCallback((id) => {
     setSections(prev => prev.filter(s => s.id !== id));
-    setActiveSectionId(null);
-  }, []);
+    if (activeSectionId === id) setActiveSectionId(null);
+  }, [activeSectionId]);
 
   const moveSection = useCallback((fromIndex, toIndex) => {
     setSections(prev => {
@@ -346,7 +246,6 @@ const EmailBuilder = () => {
   }, []);
 
   const handleGenerate = useCallback(() => {
-    // Use logoUrl for the generated HTML (email-client safe), fall back to base64 for preview only
     const emailLogo = logoUrl || logo;
     const html = templateType === 'newsletter'
       ? generateNewsletterHtml(sections, themeColors, emailLogo, logoHeight)
@@ -362,364 +261,114 @@ const EmailBuilder = () => {
     setTimeout(() => setCopiedFeedback(false), 2000);
   }, [generatedHtml]);
 
-  const headerSection = sections.find(s => s.type === 'header' || s.type === 'newsletterTitle');
-  const footerSection = sections.find(s => s.type === 'footer');
-  const bodySections = sections.filter(s => s.type !== 'header' && s.type !== 'newsletterTitle' && s.type !== 'footer');
-  const HeaderEditor = headerSection ? SECTION_EDITORS[headerSection.type] : null;
-  const FooterEditor = footerSection ? SECTION_EDITORS[footerSection.type] : null;
-
   return (
     <div className="flex h-[calc(100vh-56px)]">
-      {/* Left Sidebar - Section List */}
-      <div className="w-64 bg-slate-800 border-r border-slate-700 flex flex-col overflow-hidden">
-        {/* Template Type Toggle */}
-        <div className="p-3 border-b border-slate-700" data-tour="template-type">
-          <div className="flex bg-slate-700 rounded-lg p-0.5">
-            <button
-              onClick={() => handleTemplateSwitch('email')}
-              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                templateType === 'email' ? 'bg-amber-500 text-slate-900' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <Mail className="w-4 h-4" />
-              Email
-            </button>
-            <button
-              onClick={() => handleTemplateSwitch('newsletter')}
-              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                templateType === 'newsletter' ? 'bg-amber-500 text-slate-900' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <Newspaper className="w-4 h-4" />
-              Newsletter
-            </button>
-          </div>
-        </div>
-
-        {/* Example Templates */}
-        <div className="border-b border-slate-700" data-tour="examples">
-          <button
-            onClick={() => setShowExamples(!showExamples)}
-            className="w-full flex items-center justify-between px-3 py-2.5 text-xs font-semibold text-amber-500/80 uppercase tracking-wider hover:text-amber-400 transition-colors"
-          >
-            <span className="flex items-center gap-1.5">
-              <BookOpen className="w-3.5 h-3.5" />
-              Example Templates
-            </span>
-            {showExamples ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-          </button>
-          {showExamples && (
-            <div className="px-3 pb-3 space-y-2">
-              {EXAMPLE_TEMPLATES.map(t => (
-                <div key={t.id} className="flex items-center gap-1.5">
-                  <BookOpen className="w-3.5 h-3.5 text-amber-500/60 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-slate-300 truncate">{t.name}</p>
-                    <p className="text-[10px] text-amber-500/50">{t.templateType} &middot; {t.sections.length} sections</p>
-                  </div>
-                  <button
-                    onClick={() => handleLoadTemplate(t)}
-                    className="px-2 py-1 bg-amber-500/20 text-amber-500 rounded text-[10px] font-medium hover:bg-amber-500 hover:text-slate-900 transition-colors"
-                  >
-                    Load
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Saved Templates */}
-        <div className="border-b border-slate-700" data-tour="templates">
-          <button
-            onClick={() => setShowTemplates(!showTemplates)}
-            className="w-full flex items-center justify-between px-3 py-2.5 text-xs font-semibold text-slate-400 uppercase tracking-wider hover:text-white transition-colors"
-          >
-            <span className="flex items-center gap-1.5">
-              <FolderOpen className="w-3.5 h-3.5" />
-              My Templates
-              {savedTemplates.length > 0 && (
-                <span className="text-[10px] bg-slate-600 text-slate-300 px-1.5 py-0.5 rounded-full font-medium normal-case">
-                  {savedTemplates.length}
-                </span>
-              )}
-            </span>
-            {showTemplates ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-          </button>
-          {showTemplates && (
-            <div className="px-3 pb-3 space-y-2">
-              {/* Save current template */}
-              {showSaveInput ? (
-                <div className="flex gap-1.5">
-                  <input
-                    type="text"
-                    value={newTemplateName}
-                    onChange={(e) => setNewTemplateName(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSaveTemplate(newTemplateName)}
-                    placeholder="Template name..."
-                    autoFocus
-                    className="flex-1 px-2 py-1.5 bg-slate-700 border border-slate-600 rounded text-white text-xs placeholder-slate-500 focus:outline-none focus:border-amber-500"
-                  />
-                  <button
-                    onClick={() => handleSaveTemplate(newTemplateName)}
-                    className="px-2 py-1.5 bg-amber-500 text-slate-900 rounded text-xs font-medium hover:bg-amber-400 transition-colors"
-                  >
-                    Save
-                  </button>
-                  <button
-                    onClick={() => { setShowSaveInput(false); setNewTemplateName(''); }}
-                    className="px-1.5 py-1.5 text-slate-500 hover:text-white transition-colors"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setShowSaveInput(true)}
-                  className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 border border-dashed border-slate-600 rounded text-xs text-slate-400 hover:text-amber-500 hover:border-amber-500/50 transition-colors"
-                >
-                  <Plus className="w-3 h-3" />
-                  Save Current as Template
-                </button>
-              )}
-
-              {/* Template list */}
-              {savedTemplates.length === 0 ? (
-                <p className="text-xs text-slate-600 text-center py-2">No saved templates yet</p>
-              ) : (
-                savedTemplates.map(t => (
-                  <div key={t.id} className="flex items-center gap-1.5 group">
-                    <FileText className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-slate-300 truncate">{t.name}</p>
-                      <p className="text-[10px] text-slate-600">{t.templateType} &middot; {t.savedAt}</p>
-                    </div>
-                    <button
-                      onClick={() => handleLoadTemplate(t)}
-                      className="px-2 py-1 bg-slate-700 text-slate-300 rounded text-[10px] font-medium hover:bg-amber-500 hover:text-slate-900 transition-colors"
-                    >
-                      Load
-                    </button>
-                    <button
-                      onClick={() => handleDeleteTemplate(t.id)}
-                      className="p-1 text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
-                      title="Delete template"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Sections */}
-        <div className="flex-1 overflow-y-auto" data-tour="section-list">
-          <SectionList
-            sections={sections}
-            activeSectionId={activeSectionId}
-            onSelect={handleSelectSection}
-            onMove={moveSection}
-            onDelete={deleteSection}
-          />
-        </div>
-
-        {/* Add Section */}
-        <div className="p-3 border-t border-slate-700" data-tour="add-section">
-          <SectionMenu templateType={templateType} onAdd={addSection} />
-        </div>
+      {/* Left Panel - Section Catalog + Brand Settings */}
+      <div className="w-72 flex-shrink-0">
+        <SectionCatalog
+          templateType={templateType}
+          onTemplateSwitch={handleTemplateSwitch}
+          savedTemplates={savedTemplates}
+          onLoadTemplate={handleLoadTemplate}
+          onDeleteTemplate={handleDeleteTemplate}
+          onSaveTemplate={handleSaveTemplate}
+          logo={logo} setLogo={setLogo}
+          logoUrl={logoUrl} setLogoUrl={setLogoUrl}
+          logoHeight={logoHeight} setLogoHeight={setLogoHeight}
+          themeColors={themeColors} setThemeColors={setThemeColors}
+          onSaveDefaults={handleSaveDefaults}
+          onClearDefaults={handleClearDefaults}
+        />
       </div>
 
-      {/* Main Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      {/* Center - Canvas + Top Bar */}
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Top Bar */}
-        <div className="flex items-center justify-between px-6 py-3 bg-slate-800 border-b border-slate-700" data-tour="top-bar">
-          <h2 className="text-lg font-bold text-white">
-            {templateType === 'newsletter' ? 'Newsletter' : 'Email'} Template Builder
+        <div className="flex items-center justify-between px-4 py-2.5 bg-slate-800 border-b border-slate-700/50 flex-shrink-0">
+          <h2 className="text-sm font-bold text-white">
+            {templateType === 'newsletter' ? 'Newsletter' : 'Email'} Builder
           </h2>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleNew}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-slate-300 rounded-lg font-medium hover:bg-slate-600 hover:text-white transition-colors text-sm"
-            >
-              <Plus className="w-4 h-4" />
-              New
+          <div className="flex items-center gap-2">
+            <button onClick={handleNew}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-700 text-slate-300 rounded-lg font-medium hover:bg-slate-600 hover:text-white transition-colors text-xs">
+              <Plus className="w-3.5 h-3.5" /> New
             </button>
-            <button
-              onClick={handleSaveDraft}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-600 text-white rounded-lg font-medium hover:bg-slate-500 transition-colors text-sm"
-            >
-              {savedFeedback ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-              {savedFeedback ? 'Saved!' : 'Save Draft'}
+            <button onClick={handleSaveDraft}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-600 text-white rounded-lg font-medium hover:bg-slate-500 transition-colors text-xs">
+              {savedFeedback ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
+              {savedFeedback ? 'Saved!' : 'Draft'}
             </button>
             {activeTemplateId && (
-              <button
-                onClick={handleUpdateTemplate}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors text-sm ${
-                  templateSavedFeedback
-                    ? 'bg-emerald-600 text-white'
-                    : 'bg-amber-600 text-white hover:bg-amber-500'
-                }`}
-              >
-                {templateSavedFeedback ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-                {templateSavedFeedback ? 'Saved!' : `Save "${(savedTemplates.find(t => t.id === activeTemplateId)?.name || 'Template').slice(0, 20)}"`}
+              <button onClick={handleUpdateTemplate}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-colors text-xs ${
+                  templateSavedFeedback ? 'bg-emerald-600 text-white' : 'bg-amber-600 text-white hover:bg-amber-500'
+                }`}>
+                {templateSavedFeedback ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
+                {templateSavedFeedback ? 'Saved!' : 'Update'}
               </button>
             )}
             {showTopBarSave ? (
-              <div className="flex items-center gap-1.5">
-                <input
-                  type="text"
-                  value={topBarTemplateName}
+              <div className="flex items-center gap-1">
+                <input type="text" value={topBarTemplateName}
                   onChange={(e) => setTopBarTemplateName(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && topBarTemplateName.trim()) {
-                      handleSaveTemplate(topBarTemplateName);
-                      setTopBarTemplateName('');
-                      setShowTopBarSave(false);
+                      handleSaveTemplate(topBarTemplateName); setTopBarTemplateName(''); setShowTopBarSave(false);
                     }
                     if (e.key === 'Escape') { setShowTopBarSave(false); setTopBarTemplateName(''); }
                   }}
-                  placeholder="Template name..."
-                  autoFocus
-                  className="px-3 py-2 bg-slate-700 border border-slate-500 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:border-amber-500 w-44"
-                />
-                <button
-                  onClick={() => {
-                    if (topBarTemplateName.trim()) {
-                      handleSaveTemplate(topBarTemplateName);
-                      setTopBarTemplateName('');
-                      setShowTopBarSave(false);
-                    }
+                  placeholder="Template name..." autoFocus
+                  className="px-2 py-1.5 bg-slate-700 border border-slate-500 rounded-lg text-white text-xs placeholder-slate-500 focus:outline-none focus:border-amber-500 w-32" />
+                <button onClick={() => {
+                    if (topBarTemplateName.trim()) { handleSaveTemplate(topBarTemplateName); setTopBarTemplateName(''); setShowTopBarSave(false); }
                   }}
-                  className="px-3 py-2 bg-amber-500 text-slate-900 rounded-lg text-sm font-medium hover:bg-amber-400 transition-colors"
-                >
-                  Save
-                </button>
-                <button
-                  onClick={() => { setShowTopBarSave(false); setTopBarTemplateName(''); }}
-                  className="p-2 text-slate-400 hover:text-white transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+                  className="px-2 py-1.5 bg-amber-500 text-slate-900 rounded-lg text-xs font-medium hover:bg-amber-400">Save</button>
+                <button onClick={() => { setShowTopBarSave(false); setTopBarTemplateName(''); }}
+                  className="p-1.5 text-slate-400 hover:text-white"><X className="w-3.5 h-3.5" /></button>
               </div>
             ) : (
-              <button
-                onClick={() => setShowTopBarSave(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-600 text-white rounded-lg font-medium hover:bg-slate-500 transition-colors text-sm"
-              >
-                <FolderOpen className="w-4 h-4" />
-                {activeTemplateId ? 'Save as New Template' : 'Save as Template'}
+              <button onClick={() => setShowTopBarSave(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-600 text-white rounded-lg font-medium hover:bg-slate-500 transition-colors text-xs">
+                <Save className="w-3.5 h-3.5" /> {activeTemplateId ? 'Save As' : 'Save'}
               </button>
             )}
-            <button
-              onClick={handleGenerate}
-              data-tour="generate"
-              className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-slate-900 rounded-lg font-medium hover:bg-amber-400 transition-colors text-sm"
-            >
-              {hasGenerated ? <RotateCw className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              {hasGenerated ? 'Regenerate Preview' : 'Preview'}
+            <div className="w-px h-5 bg-slate-700" />
+            <button onClick={handleGenerate}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 text-slate-900 rounded-lg font-medium hover:bg-amber-400 transition-colors text-xs">
+              {hasGenerated ? <RotateCw className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              {hasGenerated ? 'Regenerate' : 'Preview HTML'}
             </button>
             {generatedHtml && (
-              <button
-                onClick={handleCopy}
-                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-500 transition-colors text-sm"
-              >
-                {copiedFeedback ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                {copiedFeedback ? 'Copied!' : 'Copy Template HTML'}
+              <button onClick={handleCopy}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-500 transition-colors text-xs">
+                {copiedFeedback ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                {copiedFeedback ? 'Copied!' : 'Copy HTML'}
               </button>
             )}
-            <button
-              onClick={() => setShowOnboarding(true)}
-              className="p-2 text-slate-400 hover:text-amber-400 transition-colors"
-              title="Start guided tour"
-            >
-              <HelpCircle className="w-5 h-5" />
+            <button onClick={() => setShowOnboarding(true)}
+              className="p-1.5 text-slate-400 hover:text-amber-400 transition-colors" title="Guided tour">
+              <HelpCircle className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Content Area - Split between editor and preview */}
-        <div className="flex-1 flex overflow-hidden">
-          {/* Editor Panel */}
-          <div className="flex-1 overflow-y-auto p-6" data-tour="editor">
-            {/* Brand Settings */}
-            <div data-tour="brand-settings">
-              <BrandSettings
-                logo={logo}
-                setLogo={setLogo}
-                logoUrl={logoUrl}
-                setLogoUrl={setLogoUrl}
-                logoHeight={logoHeight}
-                setLogoHeight={setLogoHeight}
-                themeColors={themeColors}
-                setThemeColors={setThemeColors}
-                onSaveDefaults={handleSaveDefaults}
-                onClearDefaults={handleClearDefaults}
-              />
-            </div>
-
-            {/* Header - always visible */}
-            {HeaderEditor && headerSection && (
-              <div className="mt-6 mb-4 bg-slate-800/50 border border-slate-700 rounded-xl p-4">
-                <HeaderEditor
-                  data={headerSection.data}
-                  onChange={(data) => updateSection(headerSection.id, data)}
-                  themeColors={themeColors}
-                />
-              </div>
-            )}
-
-            {/* Body Sections - all visible */}
-            {bodySections.length > 0 ? (
-              bodySections.map((section, idx) => {
-                const Editor = SECTION_EDITORS[section.type];
-                if (!Editor) return null;
-                return (
-                  <div
-                    key={section.id}
-                    id={`section-${section.id}`}
-                    className={`${idx === 0 ? 'mt-8' : 'mt-4'} bg-slate-800/50 border rounded-xl p-4 ${
-                      activeSectionId === section.id ? 'border-amber-500/50' : 'border-slate-700'
-                    }`}
-                    onClick={() => setActiveSectionId(section.id)}
-                  >
-                    <Editor
-                      data={section.data}
-                      onChange={(data) => updateSection(section.id, data)}
-                      themeColors={themeColors}
-                    />
-                  </div>
-                );
-              })
-            ) : (
-              <div className="mt-8 text-center py-8 text-slate-500">
-                <p className="text-sm">Add sections using the button in the sidebar</p>
-              </div>
-            )}
-
-            {/* Footer - always visible */}
-            {FooterEditor && footerSection && (
-              <div className="mt-4 bg-slate-800/50 border border-slate-700 rounded-xl p-4">
-                <FooterEditor
-                  data={footerSection.data}
-                  onChange={(data) => updateSection(footerSection.id, data)}
-                  themeColors={themeColors}
-                  onSaveDefault={() => {
-                    try {
-                      localStorage.setItem(`${LS_PREFIX}footer`, JSON.stringify(footerSection.data));
-                    } catch (e) {}
-                  }}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Preview Panel */}
-          {showPreview && generatedHtml && (
-            <div className="w-[45%] border-l border-slate-700" data-tour="preview">
-              <PreviewPanel html={generatedHtml} onClose={() => setShowPreview(false)} />
-            </div>
+        {/* Canvas or HTML Preview */}
+        <div className="flex-1 overflow-hidden">
+          {showPreview && generatedHtml ? (
+            <PreviewPanel html={generatedHtml} onClose={() => setShowPreview(false)} />
+          ) : (
+            <BuilderCanvas
+              sections={sections}
+              activeSectionId={activeSectionId}
+              onSelectSection={setActiveSectionId}
+              onMoveSection={moveSection}
+              onDeleteSection={deleteSection}
+              onAddSection={addSectionAtIndex}
+              onUpdateSection={updateSection}
+              themeColors={themeColors}
+              logo={logoUrl || logo}
+              logoHeight={logoHeight}
+            />
           )}
         </div>
       </div>
@@ -729,9 +378,7 @@ const EmailBuilder = () => {
         <OnboardingGuide
           onComplete={() => {
             setShowOnboarding(false);
-            try {
-              localStorage.setItem(`${LS_PREFIX}onboarding-complete`, 'true');
-            } catch (e) {}
+            try { localStorage.setItem(`${LS_PREFIX}onboarding-complete`, 'true'); } catch (e) {}
           }}
         />
       )}

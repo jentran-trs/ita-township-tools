@@ -4,19 +4,16 @@ import EXAMPLE_TEMPLATES from './exampleTemplates';
 import BrandSettings from './BrandSettings';
 
 const SHARED_SECTIONS = [
-  { type: 'greeting', label: 'Greeting', desc: 'Opening greeting with sign-offs', icon: 'G', color: 'emerald' },
   { type: 'contentBody', label: 'Content Body', desc: 'Rich text content block', icon: 'C', color: 'blue' },
   { type: 'image', label: 'Image', desc: 'Image from URL with sizing & shape', icon: 'I', color: 'cyan' },
   { type: 'highlighted', label: 'Highlighted', desc: 'Colored border emphasis block', icon: '!', color: 'amber' },
   { type: 'importantNotice', label: 'Important Notice', desc: 'Yellow notice box', icon: 'i', color: 'yellow' },
-  { type: 'alertBox', label: 'Alert Box', desc: 'Red alert/warning box', icon: '!', color: 'red' },
   { type: 'ctaButton', label: 'CTA Button', desc: 'Call-to-action button with link', icon: 'B', color: 'amber' },
   { type: 'meetingDetails', label: 'Meeting Details', desc: 'Date, time, ID & join link', icon: 'M', color: 'indigo' },
   { type: 'resourceLinks', label: 'Resource Links', desc: 'List of clickable links', icon: 'R', color: 'blue' },
   { type: 'twoColumn', label: 'Two Column', desc: 'Side-by-side content columns', icon: '⫼', color: 'teal' },
   { type: 'list', label: 'List', desc: 'Bullet or numbered list', icon: '≡', color: 'orange' },
-  { type: 'closing', label: 'Closing', desc: 'Closing remarks', icon: '✉', color: 'rose' },
-  { type: 'signature', label: 'Signature', desc: 'Name, title, organization', icon: 'S', color: 'violet' },
+  { type: 'closing', label: 'Closing & Sign-off', desc: 'Closing remarks with signature', icon: '✉', color: 'rose' },
 ];
 
 const NEWSLETTER_SECTIONS = [

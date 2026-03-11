@@ -57,13 +57,15 @@ const CtaButtonSection = ({ data, onChange }) => {
         </div>
       ))}
 
-      <button
-        onClick={addButton}
-        className="flex items-center gap-1.5 text-xs text-amber-500 hover:text-amber-400 transition-colors"
-      >
-        <Plus className="w-3.5 h-3.5" />
-        Add Button
-      </button>
+      {buttons.length < 3 && (
+        <button
+          onClick={addButton}
+          className="flex items-center gap-1.5 text-xs text-amber-500 hover:text-amber-400 transition-colors"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          Add Button (max 3)
+        </button>
+      )}
 
       <div>
         <label className="block text-xs font-medium text-slate-400 mb-1">Helper Text (optional, shown below buttons)</label>

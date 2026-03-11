@@ -1,8 +1,8 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, List, ListOrdered, Palette, Type, ChevronDown } from 'lucide-react';
+import { Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, List, ListOrdered, Palette, Type, ChevronDown, Link2 } from 'lucide-react';
 
 // ─── Inline Editable Plain Text ─────────────────────────────────────────────
-export const EditableText = ({ value, onChange, placeholder, tag: Tag = 'span', className, style, disabled }) => {
+export const EditableText = ({ value, onChange, placeholder, tag: Tag = 'span', className, style }) => {
   const ref = useRef(null);
   const lastValue = useRef(value);
 
@@ -12,14 +12,6 @@ export const EditableText = ({ value, onChange, placeholder, tag: Tag = 'span', 
       lastValue.current = value;
     }
   }, [value]);
-
-  if (disabled) {
-    return (
-      <Tag className={className} style={style}>
-        {value || <span style={{ opacity: 0.4, fontStyle: 'italic' }}>{placeholder}</span>}
-      </Tag>
-    );
-  }
 
   return (
     <Tag
@@ -36,13 +28,12 @@ export const EditableText = ({ value, onChange, placeholder, tag: Tag = 'span', 
       data-placeholder={placeholder}
       className={`outline-none cursor-text inline-editable-text ${className || ''}`}
       style={{ ...style, minWidth: '20px' }}
-      onClick={(e) => e.stopPropagation()}
     />
   );
 };
 
 // ─── Inline Editable Rich Text ──────────────────────────────────────────────
-export const EditableRichText = ({ value, onChange, placeholder, className, style, showToolbar, onFocus }) => {
+export const EditableRichText = ({ value, onChange, placeholder, className, style, onFocus }) => {
   const ref = useRef(null);
   const isInitialized = useRef(false);
 
@@ -74,7 +65,6 @@ export const EditableRichText = ({ value, onChange, placeholder, className, styl
       suppressContentEditableWarning
       onInput={handleInput}
       onFocus={onFocus}
-      onClick={(e) => e.stopPropagation()}
       data-placeholder={placeholder}
       className={`outline-none cursor-text inline-editable-rich ${className || ''}`}
       style={{ minHeight: '1.5em', lineHeight: 1.6, ...style }}
@@ -205,6 +195,16 @@ export const RichTextToolbar = ({ visible }) => {
       </button>
       <button onMouseDown={(e) => { e.preventDefault(); exec('insertOrderedList'); }} className="p-1 text-gray-600 hover:bg-gray-100 rounded">
         <ListOrdered className="w-3.5 h-3.5" />
+      </button>
+
+      <div className="w-px h-5 bg-gray-200 mx-0.5" />
+
+      <button onMouseDown={(e) => {
+        e.preventDefault();
+        const url = prompt('Enter URL:');
+        if (url) exec('createLink', url);
+      }} className="p-1 text-gray-600 hover:bg-gray-100 rounded" title="Insert link">
+        <Link2 className="w-3.5 h-3.5" />
       </button>
     </div>
   );

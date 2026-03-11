@@ -270,15 +270,34 @@ const renderSection = (section, colors) => {
         </tr>`;
     }
 
-    case 'closing':
+    case 'closing': {
+      const hasSignOff = data.signOff || data.name;
       return `
         <tr>
           <td style="padding: 8px 40px;">
             <div style="font-size: 16px; line-height: 1.6; color: #333333; font-family: Arial, sans-serif;">
               ${sanitizeHtmlForEmail(data.content)}
             </div>
+            ${hasSignOff ? `
+            <table cellpadding="0" cellspacing="0" border="0" style="margin-top: 16px;">
+              <tr>
+                <td>
+                  ${data.signOff ? `<p style="margin: 0 0 8px 0; font-size: 16px; color: #333333; font-family: Arial, sans-serif;">${escapeHtml(data.signOff)}</p>` : ''}
+                  <table cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td style="border-left: 3px solid ${c.gold}; padding-left: 15px;">
+                        ${data.name ? `<p style="margin: 0; font-size: 16px; font-weight: bold; color: #333333; font-family: Arial, sans-serif;">${escapeHtml(data.name)}</p>` : ''}
+                        ${data.title ? `<p style="margin: 2px 0 0 0; font-size: 14px; color: #666666; font-family: Arial, sans-serif;">${escapeHtml(data.title)}</p>` : ''}
+                        ${data.org ? `<p style="margin: 2px 0 0 0; font-size: 14px; color: ${c.primary}; font-weight: 600; font-family: Arial, sans-serif;">${escapeHtml(data.org)}</p>` : ''}
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>` : ''}
           </td>
         </tr>`;
+    }
 
     case 'signature':
       return `

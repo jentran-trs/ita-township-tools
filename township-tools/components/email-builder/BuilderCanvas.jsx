@@ -10,20 +10,19 @@ const SECTION_LABELS = {
   newsletterTitle: 'Newsletter Title', featuredArticle: 'Featured Article',
   eventListing: 'Event Listing', newsSection: 'News Section', highlightBanner: 'Highlight Banner',
   memberResources: 'Member Resources', alertBox: 'Alert Box', twoColumn: 'Two Column',
-  list: 'List', greeting: 'Greeting', closing: 'Closing',
+  list: 'List', greeting: 'Greeting', closing: 'Closing & Sign-off',
 };
 
 // ─── Sections that have config panels ───────────────────────────────────────
 const SECTIONS_WITH_CONFIG = new Set([
   'image', 'ctaButton', 'meetingDetails', 'resourceLinks', 'list',
-  'eventListing', 'featuredArticle', 'highlightBanner', 'memberResources', 'greeting',
+  'eventListing', 'featuredArticle', 'highlightBanner', 'memberResources', 'greeting', 'closing',
 ]);
 
 // ─── Inline Section Renderer ────────────────────────────────────────────────
-const InlineSection = ({ section, isEditing, onChange, themeColors, logo, logoHeight, showRichToolbar, onRichFocus }) => {
+const InlineSection = ({ section, onChange, themeColors, logo, logoHeight, onRichFocus }) => {
   const { type, data } = section;
   const c = themeColors;
-  const editing = isEditing;
 
   switch (type) {
     // ── Header ──────────────────────────────────────────────────────────
@@ -40,7 +39,6 @@ const InlineSection = ({ section, isEditing, onChange, themeColors, logo, logoHe
             value={data.title || ''}
             onChange={(v) => onChange({ title: v })}
             placeholder="Email Title"
-            disabled={!editing}
             className="text-xl font-bold text-white m-0 focus:bg-white/10 rounded px-1"
           />
           <EditableText
@@ -48,8 +46,8 @@ const InlineSection = ({ section, isEditing, onChange, themeColors, logo, logoHe
             value={data.subtitle || ''}
             onChange={(v) => onChange({ subtitle: v })}
             placeholder="Subtitle (optional)"
-            disabled={!editing}
-            className="text-sm mt-2 text-white/70 focus:bg-white/10 rounded px-1"
+            className="mt-2 text-white/70 focus:bg-white/10 rounded px-1"
+            style={{ fontSize: '16px', lineHeight: 1.6 }}
           />
         </div>
       );
@@ -68,25 +66,24 @@ const InlineSection = ({ section, isEditing, onChange, themeColors, logo, logoHe
             value={data.name || ''}
             onChange={(v) => onChange({ name: v })}
             placeholder="Newsletter Name"
-            disabled={!editing}
             className="text-xl font-bold text-white m-0 focus:bg-white/10 rounded px-1"
           />
           <div className="flex items-center justify-center gap-2 mt-2 text-xs text-white/60">
             <span>Vol.</span>
-            <EditableText value={data.volume || ''} onChange={(v) => onChange({ volume: v })} placeholder="1" disabled={!editing}
+            <EditableText value={data.volume || ''} onChange={(v) => onChange({ volume: v })} placeholder="1"
               className="focus:bg-white/10 rounded px-1 text-white/60" />
             <span>·</span>
             <span>Issue</span>
-            <EditableText value={data.issue || ''} onChange={(v) => onChange({ issue: v })} placeholder="1" disabled={!editing}
+            <EditableText value={data.issue || ''} onChange={(v) => onChange({ issue: v })} placeholder="1"
               className="focus:bg-white/10 rounded px-1 text-white/60" />
             <span>·</span>
-            <EditableText value={data.date || ''} onChange={(v) => onChange({ date: v })} placeholder="Date" disabled={!editing}
+            <EditableText value={data.date || ''} onChange={(v) => onChange({ date: v })} placeholder="Date"
               className="focus:bg-white/10 rounded px-1 text-white/60" />
           </div>
         </div>
       );
 
-    // ── Greeting ────────────────────────────────────────────────────────
+    // ── Greeting (legacy support) ────────────────────────────────────────
     case 'greeting': {
       const signOffs = data.signOffs || [];
       return (
@@ -96,26 +93,22 @@ const InlineSection = ({ section, isEditing, onChange, themeColors, logo, logoHe
             value={data.greeting || data.text || ''}
             onChange={(v) => onChange({ greeting: v })}
             placeholder="Dear residents..."
-            disabled={!editing}
-            className="font-bold text-sm focus:bg-amber-50 rounded px-1"
-            style={{ color: c.accent }}
+            className="font-bold focus:bg-amber-50 rounded px-1"
+            style={{ color: c.accent, fontSize: '16px', lineHeight: 1.6 }}
           />
-          {editing ? (
-            <EditableRichText
-              value={data.content || ''}
-              onChange={(v) => onChange({ content: v })}
-              placeholder="Write greeting body..."
-              onFocus={onRichFocus}
-              className="text-sm text-gray-600 mt-2 focus:bg-blue-50/50 rounded px-1"
-            />
-          ) : (
-            data.content && <div className="text-sm text-gray-600 mt-2" dangerouslySetInnerHTML={{ __html: data.content }} />
-          )}
+          <EditableRichText
+            value={data.content || ''}
+            onChange={(v) => onChange({ content: v })}
+            placeholder="Write greeting body..."
+            onFocus={onRichFocus}
+            className="text-gray-600 mt-2 focus:bg-blue-50/50 rounded px-1"
+            style={{ fontSize: '16px', lineHeight: 1.6 }}
+          />
           {data.signOffLine && (
-            <p className="text-sm text-gray-800 mt-3">{data.signOffLine}</p>
+            <p className="text-gray-800 mt-3" style={{ fontSize: '16px' }}>{data.signOffLine}</p>
           )}
           {signOffs.filter(s => s.name).map((s, i) => (
-            <p key={i} className="text-sm"><strong className="text-gray-800">{s.name}</strong>{s.title && <span className="text-gray-500">, {s.title}</span>}</p>
+            <p key={i} style={{ fontSize: '16px' }}><strong className="text-gray-800">{s.name}</strong>{s.title && <span className="text-gray-500">, {s.title}</span>}</p>
           ))}
           {data.org && <p className="text-xs italic mt-1" style={{ color: c.primary }}>{data.org}</p>}
         </div>
@@ -126,19 +119,14 @@ const InlineSection = ({ section, isEditing, onChange, themeColors, logo, logoHe
     case 'contentBody':
       return (
         <div className="px-10 py-5 bg-white">
-          {editing ? (
-            <EditableRichText
-              value={data.content || ''}
-              onChange={(v) => onChange({ content: v })}
-              placeholder="Write your main email content here..."
-              onFocus={onRichFocus}
-              className="text-sm text-gray-700 focus:bg-blue-50/50 rounded px-1"
-            />
-          ) : (
-            data.content
-              ? <div className="text-sm text-gray-700" dangerouslySetInnerHTML={{ __html: data.content }} />
-              : <p className="text-sm text-gray-300 italic">Write your main email content here...</p>
-          )}
+          <EditableRichText
+            value={data.content || ''}
+            onChange={(v) => onChange({ content: v })}
+            placeholder="Write your main email content here..."
+            onFocus={onRichFocus}
+            className="text-gray-700 focus:bg-blue-50/50 rounded px-1"
+            style={{ fontSize: '16px', lineHeight: 1.6 }}
+          />
         </div>
       );
 
@@ -170,19 +158,14 @@ const InlineSection = ({ section, isEditing, onChange, themeColors, logo, logoHe
       return (
         <div className="px-10 py-5 bg-white">
           <div className="border-l-4 pl-4 py-2" style={{ borderColor: c.accent }}>
-            {editing ? (
-              <EditableRichText
-                value={data.content || ''}
-                onChange={(v) => onChange({ content: v })}
-                placeholder="Highlighted content..."
-                onFocus={onRichFocus}
-                className="text-sm text-gray-700 focus:bg-amber-50/50 rounded px-1"
-              />
-            ) : (
-              data.content
-                ? <div className="text-sm text-gray-700" dangerouslySetInnerHTML={{ __html: data.content }} />
-                : <p className="text-sm text-gray-300 italic">Highlighted content...</p>
-            )}
+            <EditableRichText
+              value={data.content || ''}
+              onChange={(v) => onChange({ content: v })}
+              placeholder="Highlighted content..."
+              onFocus={onRichFocus}
+              className="text-gray-700 focus:bg-amber-50/50 rounded px-1"
+              style={{ fontSize: '16px', lineHeight: 1.6 }}
+            />
           </div>
         </div>
       );
@@ -197,27 +180,22 @@ const InlineSection = ({ section, isEditing, onChange, themeColors, logo, logoHe
               value={data.title || ''}
               onChange={(v) => onChange({ title: v })}
               placeholder="Important Notice"
-              disabled={!editing}
-              className="text-sm font-bold text-yellow-800 mb-1 focus:bg-yellow-100 rounded px-1"
+              className="font-bold text-yellow-800 mb-1 focus:bg-yellow-100 rounded px-1"
+              style={{ fontSize: '16px' }}
             />
-            {editing ? (
-              <EditableRichText
-                value={data.content || ''}
-                onChange={(v) => onChange({ content: v })}
-                placeholder="Notice content..."
-                onFocus={onRichFocus}
-                className="text-xs text-yellow-700 focus:bg-yellow-100/50 rounded px-1"
-              />
-            ) : (
-              data.content
-                ? <div className="text-xs text-yellow-700" dangerouslySetInnerHTML={{ __html: data.content }} />
-                : <p className="text-xs text-yellow-600/50 italic">Notice content...</p>
-            )}
+            <EditableRichText
+              value={data.content || ''}
+              onChange={(v) => onChange({ content: v })}
+              placeholder="Notice content..."
+              onFocus={onRichFocus}
+              className="text-yellow-700 focus:bg-yellow-100/50 rounded px-1"
+              style={{ fontSize: '16px', lineHeight: 1.6 }}
+            />
           </div>
         </div>
       );
 
-    // ── Alert Box ───────────────────────────────────────────────────────
+    // ── Alert Box (legacy support) ──────────────────────────────────────
     case 'alertBox':
       return (
         <div className="px-10 py-5 bg-white">
@@ -227,22 +205,17 @@ const InlineSection = ({ section, isEditing, onChange, themeColors, logo, logoHe
               value={data.title || ''}
               onChange={(v) => onChange({ title: v })}
               placeholder="Alert"
-              disabled={!editing}
-              className="text-sm font-bold text-red-800 mb-1 focus:bg-red-100 rounded px-1"
+              className="font-bold text-red-800 mb-1 focus:bg-red-100 rounded px-1"
+              style={{ fontSize: '16px' }}
             />
-            {editing ? (
-              <EditableRichText
-                value={data.content || ''}
-                onChange={(v) => onChange({ content: v })}
-                placeholder="Alert content..."
-                onFocus={onRichFocus}
-                className="text-xs text-red-700 focus:bg-red-100/50 rounded px-1"
-              />
-            ) : (
-              data.content
-                ? <div className="text-xs text-red-700" dangerouslySetInnerHTML={{ __html: data.content }} />
-                : <p className="text-xs text-red-600/50 italic">Alert content...</p>
-            )}
+            <EditableRichText
+              value={data.content || ''}
+              onChange={(v) => onChange({ content: v })}
+              placeholder="Alert content..."
+              onFocus={onRichFocus}
+              className="text-red-700 focus:bg-red-100/50 rounded px-1"
+              style={{ fontSize: '16px', lineHeight: 1.6 }}
+            />
           </div>
         </div>
       );
@@ -256,19 +229,15 @@ const InlineSection = ({ section, isEditing, onChange, themeColors, logo, logoHe
             {buttons.map((btn, i) => (
               <span key={i} className="inline-block px-5 py-2.5 text-sm font-bold rounded cursor-text"
                 style={{ backgroundColor: c.gold, color: '#1a1a1a' }}>
-                {editing ? (
-                  <EditableText
-                    value={btn.text || ''}
-                    onChange={(v) => {
-                      const updated = buttons.map((b, j) => j === i ? { ...b, text: v } : b);
-                      onChange({ buttons: updated });
-                    }}
-                    placeholder="Button Text"
-                    className="focus:bg-black/10 rounded px-1"
-                  />
-                ) : (
-                  btn.text || <span className="opacity-50 italic">Button Text</span>
-                )}
+                <EditableText
+                  value={btn.text || ''}
+                  onChange={(v) => {
+                    const updated = buttons.map((b, j) => j === i ? { ...b, text: v } : b);
+                    onChange({ buttons: updated });
+                  }}
+                  placeholder="Button Text"
+                  className="focus:bg-black/10 rounded px-1"
+                />
               </span>
             ))}
           </div>
@@ -286,35 +255,29 @@ const InlineSection = ({ section, isEditing, onChange, themeColors, logo, logoHe
             <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm text-gray-600">
               <div className="flex gap-1">
                 <span className="font-medium text-gray-500">Date:</span>
-                <EditableText value={data.date || ''} onChange={(v) => onChange({ date: v })} placeholder="TBD" disabled={!editing}
+                <EditableText value={data.date || ''} onChange={(v) => onChange({ date: v })} placeholder="TBD"
                   className="focus:bg-blue-50 rounded px-1" />
               </div>
               <div className="flex gap-1">
                 <span className="font-medium text-gray-500">Time:</span>
-                <EditableText value={data.time || ''} onChange={(v) => onChange({ time: v })} placeholder="TBD" disabled={!editing}
+                <EditableText value={data.time || ''} onChange={(v) => onChange({ time: v })} placeholder="TBD"
                   className="focus:bg-blue-50 rounded px-1" />
               </div>
-              {(data.format || editing) && (
-                <div className="flex gap-1 col-span-2">
-                  <span className="font-medium text-gray-500">Format:</span>
-                  <EditableText value={data.format || ''} onChange={(v) => onChange({ format: v })} placeholder="e.g. Zoom" disabled={!editing}
-                    className="focus:bg-blue-50 rounded px-1" />
-                </div>
-              )}
-              {(data.meetingId || editing) && (
-                <div className="flex gap-1">
-                  <span className="font-medium text-gray-500">ID:</span>
-                  <EditableText value={data.meetingId || ''} onChange={(v) => onChange({ meetingId: v })} placeholder="—" disabled={!editing}
-                    className="focus:bg-blue-50 rounded px-1" />
-                </div>
-              )}
-              {(data.passcode || editing) && (
-                <div className="flex gap-1">
-                  <span className="font-medium text-gray-500">Passcode:</span>
-                  <EditableText value={data.passcode || ''} onChange={(v) => onChange({ passcode: v })} placeholder="—" disabled={!editing}
-                    className="focus:bg-blue-50 rounded px-1" />
-                </div>
-              )}
+              <div className="flex gap-1 col-span-2">
+                <span className="font-medium text-gray-500">Format:</span>
+                <EditableText value={data.format || ''} onChange={(v) => onChange({ format: v })} placeholder="e.g. Zoom"
+                  className="focus:bg-blue-50 rounded px-1" />
+              </div>
+              <div className="flex gap-1">
+                <span className="font-medium text-gray-500">ID:</span>
+                <EditableText value={data.meetingId || ''} onChange={(v) => onChange({ meetingId: v })} placeholder="—"
+                  className="focus:bg-blue-50 rounded px-1" />
+              </div>
+              <div className="flex gap-1">
+                <span className="font-medium text-gray-500">Passcode:</span>
+                <EditableText value={data.passcode || ''} onChange={(v) => onChange({ passcode: v })} placeholder="—"
+                  className="focus:bg-blue-50 rounded px-1" />
+              </div>
             </div>
             {(data.buttonText || data.meetingUrl) && (
               <div className="mt-3 text-center">
@@ -337,13 +300,13 @@ const InlineSection = ({ section, isEditing, onChange, themeColors, logo, logoHe
             value={data.heading || ''}
             onChange={(v) => onChange({ heading: v })}
             placeholder="Resources"
-            disabled={!editing}
-            className="text-sm font-bold text-gray-800 mb-2 focus:bg-blue-50 rounded px-1"
+            className="font-bold text-gray-800 mb-2 focus:bg-blue-50 rounded px-1"
+            style={{ fontSize: '16px' }}
           />
           {links.length > 0 ? (
             <ul className="space-y-1">
               {links.map((link, i) => (
-                <li key={i} className="text-sm" style={{ color: c.gold }}>
+                <li key={i} style={{ color: c.gold, fontSize: '16px' }}>
                   → {link.text || link.label || link.url || 'Link'}
                 </li>
               ))}
@@ -361,34 +324,24 @@ const InlineSection = ({ section, isEditing, onChange, themeColors, logo, logoHe
         <div className="px-10 py-5 bg-white">
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-gray-50 border border-gray-200 rounded p-3 min-h-[40px]">
-              {editing ? (
-                <EditableRichText
-                  value={data.leftContent || ''}
-                  onChange={(v) => onChange({ leftContent: v })}
-                  placeholder="Left column content..."
-                  onFocus={onRichFocus}
-                  className="text-sm text-gray-600 focus:bg-blue-50/50 rounded px-1"
-                />
-              ) : (
-                data.leftContent
-                  ? <div className="text-sm text-gray-600" dangerouslySetInnerHTML={{ __html: data.leftContent }} />
-                  : <p className="text-xs text-gray-300 italic text-center">Left column</p>
-              )}
+              <EditableRichText
+                value={data.leftContent || ''}
+                onChange={(v) => onChange({ leftContent: v })}
+                placeholder="Left column content..."
+                onFocus={onRichFocus}
+                className="text-gray-600 focus:bg-blue-50/50 rounded px-1"
+                style={{ fontSize: '16px', lineHeight: 1.6 }}
+              />
             </div>
             <div className="bg-gray-50 border border-gray-200 rounded p-3 min-h-[40px]">
-              {editing ? (
-                <EditableRichText
-                  value={data.rightContent || ''}
-                  onChange={(v) => onChange({ rightContent: v })}
-                  placeholder="Right column content..."
-                  onFocus={onRichFocus}
-                  className="text-sm text-gray-600 focus:bg-blue-50/50 rounded px-1"
-                />
-              ) : (
-                data.rightContent
-                  ? <div className="text-sm text-gray-600" dangerouslySetInnerHTML={{ __html: data.rightContent }} />
-                  : <p className="text-xs text-gray-300 italic text-center">Right column</p>
-              )}
+              <EditableRichText
+                value={data.rightContent || ''}
+                onChange={(v) => onChange({ rightContent: v })}
+                placeholder="Right column content..."
+                onFocus={onRichFocus}
+                className="text-gray-600 focus:bg-blue-50/50 rounded px-1"
+                style={{ fontSize: '16px', lineHeight: 1.6 }}
+              />
             </div>
           </div>
         </div>
@@ -405,17 +358,17 @@ const InlineSection = ({ section, isEditing, onChange, themeColors, logo, logoHe
             value={data.heading || ''}
             onChange={(v) => onChange({ heading: v })}
             placeholder="List Heading"
-            disabled={!editing}
-            className="text-sm font-bold text-gray-800 mb-2 focus:bg-blue-50 rounded px-1"
+            className="font-bold text-gray-800 mb-2 focus:bg-blue-50 rounded px-1"
+            style={{ fontSize: '16px' }}
           />
           {items.length > 0 ? (
             isOrdered ? (
-              <ol className="list-decimal list-inside space-y-0.5">
-                {items.map((item, i) => <li key={i} className="text-sm text-gray-600">{item}</li>)}
+              <ol className="list-decimal list-inside space-y-0.5" style={{ fontSize: '16px', lineHeight: 1.6, color: '#555' }}>
+                {items.map((item, i) => <li key={i}>{item}</li>)}
               </ol>
             ) : (
-              <ul className="list-disc list-inside space-y-0.5">
-                {items.map((item, i) => <li key={i} className="text-sm text-gray-600">{item}</li>)}
+              <ul className="list-disc list-inside space-y-0.5" style={{ fontSize: '16px', lineHeight: 1.6, color: '#555' }}>
+                {items.map((item, i) => <li key={i}>{item}</li>)}
               </ul>
             )
           ) : (
@@ -425,27 +378,32 @@ const InlineSection = ({ section, isEditing, onChange, themeColors, logo, logoHe
       );
     }
 
-    // ── Closing ─────────────────────────────────────────────────────────
+    // ── Closing & Sign-off ──────────────────────────────────────────────
     case 'closing':
       return (
         <div className="px-10 py-5 bg-white">
-          {editing ? (
-            <EditableRichText
-              value={data.content || ''}
-              onChange={(v) => onChange({ content: v })}
-              placeholder="Closing remarks..."
-              onFocus={onRichFocus}
-              className="text-sm text-gray-600 focus:bg-blue-50/50 rounded px-1"
-            />
-          ) : (
-            data.content
-              ? <div className="text-sm text-gray-600" dangerouslySetInnerHTML={{ __html: data.content }} />
-              : <p className="text-sm text-gray-300 italic">Closing remarks...</p>
+          <EditableRichText
+            value={data.content || ''}
+            onChange={(v) => onChange({ content: v })}
+            placeholder="Closing remarks..."
+            onFocus={onRichFocus}
+            className="text-gray-600 focus:bg-blue-50/50 rounded px-1"
+            style={{ fontSize: '16px', lineHeight: 1.6 }}
+          />
+          {(data.signOff || data.name) && (
+            <div className="border-t border-gray-200 mt-3 pt-3">
+              {data.signOff && <p className="text-gray-600 mb-1" style={{ fontSize: '16px' }}>{data.signOff}</p>}
+              <div style={{ borderLeft: `3px solid ${c.gold}`, paddingLeft: '12px' }}>
+                {data.name && <p className="font-bold text-gray-800 m-0" style={{ fontSize: '16px' }}>{data.name}</p>}
+                {data.title && <p className="text-gray-600 mt-0.5 m-0" style={{ fontSize: '14px' }}>{data.title}</p>}
+                {data.org && <p className="mt-0.5 m-0" style={{ color: c.primary, fontSize: '14px', fontWeight: 600 }}>{data.org}</p>}
+              </div>
+            </div>
           )}
         </div>
       );
 
-    // ── Signature ───────────────────────────────────────────────────────
+    // ── Signature (legacy support) ──────────────────────────────────────
     case 'signature':
       return (
         <div className="px-10 py-5 bg-white">
@@ -455,25 +413,24 @@ const InlineSection = ({ section, isEditing, onChange, themeColors, logo, logoHe
               value={data.name || ''}
               onChange={(v) => onChange({ name: v })}
               placeholder="Your Name"
-              disabled={!editing}
-              className="text-sm font-bold text-gray-800 focus:bg-blue-50 rounded px-1"
+              className="font-bold text-gray-800 focus:bg-blue-50 rounded px-1"
+              style={{ fontSize: '16px' }}
             />
             <EditableText
               tag="p"
               value={data.title || ''}
               onChange={(v) => onChange({ title: v })}
               placeholder="Title / Role"
-              disabled={!editing}
-              className="text-xs text-gray-600 mt-0.5 focus:bg-blue-50 rounded px-1"
+              className="text-gray-600 mt-0.5 focus:bg-blue-50 rounded px-1"
+              style={{ fontSize: '14px' }}
             />
             <EditableText
               tag="p"
               value={data.org || ''}
               onChange={(v) => onChange({ org: v })}
               placeholder="Organization"
-              disabled={!editing}
-              className="text-xs mt-0.5 focus:bg-blue-50 rounded px-1"
-              style={{ color: c.primary }}
+              className="mt-0.5 focus:bg-blue-50 rounded px-1"
+              style={{ color: c.primary, fontSize: '14px' }}
             />
           </div>
         </div>
@@ -488,25 +445,24 @@ const InlineSection = ({ section, isEditing, onChange, themeColors, logo, logoHe
             value={data.orgName || ''}
             onChange={(v) => onChange({ orgName: v })}
             placeholder="Organization Name"
-            disabled={!editing}
-            className="text-sm text-white font-medium focus:bg-white/10 rounded px-1"
+            className="text-white font-medium focus:bg-white/10 rounded px-1"
+            style={{ fontSize: '14px' }}
           />
           <EditableText
             tag="p"
             value={data.website || ''}
             onChange={(v) => onChange({ website: v })}
             placeholder="https://yourwebsite.gov"
-            disabled={!editing}
-            className="text-xs mt-1 focus:bg-white/10 rounded px-1"
-            style={{ color: c.gold }}
+            className="mt-1 focus:bg-white/10 rounded px-1"
+            style={{ color: c.gold, fontSize: '13px' }}
           />
           <EditableText
             tag="p"
             value={data.tagline || ''}
             onChange={(v) => onChange({ tagline: v })}
             placeholder="Tagline (optional)"
-            disabled={!editing}
-            className="text-xs mt-1 text-white/50 focus:bg-white/10 rounded px-1"
+            className="mt-1 text-white/50 focus:bg-white/10 rounded px-1"
+            style={{ fontSize: '12px' }}
           />
         </div>
       );
@@ -521,16 +477,16 @@ const InlineSection = ({ section, isEditing, onChange, themeColors, logo, logoHe
               value={data.headline || ''}
               onChange={(v) => onChange({ headline: v })}
               placeholder="Featured Article Headline"
-              disabled={!editing}
-              className="text-sm font-bold text-gray-800 focus:bg-amber-50 rounded px-1"
+              className="font-bold text-gray-800 focus:bg-amber-50 rounded px-1"
+              style={{ fontSize: '16px' }}
             />
             <EditableText
               tag="p"
               value={data.summary || ''}
               onChange={(v) => onChange({ summary: v })}
               placeholder="Article summary..."
-              disabled={!editing}
-              className="text-xs text-gray-600 mt-1 focus:bg-amber-50 rounded px-1"
+              className="text-gray-600 mt-1 focus:bg-amber-50 rounded px-1"
+              style={{ fontSize: '16px', lineHeight: 1.6 }}
             />
             {data.ctaText && (
               <span className="inline-block mt-2 px-3 py-1.5 text-xs font-bold rounded" style={{ backgroundColor: c.gold, color: '#1a1a1a' }}>
@@ -550,23 +506,17 @@ const InlineSection = ({ section, isEditing, onChange, themeColors, logo, logoHe
             value={data.heading || ''}
             onChange={(v) => onChange({ heading: v })}
             placeholder="News Section Heading"
-            disabled={!editing}
-            className="text-sm font-bold mb-2 focus:bg-blue-50 rounded px-1"
-            style={{ color: c.primary }}
+            className="font-bold mb-2 focus:bg-blue-50 rounded px-1"
+            style={{ color: c.primary, fontSize: '16px' }}
           />
-          {editing ? (
-            <EditableRichText
-              value={data.content || ''}
-              onChange={(v) => onChange({ content: v })}
-              placeholder="News content..."
-              onFocus={onRichFocus}
-              className="text-sm text-gray-600 focus:bg-blue-50/50 rounded px-1"
-            />
-          ) : (
-            data.content
-              ? <div className="text-sm text-gray-600" dangerouslySetInnerHTML={{ __html: data.content }} />
-              : <p className="text-xs text-gray-300 italic">News content...</p>
-          )}
+          <EditableRichText
+            value={data.content || ''}
+            onChange={(v) => onChange({ content: v })}
+            placeholder="News content..."
+            onFocus={onRichFocus}
+            className="text-gray-600 focus:bg-blue-50/50 rounded px-1"
+            style={{ fontSize: '16px', lineHeight: 1.6 }}
+          />
         </div>
       );
 
@@ -580,14 +530,14 @@ const InlineSection = ({ section, isEditing, onChange, themeColors, logo, logoHe
             value={data.heading || ''}
             onChange={(v) => onChange({ heading: v })}
             placeholder="Upcoming Events"
-            disabled={!editing}
-            className="text-sm font-bold text-gray-800 mb-2 focus:bg-blue-50 rounded px-1"
+            className="font-bold text-gray-800 mb-2 focus:bg-blue-50 rounded px-1"
+            style={{ fontSize: '16px' }}
           />
           {events.length > 0 ? (
             <div className="space-y-2">
               {events.map((evt, i) => (
                 <div key={i} className="bg-gray-50 border border-gray-200 rounded p-3">
-                  <p className="text-sm font-bold text-gray-800">{evt.name || 'Event'}</p>
+                  <p className="font-bold text-gray-800" style={{ fontSize: '16px' }}>{evt.name || 'Event'}</p>
                   <p className="text-xs text-gray-500">{evt.date || 'Date TBD'} {evt.time && `· ${evt.time}`}</p>
                   {evt.location && <p className="text-xs text-gray-500">{evt.location}</p>}
                 </div>
@@ -610,16 +560,16 @@ const InlineSection = ({ section, isEditing, onChange, themeColors, logo, logoHe
               value={data.heading || ''}
               onChange={(v) => onChange({ heading: v })}
               placeholder="Banner Heading"
-              disabled={!editing}
-              className="text-sm font-bold text-white focus:bg-white/10 rounded px-1"
+              className="font-bold text-white focus:bg-white/10 rounded px-1"
+              style={{ fontSize: '16px' }}
             />
             <EditableText
               tag="p"
               value={data.subtext || ''}
               onChange={(v) => onChange({ subtext: v })}
               placeholder="Subtext (optional)"
-              disabled={!editing}
-              className="text-xs text-white/70 mt-1 focus:bg-white/10 rounded px-1"
+              className="text-white/70 mt-1 focus:bg-white/10 rounded px-1"
+              style={{ fontSize: '14px' }}
             />
             {data.ctaText && (
               <span className="inline-block mt-3 px-4 py-1.5 text-xs font-bold rounded text-slate-900" style={{ backgroundColor: c.gold }}>
@@ -640,13 +590,13 @@ const InlineSection = ({ section, isEditing, onChange, themeColors, logo, logoHe
             value={data.heading || ''}
             onChange={(v) => onChange({ heading: v })}
             placeholder="Member Resources"
-            disabled={!editing}
-            className="text-sm font-bold text-gray-800 mb-2 focus:bg-blue-50 rounded px-1"
+            className="font-bold text-gray-800 mb-2 focus:bg-blue-50 rounded px-1"
+            style={{ fontSize: '16px' }}
           />
           {resources.length > 0 ? (
             <ul className="space-y-1">
               {resources.map((r, i) => (
-                <li key={i} className="text-sm" style={{ color: c.primary }}>• {r.label || r.url || 'Resource'}</li>
+                <li key={i} style={{ color: c.primary, fontSize: '16px' }}>• {r.label || r.url || 'Resource'}</li>
               ))}
             </ul>
           ) : (
@@ -729,10 +679,12 @@ const SectionConfigPanel = ({ section, onChange, themeColors }) => {
             </div>
           ))}
           <div className="flex items-center gap-2">
+            {buttons.length < 3 && (
             <button onClick={(e) => { e.stopPropagation(); onChange({ buttons: [...buttons, { text: '', url: '' }] }); }}
               className="flex items-center gap-1 text-[10px] text-amber-600 hover:text-amber-700 font-medium">
               <Plus className="w-3 h-3" /> Add Button
             </button>
+            )}
           </div>
           <ConfigInput label="Helper Text (below buttons)" value={data.helperText} onChange={(v) => onChange({ helperText: v })} placeholder="Optional helper text" />
         </div>
@@ -910,6 +862,18 @@ const SectionConfigPanel = ({ section, onChange, themeColors }) => {
       );
     }
 
+    case 'closing':
+      return (
+        <div className="space-y-2">
+          <ConfigInput label="Sign-off Line" value={data.signOff} onChange={(v) => onChange({ signOff: v })} placeholder="e.g. Sincerely," />
+          <ConfigInput label="Name" value={data.name} onChange={(v) => onChange({ name: v })} placeholder="Full name" />
+          <div className="grid grid-cols-2 gap-2">
+            <ConfigInput label="Title / Role" value={data.title} onChange={(v) => onChange({ title: v })} placeholder="Title" />
+            <ConfigInput label="Organization" value={data.org} onChange={(v) => onChange({ org: v })} placeholder="Organization" />
+          </div>
+        </div>
+      );
+
     default:
       return null;
   }
@@ -1000,9 +964,14 @@ const BuilderCanvas = ({
 
   const handleSelectSection = useCallback((id) => {
     onSelectSection(id);
-    // If selecting a new section, close config of previous
-    if (showConfig && showConfig !== id) setShowConfig(null);
-  }, [onSelectSection, showConfig]);
+    // Auto-open config panel for sections that have one
+    const section = sections.find(s => s.id === id);
+    if (section && SECTIONS_WITH_CONFIG.has(section.type)) {
+      setShowConfig(id);
+    } else {
+      setShowConfig(null);
+    }
+  }, [onSelectSection, sections]);
 
   const toggleConfig = useCallback((id, e) => {
     e.stopPropagation();
@@ -1035,6 +1004,7 @@ const BuilderCanvas = ({
         .inline-editable-rich b, .inline-editable-rich strong { font-weight: bold; }
         .inline-editable-rich i, .inline-editable-rich em { font-style: italic; }
         .inline-editable-rich u { text-decoration: underline; }
+        .inline-editable-rich a { color: #2563eb; text-decoration: underline; cursor: pointer; }
       `}</style>
 
       <div className="max-w-[620px] mx-auto my-8">
@@ -1138,16 +1108,14 @@ const BuilderCanvas = ({
                   {/* Inline-editable section preview */}
                   <InlineSection
                     section={section}
-                    isEditing={isActive}
                     onChange={(newData) => onUpdateSection(section.id, newData)}
                     themeColors={themeColors}
                     logo={logo}
                     logoHeight={logoHeight}
-                    showRichToolbar={richToolbarVisible}
                     onRichFocus={() => setRichToolbarVisible(true)}
                   />
 
-                  {/* Config panel */}
+                  {/* Config panel - auto-opens on section click */}
                   {isActive && isConfigOpen && hasConfig && (
                     <ConfigPanel visible>
                       <SectionConfigPanel

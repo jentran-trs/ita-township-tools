@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Eye, Copy, Check, RotateCw, X, Save, Plus, HelpCircle } from 'lucide-react';
+import { Eye, Copy, Check, RotateCw, X, Save, Plus, HelpCircle, Pencil } from 'lucide-react';
 import SectionCatalog from './SectionCatalog';
 import BuilderCanvas from './BuilderCanvas';
 import PreviewPanel from './PreviewPanel';
@@ -333,11 +333,19 @@ const EmailBuilder = () => {
               </button>
             )}
             <div className="w-px h-5 bg-slate-700" />
-            <button onClick={handleGenerate}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 text-slate-900 rounded-lg font-medium hover:bg-amber-400 transition-colors text-xs">
-              {hasGenerated ? <RotateCw className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-              {hasGenerated ? 'Regenerate' : 'Preview HTML'}
-            </button>
+            {showPreview ? (
+              <button onClick={() => setShowPreview(false)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-400 transition-colors text-xs">
+                <Pencil className="w-3.5 h-3.5" />
+                Edit
+              </button>
+            ) : (
+              <button onClick={handleGenerate}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 text-slate-900 rounded-lg font-medium hover:bg-amber-400 transition-colors text-xs">
+                <Eye className="w-3.5 h-3.5" />
+                Preview
+              </button>
+            )}
             {generatedHtml && (
               <button onClick={handleCopy}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-500 transition-colors text-xs">

@@ -26,7 +26,7 @@ const QUESTIONS = [
     description: <>Did your township provide township assistance in 2023 <span className="underline font-bold">OR</span> 2024?</>,
     options: [
       { value: 0, label: 'Yes — Provided assistance in at least one year', hint: '0 points.' },
-      { value: 2, label: <>No — <span className="underline font-bold">NO</span> assistance in 2023 <span className="underline font-bold">OR</span> 2024</>, hint: '2 points.' },
+      { value: 2, label: <>No — <span className="underline font-bold">NO</span> assistance in 2023 <span className="underline font-bold">AND</span> 2024</>, hint: '2 points.' },
     ],
   },
   {

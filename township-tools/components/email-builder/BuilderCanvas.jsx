@@ -533,13 +533,22 @@ const InlineSection = ({ section, onChange, themeColors, logo, logoHeight, onRic
             className="font-bold text-gray-800 mb-2 focus:bg-blue-50 rounded px-1"
             style={{ fontSize: '16px' }}
           />
-          {events.length > 0 ? (
+          {events.filter(e => e.title).length > 0 ? (
             <div className="space-y-2">
-              {events.map((evt, i) => (
-                <div key={i} className="bg-gray-50 border border-gray-200 rounded p-3">
-                  <p className="font-bold text-gray-800" style={{ fontSize: '16px' }}>{evt.name || 'Event'}</p>
-                  <p className="text-xs text-gray-500">{evt.date || 'Date TBD'} {evt.time && `· ${evt.time}`}</p>
-                  {evt.location && <p className="text-xs text-gray-500">{evt.location}</p>}
+              {events.filter(e => e.title).map((evt, i) => (
+                <div key={i} className="flex gap-3 items-start">
+                  {evt.date && (
+                    <div className="flex-shrink-0 text-center text-white text-xs font-bold rounded px-2 py-2" style={{ backgroundColor: c.primary, minWidth: '70px', lineHeight: 1.3 }}>
+                      {evt.date}
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <p className="font-bold text-gray-800" style={{ fontSize: '16px' }}>{evt.title}</p>
+                    {evt.startTime && <p className="text-xs text-gray-500">{evt.startTime}{evt.endTime ? ` – ${evt.endTime}` : ''}</p>}
+                    {evt.location && <p className="text-xs text-gray-500">{evt.location}</p>}
+                    {evt.description && <p className="text-gray-600 mt-1" style={{ fontSize: '14px' }}>{evt.description}</p>}
+                    {evt.link && <a href={evt.link} className="text-xs font-semibold mt-1 inline-block" style={{ color: c.gold }}>Learn more →</a>}
+                  </div>
                 </div>
               ))}
             </div>
@@ -788,11 +797,26 @@ const SectionConfigPanel = ({ section, onChange, themeColors }) => {
     }
 
     case 'eventListing': {
-      const events = data.events || [{ name: '', date: '', time: '', location: '' }];
+      const events = data.events || [{ title: '', calendarDate: '', startTime: '', endTime: '', date: '', description: '', location: '', recurrence: 'one-time', link: '' }];
+      const formatDisplayDate = (isoDate) => {
+        if (!isoDate) return '';
+        const [y, m, d] = isoDate.split('-').map(Number);
+        const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        return `${months[m - 1]} ${d}, ${y}`;
+      };
+      const updateEvt = (i, field, value) => {
+        const updated = events.map((e, j) => {
+          if (j !== i) return e;
+          const patch = { [field]: value };
+          if (field === 'calendarDate' && value) patch.date = formatDisplayDate(value);
+          return { ...e, ...patch };
+        });
+        onChange({ events: updated });
+      };
       return (
         <div className="space-y-2">
           {events.map((evt, i) => (
-            <div key={i} className="p-2 bg-white border border-gray-200 rounded space-y-1">
+            <div key={i} className="p-2 bg-white border border-gray-200 rounded space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-medium text-gray-400">Event {i + 1}</span>
                 {events.length > 1 && (
@@ -800,19 +824,51 @@ const SectionConfigPanel = ({ section, onChange, themeColors }) => {
                     className="p-0.5 text-red-400 hover:text-red-600"><X className="w-3 h-3" /></button>
                 )}
               </div>
-              <div className="grid grid-cols-2 gap-1">
-                <ConfigInput label="Name" value={evt.name} placeholder="Event name"
-                  onChange={(v) => { const u = events.map((e, j) => j === i ? { ...e, name: v } : e); onChange({ events: u }); }} />
-                <ConfigInput label="Date" value={evt.date} placeholder="Date"
-                  onChange={(v) => { const u = events.map((e, j) => j === i ? { ...e, date: v } : e); onChange({ events: u }); }} />
-                <ConfigInput label="Time" value={evt.time} placeholder="Time"
-                  onChange={(v) => { const u = events.map((e, j) => j === i ? { ...e, time: v } : e); onChange({ events: u }); }} />
-                <ConfigInput label="Location" value={evt.location} placeholder="Location"
-                  onChange={(v) => { const u = events.map((e, j) => j === i ? { ...e, location: v } : e); onChange({ events: u }); }} />
+              <ConfigInput label="Event Title" value={evt.title} placeholder="e.g. Annual Spring Clean-Up"
+                onChange={(v) => updateEvt(i, 'title', v)} />
+              <div className="grid grid-cols-3 gap-1">
+                <div>
+                  <label className="block text-[10px] font-medium text-gray-400 mb-0.5">Date</label>
+                  <input type="date" value={evt.calendarDate || ''} onChange={(e) => updateEvt(i, 'calendarDate', e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-gray-800 text-xs focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-medium text-gray-400 mb-0.5">Start Time</label>
+                  <input type="time" value={evt.startTime || ''} onChange={(e) => updateEvt(i, 'startTime', e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-gray-800 text-xs focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-medium text-gray-400 mb-0.5">End Time</label>
+                  <input type="time" value={evt.endTime || ''} onChange={(e) => updateEvt(i, 'endTime', e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-gray-800 text-xs focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30" />
+                </div>
               </div>
+              <ConfigInput label="Location (optional)" value={evt.location} placeholder="e.g. Town Hall, 123 Main St"
+                onChange={(v) => updateEvt(i, 'location', v)} />
+              <div>
+                <label className="block text-[10px] font-medium text-gray-400 mb-0.5">Recurrence</label>
+                <select value={evt.recurrence || 'one-time'} onChange={(e) => updateEvt(i, 'recurrence', e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-gray-800 text-xs focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30">
+                  <option value="one-time">One-time event</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="biweekly">Every 2 weeks</option>
+                  <option value="monthly">Monthly</option>
+                </select>
+              </div>
+              <ConfigInput label="Description (optional)" value={evt.description} placeholder="Brief event description"
+                onChange={(v) => updateEvt(i, 'description', v)} />
+              <ConfigInput label="Link URL (optional)" value={evt.link} placeholder="https://..."
+                onChange={(v) => updateEvt(i, 'link', v)} />
+              {evt.calendarDate && evt.startTime && (
+                <p className="text-[10px] text-emerald-600">Calendar links will be auto-generated in preview.</p>
+              )}
             </div>
           ))}
-          <button onClick={(e) => { e.stopPropagation(); onChange({ events: [...events, { name: '', date: '', time: '', location: '' }] }); }}
+          <button onClick={(e) => { e.stopPropagation(); onChange({ events: [...events, { title: '', calendarDate: '', startTime: '', endTime: '', date: '', description: '', location: '', recurrence: 'one-time', link: '' }] }); }}
             className="flex items-center gap-1 text-[10px] text-amber-600 hover:text-amber-700 font-medium">
             <Plus className="w-3 h-3" /> Add Event
           </button>

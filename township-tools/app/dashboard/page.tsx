@@ -96,6 +96,40 @@ export default function Dashboard() {
 
             {/* Tools Grid */}
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-12">
+              {/* SB 270 Scoring Tool — visible to everyone */}
+              <div
+                onClick={() => router.push("/tools/scoring-tool")}
+                className="bg-slate-800 border border-slate-700 rounded-xl p-5 sm:p-6 hover:border-amber-500/50 transition-colors cursor-pointer group"
+              >
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-500/20 rounded-lg flex items-center justify-center mb-3 sm:mb-4 group-hover:bg-purple-500/30 transition-colors">
+                  <ClipboardCheck className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500" />
+                </div>
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-2">SB 270 Scoring Tool</h3>
+                <p className="text-sm sm:text-base text-slate-300 mb-3 sm:mb-4">
+                  Self-score your township under SB 270 to determine Designated or Recipient status.
+                </p>
+                <div className="flex items-center text-purple-500 font-medium text-sm sm:text-base">
+                  Open Tool <ArrowRight className="w-4 h-4 ml-2" />
+                </div>
+              </div>
+
+              {/* Verify Your Township Contacts — public reviewer flow, visible to everyone */}
+              <div
+                onClick={() => router.push("/verify-contacts")}
+                className="bg-slate-800 border border-slate-700 rounded-xl p-5 sm:p-6 hover:border-amber-500/50 transition-colors cursor-pointer group"
+              >
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-rose-500/20 rounded-lg flex items-center justify-center mb-3 sm:mb-4 group-hover:bg-rose-500/30 transition-colors">
+                  <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-rose-500" />
+                </div>
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Verify Your Township Contacts</h3>
+                <p className="text-sm sm:text-base text-slate-300 mb-3 sm:mb-4">
+                  Quickly review and update your township&apos;s officials, addresses, and emails so we can keep records accurate.
+                </p>
+                <div className="flex items-center text-rose-500 font-medium text-sm sm:text-base">
+                  Start Reviewing <ArrowRight className="w-4 h-4 ml-2" />
+                </div>
+              </div>
+
               {/* Annual Report Builder - Admin Only */}
               {isAdmin && (
                 <div
@@ -153,25 +187,6 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Verify Your Township Contacts - public reviewer flow, visible to everyone */}
-              <div
-                onClick={() => router.push("/verify-contacts")}
-                className="bg-slate-800 border border-slate-700 rounded-xl p-5 sm:p-6 hover:border-amber-500/50 transition-colors cursor-pointer group"
-              >
-                <div className="flex items-center justify-between mb-3 sm:mb-4">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-rose-500/20 rounded-lg flex items-center justify-center group-hover:bg-rose-500/30 transition-colors">
-                    <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-rose-500" />
-                  </div>
-                </div>
-                <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Verify Your Township Contacts</h3>
-                <p className="text-sm sm:text-base text-slate-300 mb-3 sm:mb-4">
-                  Quickly review and update your township&apos;s officials, addresses, and emails so we can keep records accurate.
-                </p>
-                <div className="flex items-center text-rose-500 font-medium text-sm sm:text-base">
-                  Start Reviewing <ArrowRight className="w-4 h-4 ml-2" />
-                </div>
-              </div>
-
               {/* Contact Verification — superadmin only (gated by password cookie) */}
               {isSuperadmin && (
                 <div
@@ -196,22 +211,6 @@ export default function Dashboard() {
                 </div>
               )}
 
-              {/* SB 270 Scoring Tool */}
-              <div
-                onClick={() => router.push("/tools/scoring-tool")}
-                className="bg-slate-800 border border-slate-700 rounded-xl p-5 sm:p-6 hover:border-amber-500/50 transition-colors cursor-pointer group"
-              >
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-500/20 rounded-lg flex items-center justify-center mb-3 sm:mb-4 group-hover:bg-purple-500/30 transition-colors">
-                  <ClipboardCheck className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500" />
-                </div>
-                <h3 className="text-lg sm:text-xl font-bold text-white mb-2">SB 270 Scoring Tool</h3>
-                <p className="text-sm sm:text-base text-slate-300 mb-3 sm:mb-4">
-                  Self-score your township under SB 270 to determine Designated or Recipient status.
-                </p>
-                <div className="flex items-center text-purple-500 font-medium text-sm sm:text-base">
-                  Open Tool <ArrowRight className="w-4 h-4 ml-2" />
-                </div>
-              </div>
             </div>
 
             {/* Organization Management - Admin only */}

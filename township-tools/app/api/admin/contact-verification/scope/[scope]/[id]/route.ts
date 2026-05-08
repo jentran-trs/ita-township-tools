@@ -56,7 +56,10 @@ export async function GET(
   // Recent edits for this scope
   let auditQuery = supabase
     .from('cv_audit_log')
-    .select('id, action, created_at, reviewer_name, reviewer_email, township_id, contact_id, before, after')
+    .select(
+      `id, action, created_at, reviewer_name, reviewer_email, township_id, contact_id, before, after,
+       cv_townships:township_id ( name, cv_counties:county_id ( name ) )`
+    )
     .order('created_at', { ascending: false })
     .limit(50);
 

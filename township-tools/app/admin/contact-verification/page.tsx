@@ -283,8 +283,17 @@ export default function ContactVerificationAdminPage() {
                         {r.contact_reviewed}/{r.contact_total} contacts reviewed
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-wrap justify-end">
                       <ProgressBar percent={pct(r.township_completed, r.township_total)} />
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/admin/contact-verification/region/${r.id}`);
+                        }}
+                        className="flex items-center gap-1 text-xs font-medium text-gray-700 px-2 py-1 border border-gray-300 rounded-md hover:bg-gray-50"
+                      >
+                        Open region
+                      </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();

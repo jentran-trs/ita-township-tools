@@ -679,14 +679,14 @@ export default function VerifyTownshipPage() {
               <div className="min-w-0 flex-1 text-base text-gray-800 space-y-2">
                 <div>
                   <span className="text-gray-500">Street:</span>{" "}
-                  {township?.street_address || <span className="text-gray-400">not on file</span>}
+                  {township?.street_address || <span className="text-gray-500 italic">not on file</span>}
                 </div>
                 <div>
                   <span className="text-gray-500">Mailing:</span>{" "}
-                  {township?.mailing_address || <span className="text-gray-400">not on file</span>}
+                  {township?.mailing_address || <span className="text-gray-500 italic">not on file</span>}
                 </div>
                 {township?.address_reviewed_by_name && !addressUnreviewed && (
-                  <div className="text-sm text-gray-400 pt-1">
+                  <div className="text-sm text-gray-600 pt-1">
                     Reviewed by {township.address_reviewed_by_name}
                   </div>
                 )}
@@ -792,7 +792,7 @@ export default function VerifyTownshipPage() {
                 className={`border rounded-md ${cardBg} ${
                   view === "wizard" ? "p-6 sm:p-8 shadow-sm " + wizardAnim : "p-4"
                 } transition-opacity ${
-                  view === "summary" && isReviewed ? "opacity-75 hover:opacity-100" : ""
+                  view === "summary" && isReviewed ? "opacity-90 hover:opacity-100" : ""
                 }`}
               >
                 {!isEditing ? (
@@ -807,18 +807,18 @@ export default function VerifyTownshipPage() {
                       {c.title && <div className="text-base text-gray-700 mt-1">{c.title}</div>}
                       <div
                         className={`text-base mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 break-all ${
-                          c.review_status === "needs_removal" ? "text-gray-400 line-through" : "text-gray-700"
+                          c.review_status === "needs_removal" ? "text-gray-500 line-through" : "text-gray-700"
                         }`}
                       >
                         <span>
-                          {c.email || <span className="text-gray-400">no email</span>}
+                          {c.email || <span className="text-gray-500 italic">no email</span>}
                         </span>
                         {c.email && c.email_status && <EmailStatusPill status={c.email_status} />}
                         {c.phone ? (
                           <span className="text-gray-500">· {c.phone}</span>
                         ) : (
                           <span
-                            className="text-gray-400 italic"
+                            className="text-gray-500 italic"
                             title="No phone number on file. Adding one opts this contact in for SMS updates from ITA."
                           >
                             · no phone on file
@@ -832,7 +832,7 @@ export default function VerifyTownshipPage() {
                         </div>
                       )}
                       {c.reviewed_by_name && c.review_status !== "unreviewed" && (
-                        <div className="text-sm text-gray-400 mt-1">
+                        <div className="text-sm text-gray-600 mt-1">
                           Reviewed by {c.reviewed_by_name}
                         </div>
                       )}
@@ -1028,7 +1028,7 @@ export default function VerifyTownshipPage() {
             </p>
             <label className="block mb-4">
               <span className="block text-sm font-medium text-gray-700 mb-1">
-                Anything we should know? <span className="text-gray-400">(optional)</span>
+                Anything we should know? <span className="text-gray-500">(optional)</span>
               </span>
               <textarea
                 rows={3}

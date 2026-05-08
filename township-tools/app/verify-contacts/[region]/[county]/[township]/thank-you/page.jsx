@@ -95,7 +95,7 @@ export default function ThankYouPage() {
 
           {/* Actions */}
           <div className="px-6 sm:px-8 pb-8 sm:pb-10">
-            <div className="text-xs uppercase tracking-wide font-semibold text-gray-400 text-center mb-3">
+            <div className="text-xs uppercase tracking-wide font-semibold text-gray-500 text-center mb-3">
               What&apos;s next?
             </div>
             <div className="flex flex-col gap-3">
@@ -118,7 +118,7 @@ export default function ThankYouPage() {
                       <div className="text-sm text-gray-500 mt-0.5">{a.description}</div>
                     </div>
                     <ArrowRight
-                      className={`w-5 h-5 text-gray-300 flex-shrink-0 transition-all ${cls.arrow} group-hover:translate-x-1`}
+                      className={`w-5 h-5 text-gray-500 flex-shrink-0 transition-all ${cls.arrow} group-hover:translate-x-1`}
                     />
                   </button>
                 );

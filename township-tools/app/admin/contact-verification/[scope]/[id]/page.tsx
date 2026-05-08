@@ -30,6 +30,7 @@ type Audit = {
   contact_id: string | null;
   before: any;
   after: any;
+  cv_townships?: { name: string; cv_counties?: { name: string } } | null;
 };
 
 type Contact = {
@@ -50,8 +51,7 @@ type Contact = {
   township_id: string;
 };
 
-const FILTER_OPTIONS: { value: string; label: string }[] = [
-  { value: "all", label: "All" },
+const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: "unreviewed", label: "Unreviewed" },
   { value: "no_change", label: "No change" },
   { value: "updated", label: "Updated" },
@@ -76,7 +76,8 @@ export default function DrillDownPage() {
   const [verificationDeadline, setVerificationDeadline] = useState<string | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<string>("all");
+  const [statusFilters, setStatusFilters] = useState<Set<string>>(new Set());
+  const [townshipFilters, setTownshipFilters] = useState<Set<string>>(new Set());
   const [activityFilter, setActivityFilter] = useState<"all" | "since_visit" | "since_deadline">("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [exporting, setExporting] = useState(false);
@@ -116,15 +117,42 @@ export default function DrillDownPage() {
   };
 
   const filteredContacts = useMemo(() => {
-    if (filter === "all") return contacts;
-    return contacts.filter((c) => c.review_status === filter);
-  }, [contacts, filter]);
+    return contacts.filter((c) => {
+      if (statusFilters.size > 0 && !statusFilters.has(c.review_status)) return false;
+      if (townshipFilters.size > 0 && !townshipFilters.has(c.township_id)) return false;
+      return true;
+    });
+  }, [contacts, statusFilters, townshipFilters]);
 
-  const filterCounts = useMemo(() => {
-    const map: Record<string, number> = { all: contacts.length };
+  const statusCounts = useMemo(() => {
+    const map: Record<string, number> = {};
     for (const c of contacts) map[c.review_status] = (map[c.review_status] || 0) + 1;
     return map;
   }, [contacts]);
+
+  const townshipOptions = useMemo(() => {
+    const seen = new Map<string, { id: string; name: string; count: number }>();
+    for (const c of contacts) {
+      if (!c.township_id) continue;
+      const existing = seen.get(c.township_id);
+      if (existing) existing.count += 1;
+      else seen.set(c.township_id, { id: c.township_id, name: c.township_name, count: 1 });
+    }
+    return Array.from(seen.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [contacts]);
+
+  const toggleStatus = (v: string) => {
+    const next = new Set(statusFilters);
+    if (next.has(v)) next.delete(v);
+    else next.add(v);
+    setStatusFilters(next);
+  };
+  const toggleTownship = (id: string) => {
+    const next = new Set(townshipFilters);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setTownshipFilters(next);
+  };
 
   const allFilteredSelected =
     filteredContacts.length > 0 && filteredContacts.every((c) => selected.has(c.id));
@@ -262,6 +290,10 @@ export default function DrillDownPage() {
           </div>
         </div>
 
+        {scope === "region" && stats[0]?.region_id && (
+          <DangerZone regionId={id} regionName={stats[0]?.region_name || ""} />
+        )}
+
         <div className="bg-white border border-gray-200 rounded-lg overflow-hidden mb-8">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-left text-gray-500">
@@ -288,7 +320,7 @@ export default function DrillDownPage() {
                   <td className="px-4 py-2 text-right text-gray-700">{s.contact_reviewed}</td>
                   <td className="px-4 py-2 text-right text-gray-700">{s.contact_total}</td>
                   <td className="px-4 py-2">
-                    <div className="flex items-center justify-end gap-2">
+                    <div className="flex items-center justify-end gap-2 flex-wrap">
                       {s.region_slug && s.county_slug && s.township_slug && (
                         <a
                           href={`/verify-contacts/${s.region_slug}/${s.county_slug}/${s.township_slug}?from=admin&scope=${scope}&id=${id}`}
@@ -297,6 +329,12 @@ export default function DrillDownPage() {
                           <ExternalLink className="w-3 h-3" /> View list
                         </a>
                       )}
+                      <a
+                        href={`/api/admin/contact-verification/export?scope=township&id=${s.township_id}&format=xlsx&variant=${detailed ? "detailed" : "simple"}`}
+                        className="flex items-center gap-1 text-xs font-medium text-gray-700 px-2 py-1 border border-gray-300 rounded-md hover:bg-gray-50"
+                      >
+                        <Download className="w-3 h-3" /> Export
+                      </a>
                       {s.township_status === "completed" && (
                         <button
                           onClick={() => reopen(s.township_id)}
@@ -344,26 +382,84 @@ export default function DrillDownPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 mb-3 flex-wrap">
-          <span className="flex items-center gap-1 text-xs text-gray-500">
-            <Filter className="w-3 h-3" /> Filter:
-          </span>
-          {FILTER_OPTIONS.map((f) => (
-            <button
-              key={f.value}
-              onClick={() => setFilter(f.value)}
-              className={`text-xs px-2.5 py-1 rounded-full border ${
-                filter === f.value
-                  ? "bg-gray-900 text-white border-gray-900"
-                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-              }`}
-            >
-              {f.label}
-              {filterCounts[f.value] !== undefined && (
-                <span className="ml-1 opacity-70">({filterCounts[f.value]})</span>
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4 mb-3 space-y-3">
+          {townshipOptions.length > 1 && (
+            <div className="flex items-start gap-2 flex-wrap">
+              <span className="flex items-center gap-1 text-xs font-medium text-gray-600 mt-1">
+                <Filter className="w-3 h-3" /> Townships:
+              </span>
+              {townshipOptions.map((t) => {
+                const active = townshipFilters.has(t.id);
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => toggleTownship(t.id)}
+                    className={`text-xs px-2.5 py-1 rounded-full border ${
+                      active
+                        ? "bg-gray-900 text-white border-gray-900"
+                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    {t.name} <span className="opacity-70">({t.count})</span>
+                  </button>
+                );
+              })}
+              {townshipFilters.size > 0 && (
+                <button
+                  onClick={() => setTownshipFilters(new Set())}
+                  className="text-xs text-gray-500 underline ml-1 mt-1"
+                >
+                  Clear
+                </button>
               )}
-            </button>
-          ))}
+            </div>
+          )}
+
+          <div className="flex items-start gap-2 flex-wrap">
+            <span className="flex items-center gap-1 text-xs font-medium text-gray-600 mt-1">
+              <Filter className="w-3 h-3" /> Statuses:
+            </span>
+            {STATUS_OPTIONS.map((f) => {
+              const active = statusFilters.has(f.value);
+              const count = statusCounts[f.value] || 0;
+              return (
+                <button
+                  key={f.value}
+                  onClick={() => toggleStatus(f.value)}
+                  className={`text-xs px-2.5 py-1 rounded-full border ${
+                    active
+                      ? "bg-gray-900 text-white border-gray-900"
+                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                  }`}
+                >
+                  {f.label} <span className="opacity-70">({count})</span>
+                </button>
+              );
+            })}
+            {statusFilters.size > 0 && (
+              <button
+                onClick={() => setStatusFilters(new Set())}
+                className="text-xs text-gray-500 underline ml-1 mt-1"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          <div className="text-xs text-gray-500">
+            Showing <strong>{filteredContacts.length}</strong> of {contacts.length} contact{contacts.length === 1 ? "" : "s"}.
+            {(townshipFilters.size > 0 || statusFilters.size > 0) && (
+              <button
+                onClick={() => {
+                  setTownshipFilters(new Set());
+                  setStatusFilters(new Set());
+                }}
+                className="ml-2 text-gray-700 underline"
+              >
+                Clear all filters
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="bg-white border border-gray-200 rounded-lg overflow-hidden mb-8">
@@ -485,41 +581,51 @@ export default function DrillDownPage() {
               <ul className="divide-y divide-gray-100">
                 {filtered.map((a) => {
                   const isNew = lastViewedAt ? a.created_at > lastViewedAt : false;
+                  const tname = a.cv_townships?.name;
+                  const cname = a.cv_townships?.cv_counties?.name;
+                  const contactName = [
+                    a.after?.first_name || a.before?.first_name,
+                    a.after?.last_name || a.before?.last_name,
+                  ]
+                    .filter(Boolean)
+                    .join(" ");
                   return (
                     <li
                       key={a.id}
                       className={`px-4 py-3 text-sm ${isNew ? "bg-blue-50/50" : ""}`}
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="text-gray-900 flex items-center gap-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="text-gray-900 flex items-center gap-2 flex-wrap min-w-0">
                           {isNew && (
                             <span className="inline-flex items-center text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-blue-600 text-white">
                               new
                             </span>
                           )}
-                          <span className="font-medium capitalize">{a.action.replace("_", " ")}</span>
+                          <span className="font-medium capitalize">{a.action.replace(/_/g, " ")}</span>
                           {a.reviewer_name || a.reviewer_email ? (
                             <span className="text-gray-600">
                               by {a.reviewer_name || a.reviewer_email}
                             </span>
                           ) : (
-                            <span className="text-gray-400">(anonymous)</span>
+                            <span className="text-gray-500">(anonymous)</span>
                           )}
                         </div>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-gray-500 whitespace-nowrap">
                           {new Date(a.created_at).toLocaleString()}
                         </div>
                       </div>
-                      {a.after?.first_name || a.after?.last_name || a.before?.first_name ? (
-                        <div className="text-xs text-gray-500 mt-1">
-                          {[
-                            a.after?.first_name || a.before?.first_name,
-                            a.after?.last_name || a.before?.last_name,
-                          ]
-                            .filter(Boolean)
-                            .join(" ")}
+                      {(tname || contactName) && (
+                        <div className="text-xs text-gray-600 mt-1">
+                          {tname && (
+                            <span className="font-medium text-gray-700">
+                              {tname}
+                              {cname ? `, ${cname} County` : ""}
+                            </span>
+                          )}
+                          {tname && contactName ? " · " : ""}
+                          {contactName && <span>{contactName}</span>}
                         </div>
-                      ) : null}
+                      )}
                       {a.action === "session_finished" && a.after?.note && (
                         <div className="text-sm text-gray-700 italic mt-1.5 pl-2 border-l-2 border-gray-300">
                           &ldquo;{a.after.note}&rdquo;
@@ -532,8 +638,108 @@ export default function DrillDownPage() {
             );
           })()}
         </div>
+
       </div>
     </div>
+  );
+}
+
+function DangerZone({ regionId, regionName }: { regionId: string; regionName: string }) {
+  const router = useRouter();
+  const [showModal, setShowModal] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const submit = async () => {
+    setBusy(true);
+    try {
+      const res = await fetch(
+        `/api/admin/contact-verification/region/${regionId}/delete`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ confirmName: confirmText }),
+        }
+      );
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Delete failed");
+      alert(`Deleted "${json.deleted}". Returning to dashboard.`);
+      router.push("/admin/contact-verification");
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="mb-6 border-2 border-red-200 rounded-lg p-5 bg-red-50/40">
+        <h2 className="text-base font-semibold text-red-900 mb-1">Danger zone</h2>
+        <p className="text-sm text-red-900/80 mb-4">
+          Delete this entire region — including all of its counties, townships, contacts, and
+          audit history. Use this after you have exported the data and applied it to your
+          downstream system. This cannot be undone.
+        </p>
+        <button
+          onClick={() => {
+            setConfirmText("");
+            setShowModal(true);
+          }}
+          className="flex items-center gap-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded-md shadow-sm"
+        >
+          Delete region
+        </button>
+      </div>
+
+      {showModal && (
+        <div
+          className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4"
+          onClick={() => !busy && setShowModal(false)}
+        >
+          <div
+            className="bg-white rounded-lg shadow-xl max-w-lg w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+              Delete &ldquo;{regionName}&rdquo;?
+            </h2>
+            <p className="text-sm text-gray-700 mb-4">
+              This permanently removes all counties, townships, contacts, and audit-log entries
+              under this region. There is no undo.
+            </p>
+            <label className="block mb-4">
+              <span className="block text-sm font-medium text-gray-700 mb-1">
+                Type the region name to confirm: <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded">{regionName}</span>
+              </span>
+              <input
+                type="text"
+                autoFocus
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-base text-gray-900"
+              />
+            </label>
+            <div className="flex justify-end gap-2 flex-wrap">
+              <button
+                onClick={() => setShowModal(false)}
+                disabled={busy}
+                className="text-sm font-medium text-gray-700 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submit}
+                disabled={busy || confirmText !== regionName}
+                className="text-sm font-semibold text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded-md disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {busy ? "Deleting…" : "Yes, delete this region"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 

@@ -92,7 +92,7 @@ export async function POST(req: Request) {
 export async function PATCH(req: Request) {
   const supabase = createServerSupabaseClient();
   const body = await req.json();
-  const { contactId, reviewer, changes, markNoChange, markUnreviewed, markForRemoval } = body;
+  const { contactId, reviewer, changes, markNoChange, markUnreviewed, markForRemoval, markSkipped } = body;
   if (!contactId) return NextResponse.json({ error: 'contactId required' }, { status: 400 });
 
   const { data: existing, error: exErr } = await supabase
@@ -124,6 +124,8 @@ export async function PATCH(req: Request) {
     Object.assign(update, reviewerFields(reviewer || {}));
     if (markForRemoval) {
       update.review_status = 'needs_removal';
+    } else if (markSkipped) {
+      update.review_status = 'skipped';
     } else if (markNoChange) {
       update.review_status = 'no_change';
     } else if (changes) {
@@ -174,6 +176,8 @@ export async function PATCH(req: Request) {
       ? 'undo_review'
       : markForRemoval
       ? 'mark_for_removal'
+      : markSkipped
+      ? 'skipped'
       : markNoChange
       ? 'no_change'
       : 'update',

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
+  ArrowRight,
   Loader2,
   Check,
   Pencil,
@@ -11,13 +12,13 @@ import {
   Plus,
   X,
   Save,
-  AlertTriangle,
   CheckCircle2,
   ChevronDown,
   Undo2,
   Sparkles,
   ShieldAlert,
   ShieldCheck,
+  SkipForward,
 } from "lucide-react";
 
 const FIELDS = ["first_name", "last_name", "title", "email", "phone", "email_status"];
@@ -81,6 +82,10 @@ export default function VerifyTownshipPage() {
   const [busyId, setBusyId] = useState(null);
   const [completing, setCompleting] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState(null);
+  const [view, setView] = useState("wizard"); // 'wizard' | 'summary'
+  const [wizardIndex, setWizardIndex] = useState(0);
+  const [wizardDirection, setWizardDirection] = useState("forward"); // 'forward' | 'backward'
+  const [didInitView, setDidInitView] = useState(false);
   const [savedTick, setSavedTick] = useState(0);
   const [showFinishModal, setShowFinishModal] = useState(false);
   const [handoffNote, setHandoffNote] = useState("");
@@ -109,7 +114,26 @@ export default function VerifyTownshipPage() {
     return () => clearInterval(id);
   }, [lastSavedAt]);
 
+  // After contacts load for the first time, skip the wizard if there's
+  // only 0 or 1 contact (wizard is pointless for a single card).
+  useEffect(() => {
+    if (didInitView || !township) return;
+    setDidInitView(true);
+    if (contacts.length <= 1) setView("summary");
+  }, [township, contacts, didInitView]);
+
   const markSaved = () => setLastSavedAt(Date.now());
+
+  // Move to the next contact in the wizard, or jump to the summary at the end.
+  const advanceWizard = () => {
+    if (view !== "wizard") return;
+    setWizardDirection("forward");
+    if (wizardIndex >= contacts.length - 1) {
+      setView("summary");
+    } else {
+      setWizardIndex((i) => i + 1);
+    }
+  };
 
   const refresh = async (townshipId) => {
     const res = await fetch(`/api/verify/contacts/${townshipId}`);
@@ -207,6 +231,7 @@ export default function VerifyTownshipPage() {
       cancelEdit();
       await refresh(township.id);
       markSaved();
+      advanceWizard();
     } catch (e) {
       alert(e.message);
     } finally {
@@ -227,6 +252,28 @@ export default function VerifyTownshipPage() {
       if (!res.ok) throw new Error(json.error || "Failed");
       await refresh(township.id);
       markSaved();
+      advanceWizard();
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const skipContact = async (contactId) => {
+    setBusyId(contactId);
+    try {
+      const r = await ensureSession();
+      const res = await fetch("/api/verify/contact", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contactId, reviewer: r, markSkipped: true }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed");
+      await refresh(township.id);
+      markSaved();
+      advanceWizard();
     } catch (e) {
       alert(e.message);
     } finally {
@@ -291,6 +338,7 @@ export default function VerifyTownshipPage() {
       if (!res.ok) throw new Error(json.error || "Failed");
       await refresh(township.id);
       markSaved();
+      advanceWizard();
     } catch (e) {
       alert(e.message);
     } finally {
@@ -562,146 +610,185 @@ export default function VerifyTownshipPage() {
             addressUnreviewed ? "border-l-4 border-l-red-500 border-gray-200" : "border-l-4 border-l-emerald-400 border-gray-200"
           }`}
         >
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-lg font-semibold text-gray-900">Township address</span>
-                {addressUnreviewed ? (
-                  <span className="inline-flex items-center text-sm font-medium px-2.5 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
-                    Needs review
-                  </span>
-                ) : township?.address_status === "confirmed" ? (
-                  <span className="inline-flex items-center gap-1 text-sm font-medium px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Confirmed
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 text-sm font-medium px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Updated
-                  </span>
+          {/* Header row: title + status pill (always on top) */}
+          <div className="flex items-center gap-2 flex-wrap mb-3">
+            <span className="text-lg font-semibold text-gray-900">Township address</span>
+            {addressUnreviewed ? (
+              <span className="inline-flex items-center text-sm font-medium px-2.5 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">
+                Needs review
+              </span>
+            ) : township?.address_status === "confirmed" ? (
+              <span className="inline-flex items-center gap-1 text-sm font-medium px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Confirmed
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-sm font-medium px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Updated
+              </span>
+            )}
+          </div>
+
+          {addressEditing ? (
+            // Edit mode: full-width form, buttons below
+            <>
+              <div className="space-y-3">
+                <Field label="Street address" full>
+                  <input
+                    className="w-full border border-gray-300 rounded-md px-3 py-2.5 text-base text-gray-900"
+                    value={addressDraft.street_address}
+                    onChange={(e) =>
+                      setAddressDraft({ ...addressDraft, street_address: e.target.value })
+                    }
+                  />
+                </Field>
+                <Field label="Mailing address" full>
+                  <input
+                    className="w-full border border-gray-300 rounded-md px-3 py-2.5 text-base text-gray-900"
+                    value={addressDraft.mailing_address}
+                    onChange={(e) =>
+                      setAddressDraft({ ...addressDraft, mailing_address: e.target.value })
+                    }
+                  />
+                </Field>
+              </div>
+              <div className="flex flex-wrap gap-2 justify-end mt-4">
+                <button
+                  onClick={cancelAddressEdit}
+                  disabled={addressBusy}
+                  className="flex items-center gap-1.5 text-sm font-medium text-gray-700 px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                  <X className="w-4 h-4" /> Cancel
+                </button>
+                <button
+                  onClick={saveAddressEdits}
+                  disabled={addressBusy}
+                  className="flex items-center gap-1.5 text-sm font-medium px-4 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800 disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" /> Save
+                </button>
+              </div>
+            </>
+          ) : (
+            // Read-only mode: side-by-side address text + buttons
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+              <div className="min-w-0 flex-1 text-base text-gray-800 space-y-2">
+                <div>
+                  <span className="text-gray-500">Street:</span>{" "}
+                  {township?.street_address || <span className="text-gray-400">not on file</span>}
+                </div>
+                <div>
+                  <span className="text-gray-500">Mailing:</span>{" "}
+                  {township?.mailing_address || <span className="text-gray-400">not on file</span>}
+                </div>
+                {township?.address_reviewed_by_name && !addressUnreviewed && (
+                  <div className="text-sm text-gray-400 pt-1">
+                    Reviewed by {township.address_reviewed_by_name}
+                  </div>
                 )}
               </div>
-              {!addressEditing ? (
-                <div className="mt-3 text-base text-gray-800 space-y-2">
-                  <div>
-                    <span className="text-gray-500">Street:</span>{" "}
-                    {township?.street_address || <span className="text-gray-400">not on file</span>}
-                  </div>
-                  <div>
-                    <span className="text-gray-500">Mailing:</span>{" "}
-                    {township?.mailing_address || <span className="text-gray-400">not on file</span>}
-                  </div>
-                  {township?.address_reviewed_by_name && !addressUnreviewed && (
-                    <div className="text-sm text-gray-400 pt-1">
-                      Reviewed by {township.address_reviewed_by_name}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="mt-3 space-y-3">
-                  <Field label="Street address" full>
-                    <input
-                      className="w-full border border-gray-300 rounded-md px-3 py-2.5 text-base text-gray-900"
-                      value={addressDraft.street_address}
-                      onChange={(e) =>
-                        setAddressDraft({ ...addressDraft, street_address: e.target.value })
-                      }
-                    />
-                  </Field>
-                  <Field label="Mailing address" full>
-                    <input
-                      className="w-full border border-gray-300 rounded-md px-3 py-2.5 text-base text-gray-900"
-                      value={addressDraft.mailing_address}
-                      onChange={(e) =>
-                        setAddressDraft({ ...addressDraft, mailing_address: e.target.value })
-                      }
-                    />
-                  </Field>
-                </div>
-              )}
+              <div className="flex flex-wrap sm:flex-nowrap gap-2 sm:justify-end shrink-0">
+                {addressUnreviewed ? (
+                  <>
+                    <button
+                      onClick={confirmAddress}
+                      disabled={addressBusy}
+                      className="flex items-center gap-1.5 text-sm font-medium text-gray-700 px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50"
+                    >
+                      <Check className="w-4 h-4" /> Confirm correct
+                    </button>
+                    <button
+                      onClick={startAddressEdit}
+                      disabled={addressBusy}
+                      className="flex items-center gap-1.5 text-sm font-medium text-gray-700 px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50"
+                    >
+                      <Pencil className="w-4 h-4" /> Edit
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={undoAddress}
+                    disabled={addressBusy}
+                    className="flex items-center gap-1.5 text-sm font-medium text-gray-700 px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50"
+                  >
+                    <Undo2 className="w-4 h-4" /> Undo
+                  </button>
+                )}
+              </div>
             </div>
-            <div className="flex flex-wrap sm:flex-nowrap gap-2 sm:justify-end shrink-0">
-              {!addressEditing && addressUnreviewed && (
-                <>
-                  <button
-                    onClick={confirmAddress}
-                    disabled={addressBusy}
-                    className="flex items-center gap-1.5 text-sm font-medium text-gray-700 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
-                  >
-                    <Check className="w-4 h-4" /> Confirm correct
-                  </button>
-                  <button
-                    onClick={startAddressEdit}
-                    disabled={addressBusy}
-                    className="flex items-center gap-1.5 text-sm font-medium text-gray-700 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
-                  >
-                    <Pencil className="w-4 h-4" /> Edit
-                  </button>
-                </>
-              )}
-              {!addressEditing && !addressUnreviewed && (
-                <button
-                  onClick={undoAddress}
-                  disabled={addressBusy}
-                  className="flex items-center gap-1.5 text-sm font-medium text-gray-700 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
-                >
-                  <Undo2 className="w-4 h-4" /> Undo
-                </button>
-              )}
-              {addressEditing && (
-                <>
-                  <button
-                    onClick={cancelAddressEdit}
-                    disabled={addressBusy}
-                    className="flex items-center gap-1.5 text-sm font-medium text-gray-700 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
-                  >
-                    <X className="w-4 h-4" /> Cancel
-                  </button>
-                  <button
-                    onClick={saveAddressEdits}
-                    disabled={addressBusy}
-                    className="flex items-center gap-1.5 text-sm font-medium px-4 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800 disabled:opacity-50"
-                  >
-                    <Save className="w-4 h-4" /> Save
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
+          )}
         </div>
 
-        {unreviewedCount > 0 && (
-          <div className="mt-5 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-md px-4 py-3 text-base text-amber-900">
-            <AlertTriangle className="w-5 h-5 mt-0.5 flex-shrink-0" />
-            {unreviewedCount} contact{unreviewedCount === 1 ? "" : "s"} still need review (highlighted in
-            red).
+        {/* Contacts section: wizard view (one at a time) or summary view (full list) */}
+        {contacts.length === 0 && !adding && (
+          <div className="mt-6 bg-white border border-gray-200 rounded-md p-6 text-center text-sm text-gray-500">
+            No contacts on file for this township yet.
           </div>
         )}
 
-        <div className="mt-6 space-y-3">
-          {contacts.length === 0 && !adding && (
-            <div className="bg-white border border-gray-200 rounded-md p-6 text-center text-sm text-gray-500">
-              No contacts on file for this township yet.
+        {contacts.length > 0 && (
+          <div className="mt-6 flex items-center justify-between flex-wrap gap-3">
+            <div className="text-base text-gray-700">
+              {view === "wizard" ? (
+                <>
+                  Contact <strong>{wizardIndex + 1}</strong> of <strong>{contacts.length}</strong>
+                </>
+              ) : (
+                <>
+                  <strong>Review summary</strong>
+                  <span className="text-gray-500"> · {contacts.length} contact{contacts.length === 1 ? "" : "s"}</span>
+                </>
+              )}
             </div>
-          )}
+            {view === "summary" && (
+              <button
+                onClick={() => {
+                  setWizardDirection("forward");
+                  setWizardIndex(0);
+                  setView("wizard");
+                }}
+                className="flex items-center gap-2 text-base font-semibold text-white bg-gray-900 px-5 py-2.5 rounded-md shadow-md hover:bg-gray-800 hover:shadow-lg transition-all"
+              >
+                <Pencil className="w-4 h-4" /> Review one at a time
+              </button>
+            )}
+          </div>
+        )}
 
-          {contacts.map((c) => {
+        <div className="mt-4 space-y-2">
+          {(view === "wizard" && contacts.length > 0
+            ? [contacts[Math.min(wizardIndex, contacts.length - 1)]]
+            : contacts
+          ).map((c) => {
             const isUnreviewed = c.review_status === "unreviewed";
             const isEditing = editingId === c.id;
             const cardBg = isUnreviewed
               ? "bg-red-50 border-red-300 border-l-4 border-l-red-500"
               : c.review_status === "no_change"
-              ? "bg-white border-gray-200 border-l-4 border-l-emerald-400"
+              ? "bg-gray-50 border-gray-200 border-l-4 border-l-emerald-400"
               : c.review_status === "newly_added"
-              ? "bg-white border-gray-200 border-l-4 border-l-blue-500"
+              ? "bg-gray-50 border-gray-200 border-l-4 border-l-blue-500"
               : c.review_status === "needs_removal"
-              ? "bg-white border-gray-200 border-l-4 border-l-amber-500"
-              : "bg-white border-gray-200 border-l-4 border-l-emerald-500";
+              ? "bg-gray-50 border-gray-200 border-l-4 border-l-amber-500"
+              : c.review_status === "skipped"
+              ? "bg-gray-50 border-gray-200 border-l-4 border-l-yellow-400"
+              : "bg-gray-50 border-gray-200 border-l-4 border-l-emerald-500";
+            const isReviewed = !isUnreviewed && !isEditing;
 
+            const wizardAnim =
+              view === "wizard"
+                ? wizardDirection === "backward"
+                  ? "animate-slide-in-left"
+                  : "animate-slide-in-right"
+                : "";
             return (
               <div
-                key={c.id}
+                key={view === "wizard" ? `wiz-${c.id}` : c.id}
                 data-unreviewed={isUnreviewed ? "true" : undefined}
-                className={`border rounded-md ${cardBg} p-5`}
+                className={`border rounded-md ${cardBg} ${
+                  view === "wizard" ? "p-6 sm:p-8 shadow-sm " + wizardAnim : "p-4"
+                } transition-opacity ${
+                  view === "summary" && isReviewed ? "opacity-75 hover:opacity-100" : ""
+                }`}
               >
                 {!isEditing ? (
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -751,31 +838,33 @@ export default function VerifyTownshipPage() {
                           <button
                             onClick={() => markNoChange(c.id)}
                             disabled={busyId === c.id}
-                            className="flex items-center gap-1.5 text-sm font-medium text-gray-700 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                            className="flex items-center gap-1.5 text-sm font-medium text-gray-700 px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50"
                           >
                             <Check className="w-4 h-4" /> No change
                           </button>
                           <button
                             onClick={() => startEdit(c)}
                             disabled={busyId === c.id}
-                            className="flex items-center gap-1.5 text-sm font-medium text-gray-700 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                            className="flex items-center gap-1.5 text-sm font-medium text-gray-700 px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50"
                           >
                             <Pencil className="w-4 h-4" /> Edit
                           </button>
                           <button
                             onClick={() => markForRemoval(c.id)}
                             disabled={busyId === c.id}
-                            className="flex items-center gap-1.5 text-sm font-medium px-4 py-2 border border-amber-300 text-amber-700 rounded-md hover:bg-amber-50"
+                            className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 border border-amber-300 text-amber-700 rounded-md hover:bg-amber-50"
                           >
                             <Trash2 className="w-4 h-4" /> Mark for removal
                           </button>
                         </>
                       )}
-                      {(c.review_status === "no_change" || c.review_status === "needs_removal") && (
+                      {(c.review_status === "no_change" ||
+                        c.review_status === "needs_removal" ||
+                        c.review_status === "skipped") && (
                         <button
                           onClick={() => undoReview(c.id)}
                           disabled={busyId === c.id}
-                          className="flex items-center gap-1.5 text-sm font-medium text-gray-700 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                          className="flex items-center gap-1.5 text-sm font-medium text-gray-700 px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50"
                         >
                           <Undo2 className="w-4 h-4" /> Undo
                         </button>
@@ -785,21 +874,21 @@ export default function VerifyTownshipPage() {
                           <button
                             onClick={() => undoReview(c.id)}
                             disabled={busyId === c.id}
-                            className="flex items-center gap-1.5 text-sm font-medium text-gray-700 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                            className="flex items-center gap-1.5 text-sm font-medium text-gray-700 px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50"
                           >
                             <Undo2 className="w-4 h-4" /> Undo
                           </button>
                           <button
                             onClick={() => startEdit(c)}
                             disabled={busyId === c.id}
-                            className="flex items-center gap-1.5 text-sm font-medium text-gray-700 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                            className="flex items-center gap-1.5 text-sm font-medium text-gray-700 px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50"
                           >
                             <Pencil className="w-4 h-4" /> Edit
                           </button>
                           <button
                             onClick={() => markForRemoval(c.id)}
                             disabled={busyId === c.id}
-                            className="flex items-center gap-1.5 text-sm font-medium px-4 py-2 border border-amber-300 text-amber-700 rounded-md hover:bg-amber-50"
+                            className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 border border-amber-300 text-amber-700 rounded-md hover:bg-amber-50"
                           >
                             <Trash2 className="w-4 h-4" /> Mark for removal
                           </button>
@@ -810,14 +899,14 @@ export default function VerifyTownshipPage() {
                           <button
                             onClick={() => startEdit(c)}
                             disabled={busyId === c.id}
-                            className="flex items-center gap-1.5 text-sm font-medium text-gray-700 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                            className="flex items-center gap-1.5 text-sm font-medium text-gray-700 px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50"
                           >
                             <Pencil className="w-4 h-4" /> Edit
                           </button>
                           <button
                             onClick={() => removeNewContact(c.id)}
                             disabled={busyId === c.id}
-                            className="flex items-center gap-1.5 text-sm font-medium px-4 py-2 border border-red-200 text-red-700 rounded-md hover:bg-red-50"
+                            className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 border border-red-200 text-red-700 rounded-md hover:bg-red-50"
                           >
                             <Trash2 className="w-4 h-4" /> Remove
                           </button>
@@ -851,14 +940,44 @@ export default function VerifyTownshipPage() {
             </div>
           )}
 
-          {!adding && (
+          {/* Wizard nav: Previous / Next (only in wizard view) */}
+          {view === "wizard" && contacts.length > 0 && (
+            <div className="flex items-center justify-between gap-2 mt-4">
+              <button
+                onClick={() => {
+                  setWizardDirection("backward");
+                  setWizardIndex((i) => Math.max(0, i - 1));
+                }}
+                disabled={wizardIndex === 0}
+                className="flex items-center gap-2 text-base font-medium text-gray-700 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <ArrowLeft className="w-4 h-4" /> Previous
+              </button>
+              <span className="text-sm text-gray-500">
+                {wizardIndex + 1} / {contacts.length}
+              </span>
+              <button
+                onClick={() => {
+                  setWizardDirection("forward");
+                  if (wizardIndex >= contacts.length - 1) setView("summary");
+                  else setWizardIndex((i) => i + 1);
+                }}
+                className="flex items-center gap-2 text-base font-medium text-gray-700 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                {wizardIndex >= contacts.length - 1 ? "Finish & view overview" : "Skip to next"} <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {/* Add new contact (summary view only) */}
+          {view === "summary" && !adding && (
             <button
               onClick={() => {
                 setAdding(true);
                 setEditingId(null);
                 setDraft(EMPTY_DRAFT);
               }}
-              className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-gray-300 rounded-md py-4 text-base font-medium text-gray-600 hover:border-gray-400 hover:text-gray-900"
+              className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-gray-300 rounded-md py-4 text-base font-medium text-gray-600 hover:border-gray-400 hover:text-gray-900 mt-3"
             >
               <Plus className="w-5 h-5" /> Add a new contact
             </button>
@@ -1006,7 +1125,13 @@ function StatusPill({ status }) {
       <span className="inline-flex items-center gap-1 text-sm font-medium px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-300">
         Needs removal
       </span>
-
+    );
+  }
+  if (status === "skipped") {
+    return (
+      <span className="inline-flex items-center gap-1 text-sm font-medium px-2.5 py-0.5 rounded-full bg-yellow-50 text-yellow-800 border border-yellow-300">
+        Skipped
+      </span>
     );
   }
   return null;

@@ -161,7 +161,7 @@ export default function VerifyLanding() {
               <Clock className="w-5 h-5 mt-0.5 flex-shrink-0" />
               <div>
                 <strong>Please verify by {formatted}.</strong> The portal will close for review
-                after this date so the team can finalize the records.
+                after this date so Indiana Township Association can finalize the records.
               </div>
             </div>
           );

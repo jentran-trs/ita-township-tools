@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser, useOrganization, useAuth } from "@clerk/nextjs";
-import { ArrowLeft, Loader2, Upload, Download, RefreshCw, Bell, Settings, Save, Lock, LogOut } from "lucide-react";
+import { ArrowLeft, Loader2, Upload, Download, RefreshCw, Bell, Settings, Save, Lock, LogOut, MessageSquare, ChevronDown, ChevronUp } from "lucide-react";
 
 type CountyStat = {
   id: string;
@@ -57,6 +57,8 @@ export default function ContactVerificationAdminPage() {
   const [refreshTick, setRefreshTick] = useState(0);
   const [authChecked, setAuthChecked] = useState(false);
   const [authorized, setAuthorized] = useState(false);
+  const [notes, setNotes] = useState<any[]>([]);
+  const [notesOpen, setNotesOpen] = useState(true);
 
   useEffect(() => {
     if (isLoaded && !isAdmin) router.push("/dashboard");
@@ -83,12 +85,14 @@ export default function ContactVerificationAdminPage() {
     let cancelled = false;
     const load = async () => {
       try {
-        const [statsRes, settingsRes] = await Promise.all([
+        const [statsRes, settingsRes, notesRes] = await Promise.all([
           fetch("/api/admin/contact-verification/stats"),
           fetch("/api/admin/contact-verification/settings"),
+          fetch("/api/admin/contact-verification/notes"),
         ]);
         const stats = await statsRes.json();
         const setj = await settingsRes.json();
+        const notesj = await notesRes.json();
         if (cancelled) return;
         if (statsRes.ok) {
           setRegions(stats.regions || []);
@@ -97,6 +101,9 @@ export default function ContactVerificationAdminPage() {
         }
         if (settingsRes.ok) {
           setSettings(setj.settings || null);
+        }
+        if (notesRes.ok) {
+          setNotes(notesj.notes || []);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -245,6 +252,59 @@ export default function ContactVerificationAdminPage() {
               >
                 Mark all as seen
               </button>
+            )}
+          </div>
+        )}
+
+        {notes.length > 0 && (
+          <div className="bg-white border border-gray-200 rounded-lg mb-5 overflow-hidden">
+            <button
+              onClick={() => setNotesOpen((v) => !v)}
+              className="w-full flex items-center justify-between px-5 py-3 hover:bg-gray-50"
+            >
+              <div className="flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-amber-600" />
+                <span className="text-base font-semibold text-gray-900">
+                  Reviewer notes
+                </span>
+                <span className="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                  {notes.length}
+                </span>
+              </div>
+              {notesOpen ? (
+                <ChevronUp className="w-5 h-5 text-gray-500" />
+              ) : (
+                <ChevronDown className="w-5 h-5 text-gray-500" />
+              )}
+            </button>
+            {notesOpen && (
+              <ul className="divide-y divide-gray-100 max-h-96 overflow-y-auto">
+                {notes.map((n) => (
+                  <li key={n.id} className="px-5 py-3">
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div className="text-sm text-gray-700 min-w-0">
+                        <span className="font-medium text-gray-900">
+                          {n.reviewer_name || n.reviewer_email || "(anonymous)"}
+                        </span>
+                        {n.reviewer_email && n.reviewer_name && (
+                          <span className="text-gray-500"> · {n.reviewer_email}</span>
+                        )}
+                        <span className="text-gray-500">
+                          {" "}· {n.township_name}
+                          {n.county_name ? `, ${n.county_name} County` : ""}
+                          {n.region_name ? ` · ${n.region_name}` : ""}
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-500 whitespace-nowrap">
+                        {new Date(n.created_at).toLocaleString()}
+                      </div>
+                    </div>
+                    <div className="mt-1.5 pl-3 border-l-2 border-amber-300 italic text-base text-gray-800">
+                      &ldquo;{n.note}&rdquo;
+                    </div>
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
         )}

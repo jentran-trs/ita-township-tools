@@ -29,6 +29,18 @@ function reviewerKey() {
   return "cv_reviewer_v1";
 }
 
+// Standardize US phone numbers to xxx-xxx-xxxx as the user types or when displayed.
+function formatPhone(input) {
+  let digits = String(input || "").replace(/\D/g, "");
+  // Drop a leading 1 (US country code) so 15551234567 renders as 555-123-4567.
+  if (digits.length === 11 && digits.startsWith("1")) digits = digits.slice(1);
+  digits = digits.slice(0, 10);
+  if (digits.length === 0) return "";
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
 function formatRelative(ts) {
   if (!ts) return "";
   const diff = Math.max(0, Date.now() - ts);
@@ -207,7 +219,7 @@ export default function VerifyTownshipPage() {
       last_name: contact.last_name || "",
       title: contact.title || "",
       email: contact.email || "",
-      phone: contact.phone || "",
+      phone: formatPhone(contact.phone || ""),
       email_status: contact.email_status || "",
     });
   };
@@ -555,7 +567,7 @@ export default function VerifyTownshipPage() {
               <Clock className="w-5 h-5 mt-0.5 flex-shrink-0" />
               <div>
                 <strong>Please verify by {formatted}.</strong> The portal will close for
-                review after this date so the team can finalize the records.
+                review after this date so Indiana Township Association can finalize the records.
               </div>
             </div>
           );
@@ -836,7 +848,7 @@ export default function VerifyTownshipPage() {
                         </span>
                         {c.email && c.email_status && <EmailStatusPill status={c.email_status} />}
                         {c.phone ? (
-                          <span className="text-gray-500">· {c.phone}</span>
+                          <span className="text-gray-500">· {formatPhone(c.phone) || c.phone}</span>
                         ) : (
                           <span
                             className="text-gray-500 italic"
@@ -1219,7 +1231,15 @@ function ContactForm({ draft, setDraft, onCancel, onSave, busy, isNew }) {
           <input type="email" className={inputClass} value={draft.email} onChange={set("email")} />
         </Field>
         <Field label="Phone number (optional)" full>
-          <input type="tel" className={inputClass} value={draft.phone} onChange={set("phone")} />
+          <input
+            type="tel"
+            inputMode="numeric"
+            className={inputClass}
+            value={draft.phone}
+            placeholder="555-123-4567"
+            maxLength={12}
+            onChange={(e) => setDraft({ ...draft, phone: formatPhone(e.target.value) })}
+          />
           <span className="block text-sm text-gray-500 mt-1">
             Fill in phone number to receive SMS updates from ITA.
           </span>

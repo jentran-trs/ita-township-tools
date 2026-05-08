@@ -411,7 +411,12 @@ export default function VerifyTownshipPage() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed");
-      router.push("/verify-contacts?finished=1");
+      const qs = new URLSearchParams({
+        finished: "1",
+        township: township?.name || "",
+        county: tree?.county?.name || "",
+      });
+      router.push(`/verify-contacts?${qs}`);
     } catch (e) {
       alert(e.message);
       setFinishingSession(false);

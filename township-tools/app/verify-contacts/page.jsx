@@ -27,6 +27,8 @@ export default function VerifyLanding() {
   const searchParams = useSearchParams();
   const { isSignedIn } = useAuth();
   const [showFinishedBanner, setShowFinishedBanner] = useState(false);
+  const [finishedTownship, setFinishedTownship] = useState("");
+  const [finishedCounty, setFinishedCounty] = useState("");
   const [tree, setTree] = useState(null);
   const [regionId, setRegionId] = useState("");
   const [countyId, setCountyId] = useState("");
@@ -40,6 +42,8 @@ export default function VerifyLanding() {
   useEffect(() => {
     if (searchParams.get("finished") === "1") {
       setShowFinishedBanner(true);
+      setFinishedTownship(searchParams.get("township") || "");
+      setFinishedCounty(searchParams.get("county") || "");
     }
   }, [searchParams]);
 
@@ -114,8 +118,15 @@ export default function VerifyLanding() {
             <div className="flex items-start gap-2 text-base text-emerald-900">
               <CheckCircle2 className="w-5 h-5 mt-0.5 flex-shrink-0" />
               <div>
-                <strong>Thanks — your changes are saved.</strong> Pick another township
-                below, or you can close this tab.
+                <strong>Thanks — your changes are saved</strong>
+                {finishedTownship ? (
+                  <>
+                    {" "}
+                    for <strong>{finishedTownship}</strong>
+                    {finishedCounty ? <span>, {finishedCounty} County</span> : null}
+                  </>
+                ) : null}
+                . Pick another township below, or you can close this tab.
               </div>
             </div>
             <button

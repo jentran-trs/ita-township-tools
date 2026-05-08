@@ -34,5 +34,10 @@ export const createServerSupabaseClient = () => {
     throw new Error('Missing Supabase server environment variables');
   }
 
-  return createClient(supabaseUrl, supabaseServiceKey);
+  return createClient(supabaseUrl, supabaseServiceKey, {
+    global: {
+      fetch: (url, options = {}) =>
+        fetch(url, { ...options, cache: 'no-store' }),
+    },
+  });
 };

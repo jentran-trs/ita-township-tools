@@ -2,7 +2,7 @@
 
 import { UserButton, OrganizationSwitcher, useUser, useOrganization, useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { Building2, FileText, Users, ArrowRight, Plus, ShieldCheck, FolderOpen, Mail, ClipboardCheck } from "lucide-react";
+import { Building2, FileText, Users, ArrowRight, Plus, ShieldCheck, FolderOpen, Mail, ClipboardCheck, MapPin } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
 export default function Dashboard() {
@@ -142,6 +142,25 @@ export default function Dashboard() {
                 </div>
               </div>
 
+              {/* Contact Verification - Admin Only (password-gated on the destination page) */}
+              {isAdmin && (
+                <div
+                  onClick={() => router.push("/admin/contact-verification")}
+                  className="bg-slate-800 border border-slate-700 rounded-xl p-5 sm:p-6 hover:border-amber-500/50 transition-colors cursor-pointer group"
+                >
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-rose-500/20 rounded-lg flex items-center justify-center mb-3 sm:mb-4 group-hover:bg-rose-500/30 transition-colors">
+                    <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-rose-500" />
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Contact Verification</h3>
+                  <p className="text-sm sm:text-base text-slate-300 mb-3 sm:mb-4">
+                    Track township contact verification, import xlsx files, and export updated lists. Password required.
+                  </p>
+                  <div className="flex items-center text-rose-500 font-medium text-sm sm:text-base">
+                    Open Tool <ArrowRight className="w-4 h-4 ml-2" />
+                  </div>
+                </div>
+              )}
+
               {/* SB 270 Scoring Tool */}
               <div
                 onClick={() => router.push("/tools/scoring-tool")}
@@ -170,15 +189,13 @@ export default function Dashboard() {
                 <p className="text-sm sm:text-base text-slate-300 mb-3 sm:mb-4">
                   Manage your township&apos;s team members and their access.
                 </p>
-                <OrganizationSwitcher
-                  appearance={{
-                    elements: {
-                      rootBox: "flex",
-                      organizationSwitcherTrigger: "bg-amber-500 text-slate-900 rounded-lg px-3 sm:px-4 py-2 font-medium hover:bg-amber-400 text-sm sm:text-base",
-                    }
-                  }}
-                  organizationProfileMode="modal"
-                />
+                <button
+                  onClick={() => router.push("/admin")}
+                  className="inline-flex items-center gap-2 bg-amber-500 text-slate-900 rounded-lg px-3 sm:px-4 py-2 font-medium hover:bg-amber-400 text-sm sm:text-base"
+                >
+                  <Users className="w-4 h-4" />
+                  Manage members
+                </button>
               </div>
             )}
           </>

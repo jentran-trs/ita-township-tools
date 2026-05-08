@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
-import { Loader2, ArrowRight, ArrowLeft, User, MapPin, UserCheck, CheckCircle2, X } from "lucide-react";
+import { Loader2, ArrowRight, ArrowLeft, User, MapPin, UserCheck, CheckCircle2, X, Clock } from "lucide-react";
 
 const REVIEWER_KEY = "cv_reviewer_v1";
 
@@ -29,6 +29,7 @@ export default function VerifyLanding() {
   const [showFinishedBanner, setShowFinishedBanner] = useState(false);
   const [finishedTownship, setFinishedTownship] = useState("");
   const [finishedCounty, setFinishedCounty] = useState("");
+  const [verificationDeadline, setVerificationDeadline] = useState(null);
   const [tree, setTree] = useState(null);
   const [regionId, setRegionId] = useState("");
   const [countyId, setCountyId] = useState("");
@@ -63,6 +64,10 @@ export default function VerifyLanding() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+    fetch("/api/verify/settings")
+      .then((r) => r.json())
+      .then((d) => setVerificationDeadline(d.verification_deadline || null))
+      .catch(() => {});
   }, []);
 
   const confirmAsSaved = () => {
@@ -141,6 +146,27 @@ export default function VerifyLanding() {
             </button>
           </div>
         )}
+        {verificationDeadline && (() => {
+          const deadlineDate = new Date(verificationDeadline + "T23:59:59");
+          const now = new Date();
+          const isPast = now > deadlineDate;
+          const formatted = new Date(verificationDeadline + "T00:00:00").toLocaleDateString(undefined, {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          });
+          if (isPast) return null;
+          return (
+            <div className="mb-6 bg-amber-50 border-2 border-amber-300 rounded-md px-4 py-3 flex items-start gap-2 text-base text-amber-900">
+              <Clock className="w-5 h-5 mt-0.5 flex-shrink-0" />
+              <div>
+                <strong>Please verify by {formatted}.</strong> The portal will close for review
+                after this date so the team can finalize the records.
+              </div>
+            </div>
+          );
+        })()}
+
         <h1 className="text-3xl font-semibold text-gray-900 mb-2">Verify your township contacts</h1>
         <p className="text-gray-600 mb-8">
           Tell us a little about yourself, then pick your township so we can show you the contacts on file.

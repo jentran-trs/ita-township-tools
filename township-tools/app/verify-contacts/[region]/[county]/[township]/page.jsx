@@ -19,6 +19,7 @@ import {
   ShieldAlert,
   ShieldCheck,
   SkipForward,
+  Clock,
 } from "lucide-react";
 
 const FIELDS = ["first_name", "last_name", "title", "email", "phone", "email_status"];
@@ -529,16 +530,36 @@ export default function VerifyTownshipPage() {
           </div>
         )}
 
-        {verificationDeadline && new Date() > new Date(verificationDeadline + "T23:59:59") && (
-          <div className="mt-5 bg-blue-50 border border-blue-200 rounded-md px-4 py-3 text-base text-blue-900 flex items-start gap-2">
-            <CheckCircle2 className="w-5 h-5 mt-0.5 flex-shrink-0" />
-            <div>
-              <strong>The initial verification phase ended on{" "}
-              {new Date(verificationDeadline + "T00:00:00").toLocaleDateString()}.</strong>{" "}
-              Need to update something? Make changes anytime — we&apos;ll review them.
+        {verificationDeadline && (() => {
+          const deadlineDate = new Date(verificationDeadline + "T23:59:59");
+          const now = new Date();
+          const isPast = now > deadlineDate;
+          const formatted = new Date(verificationDeadline + "T00:00:00").toLocaleDateString(undefined, {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          });
+          if (isPast) {
+            return (
+              <div className="mt-5 bg-blue-50 border border-blue-200 rounded-md px-4 py-3 text-base text-blue-900 flex items-start gap-2">
+                <CheckCircle2 className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                <div>
+                  <strong>The initial verification phase ended on {formatted}.</strong>{" "}
+                  Need to update something? Make changes anytime — we&apos;ll review them.
+                </div>
+              </div>
+            );
+          }
+          return (
+            <div className="mt-5 bg-amber-50 border-2 border-amber-300 rounded-md px-4 py-3 text-base text-amber-900 flex items-start gap-2">
+              <Clock className="w-5 h-5 mt-0.5 flex-shrink-0" />
+              <div>
+                <strong>Please verify by {formatted}.</strong> The portal will close for
+                review after this date so the team can finalize the records.
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Reviewer identity (required) */}
         <div

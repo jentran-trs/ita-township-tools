@@ -1059,32 +1059,35 @@ export default function VerifyTownshipPage() {
       )}
 
       {/* Sticky completion bar */}
-      <div className="fixed bottom-0 inset-x-0 bg-white border-t border-gray-200 shadow-md">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between gap-3 flex-col sm:flex-row">
-          <div className="text-base text-gray-700">
+      <div className="fixed bottom-0 inset-x-0 bg-white border-t-2 border-gray-300 shadow-[0_-8px_24px_-8px_rgba(0,0,0,0.15)]">
+        <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between gap-4 flex-col sm:flex-row">
+          <div className="text-base text-gray-800 font-medium whitespace-nowrap overflow-hidden text-ellipsis min-w-0 flex-1">
+            <span className="text-gray-500 font-normal">Progress: </span>
             {contacts.length} contact{contacts.length === 1 ? "" : "s"} ·{" "}
-            <span className={unreviewedCount === 0 ? "text-emerald-700 font-medium" : "text-red-700 font-medium"}>
+            <span className={unreviewedCount === 0 ? "text-emerald-700 font-semibold" : "text-red-700 font-semibold"}>
               {unreviewedCount === 0 ? "all reviewed" : `${unreviewedCount} still need review`}
             </span>
             {addressUnreviewed && (
-              <span className="text-red-700 font-medium"> · address still needs review</span>
+              <span className="text-red-700 font-semibold"> · address still needs review</span>
             )}
           </div>
-          <div className="flex items-center gap-2 flex-wrap justify-end">
+          <div className="flex items-stretch gap-3 flex-shrink-0">
             <button
               onClick={() => {
                 setHandoffNote("");
                 setShowFinishModal(true);
               }}
-              className="text-base font-medium text-gray-700 px-4 py-2.5 border border-gray-300 rounded-md bg-white hover:bg-gray-50"
+              className="w-[160px] flex items-center justify-center text-sm font-semibold text-amber-900 bg-amber-100 border-2 border-amber-300 px-3 py-2.5 rounded-md shadow-sm hover:bg-amber-200 hover:border-amber-400 transition-colors whitespace-nowrap"
             >
               I&apos;m done for now
             </button>
             <button
               onClick={markComplete}
               disabled={completing}
-              className={`flex items-center gap-2 text-base font-semibold px-5 py-2.5 rounded-md text-white ${
-                blockingComplete ? "bg-gray-400 hover:bg-gray-500" : "bg-emerald-600 hover:bg-emerald-700"
+              className={`flex items-center justify-center gap-2 text-base font-bold px-6 py-2.5 rounded-md text-white shadow-md transition-all whitespace-nowrap ${
+                blockingComplete
+                  ? "bg-gray-400 hover:bg-gray-500"
+                  : "bg-emerald-600 hover:bg-emerald-700 hover:shadow-lg"
               } disabled:opacity-50`}
             >
               <CheckCircle2 className="w-5 h-5" /> Mark list completed

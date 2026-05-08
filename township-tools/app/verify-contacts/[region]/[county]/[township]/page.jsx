@@ -80,7 +80,6 @@ export default function VerifyTownshipPage() {
   const [adding, setAdding] = useState(false);
   const [busyId, setBusyId] = useState(null);
   const [completing, setCompleting] = useState(false);
-  const [justCompleted, setJustCompleted] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState(null);
   const [savedTick, setSavedTick] = useState(0);
   const [showFinishModal, setShowFinishModal] = useState(false);
@@ -208,7 +207,6 @@ export default function VerifyTownshipPage() {
       cancelEdit();
       await refresh(township.id);
       markSaved();
-      setJustCompleted(false);
     } catch (e) {
       alert(e.message);
     } finally {
@@ -229,7 +227,6 @@ export default function VerifyTownshipPage() {
       if (!res.ok) throw new Error(json.error || "Failed");
       await refresh(township.id);
       markSaved();
-      setJustCompleted(false);
     } catch (e) {
       alert(e.message);
     } finally {
@@ -250,7 +247,6 @@ export default function VerifyTownshipPage() {
       if (!res.ok) throw new Error(json.error || "Failed");
       await refresh(township.id);
       markSaved();
-      setJustCompleted(false);
     } catch (e) {
       alert(e.message);
     } finally {
@@ -274,7 +270,6 @@ export default function VerifyTownshipPage() {
       if (!res.ok) throw new Error(json.error || "Failed");
       await refresh(township.id);
       markSaved();
-      setJustCompleted(false);
     } catch (e) {
       alert(e.message);
     } finally {
@@ -296,7 +291,6 @@ export default function VerifyTownshipPage() {
       if (!res.ok) throw new Error(json.error || "Failed");
       await refresh(township.id);
       markSaved();
-      setJustCompleted(false);
     } catch (e) {
       alert(e.message);
     } finally {
@@ -318,7 +312,6 @@ export default function VerifyTownshipPage() {
       cancelEdit();
       await refresh(township.id);
       markSaved();
-      setJustCompleted(false);
     } catch (e) {
       alert(e.message);
     } finally {
@@ -350,12 +343,11 @@ export default function VerifyTownshipPage() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed");
-      await refresh(township.id);
-      markSaved();
-      setJustCompleted(true);
+      router.push(
+        `/verify-contacts/${regionSlug}/${countySlug}/${townshipSlug}/thank-you`
+      );
     } catch (e) {
       alert(e.message);
-    } finally {
       setCompleting(false);
     }
   };
@@ -410,7 +402,6 @@ export default function VerifyTownshipPage() {
       await refresh(township.id);
       markSaved();
       setAddressEditing(false);
-      setJustCompleted(false);
     } catch (e) {
       alert(e.message);
     } finally {
@@ -453,7 +444,7 @@ export default function VerifyTownshipPage() {
       <div className="max-w-4xl mx-auto px-6 py-8">
         <button
           onClick={() => router.push(adminBackHref || "/verify-contacts")}
-          className="flex items-center gap-2 text-base text-gray-600 hover:text-gray-900 mb-6"
+          className="inline-flex items-center gap-2 text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-md px-4 py-2.5 hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 shadow-sm mb-6"
         >
           <ArrowLeft className="w-5 h-5" />
           {adminBackHref ? "Back to admin dashboard" : "Pick a different township"}
@@ -473,25 +464,7 @@ export default function VerifyTownshipPage() {
           </div>
         )}
 
-        {justCompleted ? (
-          <div className="mt-4 bg-green-50 border border-green-200 rounded-md px-4 py-4 flex items-start sm:items-center justify-between gap-3 flex-col sm:flex-row">
-            <div className="flex items-start gap-2 text-base text-green-900">
-              <CheckCircle2 className="w-6 h-6 mt-0.5 flex-shrink-0" />
-              <div>
-                <strong>Thanks — this list is marked complete.</strong> You&apos;re free to close this
-                page or jump back to pick another township.
-              </div>
-            </div>
-            {!adminBackHref && (
-              <button
-                onClick={() => router.push("/verify-contacts")}
-                className="text-base font-medium text-green-900 underline whitespace-nowrap"
-              >
-                Pick another township
-              </button>
-            )}
-          </div>
-        ) : township?.status === "completed" ? (
+        {township?.status === "completed" && (
           <div className="mt-4 flex items-start gap-2 bg-green-50 border border-green-200 rounded-md px-4 py-3 text-base text-green-900">
             <CheckCircle2 className="w-5 h-5 mt-0.5 flex-shrink-0" />
             <div>
@@ -501,7 +474,7 @@ export default function VerifyTownshipPage() {
               edits — the list will move back into &ldquo;in progress&rdquo; if anything changes.
             </div>
           </div>
-        ) : null}
+        )}
 
         {verificationDeadline && new Date() > new Date(verificationDeadline + "T23:59:59") && (
           <div className="mt-5 bg-blue-50 border border-blue-200 rounded-md px-4 py-3 text-base text-blue-900 flex items-start gap-2">
@@ -646,7 +619,7 @@ export default function VerifyTownshipPage() {
                 </div>
               )}
             </div>
-            <div className="flex flex-wrap gap-2 sm:justify-end">
+            <div className="flex flex-wrap sm:flex-nowrap gap-2 sm:justify-end shrink-0">
               {!addressEditing && addressUnreviewed && (
                 <>
                   <button
@@ -741,18 +714,25 @@ export default function VerifyTownshipPage() {
                       </div>
                       {c.title && <div className="text-base text-gray-700 mt-1">{c.title}</div>}
                       <div
-                        className={`text-base mt-1 break-all ${
+                        className={`text-base mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 break-all ${
                           c.review_status === "needs_removal" ? "text-gray-400 line-through" : "text-gray-700"
                         }`}
                       >
-                        {c.email || <span className="text-gray-400">no email</span>}
-                        {c.phone ? ` · ${c.phone}` : ""}
+                        <span>
+                          {c.email || <span className="text-gray-400">no email</span>}
+                        </span>
+                        {c.email && c.email_status && <EmailStatusPill status={c.email_status} />}
+                        {c.phone ? (
+                          <span className="text-gray-500">· {c.phone}</span>
+                        ) : (
+                          <span
+                            className="text-gray-400 italic"
+                            title="No phone number on file. Adding one opts this contact in for SMS updates from ITA."
+                          >
+                            · no phone on file
+                          </span>
+                        )}
                       </div>
-                      {c.email_status && (
-                        <div className="mt-1.5">
-                          <EmailStatusPill status={c.email_status} />
-                        </div>
-                      )}
                       {c.previous_email && (
                         <div className="text-sm text-amber-700 mt-1">
                           Previously: {c.previous_email}
@@ -765,7 +745,7 @@ export default function VerifyTownshipPage() {
                         </div>
                       )}
                     </div>
-                    <div className="flex flex-wrap gap-2 sm:justify-end">
+                    <div className="flex flex-wrap sm:flex-nowrap gap-2 sm:justify-end shrink-0">
                       {isUnreviewed && (
                         <>
                           <button
@@ -1036,13 +1016,15 @@ function EmailStatusPill({ status }) {
   if (!status) return null;
   const isValid = status.toLowerCase().trim() === "valid";
   const cls = isValid
-    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-    : "bg-red-50 text-red-700 border-red-200";
-  const Icon = isValid ? ShieldCheck : ShieldAlert;
+    ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+    : "bg-red-100 text-red-800 border-red-300";
+  const label = isValid ? "Valid" : "Invalid";
   return (
-    <span className={`inline-flex items-center gap-1.5 text-sm font-semibold px-2.5 py-1 rounded-full border ${cls}`}>
-      <Icon className="w-4 h-4" />
-      Current email status: {status}
+    <span
+      className={`inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full border ${cls} align-middle`}
+      title={`Original status: ${status}`}
+    >
+      {label}
     </span>
   );
 }
@@ -1071,16 +1053,22 @@ function ContactForm({ draft, setDraft, onCancel, onSave, busy, isNew }) {
         <Field label="Title" full>
           <input className={inputClass} value={draft.title} onChange={set("title")} />
         </Field>
-        <Field label="Email address" full>
+        <Field
+          label={
+            <span className="flex items-center gap-2">
+              Email address
+              {draft.email_status && <EmailStatusPill status={draft.email_status} />}
+            </span>
+          }
+          full
+        >
           <input type="email" className={inputClass} value={draft.email} onChange={set("email")} />
-          {draft.email_status && (
-            <div className="mt-1.5">
-              <EmailStatusPill status={draft.email_status} />
-            </div>
-          )}
         </Field>
-        <Field label="Phone number" full>
+        <Field label="Phone number (optional)" full>
           <input type="tel" className={inputClass} value={draft.phone} onChange={set("phone")} />
+          <span className="block text-sm text-gray-500 mt-1">
+            Fill in phone number to receive SMS updates from ITA.
+          </span>
         </Field>
       </div>
       <div className="flex justify-end gap-2">

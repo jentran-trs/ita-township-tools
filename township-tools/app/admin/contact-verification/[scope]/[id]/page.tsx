@@ -221,9 +221,9 @@ export default function DrillDownPage() {
       <div className="max-w-5xl mx-auto px-6 py-10">
         <button
           onClick={() => router.push("/admin/contact-verification")}
-          className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-6"
+          className="inline-flex items-center gap-2 text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-md px-4 py-2.5 hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 shadow-sm mb-6"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to dashboard
+          <ArrowLeft className="w-5 h-5" /> Back to Contact Verification
         </button>
 
         <div className="flex items-start justify-between mb-8">

@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2, ArrowRight, User, MapPin, UserCheck, CheckCircle2, X } from "lucide-react";
+import { useAuth } from "@clerk/nextjs";
+import { Loader2, ArrowRight, ArrowLeft, User, MapPin, UserCheck, CheckCircle2, X } from "lucide-react";
 
 const REVIEWER_KEY = "cv_reviewer_v1";
 
@@ -24,6 +25,7 @@ function saveReviewer(r) {
 export default function VerifyLanding() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { isSignedIn } = useAuth();
   const [showFinishedBanner, setShowFinishedBanner] = useState(false);
   const [tree, setTree] = useState(null);
   const [regionId, setRegionId] = useState("");
@@ -99,6 +101,14 @@ export default function VerifyLanding() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-2xl mx-auto px-6 py-12 sm:py-16">
+        <button
+          onClick={() => router.push(isSignedIn ? "/dashboard" : "/")}
+          className="inline-flex items-center gap-2 text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-md px-4 py-2.5 hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 shadow-sm mb-6"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          {isSignedIn ? "Back to Township Tools dashboard" : "Back to Township Tools"}
+        </button>
+
         {showFinishedBanner && (
           <div className="mb-6 bg-emerald-50 border border-emerald-200 rounded-md px-4 py-3 flex items-start sm:items-center justify-between gap-3 flex-col sm:flex-row">
             <div className="flex items-start gap-2 text-base text-emerald-900">
@@ -245,7 +255,7 @@ export default function VerifyLanding() {
                 {(county?.townships || []).map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.name}
-                    {t.status === "completed" ? " ✓ already completed" : ""}
+                    {t.status === "completed" ? " (completed)" : ""}
                   </option>
                 ))}
               </select>

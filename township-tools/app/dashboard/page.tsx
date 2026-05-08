@@ -2,6 +2,7 @@
 
 import { UserButton, OrganizationSwitcher, useUser, useOrganization, useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Building2, FileText, Users, ArrowRight, Plus, ShieldCheck, FolderOpen, Mail, ClipboardCheck, MapPin } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
@@ -13,6 +14,16 @@ export default function Dashboard() {
 
   // Check if user is admin via organization membership
   const isAdmin = membership?.role === 'org:admin' || orgRole === 'org:admin';
+
+  // Superadmin (only the user with the password cookie) — used to gate the
+  // ITA-wide "Contact Verification" admin tool from other org admins.
+  const [isSuperadmin, setIsSuperadmin] = useState(false);
+  useEffect(() => {
+    fetch("/api/admin/contact-verification/auth")
+      .then((r) => r.json())
+      .then((j) => setIsSuperadmin(!!j.ok))
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-900">
@@ -142,20 +153,44 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Contact Verification - Admin Only (password-gated on the destination page) */}
-              {isAdmin && (
+              {/* Verify Your Township Contacts - public reviewer flow, visible to everyone */}
+              <div
+                onClick={() => router.push("/verify-contacts")}
+                className="bg-slate-800 border border-slate-700 rounded-xl p-5 sm:p-6 hover:border-amber-500/50 transition-colors cursor-pointer group"
+              >
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-rose-500/20 rounded-lg flex items-center justify-center group-hover:bg-rose-500/30 transition-colors">
+                    <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-rose-500" />
+                  </div>
+                </div>
+                <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Verify Your Township Contacts</h3>
+                <p className="text-sm sm:text-base text-slate-300 mb-3 sm:mb-4">
+                  Quickly review and update your township&apos;s officials, addresses, and emails so we can keep records accurate.
+                </p>
+                <div className="flex items-center text-rose-500 font-medium text-sm sm:text-base">
+                  Start Reviewing <ArrowRight className="w-4 h-4 ml-2" />
+                </div>
+              </div>
+
+              {/* Contact Verification — superadmin only (gated by password cookie) */}
+              {isSuperadmin && (
                 <div
                   onClick={() => router.push("/admin/contact-verification")}
                   className="bg-slate-800 border border-slate-700 rounded-xl p-5 sm:p-6 hover:border-amber-500/50 transition-colors cursor-pointer group"
                 >
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-rose-500/20 rounded-lg flex items-center justify-center mb-3 sm:mb-4 group-hover:bg-rose-500/30 transition-colors">
-                    <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-rose-500" />
+                  <div className="flex items-center justify-between mb-3 sm:mb-4">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-amber-500/20 rounded-lg flex items-center justify-center group-hover:bg-amber-500/30 transition-colors">
+                      <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6 text-amber-500" />
+                    </div>
+                    <span className="text-xs font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded-full">
+                      ITA ONLY
+                    </span>
                   </div>
-                  <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Contact Verification</h3>
+                  <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Contact Verification (Admin)</h3>
                   <p className="text-sm sm:text-base text-slate-300 mb-3 sm:mb-4">
-                    Track township contact verification, import xlsx files, and export updated lists. Password required.
+                    Track verification progress across all townships, import xlsx, and export updated lists.
                   </p>
-                  <div className="flex items-center text-rose-500 font-medium text-sm sm:text-base">
+                  <div className="flex items-center text-amber-500 font-medium text-sm sm:text-base">
                     Open Tool <ArrowRight className="w-4 h-4 ml-2" />
                   </div>
                 </div>

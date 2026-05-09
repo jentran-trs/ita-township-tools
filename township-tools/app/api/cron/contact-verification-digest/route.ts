@@ -68,8 +68,8 @@ async function buildDigest(supabase: ReturnType<typeof createServerSupabaseClien
 }
 
 function renderEmail({ groups, totalChanges, reviewers, since }: any) {
-  const sections = Object.entries(groups)
-    .map(([k, items]: [string, any[]]) => {
+  const sections = (Object.entries(groups) as [string, any[]][])
+    .map(([k, items]) => {
       const lines = items
         .map((it) => {
           const who = it.reviewer_name || it.reviewer_email || '(anonymous)';

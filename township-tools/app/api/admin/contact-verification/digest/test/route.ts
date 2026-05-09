@@ -57,7 +57,7 @@ export async function POST() {
   const escapeHtml = (s: string) =>
     String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-  const sections = Object.entries(groups)
+  const sections = (Object.entries(groups) as [string, any[]][])
     .map(([k, items]) => {
       const lines = items
         .map((it: any) => {

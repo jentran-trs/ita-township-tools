@@ -31,8 +31,18 @@ export async function GET() {
     .limit(100);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+  // Keep only the most recent note per (township, reviewer email). Reviewers can
+  // update their handoff note via "I'm done for now" — admin should see the
+  // latest version, not the full revision history.
+  const seen = new Set<string>();
   const notes = (data || [])
     .filter((r: any) => r.after?.note)
+    .filter((r: any) => {
+      const key = `${r.township_id}|${(r.reviewer_email || '').toLowerCase().trim()}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
     .map((r: any) => ({
       id: r.id,
       created_at: r.created_at,

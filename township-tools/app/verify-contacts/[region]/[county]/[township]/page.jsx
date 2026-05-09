@@ -20,6 +20,7 @@ import {
   ShieldCheck,
   SkipForward,
   Clock,
+  MessageSquare,
 } from "lucide-react";
 
 const FIELDS = ["first_name", "last_name", "title", "email", "phone", "email_status"];
@@ -107,6 +108,9 @@ export default function VerifyTownshipPage() {
   const [addressDraft, setAddressDraft] = useState({ street_address: "", mailing_address: "" });
   const [addressBusy, setAddressBusy] = useState(false);
   const [verificationDeadline, setVerificationDeadline] = useState(null);
+  const [townshipNotes, setTownshipNotes] = useState([]);
+  const [isSuperadmin, setIsSuperadmin] = useState(false);
+  const [notesVisible, setNotesVisible] = useState(false);
 
   useEffect(() => {
     const loaded = loadReviewer();
@@ -117,6 +121,10 @@ export default function VerifyTownshipPage() {
     fetch("/api/verify/settings")
       .then((r) => r.json())
       .then((d) => setVerificationDeadline(d.verification_deadline || null))
+      .catch(() => {});
+    fetch("/api/admin/contact-verification/auth")
+      .then((r) => r.json())
+      .then((d) => setIsSuperadmin(!!d.ok))
       .catch(() => {});
   }, []);
 
@@ -155,6 +163,15 @@ export default function VerifyTownshipPage() {
     setTownship(json.township);
     setContacts(json.contacts || []);
   };
+
+  // Fetch notes only when current user is superadmin (the API rejects non-superadmin requests).
+  useEffect(() => {
+    if (!isSuperadmin || !township?.id) return;
+    fetch(`/api/verify/township/${township.id}/notes`)
+      .then((r) => r.json())
+      .then((d) => setTownshipNotes(d.notes || []))
+      .catch(() => {});
+  }, [isSuperadmin, township?.id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -572,6 +589,47 @@ export default function VerifyTownshipPage() {
             </div>
           );
         })()}
+
+        {/* Reviewer notes — superadmin only, hidden behind a toggle */}
+        {isSuperadmin && townshipNotes.length > 0 && (
+          <div className="mt-5">
+            <button
+              onClick={() => setNotesVisible((v) => !v)}
+              className="flex items-center gap-2 text-sm font-medium text-amber-900 bg-amber-50 border border-amber-300 px-4 py-2 rounded-md hover:bg-amber-100"
+            >
+              <MessageSquare className="w-4 h-4" />
+              {notesVisible ? "Hide notes" : "View notes"}
+              <span className="inline-flex items-center text-xs font-semibold px-1.5 py-0.5 rounded-full bg-amber-200 text-amber-900">
+                {townshipNotes.length}
+              </span>
+            </button>
+            {notesVisible && (
+              <div className="mt-2 bg-amber-50/60 border border-amber-200 rounded-md">
+                <ul className="divide-y divide-amber-100">
+                  {townshipNotes.map((n) => (
+                    <li key={n.id} className="px-4 py-3">
+                      <div className="flex items-center justify-between gap-3 flex-wrap">
+                        <span className="text-sm font-medium text-gray-900">
+                          {n.reviewer_name || "Anonymous reviewer"}
+                        </span>
+                        <span className="text-xs text-gray-500 whitespace-nowrap">
+                          {new Date(n.created_at).toLocaleDateString(undefined, {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </span>
+                      </div>
+                      <div className="mt-1 pl-3 border-l-2 border-amber-300 italic text-base text-gray-800">
+                        &ldquo;{n.note}&rdquo;
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Reviewer identity (required) */}
         <div
@@ -1070,6 +1128,11 @@ export default function VerifyTownshipPage() {
                 value={handoffNote}
                 onChange={(e) => setHandoffNote(e.target.value)}
               />
+              {handoffNote && (
+                <span className="block text-xs text-gray-500 mt-1">
+                  This is your previous note. Edit it to update what we see.
+                </span>
+              )}
             </label>
             <div className="flex justify-end gap-2 flex-wrap">
               <button
@@ -1106,8 +1169,19 @@ export default function VerifyTownshipPage() {
           </div>
           <div className="flex items-stretch gap-3 flex-shrink-0">
             <button
-              onClick={() => {
-                setHandoffNote("");
+              onClick={async () => {
+                // Pre-fill the modal with this reviewer's previous note for this township, if any
+                let prev = "";
+                try {
+                  if (reviewer?.reviewerEmail && township?.id) {
+                    const res = await fetch(
+                      `/api/verify/township/${township.id}/my-note?email=${encodeURIComponent(reviewer.reviewerEmail)}`
+                    );
+                    const json = await res.json();
+                    prev = json?.note || "";
+                  }
+                } catch {}
+                setHandoffNote(prev);
                 setShowFinishModal(true);
               }}
               className="w-[160px] flex items-center justify-center text-sm font-semibold text-amber-900 bg-amber-100 border-2 border-amber-300 px-3 py-2.5 rounded-md shadow-sm hover:bg-amber-200 hover:border-amber-400 transition-colors whitespace-nowrap"

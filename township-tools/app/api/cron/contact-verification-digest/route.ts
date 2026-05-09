@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
-import { createServerSupabaseClient } from '../../../../../lib/supabase';
+import { createServerSupabaseClient } from '../../../../lib/supabase';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

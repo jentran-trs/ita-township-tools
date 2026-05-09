@@ -30,6 +30,8 @@ export default function VerifyLanding() {
   const [finishedTownship, setFinishedTownship] = useState("");
   const [finishedCounty, setFinishedCounty] = useState("");
   const [verificationDeadline, setVerificationDeadline] = useState(null);
+  const [portalLocked, setPortalLocked] = useState(false);
+  const [portalReopen, setPortalReopen] = useState(null);
   const [tree, setTree] = useState(null);
   const [regionId, setRegionId] = useState("");
   const [countyId, setCountyId] = useState("");
@@ -66,7 +68,11 @@ export default function VerifyLanding() {
       .catch(() => setLoading(false));
     fetch("/api/verify/settings")
       .then((r) => r.json())
-      .then((d) => setVerificationDeadline(d.verification_deadline || null))
+      .then((d) => {
+        setVerificationDeadline(d.verification_deadline || null);
+        setPortalLocked(!!d.portal_locked);
+        setPortalReopen(d.portal_reopen || null);
+      })
       .catch(() => {});
   }, []);
 
@@ -147,30 +153,67 @@ export default function VerifyLanding() {
           </div>
         )}
         {verificationDeadline && (() => {
-          const deadlineDate = new Date(verificationDeadline + "T23:59:59");
-          const now = new Date();
-          const isPast = now > deadlineDate;
           const formatted = new Date(verificationDeadline + "T00:00:00").toLocaleDateString(undefined, {
             year: "numeric",
             month: "long",
             day: "numeric",
           });
-          if (isPast) return null;
+          const reopenDate = portalReopen ? new Date(portalReopen) : null;
+          const reopenFormatted = reopenDate
+            ? reopenDate.toLocaleDateString(undefined, {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })
+            : "";
+          const now = new Date();
+          if (portalLocked) {
+            return (
+              <div className="mb-6 bg-gray-100 border-2 border-gray-300 rounded-md px-4 py-3 flex items-start gap-2 text-base text-gray-800">
+                <Clock className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                <div>
+                  <strong>The portal is currently closed for finalization.</strong> Indiana
+                  Township Association is reviewing the records collected by {formatted}. The
+                  portal will reopen on <strong>{reopenFormatted}</strong>.
+                </div>
+              </div>
+            );
+          }
+          if (reopenDate && now >= reopenDate) {
+            return (
+              <div className="mb-6 bg-blue-50 border border-blue-200 rounded-md px-4 py-3 flex items-start gap-2 text-base text-blue-900">
+                <CheckCircle2 className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                <div>
+                  <strong>If there have been changes to your township contact list,
+                    please update below.</strong>
+                </div>
+              </div>
+            );
+          }
           return (
             <div className="mb-6 bg-amber-50 border-2 border-amber-300 rounded-md px-4 py-3 flex items-start gap-2 text-base text-amber-900">
               <Clock className="w-5 h-5 mt-0.5 flex-shrink-0" />
               <div>
                 <strong>Please verify by {formatted}.</strong> The portal will close for review
-                after this date so Indiana Township Association can finalize the records.
+                after this date so Indiana Township Association can finalize the records. After{" "}
+                <strong>{reopenFormatted}</strong>, you can come back to update your township
+                contact list as needed.
               </div>
             </div>
           );
         })()}
 
-        <h1 className="text-3xl font-semibold text-gray-900 mb-2">Verify your township contacts</h1>
-        <p className="text-gray-600 mb-8">
-          Tell us a little about yourself, then pick your township so we can show you the contacts on file.
-        </p>
+        <div className="flex flex-col items-center text-center mb-6">
+          <img
+            src="/ita-logo.png"
+            alt="Indiana Township Association"
+            className="w-24 h-24 sm:w-28 sm:h-28 mb-3"
+          />
+          <h1 className="text-3xl font-semibold text-gray-900 mb-2">Verify your township contacts</h1>
+          <p className="text-gray-600 max-w-lg">
+            Tell us a little about yourself, then pick your township so we can show you the contacts on file.
+          </p>
+        </div>
 
         {/* Step 1 — your details */}
         {savedReviewer && !identityConfirmed ? (

@@ -108,9 +108,12 @@ export default function VerifyTownshipPage() {
   const [addressDraft, setAddressDraft] = useState({ street_address: "", mailing_address: "" });
   const [addressBusy, setAddressBusy] = useState(false);
   const [verificationDeadline, setVerificationDeadline] = useState(null);
+  const [portalLocked, setPortalLocked] = useState(false);
+  const [portalReopen, setPortalReopen] = useState(null);
   const [townshipNotes, setTownshipNotes] = useState([]);
   const [isSuperadmin, setIsSuperadmin] = useState(false);
   const [notesVisible, setNotesVisible] = useState(false);
+  const [recentlyChangedIds, setRecentlyChangedIds] = useState(new Set());
 
   useEffect(() => {
     const loaded = loadReviewer();
@@ -120,7 +123,11 @@ export default function VerifyTownshipPage() {
     }
     fetch("/api/verify/settings")
       .then((r) => r.json())
-      .then((d) => setVerificationDeadline(d.verification_deadline || null))
+      .then((d) => {
+        setVerificationDeadline(d.verification_deadline || null);
+        setPortalLocked(!!d.portal_locked);
+        setPortalReopen(d.portal_reopen || null);
+      })
       .catch(() => {});
     fetch("/api/admin/contact-verification/auth")
       .then((r) => r.json())
@@ -170,6 +177,10 @@ export default function VerifyTownshipPage() {
     fetch(`/api/verify/township/${township.id}/notes`)
       .then((r) => r.json())
       .then((d) => setTownshipNotes(d.notes || []))
+      .catch(() => {});
+    fetch(`/api/admin/contact-verification/township/${township.id}/recent-changes`)
+      .then((r) => r.json())
+      .then((d) => setRecentlyChangedIds(new Set(d.contactIds || [])))
       .catch(() => {});
   }, [isSuperadmin, township?.id]);
 
@@ -533,10 +544,19 @@ export default function VerifyTownshipPage() {
           {adminBackHref ? "Back to admin dashboard" : "Pick a different township"}
         </button>
 
-        <div className="mb-2 text-base text-gray-500">
-          {tree?.region?.name} &rsaquo; {tree?.county?.name} County
+        <div className="flex items-start gap-4">
+          <img
+            src="/ita-logo.png"
+            alt="Indiana Township Association"
+            className="w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 hidden sm:block"
+          />
+          <div className="min-w-0 flex-1">
+            <div className="mb-2 text-base text-gray-500">
+              {tree?.region?.name} &rsaquo; {tree?.county?.name} County
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-semibold text-gray-900 mb-1">{township?.name}</h1>
+          </div>
         </div>
-        <h1 className="text-3xl sm:text-4xl font-semibold text-gray-900 mb-1">{township?.name}</h1>
         {lastSavedAt && (
           <div
             key={savedTick}
@@ -560,21 +580,41 @@ export default function VerifyTownshipPage() {
         )}
 
         {verificationDeadline && (() => {
-          const deadlineDate = new Date(verificationDeadline + "T23:59:59");
-          const now = new Date();
-          const isPast = now > deadlineDate;
           const formatted = new Date(verificationDeadline + "T00:00:00").toLocaleDateString(undefined, {
             year: "numeric",
             month: "long",
             day: "numeric",
           });
-          if (isPast) {
+          const reopenDate = portalReopen ? new Date(portalReopen) : null;
+          const reopenFormatted = reopenDate
+            ? reopenDate.toLocaleDateString(undefined, {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })
+            : "";
+          const now = new Date();
+          const deadlineDate = new Date(verificationDeadline + "T23:59:59-04:00");
+          // 3 states: locked / reopened / pre-deadline
+          if (portalLocked) {
+            return (
+              <div className="mt-5 bg-gray-100 border-2 border-gray-300 rounded-md px-4 py-3 text-base text-gray-800 flex items-start gap-2">
+                <Clock className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                <div>
+                  <strong>The portal is currently closed for finalization.</strong> Indiana
+                  Township Association is reviewing the records collected by {formatted}. The
+                  portal will reopen on <strong>{reopenFormatted}</strong>.
+                </div>
+              </div>
+            );
+          }
+          if (reopenDate && now >= reopenDate) {
             return (
               <div className="mt-5 bg-blue-50 border border-blue-200 rounded-md px-4 py-3 text-base text-blue-900 flex items-start gap-2">
                 <CheckCircle2 className="w-5 h-5 mt-0.5 flex-shrink-0" />
                 <div>
-                  <strong>The initial verification phase ended on {formatted}.</strong>{" "}
-                  Need to update something? Make changes anytime — we&apos;ll review them.
+                  <strong>If there have been changes to your township contact list,
+                    please update below.</strong>
                 </div>
               </div>
             );
@@ -583,8 +623,10 @@ export default function VerifyTownshipPage() {
             <div className="mt-5 bg-amber-50 border-2 border-amber-300 rounded-md px-4 py-3 text-base text-amber-900 flex items-start gap-2">
               <Clock className="w-5 h-5 mt-0.5 flex-shrink-0" />
               <div>
-                <strong>Please verify by {formatted}.</strong> The portal will close for
-                review after this date so Indiana Township Association can finalize the records.
+                <strong>Please verify by {formatted}.</strong> The portal will close for review
+                after this date so Indiana Township Association can finalize the records. After{" "}
+                <strong>{reopenFormatted}</strong>, you can come back to update your township
+                contact list as needed.
               </div>
             </div>
           );
@@ -631,7 +673,8 @@ export default function VerifyTownshipPage() {
           </div>
         )}
 
-        {/* Reviewer identity (required) */}
+        {/* Reviewer identity (required) — hidden when portal is locked */}
+        {!portalLocked && (
         <div
           className={`mt-6 bg-white border rounded-md ${
             isReviewerComplete(reviewer)
@@ -699,6 +742,7 @@ export default function VerifyTownshipPage() {
             </div>
           )}
         </div>
+        )}
 
         {/* Address block */}
         <div
@@ -782,6 +826,7 @@ export default function VerifyTownshipPage() {
                   </div>
                 )}
               </div>
+              {!portalLocked && (
               <div className="flex flex-wrap sm:flex-nowrap gap-2 sm:justify-end shrink-0">
                 {addressUnreviewed ? (
                   <>
@@ -810,6 +855,7 @@ export default function VerifyTownshipPage() {
                   </button>
                 )}
               </div>
+              )}
             </div>
           )}
         </div>
@@ -876,6 +922,7 @@ export default function VerifyTownshipPage() {
                   ? "animate-slide-in-left"
                   : "animate-slide-in-right"
                 : "";
+            const isRecentlyChanged = isSuperadmin && recentlyChangedIds.has(c.id);
             return (
               <div
                 key={view === "wizard" ? `wiz-${c.id}` : c.id}
@@ -884,7 +931,7 @@ export default function VerifyTownshipPage() {
                   view === "wizard" ? "p-6 sm:p-8 shadow-sm " + wizardAnim : "p-4"
                 } transition-opacity ${
                   view === "summary" && isReviewed ? "opacity-90 hover:opacity-100" : ""
-                }`}
+                } ${isRecentlyChanged ? "ring-2 ring-blue-400 ring-offset-2" : ""}`}
               >
                 {!isEditing ? (
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -894,6 +941,11 @@ export default function VerifyTownshipPage() {
                           {[c.first_name, c.last_name].filter(Boolean).join(" ") || "(no name)"}
                         </span>
                         <StatusPill status={c.review_status} />
+                        {isRecentlyChanged && (
+                          <span className="inline-flex items-center text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded bg-blue-600 text-white">
+                            Recent change
+                          </span>
+                        )}
                       </div>
                       {c.title && <div className="text-base text-gray-700 mt-1">{c.title}</div>}
                       <div
@@ -928,6 +980,7 @@ export default function VerifyTownshipPage() {
                         </div>
                       )}
                     </div>
+                    {!portalLocked && (
                     <div className="flex flex-wrap sm:flex-nowrap gap-2 sm:justify-end shrink-0">
                       {isUnreviewed && (
                         <>
@@ -1009,6 +1062,7 @@ export default function VerifyTownshipPage() {
                         </>
                       )}
                     </div>
+                    )}
                   </div>
                 ) : (
                   <ContactForm
@@ -1066,7 +1120,7 @@ export default function VerifyTownshipPage() {
           )}
 
           {/* Add new contact (summary view only) */}
-          {view === "summary" && !adding && (
+          {view === "summary" && !adding && !portalLocked && (
             <button
               onClick={() => {
                 setAdding(true);
@@ -1155,6 +1209,7 @@ export default function VerifyTownshipPage() {
       )}
 
       {/* Sticky completion bar */}
+      {!portalLocked && (
       <div className="fixed bottom-0 inset-x-0 bg-white border-t-2 border-gray-300 shadow-[0_-8px_24px_-8px_rgba(0,0,0,0.15)]">
         <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between gap-4 flex-col sm:flex-row">
           <div className="text-base text-gray-800 font-medium whitespace-nowrap overflow-hidden text-ellipsis min-w-0 flex-1">
@@ -1202,6 +1257,7 @@ export default function VerifyTownshipPage() {
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }

@@ -32,6 +32,12 @@ export async function POST(req: Request) {
   if ('verification_deadline' in body) {
     update.verification_deadline = body.verification_deadline || null;
   }
+  if ('digest_enabled' in body) {
+    update.digest_enabled = !!body.digest_enabled;
+  }
+  if ('digest_recipient_email' in body) {
+    update.digest_recipient_email = body.digest_recipient_email || null;
+  }
 
   const { data, error } = await supabase
     .from('cv_settings')

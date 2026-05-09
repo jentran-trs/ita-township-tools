@@ -71,14 +71,12 @@ export default function DrillDownPage() {
   const isAdmin = membership?.role === "org:admin" || orgRole === "org:admin";
 
   const [stats, setStats] = useState<Stat[]>([]);
-  const [audit, setAudit] = useState<Audit[]>([]);
   const [lastViewedAt, setLastViewedAt] = useState<string | null>(null);
   const [verificationDeadline, setVerificationDeadline] = useState<string | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilters, setStatusFilters] = useState<Set<string>>(new Set());
   const [townshipFilters, setTownshipFilters] = useState<Set<string>>(new Set());
-  const [activityFilter, setActivityFilter] = useState<"all" | "since_visit" | "since_deadline">("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [exporting, setExporting] = useState(false);
   const [detailed, setDetailed] = useState(false);
@@ -106,7 +104,6 @@ export default function DrillDownPage() {
     const contactsJson = await contactsRes.json();
     if (scopeRes.ok) {
       setStats(scopeJson.stats || []);
-      setAudit(scopeJson.audit || []);
       setLastViewedAt(scopeJson.last_viewed_at || null);
       setVerificationDeadline(scopeJson.verification_deadline || null);
     }
@@ -524,120 +521,6 @@ export default function DrillDownPage() {
           )}
         </div>
 
-        <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
-          <h2 className="text-base font-semibold text-gray-900">Recent activity</h2>
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs text-gray-500">Show:</span>
-            {[
-              { value: "all" as const, label: "All" },
-              {
-                value: "since_visit" as const,
-                label: lastViewedAt
-                  ? `Since my last visit (${new Date(lastViewedAt).toLocaleDateString()})`
-                  : "Since my last visit",
-                disabled: !lastViewedAt,
-              },
-              {
-                value: "since_deadline" as const,
-                label: verificationDeadline
-                  ? `Since deadline (${new Date(verificationDeadline + "T00:00:00").toLocaleDateString()})`
-                  : "Since deadline",
-                disabled: !verificationDeadline,
-              },
-            ].map((f) => (
-              <button
-                key={f.value}
-                onClick={() => setActivityFilter(f.value)}
-                disabled={f.disabled}
-                className={`text-xs px-2.5 py-1 rounded-full border ${
-                  activityFilter === f.value
-                    ? "bg-gray-900 text-white border-gray-900"
-                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                } disabled:opacity-30 disabled:cursor-not-allowed`}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-          {(() => {
-            const filtered = audit.filter((a) => {
-              if (activityFilter === "since_visit" && lastViewedAt) {
-                return a.created_at > lastViewedAt;
-              }
-              if (activityFilter === "since_deadline" && verificationDeadline) {
-                return a.created_at >= new Date(verificationDeadline + "T00:00:00").toISOString();
-              }
-              return true;
-            });
-            if (filtered.length === 0) {
-              return (
-                <div className="px-4 py-6 text-sm text-gray-500 text-center">No edits in this filter.</div>
-              );
-            }
-            return (
-              <ul className="divide-y divide-gray-100">
-                {filtered.map((a) => {
-                  const isNew = lastViewedAt ? a.created_at > lastViewedAt : false;
-                  const tname = a.cv_townships?.name;
-                  const cname = a.cv_townships?.cv_counties?.name;
-                  const contactName = [
-                    a.after?.first_name || a.before?.first_name,
-                    a.after?.last_name || a.before?.last_name,
-                  ]
-                    .filter(Boolean)
-                    .join(" ");
-                  return (
-                    <li
-                      key={a.id}
-                      className={`px-4 py-3 text-sm ${isNew ? "bg-blue-50/50" : ""}`}
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="text-gray-900 flex items-center gap-2 flex-wrap min-w-0">
-                          {isNew && (
-                            <span className="inline-flex items-center text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-blue-600 text-white">
-                              new
-                            </span>
-                          )}
-                          <span className="font-medium capitalize">{a.action.replace(/_/g, " ")}</span>
-                          {a.reviewer_name || a.reviewer_email ? (
-                            <span className="text-gray-600">
-                              by {a.reviewer_name || a.reviewer_email}
-                            </span>
-                          ) : (
-                            <span className="text-gray-500">(anonymous)</span>
-                          )}
-                        </div>
-                        <div className="text-xs text-gray-500 whitespace-nowrap">
-                          {new Date(a.created_at).toLocaleString()}
-                        </div>
-                      </div>
-                      {(tname || contactName) && (
-                        <div className="text-xs text-gray-600 mt-1">
-                          {tname && (
-                            <span className="font-medium text-gray-700">
-                              {tname}
-                              {cname ? `, ${cname} County` : ""}
-                            </span>
-                          )}
-                          {tname && contactName ? " · " : ""}
-                          {contactName && <span>{contactName}</span>}
-                        </div>
-                      )}
-                      {a.action === "session_finished" && a.after?.note && (
-                        <div className="text-sm text-gray-700 italic mt-1.5 pl-2 border-l-2 border-gray-300">
-                          &ldquo;{a.after.note}&rdquo;
-                        </div>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            );
-          })()}
-        </div>
 
       </div>
     </div>

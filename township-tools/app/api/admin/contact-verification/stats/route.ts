@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '../../../../../lib/supabase';
 import { isAdmin } from '../../../../../lib/auth/isAdmin';
 import { requireSuperadmin } from '../../../../../lib/auth/superadmin';
+import { getRecentChangesCutoff } from '../../../../../lib/contact-verification/cutoff';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -29,22 +30,22 @@ export async function GET() {
   ]);
   const lastViewedAt: string | null = viewRow?.last_viewed_at || null;
   const deadline: string | null = settings?.verification_deadline || null;
+  const { cutoff: lastViewedForCompare, suppress: suppressNewPills } =
+    getRecentChangesCutoff(deadline, lastViewedAt);
 
   // Pull audit-log entries we'll bucket per region/county/township
   let auditQuery = supabase
     .from('cv_audit_log')
     .select('township_id, created_at, action');
-  if (lastViewedAt || deadline) {
-    const oldest = [lastViewedAt, deadline].filter(Boolean).sort()[0]!;
-    auditQuery = auditQuery.gte('created_at', oldest);
-  }
+  const oldest = [lastViewedForCompare, deadline].filter(Boolean).sort()[0]!;
+  auditQuery = auditQuery.gte('created_at', oldest);
   const { data: auditRows } = await auditQuery;
 
   const newSinceLastViewByTownship = new Map<string, number>();
   const newSinceDeadlineByTownship = new Map<string, number>();
   const deadlineISO = deadline ? new Date(deadline + 'T00:00:00').toISOString() : null;
   for (const row of auditRows || []) {
-    if (lastViewedAt && row.created_at > lastViewedAt) {
+    if (!suppressNewPills && row.created_at > lastViewedForCompare) {
       newSinceLastViewByTownship.set(
         row.township_id,
         (newSinceLastViewByTownship.get(row.township_id) || 0) + 1

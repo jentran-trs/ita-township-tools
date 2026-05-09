@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser, useOrganization, useAuth } from "@clerk/nextjs";
-import { ArrowLeft, Loader2, Upload, Download, RefreshCw, Bell, Settings, Save, Lock, LogOut } from "lucide-react";
+import { ArrowLeft, Loader2, Upload, Download, RefreshCw, Bell, Settings, Save, Lock, LogOut, Mail, ListChecks } from "lucide-react";
 
 type CountyStat = {
   id: string;
@@ -32,6 +32,9 @@ type RegionStat = {
 
 type Settings = {
   verification_deadline: string | null;
+  digest_enabled: boolean;
+  digest_recipient_email: string | null;
+  digest_last_sent_at: string | null;
 };
 
 function pct(num: number, den: number) {
@@ -192,6 +195,12 @@ export default function ContactVerificationAdminPage() {
               className="flex items-center gap-2 text-sm font-medium text-gray-700 px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
             >
               <RefreshCw className="w-4 h-4" /> Refresh
+            </button>
+            <button
+              onClick={() => router.push("/admin/contact-verification/recent-changes")}
+              className="flex items-center gap-2 text-sm font-medium text-gray-700 px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+            >
+              <ListChecks className="w-4 h-4" /> Recent changes
             </button>
             <button
               onClick={() => router.push("/admin/contact-verification/import")}
@@ -365,6 +374,8 @@ function SettingsPanel({
   onClose: () => void;
 }) {
   const [deadline, setDeadline] = useState(settings.verification_deadline || "");
+  const [digestEnabled, setDigestEnabled] = useState(!!settings.digest_enabled);
+  const [digestEmail, setDigestEmail] = useState(settings.digest_recipient_email || "");
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-5 mb-5">
@@ -372,29 +383,79 @@ function SettingsPanel({
         <div>
           <h2 className="text-base font-semibold text-gray-900">Settings</h2>
           <p className="text-xs text-gray-500 mt-0.5">
-            Sets the verification deadline used for the post-deadline banner and the activity filter.
+            Verification deadline and weekly summary email.
           </p>
         </div>
         <button onClick={onClose} className="text-xs text-gray-500 underline">Close</button>
       </div>
 
-      <label className="block max-w-md">
-        <span className="block text-sm font-medium text-gray-700 mb-1">Verification deadline</span>
-        <input
-          type="date"
-          value={deadline}
-          onChange={(e) => setDeadline(e.target.value)}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900"
-        />
-        <span className="block text-xs text-gray-500 mt-1">
-          After this date, the public page shows a soft &ldquo;verification ended, edits welcome
-          anytime&rdquo; banner. Leave blank to disable.
-        </span>
-      </label>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <label className="block">
+          <span className="block text-sm font-medium text-gray-700 mb-1">Verification deadline</span>
+          <input
+            type="date"
+            value={deadline}
+            onChange={(e) => setDeadline(e.target.value)}
+            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900"
+          />
+          <span className="block text-xs text-gray-500 mt-1">
+            After this date, banner messaging changes. Leave blank to disable.
+          </span>
+        </label>
 
-      <div className="flex items-center justify-end gap-2 mt-4">
+        <label className="block">
+          <span className="block text-sm font-medium text-gray-700 mb-1">Weekly summary email</span>
+          <div className="flex items-center gap-2 mb-2">
+            <input
+              type="checkbox"
+              checked={digestEnabled}
+              onChange={(e) => setDigestEnabled(e.target.checked)}
+              id="digest_enabled"
+            />
+            <label htmlFor="digest_enabled" className="text-sm text-gray-700">
+              Send weekly summary every Monday morning
+            </label>
+          </div>
+          <input
+            type="email"
+            value={digestEmail}
+            onChange={(e) => setDigestEmail(e.target.value)}
+            placeholder="you@example.com"
+            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900"
+          />
+          {settings.digest_last_sent_at && (
+            <span className="block text-xs text-gray-500 mt-1">
+              Last sent: {new Date(settings.digest_last_sent_at).toLocaleString()}
+            </span>
+          )}
+        </label>
+      </div>
+
+      <div className="flex items-center justify-between gap-2 mt-5 flex-wrap">
         <button
-          onClick={() => onSave({ verification_deadline: deadline || null })}
+          onClick={async () => {
+            try {
+              const res = await fetch("/api/admin/contact-verification/digest/test", { method: "POST" });
+              const json = await res.json();
+              if (!res.ok) throw new Error(json.error || "Failed");
+              if (json.skipped) alert(`Test digest skipped: ${json.skipped}`);
+              else alert(`Test digest sent to ${json.sent} (${json.changes} change${json.changes === 1 ? "" : "s"}).`);
+            } catch (e: any) {
+              alert(e.message);
+            }
+          }}
+          className="flex items-center gap-1.5 text-sm font-medium text-gray-700 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+        >
+          <Mail className="w-4 h-4" /> Send test now
+        </button>
+        <button
+          onClick={() =>
+            onSave({
+              verification_deadline: deadline || null,
+              digest_enabled: digestEnabled,
+              digest_recipient_email: digestEmail || null,
+            })
+          }
           disabled={saving}
           className="flex items-center gap-1.5 text-sm font-medium px-4 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800 disabled:opacity-50"
         >

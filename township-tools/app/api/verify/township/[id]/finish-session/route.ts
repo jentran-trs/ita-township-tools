@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '../../../../../../lib/supabase';
+import { isPortalLocked } from '../../../../../../lib/contact-verification/portal-lock';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -11,6 +12,17 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   const supabase = createServerSupabaseClient();
+  const { data: cfg } = await supabase
+    .from('cv_settings')
+    .select('verification_deadline')
+    .eq('id', 1)
+    .maybeSingle();
+  if (isPortalLocked(cfg?.verification_deadline || null)) {
+    return NextResponse.json(
+      { error: 'The portal is currently closed for finalization.' },
+      { status: 423 }
+    );
+  }
   const body = await req.json().catch(() => ({}));
   const reviewerName = body?.reviewer?.reviewerName || null;
   const reviewerEmail = body?.reviewer?.reviewerEmail || null;

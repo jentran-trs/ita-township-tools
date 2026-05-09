@@ -1,7 +1,23 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '../../../../lib/supabase';
+import { isPortalLocked } from '../../../../lib/contact-verification/portal-lock';
 
 export const runtime = 'nodejs';
+
+async function rejectIfLocked(supabase: ReturnType<typeof createServerSupabaseClient>) {
+  const { data } = await supabase
+    .from('cv_settings')
+    .select('verification_deadline')
+    .eq('id', 1)
+    .maybeSingle();
+  if (isPortalLocked(data?.verification_deadline || null)) {
+    return NextResponse.json(
+      { error: 'The portal is currently closed for finalization. Please come back after the reopen date.' },
+      { status: 423 }
+    );
+  }
+  return null;
+}
 
 type Reviewer = {
   sessionId?: string | null;
@@ -55,6 +71,8 @@ function reviewerFields(reviewer: Reviewer) {
 // CREATE — add a new contact
 export async function POST(req: Request) {
   const supabase = createServerSupabaseClient();
+  const lockErr = await rejectIfLocked(supabase);
+  if (lockErr) return lockErr;
   const body = await req.json();
   const { townshipId, reviewer, contact } = body;
   if (!townshipId || !contact) return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
@@ -91,6 +109,8 @@ export async function POST(req: Request) {
 // UPDATE — edit fields, mark "no change", mark for removal, or undo a review
 export async function PATCH(req: Request) {
   const supabase = createServerSupabaseClient();
+  const lockErr = await rejectIfLocked(supabase);
+  if (lockErr) return lockErr;
   const body = await req.json();
   const { contactId, reviewer, changes, markNoChange, markUnreviewed, markForRemoval, markSkipped } = body;
   if (!contactId) return NextResponse.json({ error: 'contactId required' }, { status: 400 });
@@ -192,6 +212,8 @@ export async function PATCH(req: Request) {
 // DELETE — soft-delete (remove from list)
 export async function DELETE(req: Request) {
   const supabase = createServerSupabaseClient();
+  const lockErr = await rejectIfLocked(supabase);
+  if (lockErr) return lockErr;
   const url = new URL(req.url);
   const contactId = url.searchParams.get('contactId');
   if (!contactId) return NextResponse.json({ error: 'contactId required' }, { status: 400 });

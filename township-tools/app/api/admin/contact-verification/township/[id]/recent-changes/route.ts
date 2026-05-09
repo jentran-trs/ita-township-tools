@@ -60,10 +60,10 @@ export async function GET(
     if (!latestByContact.has(r.contact_id)) latestByContact.set(r.contact_id, r.created_at);
   }
   const contactIds: string[] = [];
-  for (const [cid, latest] of latestByContact) {
+  latestByContact.forEach((latest, cid) => {
     const seen = seenMap.get(cid);
     if (!seen || latest > seen) contactIds.push(cid);
-  }
+  });
 
   return NextResponse.json({
     contactIds,

@@ -795,7 +795,7 @@ export default function VerifyTownshipPage() {
                 <button
                   onClick={cancelAddressEdit}
                   disabled={addressBusy}
-                  className="flex items-center gap-1.5 text-sm font-medium text-gray-700 px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50"
+                  className="flex items-center justify-center gap-1.5 text-sm font-medium text-gray-700 px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50"
                 >
                   <X className="w-4 h-4" /> Cancel
                 </button>
@@ -833,14 +833,14 @@ export default function VerifyTownshipPage() {
                     <button
                       onClick={confirmAddress}
                       disabled={addressBusy}
-                      className="flex items-center gap-1.5 text-sm font-medium text-gray-700 px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50"
+                      className="flex items-center justify-center gap-1.5 text-sm font-medium text-gray-700 px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50"
                     >
                       <Check className="w-4 h-4" /> Confirm correct
                     </button>
                     <button
                       onClick={startAddressEdit}
                       disabled={addressBusy}
-                      className="flex items-center gap-1.5 text-sm font-medium text-gray-700 px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50"
+                      className="flex items-center justify-center gap-1.5 text-sm font-medium text-gray-700 px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50"
                     >
                       <Pencil className="w-4 h-4" /> Edit
                     </button>
@@ -849,7 +849,7 @@ export default function VerifyTownshipPage() {
                   <button
                     onClick={undoAddress}
                     disabled={addressBusy}
-                    className="flex items-center gap-1.5 text-sm font-medium text-gray-700 px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50"
+                    className="flex items-center justify-center gap-1.5 text-sm font-medium text-gray-700 px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50"
                   >
                     <Undo2 className="w-4 h-4" /> Undo
                   </button>
@@ -881,7 +881,7 @@ export default function VerifyTownshipPage() {
                 </>
               )}
             </div>
-            {view === "summary" && (
+            {view === "summary" && contacts.length > 1 && (
               <button
                 onClick={() => {
                   setWizardDirection("forward");
@@ -985,27 +985,27 @@ export default function VerifyTownshipPage() {
                       )}
                     </div>
                     {!portalLocked && (
-                    <div className="flex flex-wrap sm:flex-nowrap gap-2 sm:justify-end shrink-0">
+                    <div className="flex flex-col gap-2 shrink-0 sm:w-44">
                       {isUnreviewed && (
                         <>
                           <button
                             onClick={() => markNoChange(c.id)}
                             disabled={busyId === c.id}
-                            className="flex items-center gap-1.5 text-sm font-medium text-gray-700 px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50"
+                            className="flex items-center justify-center gap-1.5 text-sm font-medium text-gray-700 px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50"
                           >
                             <Check className="w-4 h-4" /> No change
                           </button>
                           <button
                             onClick={() => startEdit(c)}
                             disabled={busyId === c.id}
-                            className="flex items-center gap-1.5 text-sm font-medium text-gray-700 px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50"
+                            className="flex items-center justify-center gap-1.5 text-sm font-medium text-gray-700 px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50"
                           >
                             <Pencil className="w-4 h-4" /> Edit
                           </button>
                           <button
                             onClick={() => markForRemoval(c.id)}
                             disabled={busyId === c.id}
-                            className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 border border-amber-300 text-amber-700 rounded-md hover:bg-amber-50"
+                            className="flex items-center justify-center gap-1.5 text-sm font-medium px-3 py-1.5 border border-amber-300 text-amber-700 rounded-md hover:bg-amber-50"
                           >
                             <Trash2 className="w-4 h-4" /> Mark for removal
                           </button>
@@ -1017,7 +1017,7 @@ export default function VerifyTownshipPage() {
                         <button
                           onClick={() => undoReview(c.id)}
                           disabled={busyId === c.id}
-                          className="flex items-center gap-1.5 text-sm font-medium text-gray-700 px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50"
+                          className="flex items-center justify-center gap-1.5 text-sm font-medium text-gray-700 px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50"
                         >
                           <Undo2 className="w-4 h-4" /> Undo
                         </button>
@@ -1027,21 +1027,21 @@ export default function VerifyTownshipPage() {
                           <button
                             onClick={() => undoReview(c.id)}
                             disabled={busyId === c.id}
-                            className="flex items-center gap-1.5 text-sm font-medium text-gray-700 px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50"
+                            className="flex items-center justify-center gap-1.5 text-sm font-medium text-gray-700 px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50"
                           >
                             <Undo2 className="w-4 h-4" /> Undo
                           </button>
                           <button
                             onClick={() => startEdit(c)}
                             disabled={busyId === c.id}
-                            className="flex items-center gap-1.5 text-sm font-medium text-gray-700 px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50"
+                            className="flex items-center justify-center gap-1.5 text-sm font-medium text-gray-700 px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50"
                           >
                             <Pencil className="w-4 h-4" /> Edit
                           </button>
                           <button
                             onClick={() => markForRemoval(c.id)}
                             disabled={busyId === c.id}
-                            className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 border border-amber-300 text-amber-700 rounded-md hover:bg-amber-50"
+                            className="flex items-center justify-center gap-1.5 text-sm font-medium px-3 py-1.5 border border-amber-300 text-amber-700 rounded-md hover:bg-amber-50"
                           >
                             <Trash2 className="w-4 h-4" /> Mark for removal
                           </button>
@@ -1052,14 +1052,14 @@ export default function VerifyTownshipPage() {
                           <button
                             onClick={() => startEdit(c)}
                             disabled={busyId === c.id}
-                            className="flex items-center gap-1.5 text-sm font-medium text-gray-700 px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50"
+                            className="flex items-center justify-center gap-1.5 text-sm font-medium text-gray-700 px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50"
                           >
                             <Pencil className="w-4 h-4" /> Edit
                           </button>
                           <button
                             onClick={() => removeNewContact(c.id)}
                             disabled={busyId === c.id}
-                            className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 border border-red-200 text-red-700 rounded-md hover:bg-red-50"
+                            className="flex items-center justify-center gap-1.5 text-sm font-medium px-3 py-1.5 border border-red-200 text-red-700 rounded-md hover:bg-red-50"
                           >
                             <Trash2 className="w-4 h-4" /> Remove
                           </button>
@@ -1243,7 +1243,7 @@ export default function VerifyTownshipPage() {
                 setHandoffNote(prev);
                 setShowFinishModal(true);
               }}
-              className="w-[160px] flex items-center justify-center text-sm font-semibold text-amber-900 bg-amber-100 border-2 border-amber-300 px-3 py-2.5 rounded-md shadow-sm hover:bg-amber-200 hover:border-amber-400 transition-colors whitespace-nowrap"
+              className="flex items-center justify-center text-base font-bold text-amber-900 bg-amber-100 border-2 border-amber-300 px-5 py-2.5 rounded-md shadow-sm hover:bg-amber-200 hover:border-amber-400 transition-colors whitespace-nowrap"
             >
               I&apos;m done for now
             </button>
@@ -1346,36 +1346,83 @@ function Field({ label, children, full }) {
 }
 
 function ContactForm({ draft, setDraft, onCancel, onSave, busy, isNew }) {
+  const [submitAttempted, setSubmitAttempted] = useState(false);
   const set = (k) => (e) => setDraft({ ...draft, [k]: e.target.value });
-  const inputClass = "w-full border border-gray-300 rounded-md px-3 py-2.5 text-base text-gray-900 placeholder-gray-400";
+  const baseInputClass =
+    "w-full border rounded-md px-3 py-2.5 text-base text-gray-900 placeholder-gray-400";
+  // Validation rules for new contacts
+  const errors = isNew
+    ? {
+        first_name: !draft.first_name?.trim() ? "This field is required" : "",
+        last_name: !draft.last_name?.trim() ? "This field is required" : "",
+        title: !draft.title?.trim() ? "This field is required" : "",
+        email: !draft.email?.trim()
+          ? "This field is required"
+          : !/\S+@\S+\.\S+/.test((draft.email || "").trim())
+          ? "Enter a valid email address"
+          : "",
+      }
+    : { first_name: "", last_name: "", title: "", email: "" };
+  const hasErrors = Object.values(errors).some(Boolean);
+  const inputClass = (field) =>
+    `${baseInputClass} ${
+      submitAttempted && errors[field]
+        ? "border-red-400 focus:outline-red-500"
+        : "border-gray-300"
+    }`;
+  const errorFor = (field) =>
+    submitAttempted && errors[field] ? (
+      <span className="block text-sm text-red-600 mt-1">{errors[field]}</span>
+    ) : null;
+  const req = (label) =>
+    isNew ? (
+      <>
+        {label} <span className="text-red-600">*</span>
+      </>
+    ) : (
+      label
+    );
+
+  const handleSave = () => {
+    if (isNew && hasErrors) {
+      setSubmitAttempted(true);
+      return;
+    }
+    onSave();
+  };
+
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="First name">
-          <input className={inputClass} value={draft.first_name} onChange={set("first_name")} />
+        <Field label={req("First name")}>
+          <input className={inputClass("first_name")} value={draft.first_name} onChange={set("first_name")} />
+          {errorFor("first_name")}
         </Field>
-        <Field label="Last name">
-          <input className={inputClass} value={draft.last_name} onChange={set("last_name")} />
+        <Field label={req("Last name")}>
+          <input className={inputClass("last_name")} value={draft.last_name} onChange={set("last_name")} />
+          {errorFor("last_name")}
         </Field>
-        <Field label="Title" full>
-          <input className={inputClass} value={draft.title} onChange={set("title")} />
+        <Field label={req("Title")} full>
+          <input className={inputClass("title")} value={draft.title} onChange={set("title")} />
+          {errorFor("title")}
         </Field>
         <Field
           label={
             <span className="flex items-center gap-2">
-              Email address
+              {req("Email address")}
               {draft.email_status && <EmailStatusPill status={draft.email_status} />}
             </span>
           }
           full
         >
-          <input type="email" className={inputClass} value={draft.email} onChange={set("email")} />
+          <input type="email" className={inputClass("email")} value={draft.email} onChange={set("email")} />
+          {errorFor("email")}
         </Field>
         <Field label="Phone number (optional)" full>
           <input
             type="tel"
             inputMode="numeric"
-            className={inputClass}
+            className={baseInputClass + " border-gray-300"}
             value={draft.phone}
             placeholder="555-123-4567"
             maxLength={12}
@@ -1394,7 +1441,7 @@ function ContactForm({ draft, setDraft, onCancel, onSave, busy, isNew }) {
           <X className="w-4 h-4" /> Cancel
         </button>
         <button
-          onClick={onSave}
+          onClick={handleSave}
           disabled={busy}
           className="flex items-center gap-1.5 text-base font-medium px-4 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800 disabled:opacity-50"
         >

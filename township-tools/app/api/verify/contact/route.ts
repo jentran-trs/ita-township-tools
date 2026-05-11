@@ -174,6 +174,13 @@ export async function PATCH(req: Request) {
         update.previous_email_status = existing.email_status;
       }
 
+      // When the email itself changes, the old status no longer reflects the new address.
+      // Stamp the new status as "Updated" so the UI shows it needs reverification, instead
+      // of carrying over a stale "Invalid" / "Mailbox not working" pill.
+      if (emailChanged) {
+        update.email_status = 'Updated';
+      }
+
       for (const k of ['first_name', 'last_name', 'title', 'email', 'phone']) {
         if (k in changes) update[k] = changes[k] || null;
       }

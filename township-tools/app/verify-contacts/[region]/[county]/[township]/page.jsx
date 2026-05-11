@@ -949,14 +949,18 @@ export default function VerifyTownshipPage() {
                       </div>
                       {c.title && <div className="text-base text-gray-700 mt-1">{c.title}</div>}
                       <div
-                        className={`text-base mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 break-all ${
+                        className={`text-base mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 ${
                           c.review_status === "needs_removal" ? "text-gray-500 line-through" : "text-gray-700"
                         }`}
                       >
-                        <span>
-                          {c.email || <span className="text-gray-500 italic">no email</span>}
+                        <span className="inline-flex items-center gap-2 max-w-full break-all">
+                          <span className="break-all">
+                            {c.email || <span className="text-gray-500 italic">no email</span>}
+                          </span>
+                          {c.email && c.email_status && (
+                            <EmailStatusPill status={c.email_status} />
+                          )}
                         </span>
-                        {c.email && c.email_status && <EmailStatusPill status={c.email_status} />}
                         {c.phone ? (
                           <span className="text-gray-500">· {formatPhone(c.phone) || c.phone}</span>
                         ) : (
@@ -1310,15 +1314,22 @@ function StatusPill({ status }) {
 
 function EmailStatusPill({ status }) {
   if (!status) return null;
-  const isValid = status.toLowerCase().trim() === "valid";
-  const cls = isValid
-    ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-    : "bg-red-100 text-red-800 border-red-300";
-  const label = isValid ? "Valid" : "Invalid";
+  const norm = status.toLowerCase().trim();
+  let cls = "bg-red-100 text-red-800 border-red-300";
+  let label = status;
+  let title = `Email status: ${status}`;
+  if (norm === "valid") {
+    cls = "bg-emerald-100 text-emerald-800 border-emerald-300";
+    label = "Valid";
+  } else if (norm === "updated") {
+    cls = "bg-blue-100 text-blue-800 border-blue-300";
+    label = "Updated";
+    title = "Email was updated by a reviewer — needs reverification";
+  }
   return (
     <span
       className={`inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full border ${cls} align-middle`}
-      title={`Original status: ${status}`}
+      title={title}
     >
       {label}
     </span>

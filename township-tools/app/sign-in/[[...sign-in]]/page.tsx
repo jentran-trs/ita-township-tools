@@ -1,8 +1,19 @@
+import Link from "next/link";
 import { SignIn } from "@clerk/nextjs";
+import { ArrowLeft } from "lucide-react";
 
 export default function SignInPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-900">
+    <div className="min-h-screen flex flex-col items-center bg-slate-900 px-4 py-8 sm:py-12">
+      <div className="w-full max-w-md mb-6">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-sm font-medium text-slate-300 hover:text-white bg-slate-800 border border-slate-700 rounded-md px-4 py-2 hover:border-slate-500"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Township Tools
+        </Link>
+      </div>
       <SignIn
         appearance={{
           elements: {

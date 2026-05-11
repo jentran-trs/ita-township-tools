@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
-import { Loader2, ArrowRight, ArrowLeft, User, MapPin, UserCheck, CheckCircle2, X, Clock } from "lucide-react";
+import { Loader2, ArrowRight, ArrowLeft, User, MapPin, UserCheck, CheckCircle2, X, Clock, HelpCircle, Search } from "lucide-react";
 
 const REVIEWER_KEY = "cv_reviewer_v1";
 
@@ -32,6 +32,8 @@ export default function VerifyLanding() {
   const [verificationDeadline, setVerificationDeadline] = useState(null);
   const [portalLocked, setPortalLocked] = useState(false);
   const [portalReopen, setPortalReopen] = useState(null);
+  const [showLookup, setShowLookup] = useState(false);
+  const [lookupQuery, setLookupQuery] = useState("");
   const [tree, setTree] = useState(null);
   const [regionId, setRegionId] = useState("");
   const [countyId, setCountyId] = useState("");
@@ -286,7 +288,22 @@ export default function VerifyLanding() {
           subtitle="Pick your region, then your county, then your township."
         >
           <div className="space-y-4">
-            <Field label="Region" required>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <span className="text-xs font-medium text-gray-700">
+                Region <span className="text-red-600">*</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowLookup(true);
+                  setLookupQuery("");
+                }}
+                className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 hover:text-blue-900 underline"
+              >
+                <HelpCircle className="w-3.5 h-3.5" /> Don&apos;t know your region?
+              </button>
+            </div>
+            <div>
               <select
                 className="w-full border border-gray-300 rounded-md px-3 py-2.5 text-sm bg-white text-gray-900"
                 value={regionId}
@@ -303,7 +320,7 @@ export default function VerifyLanding() {
                   </option>
                 ))}
               </select>
-            </Field>
+            </div>
 
             <Field label="County" required>
               <select
@@ -358,6 +375,112 @@ export default function VerifyLanding() {
         )}
         </>
         )}
+      </div>
+
+      {showLookup && (
+        <RegionLookupModal
+          tree={tree || []}
+          query={lookupQuery}
+          setQuery={setLookupQuery}
+          onPick={(rid) => {
+            setRegionId(rid);
+            setCountyId("");
+            setTownshipId("");
+            setShowLookup(false);
+          }}
+          onClose={() => setShowLookup(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function RegionLookupModal({ tree, query, setQuery, onPick, onClose }) {
+  // Build flat list of {county, region}
+  const allCounties = tree.flatMap((r) =>
+    (r.counties || []).map((c) => ({ countyName: c.name, regionName: r.name, regionId: r.id }))
+  );
+  const q = query.trim().toLowerCase();
+  const matches = q.length === 0
+    ? []
+    : allCounties.filter((c) => c.countyName.toLowerCase().includes(q));
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/40 z-50 flex items-start justify-center px-4 py-12 overflow-y-auto"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-lg shadow-xl max-w-xl w-full p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between mb-3">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">Look up your region</h2>
+            <p className="text-sm text-gray-600 mt-1">
+              Type your county name to see which region it belongs to.
+            </p>
+          </div>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-900" aria-label="Close">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="relative mt-3">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            autoFocus
+            placeholder="Type a county name…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="w-full border border-gray-300 rounded-md pl-10 pr-3 py-2.5 text-base text-gray-900"
+          />
+        </div>
+
+        {q.length === 0 ? (
+          <div className="mt-4">
+            <p className="text-xs font-medium text-gray-500 mb-2">Or browse by region:</p>
+            <div className="flex flex-wrap gap-2">
+              {tree.map((r) => (
+                <button
+                  key={r.id}
+                  onClick={() => onPick(r.id)}
+                  className="text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-full"
+                >
+                  {r.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : matches.length === 0 ? (
+          <p className="mt-4 text-sm text-gray-500">
+            No county found matching &ldquo;<strong>{query}</strong>&rdquo;.
+          </p>
+        ) : (
+          <ul className="mt-4 divide-y divide-gray-100 border border-gray-200 rounded-md overflow-hidden">
+            {matches.slice(0, 12).map((m, i) => (
+              <li key={i}>
+                <button
+                  onClick={() => onPick(m.regionId)}
+                  className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center justify-between gap-3"
+                >
+                  <div>
+                    <div className="text-sm font-semibold text-gray-900">{m.countyName} County</div>
+                    <div className="text-xs text-gray-500">
+                      Belongs to <span className="font-medium text-gray-700">{m.regionName}</span>
+                    </div>
+                  </div>
+                  <span className="text-xs text-blue-700 font-medium">Use this region →</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <p className="text-xs text-gray-500 mt-4 text-center">
+          92 counties across 8 regions. Click a result to auto-fill the Region dropdown.
+        </p>
       </div>
     </div>
   );

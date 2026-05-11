@@ -1328,7 +1328,7 @@ function EmailStatusPill({ status }) {
   }
   return (
     <span
-      className={`inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full border ${cls} align-middle`}
+      className={`inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap flex-shrink-0 ${cls} align-middle`}
       title={title}
     >
       {label}

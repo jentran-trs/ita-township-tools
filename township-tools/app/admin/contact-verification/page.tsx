@@ -65,6 +65,7 @@ export default function ContactVerificationAdminPage() {
   const [searchTree, setSearchTree] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [contactResults, setContactResults] = useState<any[]>([]);
 
   useEffect(() => {
     if (isLoaded && !isAdmin) router.push("/dashboard");
@@ -84,6 +85,23 @@ export default function ContactVerificationAdminPage() {
       .then((d) => setSearchTree(d.regions || []))
       .catch(() => {});
   }, [isAdmin]);
+
+  // Debounced contact search
+  useEffect(() => {
+    if (!authorized) return;
+    const q = searchQuery.trim();
+    if (q.length < 2) {
+      setContactResults([]);
+      return;
+    }
+    const handle = setTimeout(() => {
+      fetch(`/api/admin/contact-verification/search?q=${encodeURIComponent(q)}`)
+        .then((r) => r.json())
+        .then((d) => setContactResults(d.contacts || []))
+        .catch(() => {});
+    }, 250);
+    return () => clearTimeout(handle);
+  }, [searchQuery, authorized]);
 
   const logoutSuperadmin = async () => {
     await fetch("/api/admin/contact-verification/auth", { method: "DELETE" });
@@ -326,7 +344,7 @@ export default function ContactVerificationAdminPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search a county or township…"
+                placeholder="Search by county, township, contact name, or email…"
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -350,12 +368,12 @@ export default function ContactVerificationAdminPage() {
             </div>
             {searchOpen && searchQuery.trim().length >= 2 && (
               <div className="absolute z-30 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden">
-                {searchResults.length === 0 ? (
+                {searchResults.length === 0 && contactResults.length === 0 ? (
                   <div className="px-4 py-3 text-sm text-gray-500">
                     No matches for &ldquo;{searchQuery}&rdquo;.
                   </div>
                 ) : (
-                  <ul className="max-h-72 overflow-y-auto divide-y divide-gray-100">
+                  <ul className="max-h-96 overflow-y-auto divide-y divide-gray-100">
                     {searchResults.map((r) => (
                       <li key={`${r.type}-${r.id}`}>
                         <button
@@ -382,6 +400,39 @@ export default function ContactVerificationAdminPage() {
                         </button>
                       </li>
                     ))}
+                    {contactResults.map((c: any) => {
+                      const name =
+                        [c.first_name, c.last_name].filter(Boolean).join(" ") || "(no name)";
+                      return (
+                        <li key={`contact-${c.id}`}>
+                          <button
+                            onClick={() => {
+                              setSearchOpen(false);
+                              setSearchQuery("");
+                              router.push(
+                                `/verify-contacts/${c.region_slug}/${c.county_slug}/${c.township_slug}?from=admin&scope=township&id=${c.township_id}`
+                              );
+                            }}
+                            className="w-full text-left px-4 py-2.5 hover:bg-gray-50 flex items-center justify-between gap-3"
+                          >
+                            <div className="min-w-0">
+                              <div className="text-sm font-medium text-gray-900">{name}</div>
+                              <div className="text-xs text-gray-500 truncate">
+                                {c.email || <span className="italic">no email</span>}
+                                {c.title ? ` · ${c.title}` : ""}
+                              </div>
+                              <div className="text-xs text-gray-400 truncate">
+                                {c.township_name}
+                                {c.county_name ? `, ${c.county_name} County` : ""}
+                              </div>
+                            </div>
+                            <span className="text-xs font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 flex-shrink-0">
+                              contact
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
               </div>

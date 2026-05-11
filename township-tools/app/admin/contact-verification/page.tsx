@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser, useOrganization, useAuth } from "@clerk/nextjs";
-import { ArrowLeft, Loader2, Upload, Download, RefreshCw, Bell, Settings, Save, Lock, LogOut, Mail, ListChecks } from "lucide-react";
+import { ArrowLeft, Loader2, Upload, Download, RefreshCw, Bell, Settings, Save, Lock, LogOut, Mail, ListChecks, Search, X } from "lucide-react";
 
 type CountyStat = {
   id: string;
@@ -57,9 +57,14 @@ export default function ContactVerificationAdminPage() {
   const [savingSettings, setSavingSettings] = useState(false);
   const [loading, setLoading] = useState(true);
   const [expandedRegion, setExpandedRegion] = useState<string | null>(null);
-  const [refreshTick, setRefreshTick] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const [justRefreshed, setJustRefreshed] = useState(false);
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<number | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [authorized, setAuthorized] = useState(false);
+  const [searchTree, setSearchTree] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     if (isLoaded && !isAdmin) router.push("/dashboard");
@@ -74,6 +79,10 @@ export default function ContactVerificationAdminPage() {
         setAuthChecked(true);
       })
       .catch(() => setAuthChecked(true));
+    fetch("/api/verify/locations")
+      .then((r) => r.json())
+      .then((d) => setSearchTree(d.regions || []))
+      .catch(() => {});
   }, [isAdmin]);
 
   const logoutSuperadmin = async () => {
@@ -81,44 +90,82 @@ export default function ContactVerificationAdminPage() {
     setAuthorized(false);
   };
 
+  const load = useCallback(async () => {
+    try {
+      const [statsRes, settingsRes] = await Promise.all([
+        fetch("/api/admin/contact-verification/stats"),
+        fetch("/api/admin/contact-verification/settings"),
+      ]);
+      const stats = await statsRes.json();
+      const setj = await settingsRes.json();
+      if (statsRes.ok) {
+        setRegions(stats.regions || []);
+        setLastViewedAt(stats.last_viewed_at || null);
+        setVerificationDeadline(stats.verification_deadline || null);
+      }
+      if (settingsRes.ok) {
+        setSettings(setj.settings || null);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (!isAdmin || !authorized) return;
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const [statsRes, settingsRes] = await Promise.all([
-          fetch("/api/admin/contact-verification/stats"),
-          fetch("/api/admin/contact-verification/settings"),
-        ]);
-        const stats = await statsRes.json();
-        const setj = await settingsRes.json();
-        if (cancelled) return;
-        if (statsRes.ok) {
-          setRegions(stats.regions || []);
-          setLastViewedAt(stats.last_viewed_at || null);
-          setVerificationDeadline(stats.verification_deadline || null);
-        }
-        if (settingsRes.ok) {
-          setSettings(setj.settings || null);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
     load();
     const id = setInterval(load, 15000);
-    return () => {
-      cancelled = true;
-      clearInterval(id);
-    };
-  }, [isAdmin, authorized, refreshTick]);
+    return () => clearInterval(id);
+  }, [isAdmin, authorized, load]);
+
+  const manualRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await load();
+      setLastRefreshedAt(Date.now());
+      setJustRefreshed(true);
+      setTimeout(() => setJustRefreshed(false), 2000);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const totalNewSinceLastView = regions.reduce((s, r) => s + (r.new_since_last_view || 0), 0);
   const totalNewSinceDeadline = regions.reduce((s, r) => s + (r.new_since_deadline || 0), 0);
 
+  // Search across counties + townships
+  const searchResults = (() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (q.length < 2) return [] as any[];
+    const out: any[] = [];
+    for (const r of searchTree) {
+      for (const c of r.counties || []) {
+        if (c.name.toLowerCase().includes(q)) {
+          out.push({
+            type: "county",
+            id: c.id,
+            label: `${c.name} County`,
+            sub: r.name,
+          });
+        }
+        for (const t of c.townships || []) {
+          if (t.name.toLowerCase().includes(q)) {
+            out.push({
+              type: "township",
+              id: t.id,
+              label: t.name,
+              sub: `${c.name} County · ${r.name}`,
+            });
+          }
+        }
+      }
+    }
+    return out.slice(0, 15);
+  })();
+
   const markAllViewed = async () => {
     await fetch("/api/admin/contact-verification/mark-viewed", { method: "POST" });
-    setRefreshTick((t) => t + 1);
+    load();
   };
 
   const saveSettings = async (next: Partial<Settings>) => {
@@ -132,7 +179,7 @@ export default function ContactVerificationAdminPage() {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed");
       setSettings(json.settings);
-      setRefreshTick((t) => t + 1);
+      load();
     } catch (e: any) {
       alert(e.message);
     } finally {
@@ -181,6 +228,14 @@ export default function ContactVerificationAdminPage() {
                   Deadline: <span className="font-medium">{new Date(verificationDeadline + "T00:00:00").toLocaleDateString()}</span>
                 </>
               )}
+              {lastRefreshedAt && (
+                <>
+                  {" · "}
+                  <span className="text-gray-500">
+                    Last refreshed {new Date(lastRefreshedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+                  </span>
+                </>
+              )}
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -191,10 +246,16 @@ export default function ContactVerificationAdminPage() {
               <Settings className="w-4 h-4" /> Settings
             </button>
             <button
-              onClick={() => setRefreshTick((t) => t + 1)}
-              className="flex items-center gap-2 text-sm font-medium text-gray-700 px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+              onClick={manualRefresh}
+              disabled={refreshing}
+              className={`flex items-center gap-2 text-sm font-medium px-3 py-2 border rounded-md transition-colors ${
+                justRefreshed
+                  ? "text-emerald-700 bg-emerald-50 border-emerald-300"
+                  : "text-gray-700 border-gray-300 hover:bg-gray-50"
+              } disabled:opacity-70`}
             >
-              <RefreshCw className="w-4 h-4" /> Refresh
+              <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+              {refreshing ? "Refreshing…" : justRefreshed ? "Refreshed" : "Refresh"}
             </button>
             <button
               onClick={() => router.push("/admin/contact-verification/recent-changes")}
@@ -254,6 +315,76 @@ export default function ContactVerificationAdminPage() {
               >
                 Mark all as seen
               </button>
+            )}
+          </div>
+        )}
+
+        {/* Search bar (counties + townships) */}
+        {searchTree.length > 0 && (
+          <div className="relative mb-5">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search a county or township…"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setSearchOpen(true);
+                }}
+                onFocus={() => setSearchOpen(true)}
+                className="w-full border border-gray-300 rounded-md pl-10 pr-9 py-2.5 text-base text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-gray-300"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => {
+                    setSearchQuery("");
+                    setSearchOpen(false);
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
+                  aria-label="Clear"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            {searchOpen && searchQuery.trim().length >= 2 && (
+              <div className="absolute z-30 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden">
+                {searchResults.length === 0 ? (
+                  <div className="px-4 py-3 text-sm text-gray-500">
+                    No matches for &ldquo;{searchQuery}&rdquo;.
+                  </div>
+                ) : (
+                  <ul className="max-h-72 overflow-y-auto divide-y divide-gray-100">
+                    {searchResults.map((r) => (
+                      <li key={`${r.type}-${r.id}`}>
+                        <button
+                          onClick={() => {
+                            setSearchOpen(false);
+                            setSearchQuery("");
+                            router.push(`/admin/contact-verification/${r.type}/${r.id}`);
+                          }}
+                          className="w-full text-left px-4 py-2.5 hover:bg-gray-50 flex items-center justify-between gap-3"
+                        >
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium text-gray-900">{r.label}</div>
+                            <div className="text-xs text-gray-500">{r.sub}</div>
+                          </div>
+                          <span
+                            className={`text-xs font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded ${
+                              r.type === "township"
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-gray-100 text-gray-700"
+                            }`}
+                          >
+                            {r.type}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             )}
           </div>
         )}

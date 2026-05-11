@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useUser, useOrganization, useAuth } from "@clerk/nextjs";
-import { ArrowLeft, Loader2, Download, RotateCcw, CheckCircle2, ExternalLink, Filter } from "lucide-react";
+import { ArrowLeft, Loader2, Download, RotateCcw, CheckCircle2, ExternalLink, Filter, MoveRight, X } from "lucide-react";
 
 type Stat = {
   region_id: string;
@@ -80,6 +80,12 @@ export default function DrillDownPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [exporting, setExporting] = useState(false);
   const [detailed, setDetailed] = useState(false);
+  const [showMoveModal, setShowMoveModal] = useState(false);
+  const [moveTree, setMoveTree] = useState<any[]>([]);
+  const [moveRegionId, setMoveRegionId] = useState("");
+  const [moveCountyId, setMoveCountyId] = useState("");
+  const [moveTownshipId, setMoveTownshipId] = useState("");
+  const [moving, setMoving] = useState(false);
 
   useEffect(() => {
     if (isLoaded && !isAdmin) router.push("/dashboard");
@@ -170,6 +176,33 @@ export default function DrillDownPage() {
     else next.add(cid);
     setSelected(next);
   };
+
+  const submitMove = async () => {
+    if (selected.size === 0 || !moveTownshipId) return;
+    setMoving(true);
+    try {
+      const res = await fetch("/api/admin/contact-verification/contacts/move", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contactIds: Array.from(selected),
+          target_township_id: moveTownshipId,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Move failed");
+      setShowMoveModal(false);
+      setSelected(new Set());
+      load();
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setMoving(false);
+    }
+  };
+
+  const moveRegion = moveTree.find((r: any) => r.id === moveRegionId);
+  const moveCounty = moveRegion?.counties?.find((c: any) => c.id === moveCountyId);
 
   const exportSelected = async (format: "xlsx" | "csv") => {
     if (selected.size === 0) return;
@@ -369,6 +402,24 @@ export default function DrillDownPage() {
                   <Download className="w-3.5 h-3.5" /> csv
                 </button>
                 <button
+                  onClick={async () => {
+                    if (moveTree.length === 0) {
+                      try {
+                        const r = await fetch("/api/verify/locations");
+                        const j = await r.json();
+                        setMoveTree(j.regions || []);
+                      } catch {}
+                    }
+                    setMoveRegionId("");
+                    setMoveCountyId("");
+                    setMoveTownshipId("");
+                    setShowMoveModal(true);
+                  }}
+                  className="flex items-center gap-1 text-sm font-medium text-blue-700 border border-blue-300 px-3 py-1.5 rounded-md hover:bg-blue-50"
+                >
+                  <MoveRight className="w-3.5 h-3.5" /> Move to township
+                </button>
+                <button
                   onClick={() => setSelected(new Set())}
                   className="text-xs text-gray-500 underline"
                 >
@@ -523,6 +574,109 @@ export default function DrillDownPage() {
 
 
       </div>
+
+      {showMoveModal && (
+        <div
+          className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4"
+          onClick={() => !moving && setShowMoveModal(false)}
+        >
+          <div
+            className="bg-white rounded-lg shadow-xl max-w-lg w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Move {selected.size} contact{selected.size === 1 ? "" : "s"}
+              </h2>
+              <button
+                onClick={() => setShowMoveModal(false)}
+                className="text-gray-500 hover:text-gray-900"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Reassign the selected contact{selected.size === 1 ? "" : "s"} to a different
+              township. This is logged in the audit history.
+            </p>
+            <div className="space-y-3">
+              <label className="block">
+                <span className="block text-sm font-medium text-gray-700 mb-1">Region</span>
+                <select
+                  value={moveRegionId}
+                  onChange={(e) => {
+                    setMoveRegionId(e.target.value);
+                    setMoveCountyId("");
+                    setMoveTownshipId("");
+                  }}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white text-gray-900"
+                >
+                  <option value="">Select a region</option>
+                  {moveTree.map((r: any) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block">
+                <span className="block text-sm font-medium text-gray-700 mb-1">County</span>
+                <select
+                  value={moveCountyId}
+                  onChange={(e) => {
+                    setMoveCountyId(e.target.value);
+                    setMoveTownshipId("");
+                  }}
+                  disabled={!moveRegion}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white text-gray-900 disabled:bg-gray-100 disabled:text-gray-400"
+                >
+                  <option value="">{moveRegion ? "Select a county" : "Pick a region first"}</option>
+                  {(moveRegion?.counties || []).map((c: any) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block">
+                <span className="block text-sm font-medium text-gray-700 mb-1">Township</span>
+                <select
+                  value={moveTownshipId}
+                  onChange={(e) => setMoveTownshipId(e.target.value)}
+                  disabled={!moveCounty}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white text-gray-900 disabled:bg-gray-100 disabled:text-gray-400"
+                >
+                  <option value="">{moveCounty ? "Select a township" : "Pick a county first"}</option>
+                  {(moveCounty?.townships || []).map((t: any) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-5 flex-wrap">
+              <button
+                onClick={() => setShowMoveModal(false)}
+                disabled={moving}
+                className="text-sm font-medium text-gray-700 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitMove}
+                disabled={moving || !moveTownshipId}
+                className="text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {moving ? "Moving…" : `Move ${selected.size} contact${selected.size === 1 ? "" : "s"}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

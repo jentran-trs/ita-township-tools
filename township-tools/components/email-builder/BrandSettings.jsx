@@ -154,6 +154,8 @@ const BrandSettings = ({ logo, setLogo, logoUrl, setLogoUrl, logoHeight, setLogo
   const [expanded, setExpanded] = useState(true);
   const [defaultsSaved, setDefaultsSaved] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
+  const [hostError, setHostError] = useState('');
+  const [hostedFeedback, setHostedFeedback] = useState(false);
 
   const handleSaveWithFeedback = () => {
     onSaveDefaults();
@@ -161,25 +163,45 @@ const BrandSettings = ({ logo, setLogo, logoUrl, setLogoUrl, logoHeight, setLogo
     setTimeout(() => setDefaultsSaved(false), 2000);
   };
 
+  const uploadToHost = async (file) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    const res = await fetch('/api/email-builder/upload-logo', { method: 'POST', body: fd });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Upload failed');
+    return json.url;
+  };
+
   const handleLogoUpload = (e) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setLogoUploading(true);
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new window.Image();
-        img.onload = () => {
-          const colors = extractColorsFromImage(img);
-          setThemeColors(colors);
-          setLogo(event.target.result);
-          setLogoUploading(false);
-        };
-        img.onerror = () => setLogoUploading(false);
-        img.src = event.target.result;
+    if (!file) return;
+    setLogoUploading(true);
+    setHostError('');
+
+    // 1) Read locally for instant preview + theme color extraction.
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const colors = extractColorsFromImage(img);
+        setThemeColors(colors);
+        setLogo(event.target.result);
+
+        // 2) Upload to Supabase so the email has a hostable URL.
+        uploadToHost(file)
+          .then((url) => {
+            setLogoUrl(url);
+            setHostedFeedback(true);
+            setTimeout(() => setHostedFeedback(false), 2500);
+          })
+          .catch((err) => setHostError(err.message || 'Could not host the image.'))
+          .finally(() => setLogoUploading(false));
       };
-      reader.onerror = () => setLogoUploading(false);
-      reader.readAsDataURL(file);
-    }
+      img.onerror = () => { setLogoUploading(false); setHostError('Could not read the image.'); };
+      img.src = event.target.result;
+    };
+    reader.onerror = () => { setLogoUploading(false); setHostError('Could not read the image.'); };
+    reader.readAsDataURL(file);
   };
 
   const handleColorChange = (key, value) => {
@@ -250,11 +272,15 @@ const BrandSettings = ({ logo, setLogo, logoUrl, setLogoUrl, logoHeight, setLogo
                   placeholder="https://example.com/logo.png"
                   className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:border-amber-500"
                 />
-                <p className="text-xs text-slate-500 mt-1">
-                  {logoUrl
-                    ? 'Logo URL will be used in the generated HTML.'
-                    : 'Email clients block embedded images. Paste a hosted URL for your logo to display correctly in emails.'}
-                </p>
+                {hostedFeedback ? (
+                  <p className="text-xs text-emerald-400 mt-1">✓ Logo hosted automatically — ready to use in emails.</p>
+                ) : hostError ? (
+                  <p className="text-xs text-red-400 mt-1">⚠ {hostError} You can paste a hosted URL above instead.</p>
+                ) : logoUrl ? (
+                  <p className="text-xs text-slate-500 mt-1">Logo URL will be used in the generated HTML.</p>
+                ) : (
+                  <p className="text-xs text-slate-500 mt-1">Upload a logo above and it will be hosted automatically. Or paste a hosted URL here.</p>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-1">Logo Height: {logoHeight}px</label>

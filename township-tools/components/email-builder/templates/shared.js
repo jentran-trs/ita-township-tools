@@ -37,8 +37,9 @@ export const sanitizeHtmlForEmail = (html) => {
   clean = clean.replace(/\s+contenteditable="[^"]*"/g, '');
   // Convert div to p where sensible
   clean = clean.replace(/<div>/gi, '<p>').replace(/<\/div>/gi, '</p>');
-  // Clean up empty paragraphs with just br
-  clean = clean.replace(/<p><br\s*\/?><\/p>/gi, '');
+  // Render user-intended blank paragraphs as a visible spacer instead of
+  // stripping them — matches what the editor shows.
+  clean = clean.replace(/<p><br\s*\/?><\/p>/gi, '<p style="margin: 0 0 14px 0; font-size: 1px; line-height: 1px;">&nbsp;</p>');
   // Auto-link plain-text URLs
   clean = linkifyUrls(clean);
   return clean;

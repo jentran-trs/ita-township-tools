@@ -3,7 +3,28 @@ import { Mail, Newspaper, ChevronDown, ChevronRight, BookOpen, FolderOpen, FileT
 import EXAMPLE_TEMPLATES from './exampleTemplates';
 import BrandSettings from './BrandSettings';
 
-const SHARED_SECTIONS = [
+// Core email-mode elements. Header + Footer are defaults (locked at top/bottom),
+// so they aren't draggable from the catalog.
+const EMAIL_SECTIONS = [
+  { type: 'contentBody', label: 'Rich Text', desc: 'Paragraphs, headings, bullets, links', icon: 'T', color: 'blue' },
+  { type: 'ctaButton', label: 'Button', desc: 'Maroon call-to-action button', icon: 'B', color: 'red' },
+  { type: 'highlighted', label: 'Highlighted Card', desc: 'Light gray card with accent border', icon: '!', color: 'amber' },
+  { type: 'highlightBanner', label: 'Navy Callout', desc: 'White text on navy — top priority', icon: '★', color: 'indigo' },
+  { type: 'twoColumn', label: 'Two Column', desc: 'Side-by-side content columns', icon: '⫼', color: 'teal' },
+  { type: 'meetingDetails', label: 'Meeting Details', desc: 'Date, time, link + auto calendar buttons', icon: 'M', color: 'purple' },
+  { type: 'divider', label: 'Divider', desc: 'Orange accent rule between sections', icon: '—', color: 'orange' },
+];
+
+const NEWSLETTER_SECTIONS = [
+  { type: 'featuredArticle', label: 'Featured Article', desc: 'Headline article with CTA', icon: '★', color: 'amber' },
+  { type: 'newsSection', label: 'News Section', desc: 'Heading + rich text news', icon: 'N', color: 'blue' },
+  { type: 'eventListing', label: 'Event Listing', desc: 'Repeatable event items', icon: 'E', color: 'purple' },
+  { type: 'highlightBanner', label: 'Highlight Banner', desc: 'CTA banner with button', icon: '!', color: 'emerald' },
+  { type: 'memberResources', label: 'Member Resources', desc: 'Bulleted resource list', icon: 'R', color: 'green' },
+];
+
+// Newsletter mode still uses the broader catalog.
+const NEWSLETTER_SHARED_SECTIONS = [
   { type: 'contentBody', label: 'Content Body', desc: 'Rich text content block', icon: 'C', color: 'blue' },
   { type: 'image', label: 'Image', desc: 'Image from URL with sizing & shape', icon: 'I', color: 'cyan' },
   { type: 'highlighted', label: 'Highlighted', desc: 'Colored border emphasis block', icon: '!', color: 'amber' },
@@ -14,14 +35,6 @@ const SHARED_SECTIONS = [
   { type: 'twoColumn', label: 'Two Column', desc: 'Side-by-side content columns', icon: '⫼', color: 'teal' },
   { type: 'list', label: 'List', desc: 'Bullet or numbered list', icon: '≡', color: 'orange' },
   { type: 'closing', label: 'Closing & Sign-off', desc: 'Closing remarks with signature', icon: '✉', color: 'rose' },
-];
-
-const NEWSLETTER_SECTIONS = [
-  { type: 'featuredArticle', label: 'Featured Article', desc: 'Headline article with CTA', icon: '★', color: 'amber' },
-  { type: 'newsSection', label: 'News Section', desc: 'Heading + rich text news', icon: 'N', color: 'blue' },
-  { type: 'eventListing', label: 'Event Listing', desc: 'Repeatable event items', icon: 'E', color: 'purple' },
-  { type: 'highlightBanner', label: 'Highlight Banner', desc: 'CTA banner with button', icon: '!', color: 'emerald' },
-  { type: 'memberResources', label: 'Member Resources', desc: 'Bulleted resource list', icon: 'R', color: 'green' },
 ];
 
 const COLOR_MAP = {
@@ -84,8 +97,8 @@ const SectionCatalog = ({
   const [newTemplateName, setNewTemplateName] = useState('');
 
   const sections = templateType === 'newsletter'
-    ? [...NEWSLETTER_SECTIONS, ...SHARED_SECTIONS]
-    : SHARED_SECTIONS;
+    ? [...NEWSLETTER_SECTIONS, ...NEWSLETTER_SHARED_SECTIONS]
+    : EMAIL_SECTIONS;
 
   return (
     <div className="h-full flex flex-col bg-slate-900 border-r border-slate-700/50">
@@ -131,7 +144,7 @@ const SectionCatalog = ({
             </>
           )}
           <div className="space-y-1.5">
-            {(templateType === 'newsletter' ? SHARED_SECTIONS : sections).map(item => (
+            {(templateType === 'newsletter' ? NEWSLETTER_SHARED_SECTIONS : sections).map(item => (
               <DraggableSectionItem key={item.type} item={item} />
             ))}
           </div>

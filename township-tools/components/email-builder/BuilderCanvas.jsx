@@ -10,7 +10,7 @@ const SECTION_LABELS = {
   newsletterTitle: 'Newsletter Title', featuredArticle: 'Featured Article',
   eventListing: 'Event Listing', newsSection: 'News Section', highlightBanner: 'Highlight Banner',
   memberResources: 'Member Resources', alertBox: 'Alert Box', twoColumn: 'Two Column',
-  list: 'List', greeting: 'Greeting', closing: 'Closing & Sign-off',
+  list: 'List', greeting: 'Greeting', closing: 'Closing & Sign-off', divider: 'Divider',
 };
 
 // ─── Sections that have config panels ───────────────────────────────────────
@@ -28,26 +28,31 @@ const InlineSection = ({ section, onChange, themeColors, logo, logoHeight, onRic
     // ── Header ──────────────────────────────────────────────────────────
     case 'header':
       return (
-        <div style={{ backgroundColor: c.primary }} className="px-10 py-8 text-center">
+        <div style={{ backgroundColor: c.primary }} className="px-10 pt-9 pb-9 text-center">
           {logo && (
-            <div className="mb-3 flex justify-center">
+            <div className="mb-4 flex justify-center">
               <img src={logo} alt="Logo" style={{ height: logoHeight || 90 }} className="object-contain" />
             </div>
           )}
+          <div className="mb-3" style={{ fontSize: '42px', color: c.gold, lineHeight: 1 }}>★</div>
           <EditableText
             tag="h1"
             value={data.title || ''}
             onChange={(v) => onChange({ title: v })}
-            placeholder="Email Title"
-            className="text-xl font-bold text-white m-0 focus:bg-white/10 rounded px-1"
+            placeholder="Your Email Title Goes Here"
+            className="font-bold text-white m-0 focus:bg-white/10 rounded px-1"
+            style={{ fontSize: '28px', lineHeight: 1.3, letterSpacing: '-0.5px' }}
           />
+          <div className="flex justify-center pt-4 pb-1">
+            <div style={{ width: '60px', height: '3px', backgroundColor: c.gold }} />
+          </div>
           <EditableText
             tag="p"
             value={data.subtitle || ''}
             onChange={(v) => onChange({ subtitle: v })}
-            placeholder="Subtitle (optional)"
-            className="mt-2 text-white/70 focus:bg-white/10 rounded px-1"
-            style={{ fontSize: '16px', lineHeight: 1.6 }}
+            placeholder="Optional subtitle / date / tagline"
+            className="mt-3 text-white focus:bg-white/10 rounded px-1"
+            style={{ fontSize: '16px', lineHeight: 1.6, fontWeight: 500 }}
           />
         </div>
       );
@@ -127,6 +132,14 @@ const InlineSection = ({ section, onChange, themeColors, logo, logoHeight, onRic
             className="text-gray-700 focus:bg-blue-50/50 rounded px-1"
             style={{ fontSize: '16px', lineHeight: 1.6 }}
           />
+        </div>
+      );
+
+    // ── Divider ─────────────────────────────────────────────────────────
+    case 'divider':
+      return (
+        <div className="px-10 py-2 bg-white">
+          <div style={{ borderTop: `2px solid ${c.gold}`, height: 0 }} />
         </div>
       );
 
@@ -224,71 +237,113 @@ const InlineSection = ({ section, onChange, themeColors, logo, logoHeight, onRic
     case 'ctaButton': {
       const buttons = data.buttons || (data.buttonText ? [{ text: data.buttonText }] : [{ text: '' }]);
       return (
-        <div className="px-10 py-5 bg-white text-center">
-          <div className="flex flex-wrap gap-2 justify-center">
+        <div className="px-10 pt-2 pb-6 bg-white text-center">
+          <div className="flex flex-wrap gap-3 justify-center">
             {buttons.map((btn, i) => (
-              <span key={i} className="inline-block px-5 py-2.5 text-sm font-bold rounded cursor-text"
-                style={{ backgroundColor: c.gold, color: '#1a1a1a' }}>
+              <span key={i} className="inline-block font-bold cursor-text"
+                style={{ backgroundColor: c.accent, color: '#ffffff', padding: '18px 40px', borderRadius: '8px', fontSize: '18px', letterSpacing: '0.3px', minWidth: '200px', textAlign: 'center' }}>
                 <EditableText
                   value={btn.text || ''}
                   onChange={(v) => {
                     const updated = buttons.map((b, j) => j === i ? { ...b, text: v } : b);
                     onChange({ buttons: updated });
                   }}
-                  placeholder="Button Text"
-                  className="focus:bg-black/10 rounded px-1"
+                  placeholder="Button Label"
+                  className="focus:bg-white/10 rounded px-1"
                 />
               </span>
             ))}
           </div>
-          {data.helperText && <p className="text-xs text-gray-500 mt-2">{data.helperText}</p>}
+          {data.helperText && <p className="text-xs text-gray-500 mt-3">{data.helperText}</p>}
         </div>
       );
     }
 
     // ── Meeting Details ─────────────────────────────────────────────────
-    case 'meetingDetails':
+    case 'meetingDetails': {
+      const formatDateLabel = () => {
+        if (!data.calendarDate) return data.date || '';
+        try {
+          const d = new Date(`${data.calendarDate}T12:00:00`);
+          return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+        } catch { return data.calendarDate; }
+      };
+      const formatTimeLabel = () => {
+        if (!data.startTime) return data.time || '';
+        const fmt = (t) => {
+          const [h, m] = t.split(':').map(Number);
+          const period = h >= 12 ? 'PM' : 'AM';
+          const hh = h === 0 ? 12 : h > 12 ? h - 12 : h;
+          return `${hh}:${String(m).padStart(2, '0')} ${period}`;
+        };
+        const base = data.endTime ? `${fmt(data.startTime)} – ${fmt(data.endTime)}` : fmt(data.startTime);
+        return data.timezone ? `${base} ${data.timezone}` : base;
+      };
       return (
-        <div className="px-10 py-5 bg-white">
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <p className="text-sm font-bold text-gray-800 mb-3">Meeting Details</p>
-            <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm text-gray-600">
-              <div className="flex gap-1">
-                <span className="font-medium text-gray-500">Date:</span>
-                <EditableText value={data.date || ''} onChange={(v) => onChange({ date: v })} placeholder="TBD"
-                  className="focus:bg-blue-50 rounded px-1" />
+        <div className="px-10 py-3 bg-white">
+          <div className="border-l-4 px-6 py-5" style={{ backgroundColor: '#f9f9f9', borderLeftColor: c.gold }}>
+            <p className="font-bold mb-4" style={{ color: c.primary, fontSize: '20px' }}>Meeting Details</p>
+            {(data.title || true) && (
+              <div className="mb-3">
+                <p className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: c.primary }}>Event</p>
+                <EditableText
+                  tag="p"
+                  value={data.title || ''}
+                  onChange={(v) => onChange({ title: v })}
+                  placeholder="Event name"
+                  className="font-bold text-gray-800 focus:bg-blue-50 rounded px-1"
+                  style={{ fontSize: '17px' }}
+                />
               </div>
-              <div className="flex gap-1">
-                <span className="font-medium text-gray-500">Time:</span>
-                <EditableText value={data.time || ''} onChange={(v) => onChange({ time: v })} placeholder="TBD"
-                  className="focus:bg-blue-50 rounded px-1" />
-              </div>
-              <div className="flex gap-1 col-span-2">
-                <span className="font-medium text-gray-500">Format:</span>
-                <EditableText value={data.format || ''} onChange={(v) => onChange({ format: v })} placeholder="e.g. Zoom"
-                  className="focus:bg-blue-50 rounded px-1" />
-              </div>
-              <div className="flex gap-1">
-                <span className="font-medium text-gray-500">ID:</span>
-                <EditableText value={data.meetingId || ''} onChange={(v) => onChange({ meetingId: v })} placeholder="—"
-                  className="focus:bg-blue-50 rounded px-1" />
-              </div>
-              <div className="flex gap-1">
-                <span className="font-medium text-gray-500">Passcode:</span>
-                <EditableText value={data.passcode || ''} onChange={(v) => onChange({ passcode: v })} placeholder="—"
-                  className="focus:bg-blue-50 rounded px-1" />
-              </div>
+            )}
+            <div className="mb-3">
+              <p className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: c.primary }}>Date</p>
+              <p className="font-bold text-gray-800" style={{ fontSize: '17px' }}>
+                {formatDateLabel() || <span className="text-gray-400 italic">Set in panel below</span>}
+              </p>
             </div>
-            {(data.buttonText || data.meetingUrl) && (
-              <div className="mt-3 text-center">
-                <span className="inline-block px-4 py-2 text-sm font-bold rounded text-white" style={{ backgroundColor: c.accent }}>
-                  {data.buttonText || 'Join Meeting'}
-                </span>
+            <div className="mb-3">
+              <p className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: c.primary }}>Time</p>
+              <p className="font-bold text-gray-800" style={{ fontSize: '17px' }}>
+                {formatTimeLabel() || <span className="text-gray-400 italic">Set in panel below</span>}
+              </p>
+            </div>
+            {data.location && (
+              <div className="mb-3">
+                <p className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: c.primary }}>Location</p>
+                <p className="font-bold text-gray-800" style={{ fontSize: '17px' }}>{data.location}</p>
+              </div>
+            )}
+            {data.meetingId && (
+              <div className="mb-3">
+                <p className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: c.primary }}>Meeting ID</p>
+                <p className="font-bold text-gray-800" style={{ fontSize: '17px' }}>{data.meetingId}</p>
+              </div>
+            )}
+            {data.passcode && (
+              <div>
+                <p className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: c.primary }}>Passcode</p>
+                <p className="font-bold text-gray-800" style={{ fontSize: '17px' }}>{data.passcode}</p>
               </div>
             )}
           </div>
+          {data.calendarDate && data.startTime && (
+            <div className="mt-3 flex flex-wrap gap-2 justify-center">
+              <span className="px-3 py-1.5 text-xs font-semibold rounded" style={{ backgroundColor: c.gold, color: '#1a1a1a' }}>+ Google Calendar</span>
+              <span className="px-3 py-1.5 text-xs font-semibold rounded" style={{ backgroundColor: c.gold, color: '#1a1a1a' }}>+ Outlook</span>
+              <span className="px-3 py-1.5 text-xs font-semibold rounded" style={{ backgroundColor: c.gold, color: '#1a1a1a' }}>+ Apple Calendar</span>
+            </div>
+          )}
+          {(data.buttonText || data.meetingUrl) && (
+            <div className="mt-3 text-center">
+              <span className="inline-block font-bold text-white" style={{ backgroundColor: c.accent, padding: '14px 32px', borderRadius: '8px', fontSize: '17px' }}>
+                {data.buttonText || 'Join Meeting'}
+              </span>
+            </div>
+          )}
         </div>
       );
+    }
 
     // ── Resource Links ──────────────────────────────────────────────────
     case 'resourceLinks': {
@@ -321,26 +376,42 @@ const InlineSection = ({ section, onChange, themeColors, logo, logoHeight, onRic
     // ── Two Column ──────────────────────────────────────────────────────
     case 'twoColumn':
       return (
-        <div className="px-10 py-5 bg-white">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-gray-50 border border-gray-200 rounded p-3 min-h-[40px]">
-              <EditableRichText
-                value={data.leftContent || ''}
-                onChange={(v) => onChange({ leftContent: v })}
-                placeholder="Left column content..."
-                onFocus={onRichFocus}
-                className="text-gray-600 focus:bg-blue-50/50 rounded px-1"
-                style={{ fontSize: '16px', lineHeight: 1.6 }}
+        <div className="px-10 py-3 bg-white">
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <EditableText
+                tag="p"
+                value={data.leftHeading || ''}
+                onChange={(v) => onChange({ leftHeading: v })}
+                placeholder="Left column heading"
+                className="font-bold mb-1.5 focus:bg-blue-50 rounded px-1"
+                style={{ color: c.primary, fontSize: '18px' }}
+              />
+              <EditableText
+                tag="p"
+                value={data.leftText || ''}
+                onChange={(v) => onChange({ leftText: v })}
+                placeholder="Left column text. Press Enter for new lines."
+                className="text-gray-700 focus:bg-blue-50/50 rounded px-1"
+                style={{ fontSize: '16px', lineHeight: 1.7, whiteSpace: 'pre-line' }}
               />
             </div>
-            <div className="bg-gray-50 border border-gray-200 rounded p-3 min-h-[40px]">
-              <EditableRichText
-                value={data.rightContent || ''}
-                onChange={(v) => onChange({ rightContent: v })}
-                placeholder="Right column content..."
-                onFocus={onRichFocus}
-                className="text-gray-600 focus:bg-blue-50/50 rounded px-1"
-                style={{ fontSize: '16px', lineHeight: 1.6 }}
+            <div>
+              <EditableText
+                tag="p"
+                value={data.rightHeading || ''}
+                onChange={(v) => onChange({ rightHeading: v })}
+                placeholder="Right column heading"
+                className="font-bold mb-1.5 focus:bg-blue-50 rounded px-1"
+                style={{ color: c.primary, fontSize: '18px' }}
+              />
+              <EditableText
+                tag="p"
+                value={data.rightText || ''}
+                onChange={(v) => onChange({ rightText: v })}
+                placeholder="Right column text. Press Enter for new lines."
+                className="text-gray-700 focus:bg-blue-50/50 rounded px-1"
+                style={{ fontSize: '16px', lineHeight: 1.7, whiteSpace: 'pre-line' }}
               />
             </div>
           </div>
@@ -439,31 +510,52 @@ const InlineSection = ({ section, onChange, themeColors, logo, logoHeight, onRic
     // ── Footer ──────────────────────────────────────────────────────────
     case 'footer':
       return (
-        <div style={{ backgroundColor: c.primary }} className="px-10 py-5 text-center">
-          <EditableText
-            tag="p"
-            value={data.orgName || ''}
-            onChange={(v) => onChange({ orgName: v })}
-            placeholder="Organization Name"
-            className="text-white font-medium focus:bg-white/10 rounded px-1"
-            style={{ fontSize: '14px' }}
-          />
-          <EditableText
-            tag="p"
-            value={data.website || ''}
-            onChange={(v) => onChange({ website: v })}
-            placeholder="https://yourwebsite.gov"
-            className="mt-1 focus:bg-white/10 rounded px-1"
-            style={{ color: c.gold, fontSize: '13px' }}
-          />
-          <EditableText
-            tag="p"
-            value={data.tagline || ''}
-            onChange={(v) => onChange({ tagline: v })}
-            placeholder="Tagline (optional)"
-            className="mt-1 text-white/50 focus:bg-white/10 rounded px-1"
-            style={{ fontSize: '12px' }}
-          />
+        <div className="bg-white">
+          <div className="px-10 pt-6 pb-2">
+            <p style={{ fontSize: '16px', color: '#333333', lineHeight: 1.7, margin: 0 }}>Best,</p>
+            <p style={{ fontSize: '16px', lineHeight: 1.7, margin: '15px 0 0 0' }}>
+              <EditableText
+                tag="span"
+                value={data.orgName || ''}
+                onChange={(v) => onChange({ orgName: v })}
+                placeholder="Organization Name"
+                className="font-bold focus:bg-blue-50 rounded px-1"
+                style={{ color: c.primary }}
+              />
+            </p>
+          </div>
+          <div className="px-10 pt-4 pb-8">
+            <div className="bg-gray-50 px-5 py-4 text-center" style={{ borderRadius: '2px' }}>
+              <p style={{ margin: 0, fontSize: '14px', color: '#666666', lineHeight: 1.6 }}>
+                <EditableText
+                  tag="span"
+                  value={data.tagline || ''}
+                  onChange={(v) => onChange({ tagline: v })}
+                  placeholder="Tagline (optional)"
+                  className="focus:bg-white rounded px-1"
+                />
+                <br />
+                For questions, contact us at{' '}
+                <EditableText
+                  tag="span"
+                  value={data.phone || ''}
+                  onChange={(v) => onChange({ phone: v })}
+                  placeholder="(317) 555-0142"
+                  className="font-bold focus:bg-white rounded px-1"
+                  style={{ color: c.primary }}
+                />
+                {' '}or visit{' '}
+                <EditableText
+                  tag="span"
+                  value={data.website || ''}
+                  onChange={(v) => onChange({ website: v })}
+                  placeholder="yourwebsite.gov"
+                  className="underline focus:bg-white rounded px-1"
+                  style={{ color: c.primary }}
+                />
+              </p>
+            </div>
+          </div>
         </div>
       );
 
@@ -559,35 +651,52 @@ const InlineSection = ({ section, onChange, themeColors, logo, logoHeight, onRic
       );
     }
 
-    // ── Highlight Banner ────────────────────────────────────────────────
-    case 'highlightBanner':
+    // ── Highlight Banner / Navy Callout ─────────────────────────────────
+    case 'highlightBanner': {
+      const calloutText = data.text || data.subtext || '';
+      const calloutButton = data.buttonText || data.ctaText || '';
       return (
-        <div className="py-1">
-          <div className="px-10 py-6 text-center" style={{ backgroundColor: c.accent }}>
+        <div className="px-10 py-2 bg-white">
+          <div className="px-7 py-6" style={{ backgroundColor: c.primary }}>
             <EditableText
               tag="p"
               value={data.heading || ''}
               onChange={(v) => onChange({ heading: v })}
-              placeholder="Banner Heading"
-              className="font-bold text-white focus:bg-white/10 rounded px-1"
-              style={{ fontSize: '16px' }}
+              placeholder="Callout Title"
+              className="font-bold text-white mb-3 focus:bg-white/10 rounded px-1"
+              style={{ fontSize: '20px' }}
             />
             <EditableText
               tag="p"
-              value={data.subtext || ''}
-              onChange={(v) => onChange({ subtext: v })}
-              placeholder="Subtext (optional)"
-              className="text-white/70 mt-1 focus:bg-white/10 rounded px-1"
-              style={{ fontSize: '14px' }}
+              value={calloutText}
+              onChange={(v) => onChange({ text: v })}
+              placeholder="Always set explicit color #ffffff on every text element — Outlook will not inherit it."
+              className="text-white focus:bg-white/10 rounded px-1"
+              style={{ fontSize: '16px', lineHeight: 1.7 }}
             />
-            {data.ctaText && (
-              <span className="inline-block mt-3 px-4 py-1.5 text-xs font-bold rounded text-slate-900" style={{ backgroundColor: c.gold }}>
-                {data.ctaText}
+            {calloutButton && (
+              <span className="inline-block mt-4 font-bold text-white"
+                style={{ backgroundColor: c.gold, padding: '14px 32px', borderRadius: '6px', fontSize: '16px' }}>
+                <EditableText
+                  value={calloutButton}
+                  onChange={(v) => onChange({ buttonText: v })}
+                  placeholder="Learn More"
+                  className="focus:bg-white/10 rounded px-1"
+                />
               </span>
+            )}
+            {!calloutButton && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onChange({ buttonText: 'Learn More' }); }}
+                className="mt-4 inline-block text-xs text-white/60 underline hover:text-white"
+              >
+                + Add button
+              </button>
             )}
           </div>
         </div>
       );
+    }
 
     // ── Member Resources ────────────────────────────────────────────────
     case 'memberResources': {
@@ -703,8 +812,64 @@ const SectionConfigPanel = ({ section, onChange, themeColors }) => {
     case 'meetingDetails':
       return (
         <div className="space-y-2">
-          <ConfigInput label="Meeting Link" value={data.meetingUrl} onChange={(v) => onChange({ meetingUrl: v })} placeholder="https://zoom.us/j/..." />
-          <ConfigInput label="Button Text" value={data.buttonText} onChange={(v) => onChange({ buttonText: v })} placeholder="e.g. JOIN ZOOM MEETING" />
+          <ConfigInput label="Event Name" value={data.title} onChange={(v) => onChange({ title: v })} placeholder="e.g. Township Board Meeting" />
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <label className="block text-[10px] font-medium text-gray-400 mb-0.5">Date</label>
+              <input type="date" value={data.calendarDate || ''} onChange={(e) => onChange({ calendarDate: e.target.value })}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-gray-800 text-xs focus:outline-none focus:border-amber-500" />
+            </div>
+            <div>
+              <label className="block text-[10px] font-medium text-gray-400 mb-0.5">Start time</label>
+              <input type="time" value={data.startTime || ''} onChange={(e) => onChange({ startTime: e.target.value })}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-gray-800 text-xs focus:outline-none focus:border-amber-500" />
+            </div>
+            <div>
+              <label className="block text-[10px] font-medium text-gray-400 mb-0.5">End time</label>
+              <input type="time" value={data.endTime || ''} onChange={(e) => onChange({ endTime: e.target.value })}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-gray-800 text-xs focus:outline-none focus:border-amber-500" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-[10px] font-medium text-gray-400 mb-0.5">Timezone</label>
+            <select value={data.timezone || 'ET'} onChange={(e) => onChange({ timezone: e.target.value })}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-gray-800 text-xs focus:outline-none focus:border-amber-500">
+              <option value="ET">ET (Eastern)</option>
+              <option value="CT">CT (Central)</option>
+              <option value="MT">MT (Mountain)</option>
+              <option value="PT">PT (Pacific)</option>
+              <option value="AKT">AKT (Alaska)</option>
+              <option value="HT">HT (Hawaii)</option>
+              <option value="EDT">EDT</option>
+              <option value="EST">EST</option>
+              <option value="CDT">CDT</option>
+              <option value="CST">CST</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-[10px] font-medium text-gray-400 mb-0.5">Recurrence</label>
+            <select value={data.recurrence || 'one-time'} onChange={(e) => onChange({ recurrence: e.target.value })}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-gray-800 text-xs focus:outline-none focus:border-amber-500">
+              <option value="one-time">One-time event</option>
+              <option value="weekly">Weekly</option>
+              <option value="biweekly">Every 2 weeks</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+          <ConfigInput label="Location (optional)" value={data.location} onChange={(v) => onChange({ location: v })} placeholder="e.g. Town Hall, 123 Main St" />
+          <ConfigInput label="Description (optional)" value={data.description} onChange={(v) => onChange({ description: v })} placeholder="Brief event description for calendar" />
+          <ConfigInput label="Meeting ID (optional)" value={data.meetingId} onChange={(v) => onChange({ meetingId: v })} placeholder="e.g. 856 2914 7703" />
+          <ConfigInput label="Passcode (optional)" value={data.passcode} onChange={(v) => onChange({ passcode: v })} placeholder="e.g. Township2026" />
+          <ConfigInput label="Meeting Link (optional)" value={data.meetingUrl} onChange={(v) => onChange({ meetingUrl: v })} placeholder="https://zoom.us/j/..." />
+          <ConfigInput label="Join Button Text" value={data.buttonText} onChange={(v) => onChange({ buttonText: v })} placeholder="e.g. JOIN MEETING" />
+          {data.calendarDate && data.startTime && (
+            <p className="text-[10px] text-emerald-600">✓ Calendar links will be auto-generated (Google, Outlook, Apple).</p>
+          )}
         </div>
       );
 
@@ -887,8 +1052,8 @@ const SectionConfigPanel = ({ section, onChange, themeColors }) => {
     case 'highlightBanner':
       return (
         <div className="grid grid-cols-2 gap-2">
-          <ConfigInput label="CTA Button Text" value={data.ctaText} onChange={(v) => onChange({ ctaText: v })} placeholder="Learn More" />
-          <ConfigInput label="CTA Button URL" value={data.ctaUrl} onChange={(v) => onChange({ ctaUrl: v })} placeholder="https://..." />
+          <ConfigInput label="Button Text" value={data.buttonText || data.ctaText} onChange={(v) => onChange({ buttonText: v })} placeholder="Learn More" />
+          <ConfigInput label="Button URL" value={data.buttonUrl || data.ctaUrl} onChange={(v) => onChange({ buttonUrl: v })} placeholder="https://..." />
         </div>
       );
 
@@ -1053,10 +1218,12 @@ const BuilderCanvas = ({
           font-style: italic;
           pointer-events: none;
         }
-        .inline-editable-rich p { margin: 4px 0; }
-        .inline-editable-rich ul { list-style-type: disc; padding-left: 24px; margin: 4px 0; }
-        .inline-editable-rich ol { list-style-type: decimal; padding-left: 24px; margin: 4px 0; }
-        .inline-editable-rich li { margin: 2px 0; }
+        .inline-editable-rich p { margin: 0 0 14px 0; }
+        .inline-editable-rich div { margin: 0 0 14px 0; }
+        .inline-editable-rich div:last-child, .inline-editable-rich p:last-child { margin-bottom: 0; }
+        .inline-editable-rich ul { list-style-type: disc; padding-left: 24px; margin: 8px 0 14px 0; }
+        .inline-editable-rich ol { list-style-type: decimal; padding-left: 24px; margin: 8px 0 14px 0; }
+        .inline-editable-rich li { margin: 0; line-height: 1.9; }
         .inline-editable-rich b, .inline-editable-rich strong { font-weight: bold; }
         .inline-editable-rich i, .inline-editable-rich em { font-style: italic; }
         .inline-editable-rich u { text-decoration: underline; }

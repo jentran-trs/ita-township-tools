@@ -78,6 +78,7 @@ export default function DrillDownPage() {
   const [loading, setLoading] = useState(true);
   const [statusFilters, setStatusFilters] = useState<Set<string>>(new Set());
   const [townshipFilters, setTownshipFilters] = useState<Set<string>>(new Set());
+  const [emailStatusFilters, setEmailStatusFilters] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [exporting, setExporting] = useState(false);
   const [detailed, setDetailed] = useState(false);
@@ -121,13 +122,35 @@ export default function DrillDownPage() {
     setLoading(false);
   };
 
+  const emailStatusKey = (raw: string | null) =>
+    (raw || "").toLowerCase().trim() || "__none__";
+
   const filteredContacts = useMemo(() => {
     return contacts.filter((c) => {
       if (statusFilters.size > 0 && !statusFilters.has(c.review_status)) return false;
       if (townshipFilters.size > 0 && !townshipFilters.has(c.township_id)) return false;
+      if (emailStatusFilters.size > 0 && !emailStatusFilters.has(emailStatusKey(c.email_status)))
+        return false;
       return true;
     });
-  }, [contacts, statusFilters, townshipFilters]);
+  }, [contacts, statusFilters, townshipFilters, emailStatusFilters]);
+
+  const emailStatusOptions = useMemo(() => {
+    const seen = new Map<string, { key: string; display: string; count: number }>();
+    for (const c of contacts) {
+      const key = emailStatusKey(c.email_status);
+      const display = (c.email_status || "").trim() || "(no status)";
+      const existing = seen.get(key);
+      if (existing) existing.count += 1;
+      else seen.set(key, { key, display, count: 1 });
+    }
+    return Array.from(seen.values()).sort((a, b) => {
+      // Push "(no status)" to the end; otherwise alpha
+      if (a.key === "__none__") return 1;
+      if (b.key === "__none__") return -1;
+      return a.display.localeCompare(b.display);
+    });
+  }, [contacts]);
 
   const statusCounts = useMemo(() => {
     const map: Record<string, number> = {};
@@ -157,6 +180,12 @@ export default function DrillDownPage() {
     if (next.has(id)) next.delete(id);
     else next.add(id);
     setTownshipFilters(next);
+  };
+  const toggleEmailStatus = (key: string) => {
+    const next = new Set(emailStatusFilters);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    setEmailStatusFilters(next);
   };
 
   const allFilteredSelected =
@@ -496,13 +525,46 @@ export default function DrillDownPage() {
             )}
           </div>
 
+          {emailStatusOptions.length > 0 && (
+            <div className="flex items-start gap-2 flex-wrap">
+              <span className="flex items-center gap-1 text-xs font-medium text-gray-600 mt-1">
+                <Filter className="w-3 h-3" /> Email status:
+              </span>
+              {emailStatusOptions.map((opt) => {
+                const active = emailStatusFilters.has(opt.key);
+                return (
+                  <button
+                    key={opt.key}
+                    onClick={() => toggleEmailStatus(opt.key)}
+                    className={`text-xs px-2.5 py-1 rounded-full border ${
+                      active
+                        ? "bg-gray-900 text-white border-gray-900"
+                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    {opt.display} <span className="opacity-70">({opt.count})</span>
+                  </button>
+                );
+              })}
+              {emailStatusFilters.size > 0 && (
+                <button
+                  onClick={() => setEmailStatusFilters(new Set())}
+                  className="text-xs text-gray-500 underline ml-1 mt-1"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          )}
+
           <div className="text-xs text-gray-500">
             Showing <strong>{filteredContacts.length}</strong> of {contacts.length} contact{contacts.length === 1 ? "" : "s"}.
-            {(townshipFilters.size > 0 || statusFilters.size > 0) && (
+            {(townshipFilters.size > 0 || statusFilters.size > 0 || emailStatusFilters.size > 0) && (
               <button
                 onClick={() => {
                   setTownshipFilters(new Set());
                   setStatusFilters(new Set());
+                  setEmailStatusFilters(new Set());
                 }}
                 className="ml-2 text-gray-700 underline"
               >
@@ -549,7 +611,10 @@ export default function DrillDownPage() {
                         {c.title && <div className="text-xs text-gray-500">{c.title}</div>}
                       </td>
                       <td className="px-3 py-2 text-gray-700">
-                        <div className="break-all">{c.email || <span className="text-gray-400">no email</span>}</div>
+                        <div className="break-all flex items-center gap-2 flex-wrap">
+                          <span>{c.email || <span className="text-gray-400">no email</span>}</span>
+                          {c.email && c.email_status && <EmailStatusPill status={c.email_status} />}
+                        </div>
                         {c.phone && <div className="text-xs text-gray-500">{c.phone}</div>}
                         {c.previous_email && (
                           <div className="text-xs text-amber-700 mt-0.5">
@@ -838,4 +903,28 @@ function StatusBadge({ status }: { status: string }) {
     );
   }
   return <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full">Not started</span>;
+}
+
+function EmailStatusPill({ status }: { status: string | null }) {
+  if (!status) return null;
+  const norm = status.toLowerCase().trim();
+  let cls = "bg-red-100 text-red-800 border-red-300";
+  let label: string = status;
+  let title = `Email status: ${status}`;
+  if (norm === "valid") {
+    cls = "bg-emerald-100 text-emerald-800 border-emerald-300";
+    label = "Valid";
+  } else if (norm === "updated") {
+    cls = "bg-blue-100 text-blue-800 border-blue-300";
+    label = "Updated";
+    title = "Email was updated by a reviewer — needs reverification";
+  }
+  return (
+    <span
+      className={`inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded-full border whitespace-nowrap ${cls}`}
+      title={title}
+    >
+      {label}
+    </span>
+  );
 }

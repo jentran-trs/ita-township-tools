@@ -868,6 +868,14 @@ export default function VerifyTownshipPage() {
         )}
 
         {contacts.length > 0 && (
+          <div className="mt-6 bg-blue-50 border border-blue-200 rounded-md px-4 py-3">
+            <p className="text-sm text-blue-900">
+              <strong>Please don&apos;t stop at your own contact.</strong> If you know for sure that another member of your township has the correct information, needs an update, or should be removed, you can verify their record too. Confirming as much of your township&apos;s list as you can helps us keep the directory accurate.
+            </p>
+          </div>
+        )}
+
+        {contacts.length > 0 && (
           <div className="mt-6 flex items-center justify-between flex-wrap gap-3">
             <div className="text-base text-gray-700">
               {view === "wizard" ? (

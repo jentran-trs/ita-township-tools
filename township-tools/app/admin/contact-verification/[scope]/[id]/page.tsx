@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useUser, useOrganization, useAuth } from "@clerk/nextjs";
-import { ArrowLeft, Loader2, Download, RotateCcw, CheckCircle2, ExternalLink, Filter, MoveRight, X } from "lucide-react";
+import { ArrowLeft, Loader2, Download, RotateCcw, CheckCircle2, ExternalLink, Filter, MoveRight, X, Pencil } from "lucide-react";
+import AdminContactEditModal from "../../../../../components/AdminContactEditModal";
 
 type Stat = {
   region_id: string;
@@ -86,6 +87,7 @@ export default function DrillDownPage() {
   const [moveCountyId, setMoveCountyId] = useState("");
   const [moveTownshipId, setMoveTownshipId] = useState("");
   const [moving, setMoving] = useState(false);
+  const [editingContact, setEditingContact] = useState<Contact | null>(null);
 
   useEffect(() => {
     if (isLoaded && !isAdmin) router.push("/dashboard");
@@ -529,6 +531,7 @@ export default function DrillDownPage() {
                   <th className="px-3 py-2 font-medium">Email · Phone</th>
                   {scope !== "township" && <th className="px-3 py-2 font-medium">Township</th>}
                   <th className="px-3 py-2 font-medium">Status</th>
+                  <th className="px-3 py-2 font-medium w-12"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -563,6 +566,15 @@ export default function DrillDownPage() {
                       )}
                       <td className="px-3 py-2">
                         <ContactStatusBadge status={c.review_status} />
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        <button
+                          onClick={() => setEditingContact(c)}
+                          title="Admin edit"
+                          className="inline-flex items-center justify-center w-8 h-8 rounded-md text-blue-700 hover:bg-blue-50 border border-transparent hover:border-blue-200"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
                       </td>
                     </tr>
                   );
@@ -677,6 +689,12 @@ export default function DrillDownPage() {
           </div>
         </div>
       )}
+
+      <AdminContactEditModal
+        contact={editingContact}
+        onClose={() => setEditingContact(null)}
+        onSaved={load}
+      />
     </div>
   );
 }

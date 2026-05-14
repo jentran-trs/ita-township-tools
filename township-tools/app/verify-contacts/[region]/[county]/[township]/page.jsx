@@ -22,6 +22,7 @@ import {
   Clock,
   MessageSquare,
 } from "lucide-react";
+import AdminContactEditModal from "../../../../../components/AdminContactEditModal";
 
 const FIELDS = ["first_name", "last_name", "title", "email", "phone", "email_status"];
 const EMPTY_DRAFT = { first_name: "", last_name: "", title: "", email: "", phone: "", email_status: "" };
@@ -114,6 +115,7 @@ export default function VerifyTownshipPage() {
   const [isSuperadmin, setIsSuperadmin] = useState(false);
   const [notesVisible, setNotesVisible] = useState(false);
   const [recentlyChangedIds, setRecentlyChangedIds] = useState(new Set());
+  const [adminEditContact, setAdminEditContact] = useState(null);
 
   useEffect(() => {
     const loaded = loadReviewer();
@@ -992,8 +994,19 @@ export default function VerifyTownshipPage() {
                         </div>
                       )}
                     </div>
-                    {!portalLocked && (
+                    {(!portalLocked || isSuperadmin) && (
                     <div className="flex flex-col gap-2 shrink-0 sm:w-44">
+                      {isSuperadmin && (
+                        <button
+                          onClick={() => setAdminEditContact(c)}
+                          disabled={busyId === c.id}
+                          className="flex items-center justify-center gap-1.5 text-sm font-medium px-3 py-1.5 border border-blue-300 text-blue-700 bg-blue-50 rounded-md hover:bg-blue-100"
+                        >
+                          <ShieldAlert className="w-4 h-4" /> Admin edit
+                        </button>
+                      )}
+                      {!portalLocked && (
+                      <>
                       {isUnreviewed && (
                         <>
                           <button
@@ -1072,6 +1085,8 @@ export default function VerifyTownshipPage() {
                             <Trash2 className="w-4 h-4" /> Remove
                           </button>
                         </>
+                      )}
+                      </>
                       )}
                     </div>
                     )}
@@ -1270,6 +1285,15 @@ export default function VerifyTownshipPage() {
         </div>
       </div>
       )}
+
+      <AdminContactEditModal
+        contact={adminEditContact}
+        onClose={() => setAdminEditContact(null)}
+        onSaved={async () => {
+          await refresh(township.id);
+          markSaved();
+        }}
+      />
     </div>
   );
 }

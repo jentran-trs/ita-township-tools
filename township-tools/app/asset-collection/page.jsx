@@ -388,7 +388,7 @@ export default function AssetCollectionPage() {
               </div>
               <div className="flex gap-3">
                 <span className="font-bold text-amber-600 mt-0.5 flex-shrink-0">3.</span>
-                <p><strong>Need an image collage?</strong> If you'd like multiple photos combined into one collage for a section, send the images directly to Jen Tran at jentran@my-trs.com — collages are custom-made and can't be built through this form.</p>
+                <p><strong>Need an image collage?</strong> If you'd like multiple photos combined into one collage for a section, send the images directly to Jen Tran at jtran@ita-in.org — collages are custom-made and can't be built through this form.</p>
               </div>
             </div>
           )}

@@ -162,11 +162,11 @@ export default function PublicLanding() {
             Get access to all Township Tools for your organization. Contact us to get started.
           </p>
           <a
-            href="mailto:jentran@my-trs.com"
+            href="mailto:jtran@ita-in.org"
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-500 text-slate-900 rounded-lg font-semibold text-sm hover:bg-amber-400 transition-colors"
           >
             <Mail className="w-4 h-4" />
-            Contact Jen Tran — jentran@my-trs.com
+            Contact Jen Tran — jtran@ita-in.org
           </a>
         </div>
       </main>

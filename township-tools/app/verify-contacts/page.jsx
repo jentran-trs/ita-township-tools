@@ -215,6 +215,11 @@ export default function VerifyLanding() {
           <p className="text-gray-600 max-w-lg">
             Tell us a little about yourself, then pick your township so we can show you the contacts on file.
           </p>
+          <div className="mt-4 max-w-lg w-full bg-blue-50 border border-blue-200 rounded-md px-4 py-3 text-left">
+            <p className="text-sm text-blue-900">
+              <strong>Please don&apos;t stop at your own contact.</strong> If you know for sure that another member of your township has the correct information, needs an update, or should be removed, you can verify their record too. Confirming as much of your township&apos;s list as you can helps us keep the directory accurate.
+            </p>
+          </div>
         </div>
 
         {/* Step 1 — your details */}

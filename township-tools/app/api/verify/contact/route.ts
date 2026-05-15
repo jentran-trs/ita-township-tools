@@ -136,6 +136,11 @@ export async function PATCH(req: Request) {
         if (k in o) update[k] = o[k];
       }
       update.original_values = null;
+      // Restoring original values means whatever was pushed to AMO no longer matches.
+      if (existing.amo_updated_at) {
+        update.amo_updated_at = null;
+        update.amo_updated_by = null;
+      }
     }
     // Always clear the email-only snapshot too (legacy + display layer).
     update.previous_email = null;
@@ -185,6 +190,13 @@ export async function PATCH(req: Request) {
         if (k in changes) update[k] = changes[k] || null;
       }
       update.review_status = existing.review_status === 'newly_added' ? 'newly_added' : 'updated';
+
+      // Any data edit invalidates the previous AMO sync — the superadmin will
+      // need to push the new values again.
+      if (existing.amo_updated_at) {
+        update.amo_updated_at = null;
+        update.amo_updated_by = null;
+      }
     }
   }
 

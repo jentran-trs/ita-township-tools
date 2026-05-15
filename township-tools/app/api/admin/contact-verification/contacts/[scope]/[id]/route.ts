@@ -42,6 +42,7 @@ export async function GET(
       `id, first_name, last_name, title, email, phone, email_status,
        previous_email, previous_email_status,
        review_status, reviewed_at, reviewed_by_name,
+       amo_updated_at, amo_updated_by,
        cv_townships:township_id ( id, name,
          cv_counties:county_id ( id, name, cv_regions:region_id ( id, name ) )
        )`
@@ -65,6 +66,8 @@ export async function GET(
     review_status: c.review_status,
     reviewed_by_name: c.reviewed_by_name,
     reviewed_at: c.reviewed_at,
+    amo_updated_at: c.amo_updated_at,
+    amo_updated_by: c.amo_updated_by,
     region_name: c.cv_townships?.cv_counties?.cv_regions?.name || '',
     county_name: c.cv_townships?.cv_counties?.name || '',
     township_name: c.cv_townships?.name || '',

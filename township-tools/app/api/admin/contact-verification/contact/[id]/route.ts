@@ -57,11 +57,20 @@ export async function PATCH(
   const adminTaggedName = `${adminDisplay} (admin)`;
 
   const update: Record<string, any> = {};
+  let dataChanged = false;
   for (const k of EDITABLE_FIELDS) {
     if (k in changes) {
       const v = changes[k];
-      update[k] = v === '' || v === undefined ? null : v;
+      const next = v === '' || v === undefined ? null : v;
+      update[k] = next;
+      if ((existing[k] ?? null) !== (next ?? null)) dataChanged = true;
     }
+  }
+
+  // Any change to the contact's data invalidates the previous AMO sync.
+  if (dataChanged && existing.amo_updated_at) {
+    update.amo_updated_at = null;
+    update.amo_updated_by = null;
   }
 
   // Snapshot the original values on first edit so a future "Undo" can restore

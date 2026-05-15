@@ -463,73 +463,6 @@ export default function DrillDownPage() {
 
         <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
           <h2 className="text-base font-semibold text-gray-900">Contacts</h2>
-          <div className="flex items-center gap-2">
-            {selected.size > 0 && (
-              <>
-                <span className="text-sm text-gray-600">{selected.size} selected</span>
-                <button
-                  onClick={() => exportSelected("xlsx")}
-                  disabled={exporting}
-                  className="flex items-center gap-1 text-sm font-medium text-white bg-gray-900 px-3 py-1.5 rounded-md hover:bg-gray-800 disabled:opacity-50"
-                >
-                  <Download className="w-3.5 h-3.5" /> Export selected (xlsx)
-                </button>
-                <button
-                  onClick={() => exportSelected("csv")}
-                  disabled={exporting}
-                  className="flex items-center gap-1 text-sm font-medium text-gray-700 border border-gray-300 px-3 py-1.5 rounded-md hover:bg-gray-50 disabled:opacity-50"
-                >
-                  <Download className="w-3.5 h-3.5" /> csv
-                </button>
-                <button
-                  onClick={async () => {
-                    if (moveTree.length === 0) {
-                      try {
-                        const r = await fetch("/api/verify/locations");
-                        const j = await r.json();
-                        setMoveTree(j.regions || []);
-                      } catch {}
-                    }
-                    setMoveRegionId("");
-                    setMoveCountyId("");
-                    setMoveTownshipId("");
-                    setShowMoveModal(true);
-                  }}
-                  className="flex items-center gap-1 text-sm font-medium text-blue-700 border border-blue-300 px-3 py-1.5 rounded-md hover:bg-blue-50"
-                >
-                  <MoveRight className="w-3.5 h-3.5" /> Move to township
-                </button>
-                {selectedAmoState.unsyncedCount > 0 && (
-                  <button
-                    onClick={() => markAmoSynced(true)}
-                    disabled={markingAmo}
-                    title="Stamp selected contacts as pushed to AMO. Any future edit clears the stamp."
-                    className="flex items-center gap-1 text-sm font-medium text-emerald-700 border border-emerald-300 bg-emerald-50 px-3 py-1.5 rounded-md hover:bg-emerald-100 disabled:opacity-50"
-                  >
-                    <Send className="w-3.5 h-3.5" />
-                    Mark {selectedAmoState.unsyncedCount} synced to AMO
-                  </button>
-                )}
-                {selectedAmoState.syncedCount > 0 && (
-                  <button
-                    onClick={() => markAmoSynced(false)}
-                    disabled={markingAmo}
-                    title="Clear the AMO sync stamp on selected contacts."
-                    className="flex items-center gap-1 text-sm font-medium text-gray-700 border border-gray-300 px-3 py-1.5 rounded-md hover:bg-gray-50 disabled:opacity-50"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    Unmark {selectedAmoState.syncedCount} from AMO
-                  </button>
-                )}
-                <button
-                  onClick={() => setSelected(new Set())}
-                  className="text-xs text-gray-500 underline"
-                >
-                  Clear
-                </button>
-              </>
-            )}
-          </div>
         </div>
 
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4 mb-3 space-y-3">
@@ -676,6 +609,72 @@ export default function DrillDownPage() {
             )}
           </div>
         </div>
+
+        {selected.size > 0 && (
+          <div className="sticky top-2 z-10 mb-3 flex items-center gap-2 flex-wrap bg-white border border-gray-300 rounded-lg shadow-sm px-3 py-2">
+            <span className="text-sm text-gray-700 font-medium">{selected.size} selected</span>
+            <button
+              onClick={() => exportSelected("xlsx")}
+              disabled={exporting}
+              className="flex items-center gap-1 text-sm font-medium text-white bg-gray-900 px-3 py-1.5 rounded-md hover:bg-gray-800 disabled:opacity-50"
+            >
+              <Download className="w-3.5 h-3.5" /> Export selected (xlsx)
+            </button>
+            <button
+              onClick={() => exportSelected("csv")}
+              disabled={exporting}
+              className="flex items-center gap-1 text-sm font-medium text-gray-700 border border-gray-300 px-3 py-1.5 rounded-md hover:bg-gray-50 disabled:opacity-50"
+            >
+              <Download className="w-3.5 h-3.5" /> csv
+            </button>
+            <button
+              onClick={async () => {
+                if (moveTree.length === 0) {
+                  try {
+                    const r = await fetch("/api/verify/locations");
+                    const j = await r.json();
+                    setMoveTree(j.regions || []);
+                  } catch {}
+                }
+                setMoveRegionId("");
+                setMoveCountyId("");
+                setMoveTownshipId("");
+                setShowMoveModal(true);
+              }}
+              className="flex items-center gap-1 text-sm font-medium text-blue-700 border border-blue-300 px-3 py-1.5 rounded-md hover:bg-blue-50"
+            >
+              <MoveRight className="w-3.5 h-3.5" /> Move to township
+            </button>
+            {selectedAmoState.unsyncedCount > 0 && (
+              <button
+                onClick={() => markAmoSynced(true)}
+                disabled={markingAmo}
+                title="Stamp selected contacts as pushed to AMO. Any future edit clears the stamp."
+                className="flex items-center gap-1 text-sm font-medium text-emerald-700 border border-emerald-300 bg-emerald-50 px-3 py-1.5 rounded-md hover:bg-emerald-100 disabled:opacity-50"
+              >
+                <Send className="w-3.5 h-3.5" />
+                Mark {selectedAmoState.unsyncedCount} synced to AMO
+              </button>
+            )}
+            {selectedAmoState.syncedCount > 0 && (
+              <button
+                onClick={() => markAmoSynced(false)}
+                disabled={markingAmo}
+                title="Clear the AMO sync stamp on selected contacts."
+                className="flex items-center gap-1 text-sm font-medium text-gray-700 border border-gray-300 px-3 py-1.5 rounded-md hover:bg-gray-50 disabled:opacity-50"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                Unmark {selectedAmoState.syncedCount} from AMO
+              </button>
+            )}
+            <button
+              onClick={() => setSelected(new Set())}
+              className="ml-auto text-xs text-gray-500 underline"
+            >
+              Clear
+            </button>
+          </div>
+        )}
 
         <div className="bg-white border border-gray-200 rounded-lg overflow-hidden mb-8">
           {filteredContacts.length === 0 ? (

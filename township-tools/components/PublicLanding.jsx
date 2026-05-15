@@ -1,172 +1,208 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Building2, ClipboardCheck, FileText, FolderOpen, Mail, ArrowRight, LogIn, Lock, MapPin } from "lucide-react";
+import {
+  Building2,
+  ClipboardCheck,
+  FileText,
+  FolderOpen,
+  Mail,
+  ArrowRight,
+  LogIn,
+  Lock,
+  MapPin,
+  CheckCircle2,
+} from "lucide-react";
+
+const PERSONAL_EMAIL = "giang.jentran@gmail.com";
 
 export default function PublicLanding() {
   const router = useRouter();
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen bg-gray-50 text-gray-900">
       {/* Header */}
-      <header className="border-b border-slate-700 bg-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Building2 className="w-6 h-6 sm:w-8 sm:h-8 text-amber-500" />
-            <span className="text-lg sm:text-xl font-bold text-white">Township Tools</span>
+      <header className="bg-white border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-5 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <Building2 className="w-8 h-8 sm:w-9 sm:h-9 text-amber-600" />
+            <span className="text-xl sm:text-2xl font-bold text-gray-900">Township Tools</span>
           </div>
           <button
             onClick={() => router.push("/sign-in")}
-            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-amber-500 text-slate-900 rounded-lg text-sm font-medium hover:bg-amber-400 transition-colors"
+            className="flex items-center gap-2 px-4 sm:px-5 py-2.5 bg-amber-500 text-white rounded-lg text-base font-semibold hover:bg-amber-600 transition-colors shadow-sm"
           >
             <LogIn className="w-4 h-4" />
-            Member Login
+            Sign in
           </button>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
         {/* Hero */}
-        <div className="mb-8 sm:mb-10">
-          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
-            Professional Tools for Indiana Townships
+        <div className="mb-10 sm:mb-12 text-center">
+          <h1 className="text-3xl sm:text-5xl font-bold text-gray-900 mb-4">
+            Tools for Indiana Townships
           </h1>
-          <p className="text-sm sm:text-base text-slate-300 max-w-2xl">
-            Everything your township needs — from SB 270 compliance scoring to annual report creation and email templates.
+          <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
+            Pick a tool below to get started.
           </p>
         </div>
 
-        {/* Tools Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-2 gap-4 sm:gap-6">
-          {/* SB 270 Scoring Tool - PUBLIC */}
-          <div
-            onClick={() => router.push("/tools/scoring-tool")}
-            className="bg-slate-800 border border-slate-700 rounded-xl p-5 sm:p-6 hover:border-amber-500/50 transition-colors cursor-pointer group"
-          >
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-500/20 rounded-lg flex items-center justify-center group-hover:bg-purple-500/30 transition-colors">
-                <ClipboardCheck className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500" />
-              </div>
-              <span className="text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded-full">
-                FREE
-              </span>
+        {/* ───────── Section 1: Free with ITA ───────── */}
+        <section className="mb-14 sm:mb-20">
+          <div className="text-center mb-8 sm:mb-10">
+            <div className="inline-flex items-center gap-2 bg-emerald-100 text-emerald-800 px-4 py-1.5 rounded-full text-sm font-semibold mb-4">
+              <CheckCircle2 className="w-4 h-4" />
+              FREE · NO LOGIN NEEDED
             </div>
-            <h3 className="text-lg sm:text-xl font-bold text-white mb-2">SB 270 Scoring Tool</h3>
-            <p className="text-sm sm:text-base text-slate-300 mb-3 sm:mb-4">
-              Self-score your township under SB 270 to determine if you are a Designated or Recipient township.
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+              Free for all Indiana townships
+            </h2>
+            <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto">
+              Provided as part of your Indiana Township Association membership.
+              Just click and use — no account needed.
             </p>
-            <div className="flex items-center text-purple-500 font-medium text-sm sm:text-base">
-              Use Tool <ArrowRight className="w-4 h-4 ml-2" />
-            </div>
           </div>
 
-          {/* Contact Verification - PUBLIC */}
-          <div
-            onClick={() => router.push("/verify-contacts")}
-            className="bg-slate-800 border border-slate-700 rounded-xl p-5 sm:p-6 hover:border-amber-500/50 transition-colors cursor-pointer group"
-          >
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-rose-500/20 rounded-lg flex items-center justify-center group-hover:bg-rose-500/30 transition-colors">
-                <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-rose-500" />
-              </div>
-              <span className="text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded-full">
-                FREE
-              </span>
-            </div>
-            <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Verify Your Township Contacts</h3>
-            <p className="text-sm sm:text-base text-slate-300 mb-3 sm:mb-4">
-              Quickly review and update your township&apos;s officials, addresses, and email addresses so we can keep our records accurate.
-            </p>
-            <div className="flex items-center text-rose-500 font-medium text-sm sm:text-base">
-              Start Reviewing <ArrowRight className="w-4 h-4 ml-2" />
-            </div>
-          </div>
-
-          {/* Annual Report Builder - LOGIN REQUIRED */}
-          <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 sm:p-6 relative overflow-hidden">
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-amber-500/20 rounded-lg flex items-center justify-center">
-                <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-amber-500" />
-              </div>
-              <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                <Lock className="w-3 h-3" />
-                Members Only
-              </div>
-            </div>
-            <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Annual Report Builder</h3>
-            <p className="text-sm sm:text-base text-slate-300 mb-3 sm:mb-4">
-              Create professional annual reports with a drag-and-drop builder. Export as print-ready PDF.
-            </p>
+          <div className="grid sm:grid-cols-2 gap-5 sm:gap-6">
+            {/* SB 270 Scoring Tool */}
             <button
-              onClick={() => router.push("/sign-in")}
-              className="flex items-center gap-2 text-amber-500 font-medium text-sm sm:text-base hover:text-amber-400 transition-colors"
+              onClick={() => router.push("/tools/scoring-tool")}
+              className="bg-white border-2 border-gray-200 rounded-2xl p-8 sm:p-10 text-left hover:border-emerald-400 hover:shadow-lg transition-all group"
             >
-              <LogIn className="w-4 h-4" />
-              Login to Access
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-purple-100 rounded-2xl flex items-center justify-center mb-5 group-hover:bg-purple-200 transition-colors">
+                <ClipboardCheck className="w-8 h-8 sm:w-10 sm:h-10 text-purple-600" />
+              </div>
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
+                SB 270 Scoring Tool
+              </h3>
+              <p className="text-base sm:text-lg text-gray-600 mb-5">
+                Find out if your township is a Designated or Recipient township under SB 270.
+              </p>
+              <div className="inline-flex items-center gap-2 text-base sm:text-lg font-semibold text-purple-700 group-hover:text-purple-800">
+                Open tool <ArrowRight className="w-5 h-5" />
+              </div>
+            </button>
+
+            {/* Contact Verification */}
+            <button
+              onClick={() => router.push("/verify-contacts")}
+              className="bg-white border-2 border-gray-200 rounded-2xl p-8 sm:p-10 text-left hover:border-emerald-400 hover:shadow-lg transition-all group"
+            >
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-rose-100 rounded-2xl flex items-center justify-center mb-5 group-hover:bg-rose-200 transition-colors">
+                <MapPin className="w-8 h-8 sm:w-10 sm:h-10 text-rose-600" />
+              </div>
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
+                Verify Your Contacts
+              </h3>
+              <p className="text-base sm:text-lg text-gray-600 mb-5">
+                Check and update your township&apos;s officials, addresses, and email addresses.
+              </p>
+              <div className="inline-flex items-center gap-2 text-base sm:text-lg font-semibold text-rose-700 group-hover:text-rose-800">
+                Open tool <ArrowRight className="w-5 h-5" />
+              </div>
             </button>
           </div>
+        </section>
 
-          {/* Report Design Service - LOGIN REQUIRED */}
-          <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 sm:p-6 relative overflow-hidden">
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                <FolderOpen className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
-              </div>
-              <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                <Lock className="w-3 h-3" />
-                Members Only
-              </div>
+        {/* Divider */}
+        <div className="border-t border-gray-300 mb-14 sm:mb-20"></div>
+
+        {/* ───────── Section 2: Paid subscription ───────── */}
+        <section className="mb-12">
+          <div className="text-center mb-8 sm:mb-10">
+            <div className="inline-flex items-center gap-2 bg-amber-100 text-amber-800 px-4 py-1.5 rounded-full text-sm font-semibold mb-4">
+              <Lock className="w-4 h-4" />
+              PAID SUBSCRIPTION · SIGN IN REQUIRED
             </div>
-            <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Report Design Service</h3>
-            <p className="text-sm sm:text-base text-slate-300 mb-3 sm:mb-4">
-              Submit your report assets and let our team design your annual report. Professional results with minimal effort.
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+              Extra tools — paid subscription
+            </h2>
+            <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto">
+              A separate service by Jen Tran.{" "}
+              <strong>Not included with ITA membership.</strong>{" "}
+              <Link href="/about" className="text-amber-700 underline hover:text-amber-900">
+                Why?
+              </Link>
             </p>
-            <button
-              onClick={() => router.push("/sign-in")}
-              className="flex items-center gap-2 text-blue-500 font-medium text-sm sm:text-base hover:text-blue-400 transition-colors"
-            >
-              <LogIn className="w-4 h-4" />
-              Login to Access
-            </button>
           </div>
 
-          {/* Email Template Builder - LOGIN REQUIRED */}
-          <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 sm:p-6 relative overflow-hidden">
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-emerald-500/20 rounded-lg flex items-center justify-center">
-                <Mail className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-500" />
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+            {/* Annual Report Builder */}
+            <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 sm:p-7 flex flex-col">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-amber-100 rounded-xl flex items-center justify-center mb-4">
+                <FileText className="w-7 h-7 sm:w-8 sm:h-8 text-amber-600" />
               </div>
-              <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                <Lock className="w-3 h-3" />
-                Members Only
-              </div>
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
+                Annual Report Builder
+              </h3>
+              <p className="text-base text-gray-600 mb-5 flex-1">
+                Build a polished annual report and export it as a PDF.
+              </p>
+              <button
+                onClick={() => router.push("/sign-in")}
+                className="inline-flex items-center justify-center gap-2 text-base font-semibold text-amber-700 border-2 border-amber-300 rounded-lg px-4 py-2.5 hover:bg-amber-50"
+              >
+                <LogIn className="w-4 h-4" /> Sign in to use
+              </button>
             </div>
-            <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Email Template Builder</h3>
-            <p className="text-sm sm:text-base text-slate-300 mb-3 sm:mb-4">
-              Build professional email and newsletter templates with a form-based builder. Copy HTML and paste into any email client.
-            </p>
-            <button
-              onClick={() => router.push("/sign-in")}
-              className="flex items-center gap-2 text-emerald-500 font-medium text-sm sm:text-base hover:text-emerald-400 transition-colors"
-            >
-              <LogIn className="w-4 h-4" />
-              Login to Access
-            </button>
-          </div>
-        </div>
 
-        {/* Contact CTA */}
-        <div className="mt-8 sm:mt-10 bg-slate-800 border border-slate-700 rounded-xl p-5 sm:p-6 text-center">
-          <h2 className="text-lg font-bold text-white mb-2">Want to subscribe?</h2>
-          <p className="text-sm text-slate-300 mb-4">
-            Get access to all Township Tools for your organization. Contact us to get started.
+            {/* Report Design Service */}
+            <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 sm:p-7 flex flex-col">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-blue-100 rounded-xl flex items-center justify-center mb-4">
+                <FolderOpen className="w-7 h-7 sm:w-8 sm:h-8 text-blue-600" />
+              </div>
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
+                Report Design Service
+              </h3>
+              <p className="text-base text-gray-600 mb-5 flex-1">
+                Send us your materials and we&apos;ll design your annual report for you.
+              </p>
+              <button
+                onClick={() => router.push("/sign-in")}
+                className="inline-flex items-center justify-center gap-2 text-base font-semibold text-blue-700 border-2 border-blue-300 rounded-lg px-4 py-2.5 hover:bg-blue-50"
+              >
+                <LogIn className="w-4 h-4" /> Sign in to use
+              </button>
+            </div>
+
+            {/* Email Template Builder */}
+            <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 sm:p-7 flex flex-col">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-emerald-100 rounded-xl flex items-center justify-center mb-4">
+                <Mail className="w-7 h-7 sm:w-8 sm:h-8 text-emerald-600" />
+              </div>
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
+                Email Template Builder
+              </h3>
+              <p className="text-base text-gray-600 mb-5 flex-1">
+                Design professional email and newsletter templates to use in any email client.
+              </p>
+              <button
+                onClick={() => router.push("/sign-in")}
+                className="inline-flex items-center justify-center gap-2 text-base font-semibold text-emerald-700 border-2 border-emerald-300 rounded-lg px-4 py-2.5 hover:bg-emerald-50"
+              >
+                <LogIn className="w-4 h-4" /> Sign in to use
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* Subscribe CTA */}
+        <div className="bg-white border-2 border-gray-200 rounded-2xl p-8 sm:p-10 text-center">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
+            Want a subscription for your township?
+          </h2>
+          <p className="text-base sm:text-lg text-gray-600 mb-5">
+            Email Jen Tran for pricing and to get set up.
           </p>
           <a
-            href="mailto:jtran@ita-in.org"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-500 text-slate-900 rounded-lg font-semibold text-sm hover:bg-amber-400 transition-colors"
+            href={`mailto:${PERSONAL_EMAIL}`}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-amber-500 text-white rounded-lg font-semibold text-base sm:text-lg hover:bg-amber-600 transition-colors shadow-sm"
           >
-            <Mail className="w-4 h-4" />
-            Contact Jen Tran — jtran@ita-in.org
+            <Mail className="w-5 h-5" />
+            {PERSONAL_EMAIL}
           </a>
         </div>
       </main>

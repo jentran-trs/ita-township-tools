@@ -4,6 +4,7 @@ import {
   ClerkProvider,
 } from "@clerk/nextjs";
 import "./globals.css";
+import SiteFooter from "../components/SiteFooter";
 
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
@@ -22,6 +23,7 @@ export default function RootLayout({
       <html lang="en">
         <body className="bg-slate-900 text-white">
           {children}
+          <SiteFooter />
           {GA_MEASUREMENT_ID && (
             <>
               <Script

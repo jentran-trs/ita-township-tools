@@ -297,7 +297,7 @@ export default function AssetCollectionPage() {
   // Success screen
   if (submitted) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
         <header className="bg-[#1e3a5f] text-white py-4">
           <div className="max-w-3xl mx-auto px-4 flex items-center gap-3">
             <Building2 className="w-8 h-8" />
@@ -310,17 +310,17 @@ export default function AssetCollectionPage() {
             <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <CheckCircle className="w-10 h-10 text-emerald-500" />
             </div>
-            <h1 className="text-2xl font-bold text-slate-800 mb-2">
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">
               Submission Received!
             </h1>
-            <p className="text-slate-600 mb-6">
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
               Thank you for submitting your report assets. We've received everything and will begin working on your report.
             </p>
-            <div className="bg-slate-50 rounded-lg p-4 mb-6">
-              <p className="text-sm text-slate-500">Reference Number</p>
-              <p className="font-mono text-lg text-slate-800">{submissionId}</p>
+            <div className="bg-gray-50 dark:bg-gray-950 rounded-lg p-4 mb-6">
+              <p className="text-sm text-gray-500 dark:text-gray-500">Reference Number</p>
+              <p className="font-mono text-lg text-gray-800 dark:text-gray-200">{submissionId}</p>
             </div>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-gray-500 dark:text-gray-500">
               We'll review your submission and reach out if we have any questions.
             </p>
           </div>
@@ -331,14 +331,14 @@ export default function AssetCollectionPage() {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-[#1e3a5f] animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header */}
       <header className="bg-[#1e3a5f] text-white py-4">
         <div className="max-w-3xl mx-auto px-4 flex items-center gap-3">
@@ -348,7 +348,7 @@ export default function AssetCollectionPage() {
       </header>
 
       {/* Progress */}
-      <div className="bg-white border-b border-slate-200">
+      <div className="bg-white border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-3xl mx-auto px-4">
           <ProgressIndicator
             currentStep={currentStep}
@@ -446,12 +446,12 @@ export default function AssetCollectionPage() {
           )}
 
           {/* Navigation */}
-          <div className="flex justify-between mt-8 pt-6 border-t border-slate-200">
+          <div className="flex justify-between mt-8 pt-6 border-t border-gray-200 dark:border-gray-800">
             {currentStep > 1 ? (
               <button
                 type="button"
                 onClick={prevStep}
-                className="flex items-center gap-2 px-6 py-3 text-slate-600 hover:text-slate-800 transition-colors"
+                className="flex items-center gap-2 px-6 py-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
                 Back
@@ -498,7 +498,7 @@ export default function AssetCollectionPage() {
             {saveError}
           </div>
         ) : (
-          <p className="text-center text-sm text-slate-400 mt-4">
+          <p className="text-center text-sm text-gray-400 dark:text-gray-500 mt-4">
             Text content is automatically saved. Images are saved on submit.
           </p>
         )}

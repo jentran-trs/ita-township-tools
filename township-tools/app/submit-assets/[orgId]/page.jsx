@@ -53,47 +53,44 @@ export default function SubmitAssetsPage() {
   };
 
   const handleUpload = async () => {
-    if (!orgName.trim()) {
-      setError('Please enter your township/organization name');
-      return;
-    }
-    if (files.length === 0) {
-      setError('Please select at least one file to upload');
-      return;
-    }
+    if (files.length === 0) return;
 
-    setError('');
     setUploading(true);
+    setError('');
 
-    const results = [];
-    for (const fileData of files) {
+    const uploadPromises = files.map(async (fileData) => {
+      const formData = new FormData();
+      formData.append('file', fileData.file);
+      formData.append('orgId', orgId);
+      formData.append('orgName', orgName);
+      formData.append('uploaderName', uploaderName);
+      formData.append('category', selectedCategory);
+      formData.append('description', fileData.description);
+
       try {
-        const formData = new FormData();
-        formData.append('file', fileData.file);
-        formData.append('orgId', orgId);
-        formData.append('orgName', orgName);
-        formData.append('category', selectedCategory);
-        formData.append('description', fileData.description);
-        formData.append('uploadedBy', uploaderName || 'anonymous');
-
         const response = await fetch('/api/assets/upload', {
           method: 'POST',
-          body: formData
+          body: formData,
         });
 
-        const data = await response.json();
-
-        if (data.success) {
-          results.push({ success: true, fileName: fileData.file.name, asset: data.asset });
-        } else {
-          results.push({ success: false, fileName: fileData.file.name, error: data.error });
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Upload failed');
         }
-      } catch (err) {
-        results.push({ success: false, fileName: fileData.file.name, error: err.message });
-      }
-    }
 
-    setUploadedAssets(prev => [...prev, ...results.filter(r => r.success)]);
+        return { success: true, fileName: fileData.file.name, asset: await response.json() };
+      } catch (err) {
+        return { success: false, fileName: fileData.file.name, error: err.message };
+      }
+    });
+
+    const results = await Promise.all(uploadPromises);
+    const successful = results.filter(r => r.success);
+    setUploadedAssets(prev => [...prev, ...successful]);
+
+    files.forEach(fileData => {
+      if (fileData.preview) URL.revokeObjectURL(fileData.preview);
+    });
     setFiles([]);
     setUploading(false);
 
@@ -104,30 +101,30 @@ export default function SubmitAssetsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
       {/* Header */}
-      <header className="border-b border-slate-700">
+      <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
-          <Building2 className="w-8 h-8 text-amber-500" />
-          <span className="text-xl font-bold text-white">Township Tools</span>
+          <Building2 className="w-8 h-8 text-amber-600 dark:text-amber-400" />
+          <span className="text-xl font-bold">Township Tools</span>
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
         {/* Title */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Submit Report Assets</h1>
-          <p className="text-slate-400">
+          <h1 className="text-3xl font-bold mb-2">Submit Report Assets</h1>
+          <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400">
             Upload your logos, photos, and documents for your annual report
           </p>
         </div>
 
         {/* Organization Info */}
-        <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 mb-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Organization Information</h2>
+        <div className="bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 rounded-2xl p-6 mb-6">
+          <h2 className="text-lg font-semibold mb-4">Organization Information</h2>
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Township/Organization Name *
               </label>
               <input
@@ -135,11 +132,11 @@ export default function SubmitAssetsPage() {
                 value={orgName}
                 onChange={(e) => setOrgName(e.target.value)}
                 placeholder="e.g., Vernon Township"
-                className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-amber-500"
+                className="w-full px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-amber-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Your Name (optional)
               </label>
               <input
@@ -147,15 +144,15 @@ export default function SubmitAssetsPage() {
                 value={uploaderName}
                 onChange={(e) => setUploaderName(e.target.value)}
                 placeholder="e.g., John Smith"
-                className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-amber-500"
+                className="w-full px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-amber-500"
               />
             </div>
           </div>
         </div>
 
         {/* Category Selection */}
-        <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 mb-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Asset Category</h2>
+        <div className="bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 rounded-2xl p-6 mb-6">
+          <h2 className="text-lg font-semibold mb-4">Asset Category</h2>
           <div className="grid sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {CATEGORIES.map((cat) => {
               const Icon = cat.icon;
@@ -165,13 +162,13 @@ export default function SubmitAssetsPage() {
                   onClick={() => setSelectedCategory(cat.id)}
                   className={`p-4 rounded-lg border-2 transition-colors text-left ${
                     selectedCategory === cat.id
-                      ? 'border-amber-500 bg-amber-500/10'
-                      : 'border-slate-600 hover:border-slate-500'
+                      ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/30'
+                      : 'border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600'
                   }`}
                 >
-                  <Icon className={`w-6 h-6 mb-2 ${selectedCategory === cat.id ? 'text-amber-500' : 'text-slate-400'}`} />
-                  <div className="font-medium text-white text-sm">{cat.label}</div>
-                  <div className="text-xs text-slate-400 mt-1">{cat.description}</div>
+                  <Icon className={`w-6 h-6 mb-2 ${selectedCategory === cat.id ? 'text-amber-600 dark:text-amber-400' : 'text-gray-500 dark:text-gray-400'}`} />
+                  <div className="font-medium text-sm">{cat.label}</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">{cat.description}</div>
                 </button>
               );
             })}
@@ -179,14 +176,14 @@ export default function SubmitAssetsPage() {
         </div>
 
         {/* File Upload */}
-        <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 mb-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Upload Files</h2>
+        <div className="bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 rounded-2xl p-6 mb-6">
+          <h2 className="text-lg font-semibold mb-4">Upload Files</h2>
 
           {/* Drop Zone */}
-          <label className="block border-2 border-dashed border-slate-600 rounded-xl p-8 text-center cursor-pointer hover:border-amber-500/50 transition-colors mb-4">
-            <Upload className="w-10 h-10 text-slate-500 mx-auto mb-3" />
-            <p className="text-slate-300 mb-1">Click to select files or drag and drop</p>
-            <p className="text-sm text-slate-500">PNG, JPG, PDF up to 10MB each</p>
+          <label className="block border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl p-8 text-center cursor-pointer hover:border-amber-500 transition-colors mb-4">
+            <Upload className="w-10 h-10 text-gray-500 dark:text-gray-400 mx-auto mb-3" />
+            <p className="text-base text-gray-700 dark:text-gray-300 mb-1">Click to select files or drag and drop</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">PNG, JPG, PDF up to 10MB each</p>
             <input
               type="file"
               multiple
@@ -200,30 +197,30 @@ export default function SubmitAssetsPage() {
           {files.length > 0 && (
             <div className="space-y-3">
               {files.map((fileData, index) => (
-                <div key={index} className="flex items-start gap-4 bg-slate-700/50 rounded-lg p-4">
+                <div key={index} className="flex items-start gap-4 bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
                   {fileData.preview ? (
                     <img src={fileData.preview} alt="" className="w-16 h-16 object-cover rounded" />
                   ) : (
-                    <div className="w-16 h-16 bg-slate-600 rounded flex items-center justify-center">
-                      <FileText className="w-8 h-8 text-slate-400" />
+                    <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center">
+                      <FileText className="w-8 h-8 text-gray-500 dark:text-gray-400" />
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-white font-medium truncate">{fileData.file.name}</p>
-                    <p className="text-sm text-slate-400">{(fileData.file.size / 1024).toFixed(1)} KB</p>
+                    <p className="font-medium truncate">{fileData.file.name}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{(fileData.file.size / 1024).toFixed(1)} KB</p>
                     <input
                       type="text"
                       value={fileData.description}
                       onChange={(e) => updateFileDescription(index, e.target.value)}
                       placeholder="Add description (optional)"
-                      className="mt-2 w-full px-3 py-1.5 bg-slate-600 border border-slate-500 rounded text-sm text-white placeholder-slate-400 focus:outline-none focus:border-amber-500"
+                      className="mt-2 w-full px-3 py-1.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-amber-500"
                     />
                   </div>
                   <button
                     onClick={() => removeFile(index)}
-                    className="p-1 hover:bg-slate-600 rounded"
+                    className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
                   >
-                    <X className="w-5 h-5 text-slate-400" />
+                    <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                   </button>
                 </div>
               ))}
@@ -233,7 +230,7 @@ export default function SubmitAssetsPage() {
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-4 mb-6 text-red-400">
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-700 rounded-lg p-4 mb-6 text-red-700 dark:text-red-300">
             {error}
           </div>
         )}
@@ -242,7 +239,7 @@ export default function SubmitAssetsPage() {
         <button
           onClick={handleUpload}
           disabled={uploading || files.length === 0}
-          className="w-full py-4 bg-amber-500 text-slate-900 rounded-xl font-bold text-lg hover:bg-amber-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full py-4 bg-amber-500 text-white rounded-xl font-bold text-lg hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
         >
           {uploading ? (
             <>
@@ -259,22 +256,22 @@ export default function SubmitAssetsPage() {
 
         {/* Uploaded Assets */}
         {uploadedAssets.length > 0 && (
-          <div className="mt-8 bg-emerald-500/10 border border-emerald-500/50 rounded-xl p-6">
+          <div className="mt-8 bg-emerald-50 dark:bg-emerald-900/20 border-2 border-emerald-200 dark:border-emerald-800 rounded-2xl p-6">
             <div className="flex items-center gap-2 mb-4">
-              <CheckCircle className="w-6 h-6 text-emerald-500" />
-              <h2 className="text-lg font-semibold text-white">Successfully Uploaded</h2>
+              <CheckCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+              <h2 className="text-lg font-semibold">Successfully Uploaded</h2>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {uploadedAssets.map((item, index) => (
-                <div key={index} className="bg-slate-800 rounded-lg p-3">
+                <div key={index} className="bg-white dark:bg-gray-900 rounded-lg p-3">
                   {item.asset?.url && item.asset?.file_type?.startsWith('image/') ? (
                     <img src={item.asset.url} alt="" className="w-full h-24 object-cover rounded mb-2" />
                   ) : (
-                    <div className="w-full h-24 bg-slate-700 rounded mb-2 flex items-center justify-center">
-                      <FileText className="w-8 h-8 text-slate-500" />
+                    <div className="w-full h-24 bg-gray-100 dark:bg-gray-800 rounded mb-2 flex items-center justify-center">
+                      <FileText className="w-8 h-8 text-gray-500 dark:text-gray-400" />
                     </div>
                   )}
-                  <p className="text-sm text-white truncate">{item.fileName}</p>
+                  <p className="text-sm truncate">{item.fileName}</p>
                 </div>
               ))}
             </div>
@@ -282,7 +279,7 @@ export default function SubmitAssetsPage() {
         )}
 
         {/* Instructions */}
-        <div className="mt-8 text-center text-slate-400 text-sm">
+        <div className="mt-8 text-center text-gray-600 dark:text-gray-400 text-sm">
           <p>Your files will be securely stored and used in your annual report.</p>
           <p className="mt-1">Questions? Contact your report administrator.</p>
         </div>

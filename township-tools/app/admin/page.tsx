@@ -220,7 +220,7 @@ export default function AdminPage() {
 
   if (!isLoaded || loading) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
       </div>
     );
@@ -231,13 +231,13 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
       {/* Feedback Toast */}
       {feedback && (
         <div
           className={`fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-auto z-50 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 ${
             feedback.type === "success" ? "bg-emerald-600" : "bg-red-600"
-          } text-white text-sm sm:text-base`}
+          } text-gray-900 dark:text-white text-sm sm:text-base`}
         >
           {feedback.type === "success" ? <Check className="w-4 h-4 sm:w-5 sm:h-5" /> : <X className="w-4 h-4 sm:w-5 sm:h-5" />}
           <span>{feedback.message}</span>
@@ -245,12 +245,12 @@ export default function AdminPage() {
       )}
 
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-slate-700 bg-slate-800">
+      <header className="sticky top-0 z-50 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center">
           <div className="flex items-center gap-2 sm:gap-4">
             <button
               onClick={() => router.push("/dashboard")}
-              className="flex items-center gap-2 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors text-sm font-medium"
+              className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg transition-colors text-sm font-medium"
             >
               <ArrowLeft className="w-4 h-4" />
               <span className="hidden sm:inline">Back to Dashboard</span>
@@ -258,14 +258,14 @@ export default function AdminPage() {
             </button>
             <div className="flex items-center gap-2 sm:gap-3">
               <ShieldCheck className="w-6 h-6 sm:w-8 sm:h-8 text-amber-500" />
-              <span className="text-lg sm:text-xl font-bold text-white">
+              <span className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
                 <span className="hidden sm:inline">Super </span>Admin<span className="hidden sm:inline"> Panel</span>
               </span>
             </div>
           </div>
           <button
             onClick={fetchOrganizations}
-            className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors text-sm sm:text-base"
+            className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg hover:bg-gray-200 dark:bg-gray-700 transition-colors text-sm sm:text-base"
           >
             <RefreshCw className="w-4 h-4" />
             <span className="hidden sm:inline">Refresh</span>
@@ -283,27 +283,27 @@ export default function AdminPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
-          <div className="bg-slate-800 border border-slate-700 rounded-xl p-3 sm:p-4">
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-3 sm:p-4">
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-amber-500/20 rounded-lg flex items-center justify-center">
                 <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500" />
               </div>
               <div>
-                <p className="text-xl sm:text-2xl font-bold text-white">{organizations.length}</p>
-                <p className="text-xs sm:text-sm text-slate-400">Organizations</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{organizations.length}</p>
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Organizations</p>
               </div>
             </div>
           </div>
-          <div className="bg-slate-800 border border-slate-700 rounded-xl p-3 sm:p-4">
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-3 sm:p-4">
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
                 <Users className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500" />
               </div>
               <div>
-                <p className="text-xl sm:text-2xl font-bold text-white">
+                <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                   {organizations.reduce((sum, org) => sum + org.membersCount, 0)}
                 </p>
-                <p className="text-xs sm:text-sm text-slate-400">Total Members</p>
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Total Members</p>
               </div>
             </div>
           </div>
@@ -311,32 +311,32 @@ export default function AdminPage() {
 
         {/* Organizations List */}
         <div className="space-y-3 sm:space-y-4">
-          <h2 className="text-lg sm:text-xl font-bold text-white mb-3 sm:mb-4">All Organizations</h2>
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-3 sm:mb-4">All Organizations</h2>
 
           {organizations.length === 0 ? (
-            <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 sm:p-8 text-center">
-              <Building2 className="w-10 h-10 sm:w-12 sm:h-12 text-slate-600 mx-auto mb-3 sm:mb-4" />
-              <p className="text-sm sm:text-base text-slate-400">No organizations yet</p>
+            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-6 sm:p-8 text-center">
+              <Building2 className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 dark:text-gray-600 mx-auto mb-3 sm:mb-4" />
+              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">No organizations yet</p>
             </div>
           ) : (
             organizations.map((org) => (
-              <div key={org.id} className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+              <div key={org.id} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
                 {/* Org Header */}
                 <div
-                  className="p-3 sm:p-4 flex items-center justify-between cursor-pointer hover:bg-slate-700/50 transition-colors"
+                  className="p-3 sm:p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 dark:bg-gray-800/50 transition-colors"
                   onClick={() => toggleOrg(org.id)}
                 >
                   <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-slate-700 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
                       {org.imageUrl ? (
                         <img src={org.imageUrl} alt={org.name} className="w-full h-full object-cover" />
                       ) : (
-                        <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400" />
+                        <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 dark:text-gray-400" />
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h3 className="text-base sm:text-lg font-semibold text-white truncate">{org.name}</h3>
-                      <p className="text-xs sm:text-sm text-slate-400">{org.membersCount} members</p>
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate">{org.name}</h3>
+                      <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{org.membersCount} members</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
@@ -345,52 +345,52 @@ export default function AdminPage() {
                         e.stopPropagation();
                         setShowInviteModal(org.id);
                       }}
-                      className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-amber-500 text-slate-900 rounded-lg hover:bg-amber-400 transition-colors text-xs sm:text-sm font-medium"
+                      className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-amber-500 text-gray-900 dark:text-white rounded-lg hover:bg-amber-400 transition-colors text-xs sm:text-sm font-medium"
                     >
                       <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       <span className="hidden sm:inline">Invite</span>
                     </button>
                     {expandedOrg === org.id ? (
-                      <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400" />
+                      <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 dark:text-gray-400" />
                     ) : (
-                      <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400" />
+                      <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 dark:text-gray-400" />
                     )}
                   </div>
                 </div>
 
                 {/* Expanded Content */}
                 {expandedOrg === org.id && (
-                  <div className="border-t border-slate-700 p-3 sm:p-4">
+                  <div className="border-t border-gray-200 dark:border-gray-700 p-3 sm:p-4">
                     {/* Members */}
-                    <h4 className="text-xs sm:text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2 sm:mb-3">
+                    <h4 className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2 sm:mb-3">
                       Members
                     </h4>
                     <div className="space-y-2 mb-4 sm:mb-6">
                       {org.members.map((member) => (
                         <div
                           key={member.userId}
-                          className="flex flex-col sm:flex-row sm:items-center justify-between bg-slate-700/50 rounded-lg p-2 sm:p-3 gap-2 sm:gap-0"
+                          className="flex flex-col sm:flex-row sm:items-center justify-between bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2 sm:p-3 gap-2 sm:gap-0"
                         >
                           <div className="flex items-center gap-2 sm:gap-3">
-                            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-slate-600 rounded-full overflow-hidden flex-shrink-0">
+                            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden flex-shrink-0">
                               {member.imageUrl ? (
                                 <img src={member.imageUrl} alt="" className="w-full h-full object-cover" />
                               ) : (
-                                <Users className="w-3 h-3 sm:w-4 sm:h-4 text-slate-400 m-1.5 sm:m-2" />
+                                <Users className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600 dark:text-gray-400 m-1.5 sm:m-2" />
                               )}
                             </div>
                             <div className="min-w-0">
-                              <p className="text-white text-xs sm:text-sm font-medium truncate">
+                              <p className="text-gray-900 dark:text-white text-xs sm:text-sm font-medium truncate">
                                 {member.firstName} {member.lastName}
                               </p>
-                              <p className="text-slate-400 text-[10px] sm:text-xs truncate">{member.email}</p>
+                              <p className="text-gray-600 dark:text-gray-400 text-[10px] sm:text-xs truncate">{member.email}</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2 ml-9 sm:ml-0">
                             <select
                               value={member.role}
                               onChange={(e) => updateMemberRole(org.id, member.userId, e.target.value)}
-                              className="bg-slate-600 text-white text-xs sm:text-sm rounded-lg px-2 py-1 border border-slate-500"
+                              className="bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white text-xs sm:text-sm rounded-lg px-2 py-1 border border-gray-400 dark:border-gray-500"
                             >
                               <option value="org:admin">Admin</option>
                               <option value="org:member">Member</option>
@@ -410,7 +410,7 @@ export default function AdminPage() {
                     {/* Pending Invitations */}
                     {invitations[org.id]?.length > 0 && (
                       <>
-                        <h4 className="text-xs sm:text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2 sm:mb-3">
+                        <h4 className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2 sm:mb-3">
                           Pending Invitations
                         </h4>
                         <div className="space-y-2">
@@ -424,8 +424,8 @@ export default function AdminPage() {
                                 <div className="flex items-center gap-2 sm:gap-3">
                                   <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500 flex-shrink-0" />
                                   <div className="min-w-0">
-                                    <p className="text-white text-xs sm:text-sm truncate">{invitation.emailAddress}</p>
-                                    <p className="text-slate-400 text-[10px] sm:text-xs">
+                                    <p className="text-gray-900 dark:text-white text-xs sm:text-sm truncate">{invitation.emailAddress}</p>
+                                    <p className="text-gray-600 dark:text-gray-400 text-[10px] sm:text-xs">
                                       Role: {invitation.role === "org:admin" ? "Admin" : "Member"}
                                     </p>
                                   </div>
@@ -452,33 +452,33 @@ export default function AdminPage() {
       {/* Invite Modal */}
       {showInviteModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 border border-slate-700 rounded-xl p-4 sm:p-6 w-full max-w-md">
-            <h3 className="text-lg sm:text-xl font-bold text-white mb-3 sm:mb-4">Invite User</h3>
-            <p className="text-slate-400 text-xs sm:text-sm mb-3 sm:mb-4">
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 sm:p-6 w-full max-w-md">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-3 sm:mb-4">Invite User</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm mb-3 sm:mb-4">
               Send an invitation to join{" "}
-              <span className="text-white font-medium">
+              <span className="text-gray-900 dark:text-white font-medium">
                 {organizations.find((o) => o.id === showInviteModal)?.name}
               </span>
             </p>
 
             <div className="space-y-3 sm:space-y-4">
               <div>
-                <label className="block text-xs sm:text-sm font-medium text-slate-300 mb-1">Email Address</label>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email Address</label>
                 <input
                   type="email"
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
                   placeholder="user@example.com"
-                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500"
+                  className="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base text-gray-900 dark:text-white placeholder:text-gray-500 dark:text-gray-500 focus:outline-none focus:border-amber-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs sm:text-sm font-medium text-slate-300 mb-1">Role</label>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Role</label>
                 <select
                   value={inviteRole}
                   onChange={(e) => setInviteRole(e.target.value)}
-                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base text-white focus:outline-none focus:border-amber-500"
+                  className="w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base text-gray-900 dark:text-white focus:outline-none focus:border-amber-500"
                 >
                   <option value="org:member">Member - Can use tools</option>
                   <option value="org:admin">Admin - Can manage members</option>
@@ -492,14 +492,14 @@ export default function AdminPage() {
                   setShowInviteModal(null);
                   setInviteEmail("");
                 }}
-                className="px-3 sm:px-4 py-2 text-sm sm:text-base text-slate-400 hover:text-white transition-colors"
+                className="px-3 sm:px-4 py-2 text-sm sm:text-base text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={sendInvitation}
                 disabled={!inviteEmail || inviting}
-                className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-amber-500 text-slate-900 rounded-lg hover:bg-amber-400 transition-colors text-sm sm:text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-amber-500 text-gray-900 dark:text-white rounded-lg hover:bg-amber-400 transition-colors text-sm sm:text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {inviting ? (
                   <>

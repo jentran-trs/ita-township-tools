@@ -1,12 +1,12 @@
 # Township Tools
 
-Professional tools for Indiana townships, starting with the Annual Report Builder.
+Professional tools for Indiana townships, starting with the Report Builder.
 
 ## Features
 
 - 🔐 **Authentication** - Secure login with Microsoft, Google, or email
 - 🏛️ **Organizations** - Townships manage their own team members
-- 📊 **Annual Report Builder** - Drag-and-drop report creation
+- 📊 **Report Builder** - Drag-and-drop report creation
 - 📄 **PDF Export** - Professional PDF output
 
 ## Tech Stack

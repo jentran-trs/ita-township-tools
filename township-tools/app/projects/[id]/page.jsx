@@ -49,24 +49,24 @@ function SubmissionCard({ submission, isExpanded, onToggle, onDelete, isDeleting
   };
 
   return (
-    <div className="bg-slate-700/50 rounded-xl overflow-hidden">
+    <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl overflow-hidden">
       <div
         onClick={onToggle}
-        className="p-4 cursor-pointer hover:bg-slate-700 transition-colors"
+        className="p-4 cursor-pointer hover:bg-gray-100 dark:bg-gray-800 transition-colors"
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-slate-600 rounded-full flex items-center justify-center">
-              <User className="w-5 h-5 text-slate-400" />
+            <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
+              <User className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </div>
             <div>
-              <p className="font-medium text-white">{submission.submitter_name}</p>
-              <p className="text-sm text-slate-400">{submission.submitter_email}</p>
-              <p className="text-xs text-slate-500 font-mono">{submission.id}</p>
+              <p className="font-medium text-gray-900 dark:text-white">{submission.submitter_name}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{submission.submitter_email}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-500 font-mono">{submission.id}</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <div className="text-right text-sm text-slate-400">
+            <div className="text-right text-sm text-gray-600 dark:text-gray-400">
               <p>{new Date(submission.created_at).toLocaleDateString()}</p>
               <p>{totalImages} images, {sections.length} sections</p>
             </div>
@@ -81,7 +81,7 @@ function SubmissionCard({ submission, isExpanded, onToggle, onDelete, isDeleting
             <button
               onClick={handleDeleteClick}
               disabled={isDeleting}
-              className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+              className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
               title="Delete submission"
             >
               {isDeleting ? (
@@ -91,9 +91,9 @@ function SubmissionCard({ submission, isExpanded, onToggle, onDelete, isDeleting
               )}
             </button>
             {isExpanded ? (
-              <ChevronUp className="w-5 h-5 text-slate-400" />
+              <ChevronUp className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             ) : (
-              <ChevronDown className="w-5 h-5 text-slate-400" />
+              <ChevronDown className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             )}
           </div>
         </div>
@@ -111,13 +111,13 @@ function SubmissionCard({ submission, isExpanded, onToggle, onDelete, isDeleting
               <button
                 onClick={handleConfirmDelete}
                 disabled={isDeleting}
-                className="px-3 py-1 bg-red-600 text-white text-sm rounded font-medium hover:bg-red-500 disabled:opacity-50"
+                className="px-3 py-1 bg-red-600 text-gray-900 dark:text-white text-sm rounded font-medium hover:bg-red-500 disabled:opacity-50"
               >
                 {isDeleting ? 'Deleting...' : 'Delete'}
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(false); }}
-                className="px-3 py-1 text-slate-300 text-sm hover:bg-slate-600 rounded"
+                className="px-3 py-1 text-gray-700 dark:text-gray-300 text-sm hover:bg-gray-200 dark:bg-gray-700 rounded"
               >
                 Cancel
               </button>
@@ -127,37 +127,37 @@ function SubmissionCard({ submission, isExpanded, onToggle, onDelete, isDeleting
       </div>
 
       {isExpanded && (
-        <div className="border-t border-slate-600 p-4 space-y-4">
+        <div className="border-t border-gray-300 dark:border-gray-600 p-4 space-y-4">
           {/* Cover Info */}
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <p className="text-xs text-slate-500 uppercase mb-1">Organization</p>
-              <p className="text-white">{submission.organization_name}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-500 uppercase mb-1">Organization</p>
+              <p className="text-gray-900 dark:text-white">{submission.organization_name}</p>
             </div>
             <div>
-              <p className="text-xs text-slate-500 uppercase mb-1">Report Name</p>
-              <p className="text-white">{submission.report_name}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-500 uppercase mb-1">Report Name</p>
+              <p className="text-gray-900 dark:text-white">{submission.report_name}</p>
             </div>
           </div>
 
           {/* Logo */}
           {submission.logo_url && (
             <div>
-              <p className="text-xs text-slate-500 uppercase mb-2">Logo</p>
+              <p className="text-xs text-gray-500 dark:text-gray-500 uppercase mb-2">Logo</p>
               <img src={submission.logo_url} alt="Logo" className="h-16 object-contain bg-white rounded p-2" />
             </div>
           )}
 
           {/* Opening Letter */}
           {submission.include_opening_letter && (
-            <div className="bg-slate-800 rounded-lg p-4">
-              <p className="text-xs text-slate-500 uppercase mb-2">Opening Letter</p>
-              <p className="font-medium text-white">{submission.letter_title}</p>
+            <div className="bg-white dark:bg-gray-900 rounded-lg p-4">
+              <p className="text-xs text-gray-500 dark:text-gray-500 uppercase mb-2">Opening Letter</p>
+              <p className="font-medium text-gray-900 dark:text-white">{submission.letter_title}</p>
               {submission.letter_subtitle && (
-                <p className="text-sm text-slate-400">{submission.letter_subtitle}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{submission.letter_subtitle}</p>
               )}
               {submission.letter_content && (
-                <p className="text-sm text-slate-300 mt-2 line-clamp-3">{submission.letter_content}</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300 mt-2 line-clamp-3">{submission.letter_content}</p>
               )}
               <div className="flex gap-2 mt-3">
                 {submission.letter_headshot_url && (
@@ -176,12 +176,12 @@ function SubmissionCard({ submission, isExpanded, onToggle, onDelete, isDeleting
           {/* Sections */}
           {sections.length > 0 && (
             <div>
-              <p className="text-xs text-slate-500 uppercase mb-2">Content Sections</p>
+              <p className="text-xs text-gray-500 dark:text-gray-500 uppercase mb-2">Content Sections</p>
               <div className="space-y-2">
                 {sections.map((section, idx) => (
-                  <div key={section.id} className="bg-slate-800 rounded-lg p-3">
-                    <p className="font-medium text-white">{section.title}</p>
-                    <div className="flex gap-4 mt-1 text-xs text-slate-400">
+                  <div key={section.id} className="bg-white dark:bg-gray-900 rounded-lg p-3">
+                    <p className="font-medium text-gray-900 dark:text-white">{section.title}</p>
+                    <div className="flex gap-4 mt-1 text-xs text-gray-600 dark:text-gray-400">
                       <span>{section.image_urls?.length || 0} images</span>
                       <span>{section.report_section_stats?.length || 0} stats</span>
                       {section.chart_link && <span>Has chart</span>}
@@ -192,7 +192,7 @@ function SubmissionCard({ submission, isExpanded, onToggle, onDelete, isDeleting
                           <img key={imgIdx} src={url} alt="" className="w-10 h-10 object-cover rounded" />
                         ))}
                         {section.image_urls.length > 4 && (
-                          <div className="w-10 h-10 bg-slate-700 rounded flex items-center justify-center text-xs text-slate-400">
+                          <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded flex items-center justify-center text-xs text-gray-600 dark:text-gray-400">
                             +{section.image_urls.length - 4}
                           </div>
                         )}
@@ -207,21 +207,21 @@ function SubmissionCard({ submission, isExpanded, onToggle, onDelete, isDeleting
           {/* Footer Info */}
           <div className="grid sm:grid-cols-2 gap-4 text-sm">
             <div>
-              <p className="text-xs text-slate-500 uppercase mb-1">Contact</p>
-              <p className="text-slate-300">{submission.email}</p>
-              <p className="text-slate-300">{submission.phone}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-500 uppercase mb-1">Contact</p>
+              <p className="text-gray-700 dark:text-gray-300">{submission.email}</p>
+              <p className="text-gray-700 dark:text-gray-300">{submission.phone}</p>
             </div>
             <div>
-              <p className="text-xs text-slate-500 uppercase mb-1">Address</p>
-              <p className="text-slate-300">{submission.street_address}</p>
-              <p className="text-slate-300">{submission.city_state_zip}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-500 uppercase mb-1">Address</p>
+              <p className="text-gray-700 dark:text-gray-300">{submission.street_address}</p>
+              <p className="text-gray-700 dark:text-gray-300">{submission.city_state_zip}</p>
             </div>
           </div>
 
           {submission.additional_notes && (
             <div>
-              <p className="text-xs text-slate-500 uppercase mb-1">Notes</p>
-              <p className="text-sm text-slate-300">{submission.additional_notes}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-500 uppercase mb-1">Notes</p>
+              <p className="text-sm text-gray-700 dark:text-gray-300">{submission.additional_notes}</p>
             </div>
           )}
         </div>
@@ -444,7 +444,7 @@ export default function ProjectDetailPage() {
     if (status === 'in_progress') return 'bg-purple-100 text-purple-700';
     if (status === 'completed') return 'bg-emerald-100 text-emerald-700';
     if (submissionCount > 0) return 'bg-blue-100 text-blue-700';
-    return 'bg-slate-100 text-slate-600';
+    return 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-500';
   };
 
   const getStatusLabel = (status, submissionCount) => {
@@ -456,7 +456,7 @@ export default function ProjectDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
       </div>
     );
@@ -465,16 +465,16 @@ export default function ProjectDetailPage() {
   // Members should not see this page
   if (isMember) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <p className="text-slate-400">Redirecting...</p>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
+        <p className="text-gray-600 dark:text-gray-400">Redirecting...</p>
       </div>
     );
   }
 
   if (!project) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <p className="text-slate-400">Project not found</p>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
+        <p className="text-gray-600 dark:text-gray-400">Project not found</p>
       </div>
     );
   }
@@ -494,14 +494,14 @@ export default function ProjectDetailPage() {
   const isCollecting = currentStatus === 'collecting_assets' || currentStatus === 'collecting';
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-slate-700 bg-slate-800">
+      <header className="sticky top-0 z-50 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center gap-4 mb-4">
             <button
               onClick={() => router.push('/projects')}
-              className="flex items-center gap-2 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors text-sm font-medium"
+              className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg transition-colors text-sm font-medium"
             >
               <ArrowLeft className="w-4 h-4" />
               Back to Projects
@@ -515,11 +515,11 @@ export default function ProjectDetailPage() {
                     onChange={(e) => setEditValue(e.target.value)}
                     onBlur={saveField}
                     onKeyDown={(e) => { if (e.key === 'Enter') saveField(); if (e.key === 'Escape') setEditingField(null); }}
-                    className="text-xl font-bold text-white bg-slate-700 border border-slate-600 rounded px-2 py-0.5 outline-none focus:border-amber-500"
+                    className="text-xl font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded px-2 py-0.5 outline-none focus:border-amber-500"
                   />
                 ) : (
                   <h1
-                    className="text-xl font-bold text-white cursor-pointer hover:text-amber-400 transition-colors"
+                    className="text-xl font-bold text-gray-900 dark:text-white cursor-pointer hover:text-amber-400 transition-colors"
                     onClick={() => startEditing('name')}
                     title="Click to edit project name"
                   >
@@ -537,18 +537,18 @@ export default function ProjectDetailPage() {
                   onChange={(e) => setEditValue(e.target.value)}
                   onBlur={saveField}
                   onKeyDown={(e) => { if (e.key === 'Enter') saveField(); if (e.key === 'Escape') setEditingField(null); }}
-                  className="text-sm text-slate-300 bg-slate-700 border border-slate-600 rounded px-2 py-0.5 outline-none focus:border-amber-500 mt-1"
+                  className="text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded px-2 py-0.5 outline-none focus:border-amber-500 mt-1"
                 />
               ) : (
                 <p
-                  className="text-sm text-slate-400 cursor-pointer hover:text-amber-400 transition-colors"
+                  className="text-sm text-gray-600 dark:text-gray-400 cursor-pointer hover:text-amber-400 transition-colors"
                   onClick={() => startEditing('organization_name')}
                   title="Click to edit client name"
                 >
                   {project.organization_name}
                 </p>
               )}
-              <p className="text-xs text-slate-500 font-mono mt-0.5">{project.id}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-500 font-mono mt-0.5">{project.id}</p>
             </div>
           </div>
 
@@ -561,11 +561,11 @@ export default function ProjectDetailPage() {
               onBlur={saveField}
               onKeyDown={(e) => { if (e.key === 'Escape') setEditingField(null); }}
               rows={3}
-              className="w-full text-sm text-slate-300 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 outline-none focus:border-amber-500 mb-4 resize-none"
+              className="w-full text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 outline-none focus:border-amber-500 mb-4 resize-none"
             />
           ) : (
             <p
-              className="text-sm text-slate-400 mb-4 cursor-pointer hover:text-amber-400 transition-colors"
+              className="text-sm text-gray-600 dark:text-gray-400 mb-4 cursor-pointer hover:text-amber-400 transition-colors"
               onClick={() => startEditing('description')}
               title="Click to edit description"
             >
@@ -575,17 +575,17 @@ export default function ProjectDetailPage() {
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-4 mb-4">
-            <div className="bg-slate-700/50 rounded-lg p-3">
-              <p className="text-2xl font-bold text-white">{submissions.length}</p>
-              <p className="text-xs text-slate-400">Submissions</p>
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{submissions.length}</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">Submissions</p>
             </div>
-            <div className="bg-slate-700/50 rounded-lg p-3">
-              <p className="text-2xl font-bold text-white">{totalImages}</p>
-              <p className="text-xs text-slate-400">Images</p>
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalImages}</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">Images</p>
             </div>
-            <div className="bg-slate-700/50 rounded-lg p-3">
-              <p className="text-2xl font-bold text-white">{totalSections}</p>
-              <p className="text-xs text-slate-400">Sections</p>
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalSections}</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">Sections</p>
             </div>
           </div>
 
@@ -595,19 +595,19 @@ export default function ProjectDetailPage() {
             <button
               onClick={() => updateProjectStatus(isCollecting ? 'in_progress' : 'collecting')}
               disabled={updatingStatus}
-              className="flex items-center gap-2 text-sm text-slate-300 disabled:opacity-50"
+              className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 disabled:opacity-50"
               title={isCollecting ? 'Lock submissions and start designing' : 'Unlock submissions for editing'}
             >
               {updatingStatus ? (
-                <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+                <Loader2 className="w-4 h-4 animate-spin text-gray-600 dark:text-gray-400" />
               ) : isCollecting ? (
                 <Unlock className="w-4 h-4" />
               ) : (
                 <Lock className="w-4 h-4" />
               )}
-              <span className="text-xs text-slate-400 mr-1">{isCollecting ? 'Unlocked' : 'Locked'}</span>
+              <span className="text-xs text-gray-600 dark:text-gray-400 mr-1">{isCollecting ? 'Unlocked' : 'Locked'}</span>
               <div
-                className={`relative w-10 h-5 rounded-full transition-colors ${isCollecting ? 'bg-slate-600' : 'bg-purple-600'}`}
+                className={`relative w-10 h-5 rounded-full transition-colors ${isCollecting ? 'bg-gray-200 dark:bg-gray-700' : 'bg-purple-600'}`}
               >
                 <div
                   className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${isCollecting ? 'left-0.5' : 'left-[22px]'}`}
@@ -620,7 +620,7 @@ export default function ProjectDetailPage() {
               <button
                 onClick={loadSavedDraft}
                 disabled={loadingDraft}
-                className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-lg font-medium hover:bg-emerald-400 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-gray-900 dark:text-white rounded-lg font-medium hover:bg-emerald-400 transition-colors"
               >
                 {loadingDraft ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -633,7 +633,7 @@ export default function ProjectDetailPage() {
 
             <button
               onClick={copyFormLink}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg font-medium hover:bg-slate-600 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg font-medium hover:bg-gray-200 dark:bg-gray-700 transition-colors"
             >
               {copied ? (
                 <>
@@ -651,7 +651,7 @@ export default function ProjectDetailPage() {
             <button
               onClick={generateReport}
               disabled={generating || submissions.length === 0}
-              className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-slate-900 rounded-lg font-medium hover:bg-amber-400 transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-gray-900 dark:text-white rounded-lg font-medium hover:bg-amber-400 transition-colors disabled:opacity-50"
             >
               {generating ? (
                 <>
@@ -680,17 +680,17 @@ export default function ProjectDetailPage() {
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 rounded-xl max-w-md w-full p-6">
+          <div className="bg-white dark:bg-gray-900 rounded-xl max-w-md w-full p-6">
             <div className="flex items-start gap-4">
               <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center flex-shrink-0">
                 <Trash2 className="w-5 h-5 text-red-500" />
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-white mb-2">Delete Project?</h3>
-                <p className="text-slate-300 text-sm mb-2">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Delete Project?</h3>
+                <p className="text-gray-700 dark:text-gray-300 text-sm mb-2">
                   This will permanently delete <strong>"{project.name}"</strong> and all associated data:
                 </p>
-                <ul className="text-slate-400 text-sm mb-4 list-disc list-inside space-y-1">
+                <ul className="text-gray-600 dark:text-gray-400 text-sm mb-4 list-disc list-inside space-y-1">
                   <li>{submissions.length} submission{submissions.length !== 1 ? 's' : ''}</li>
                   <li>{totalImages} uploaded image{totalImages !== 1 ? 's' : ''}</li>
                   <li>All sections, stats, and drafts</li>
@@ -705,7 +705,7 @@ export default function ProjectDetailPage() {
                   <button
                     onClick={handleDelete}
                     disabled={deleting}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-500 disabled:opacity-50"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-gray-900 dark:text-white rounded-lg font-medium hover:bg-red-500 disabled:opacity-50"
                   >
                     {deleting ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -717,7 +717,7 @@ export default function ProjectDetailPage() {
                   <button
                     onClick={() => { setShowDeleteConfirm(false); setDeleteError(''); }}
                     disabled={deleting}
-                    className="px-4 py-2 text-slate-300 hover:bg-slate-700 rounded-lg"
+                    className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:bg-gray-800 rounded-lg"
                   >
                     Cancel
                   </button>
@@ -732,15 +732,15 @@ export default function ProjectDetailPage() {
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
         {submissions.length === 0 ? (
           <div className="text-center py-16">
-            <FileText className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-white mb-2">No submissions yet</h2>
-            <p className="text-slate-400 mb-6">
+            <FileText className="w-16 h-16 text-gray-500 dark:text-gray-500 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No submissions yet</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
               Waiting for contributors to submit their assets
             </p>
           </div>
         ) : (
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-white mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Submissions ({submissions.length})
             </h2>
             {submissions.map((submission) => (

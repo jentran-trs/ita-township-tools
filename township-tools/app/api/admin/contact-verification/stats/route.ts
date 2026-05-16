@@ -12,7 +12,7 @@ export async function GET() {
   const authData = await auth();
   if (!authData?.userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!isAdmin(authData)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  const sErr = requireSuperadmin(); if (sErr) return sErr;
+  const sErr = await requireSuperadmin(); if (sErr) return sErr;
 
   const supabase = createServerSupabaseClient();
   const { data, error } = await supabase.from('cv_completion_stats').select('*');

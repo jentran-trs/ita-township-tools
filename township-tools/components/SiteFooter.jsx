@@ -7,26 +7,43 @@ const PERSONAL_EMAIL = "giang.jentran@gmail.com";
 // Verification Portal — no login) from the paid independent tools.
 export default function SiteFooter() {
   return (
-    <footer className="bg-white border-t border-gray-200 text-gray-700 text-sm">
+    <footer className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 text-sm">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-2">
         <p>
-          <span className="font-semibold text-emerald-700">Free with ITA membership — no login needed:</span>{" "}
-          <Link href="/tools/scoring-tool" className="underline hover:text-gray-900">
+          <span className="font-semibold text-emerald-700 dark:text-emerald-400">
+            Free with ITA membership — no login needed:
+          </span>{" "}
+          <Link
+            href="/tools/scoring-tool"
+            className="underline hover:text-gray-900 dark:hover:text-white"
+          >
             SB 270 Scoring Tool
           </Link>{" "}
           ·{" "}
-          <Link href="/verify-contacts" className="underline hover:text-gray-900">
+          <Link
+            href="/verify-contacts"
+            className="underline hover:text-gray-900 dark:hover:text-white"
+          >
             Contact Verification Portal
           </Link>
         </p>
         <p>
-          <span className="font-semibold text-amber-700">Paid subscription</span> by Jen Tran (sign in required) —{" "}
-          <span className="font-medium">not</span> included with Indiana Township Association membership.{" "}
-          <Link href="/about" className="underline hover:text-gray-900">
+          <span className="font-semibold text-amber-700 dark:text-amber-400">
+            Friendly add-on
+          </span>{" "}
+          by Jen Tran (sign in required) — <span className="font-medium">not</span> included with
+          Indiana Township Association membership.{" "}
+          <Link
+            href="/about"
+            className="underline hover:text-gray-900 dark:hover:text-white"
+          >
             Learn more
           </Link>{" "}
           ·{" "}
-          <a href={`mailto:${PERSONAL_EMAIL}`} className="underline hover:text-gray-900">
+          <a
+            href={`mailto:${PERSONAL_EMAIL}`}
+            className="underline hover:text-gray-900 dark:hover:text-white"
+          >
             {PERSONAL_EMAIL}
           </a>
         </p>

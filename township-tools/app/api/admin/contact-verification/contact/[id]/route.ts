@@ -26,7 +26,7 @@ export async function PATCH(
   const authData = await auth();
   if (!authData?.userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!isAdmin(authData)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  const sErr = requireSuperadmin();
+  const sErr = await requireSuperadmin();
   if (sErr) return sErr;
 
   const contactId = params.id;

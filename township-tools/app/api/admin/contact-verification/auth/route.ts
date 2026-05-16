@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import {
   tokenForPassword,
-  isSuperadminFromCookies,
+  isSuperadmin,
   COOKIE_NAME,
   COOKIE_MAX_AGE_SECONDS,
 } from '../../../../../lib/auth/superadmin';
@@ -9,9 +9,10 @@ import {
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-// GET — am I currently authorized?
+// GET — am I currently authorized? Returns true if EITHER the password
+// cookie is set OR the Clerk user has privateMetadata.role === "superadmin".
 export async function GET() {
-  return NextResponse.json({ ok: isSuperadminFromCookies() });
+  return NextResponse.json({ ok: await isSuperadmin() });
 }
 
 // POST — submit password; sets cookie if it matches

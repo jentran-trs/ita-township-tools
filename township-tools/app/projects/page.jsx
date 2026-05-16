@@ -156,7 +156,7 @@ export default function ProjectsPage() {
     if (projectStatus === 'completed') return 'bg-emerald-100 text-emerald-700';
     // Unlocked states
     if (submissionCount > 0) return 'bg-blue-100 text-blue-700';
-    return 'bg-slate-100 text-slate-600';
+    return 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-500';
   };
 
   const getAdminStatusLabel = (projectStatus, submissionCount) => {
@@ -171,7 +171,7 @@ export default function ProjectsPage() {
   const getMemberStatusColor = (projectStatus, hasSubmission) => {
     if (projectStatus === 'in_progress' || projectStatus === 'completed') return 'bg-purple-100 text-purple-700';
     if (hasSubmission) return 'bg-blue-100 text-blue-700';
-    return 'bg-slate-100 text-slate-600';
+    return 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-500';
   };
 
   const getMemberStatusLabel = (projectStatus, hasSubmission) => {
@@ -182,22 +182,22 @@ export default function ProjectsPage() {
 
   if (!organization) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <p className="text-slate-400">Please select an organization</p>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
+        <p className="text-gray-600 dark:text-gray-400">Please select an organization</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-slate-700 bg-slate-800">
+      <header className="sticky top-0 z-50 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => router.push('/dashboard')}
-                className="flex items-center gap-2 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition-colors text-sm font-medium"
+                className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg transition-colors text-sm font-medium"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Back to Dashboard
@@ -205,10 +205,10 @@ export default function ProjectsPage() {
               <div className="flex items-center gap-3">
                 <Building2 className="w-8 h-8 text-amber-500" />
                 <div>
-                  <h1 className="text-xl font-bold text-white">
+                  <h1 className="text-xl font-bold text-gray-900 dark:text-white">
                     {isMember ? 'Submit Report Assets' : 'View Report Assets'}
                   </h1>
-                  <p className="text-sm text-slate-400">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
                     {isMember ? organization.name : 'Generate and design reports from submitted assets.'}
                   </p>
                 </div>
@@ -219,7 +219,7 @@ export default function ProjectsPage() {
             {isAdmin && (
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-slate-900 rounded-lg font-medium hover:bg-amber-400 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-gray-900 dark:text-white rounded-lg font-medium hover:bg-amber-400 transition-colors"
               >
                 <Plus className="w-5 h-5" />
                 New Project
@@ -231,6 +231,51 @@ export default function ProjectsPage() {
 
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+        {/* Service explainer + example reports (members only — admins manage projects directly) */}
+        {!isAdmin && (
+          <div className="mb-6 bg-blue-50 dark:bg-blue-950/40 border-2 border-blue-200 dark:border-blue-800 rounded-2xl p-5 sm:p-6">
+            <div className="flex items-start gap-3 mb-3">
+              <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-1">
+                  Report Design Service — a custom service by Jen Tran
+                </h2>
+                <p className="text-base text-gray-700 dark:text-gray-300">
+                  Send your materials (photos, text, stats, etc.) and I&apos;ll design your annual
+                  report for you. Pricing is custom — based on the number of sections and amount
+                  of content. Email <a href="mailto:giang.jentran@gmail.com" className="underline font-semibold text-blue-700 dark:text-blue-300">giang.jentran@gmail.com</a> for a quote.
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 pl-9">
+              <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                See example reports I&apos;ve designed:
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <a
+                  href="/examples/vernon-township-2025-year-in-review.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 border-2 border-blue-300 dark:border-blue-700 rounded-lg text-base font-semibold text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                >
+                  <FileText className="w-4 h-4" />
+                  Vernon Township — 2025 Year in Review
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+                <a
+                  href="/examples/vtfd-2025-annual-report.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 border-2 border-blue-300 dark:border-blue-700 rounded-lg text-base font-semibold text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                >
+                  <FileText className="w-4 h-4" />
+                  VTFD — 2025 Annual Report
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
         {error && !showCreateModal && (
           <div className="mb-4 p-3 bg-red-500/20 border border-red-500 rounded-lg text-red-400 text-sm">
             {error}
@@ -242,9 +287,9 @@ export default function ProjectsPage() {
           </div>
         ) : projects.length === 0 ? (
           <div className="text-center py-16">
-            <FolderOpen className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-white mb-2">No projects yet</h2>
-            <p className="text-slate-400 mb-6">
+            <FolderOpen className="w-16 h-16 text-gray-500 dark:text-gray-500 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No projects yet</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
               {isAdmin
                 ? 'Create a project to start collecting assets for a report'
                 : 'No projects available. Contact an admin to create a project.'}
@@ -252,7 +297,7 @@ export default function ProjectsPage() {
             {isAdmin && (
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-amber-500 text-slate-900 rounded-lg font-medium hover:bg-amber-400 transition-colors"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-amber-500 text-gray-900 dark:text-white rounded-lg font-medium hover:bg-amber-400 transition-colors"
               >
                 <Plus className="w-5 h-5" />
                 Create Your First Project
@@ -268,12 +313,12 @@ export default function ProjectsPage() {
               return (
                 <div
                   key={project.id}
-                  className="bg-slate-800 border border-slate-700 rounded-xl p-6 hover:border-slate-600 transition-colors"
+                  className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-6 hover:border-gray-300 dark:border-gray-600 transition-colors"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold text-white">{project.name}</h3>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{project.name}</h3>
                         {isAdmin ? (
                           <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${getAdminStatusColor(project.derived_status, project.submission_count)}`}>
                             {project.derived_status === 'in_progress' || project.derived_status === 'completed' ? (
@@ -292,13 +337,13 @@ export default function ProjectsPage() {
                           </span>
                         )}
                       </div>
-                      <p className="text-slate-400 text-sm mb-3">{project.organization_name}</p>
+                      <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">{project.organization_name}</p>
                       {project.description && (
-                        <p className="text-slate-500 text-sm mb-3">{project.description}</p>
+                        <p className="text-gray-500 dark:text-gray-500 text-sm mb-3">{project.description}</p>
                       )}
                       {/* Show stats to admin only */}
                       {isAdmin && (
-                        <div className="flex items-center gap-4 text-sm text-slate-500">
+                        <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-500">
                           {project.year && (
                             <span className="flex items-center gap-1">
                               <Calendar className="w-4 h-4" />
@@ -321,7 +366,7 @@ export default function ProjectsPage() {
                           {userSubmission && (
                             <button
                               onClick={() => router.push(`/submissions/${userSubmission.id}`)}
-                              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-500 transition-colors text-sm font-medium"
+                              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-gray-900 dark:text-white rounded-lg hover:bg-emerald-500 transition-colors text-sm font-medium"
                             >
                               <Eye className="w-4 h-4" />
                               View Submission
@@ -332,7 +377,7 @@ export default function ProjectsPage() {
                               {userSubmission ? (
                                 <button
                                   onClick={() => router.push(`/contribute/${project.share_id}?edit=${userSubmission.id}`)}
-                                  className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-slate-900 rounded-lg hover:bg-amber-400 transition-colors text-sm font-medium"
+                                  className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-gray-900 dark:text-white rounded-lg hover:bg-amber-400 transition-colors text-sm font-medium"
                                 >
                                   <Pencil className="w-4 h-4" />
                                   Edit Submission
@@ -340,7 +385,7 @@ export default function ProjectsPage() {
                               ) : (
                                 <button
                                   onClick={() => router.push(`/contribute/${project.share_id}`)}
-                                  className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-slate-900 rounded-lg hover:bg-amber-400 transition-colors text-sm font-medium"
+                                  className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-gray-900 dark:text-white rounded-lg hover:bg-amber-400 transition-colors text-sm font-medium"
                                 >
                                   <Send className="w-4 h-4" />
                                   Submit Assets
@@ -348,7 +393,7 @@ export default function ProjectsPage() {
                               )}
                               <button
                                 onClick={(e) => copyFormLink(e, project.share_id)}
-                                className="flex items-center gap-2 px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-500 transition-colors text-sm"
+                                className="flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm"
                               >
                                 {copiedId === project.share_id ? (
                                   <>
@@ -364,7 +409,7 @@ export default function ProjectsPage() {
                               </button>
                             </>
                           ) : (
-                            <div className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-slate-400 rounded-lg text-sm">
+                            <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-lg text-sm">
                               <Lock className="w-4 h-4" />
                               Submissions locked for designing
                             </div>
@@ -377,7 +422,7 @@ export default function ProjectsPage() {
                         <>
                           <button
                             onClick={(e) => copyFormLink(e, project.share_id)}
-                            className="flex items-center gap-2 px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-500 transition-colors text-sm"
+                            className="flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm"
                           >
                             {copiedId === project.share_id ? (
                               <>
@@ -393,7 +438,7 @@ export default function ProjectsPage() {
                           </button>
                           <button
                             onClick={() => router.push(`/projects/${project.id}`)}
-                            className="flex items-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors text-sm"
+                            className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg hover:bg-gray-200 dark:bg-gray-700 transition-colors text-sm"
                           >
                             View Project
                             <ExternalLink className="w-4 h-4" />
@@ -412,12 +457,12 @@ export default function ProjectsPage() {
       {/* Create Modal - Only for admin */}
       {showCreateModal && isAdmin && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 rounded-2xl w-full max-w-lg p-6">
-            <h2 className="text-xl font-bold text-white mb-6">Create New Project</h2>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-lg p-6">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Create New Project</h2>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Project Name *
                 </label>
                 <input
@@ -425,12 +470,12 @@ export default function ProjectsPage() {
                   value={newProject.name}
                   onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
                   placeholder="e.g., 2025 Annual Report"
-                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-amber-500"
+                  className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-amber-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Client/Township Name *
                 </label>
                 <input
@@ -438,12 +483,12 @@ export default function ProjectsPage() {
                   value={newProject.organizationName}
                   onChange={(e) => setNewProject({ ...newProject, organizationName: e.target.value })}
                   placeholder="e.g., Vernon Township"
-                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-amber-500"
+                  className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-amber-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Year
                 </label>
                 <input
@@ -451,12 +496,12 @@ export default function ProjectsPage() {
                   value={newProject.year}
                   onChange={(e) => setNewProject({ ...newProject, year: e.target.value })}
                   placeholder="e.g., 2025"
-                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-amber-500"
+                  className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-amber-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Description (optional)
                 </label>
                 <textarea
@@ -464,7 +509,7 @@ export default function ProjectsPage() {
                   onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
                   placeholder="Any notes about this project..."
                   rows={3}
-                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-amber-500 resize-none"
+                  className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-amber-500 resize-none"
                 />
               </div>
             </div>
@@ -478,14 +523,14 @@ export default function ProjectsPage() {
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => { setShowCreateModal(false); setError(''); }}
-                className="px-4 py-2 text-slate-400 hover:text-white transition-colors"
+                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={createProject}
                 disabled={creating || !newProject.name || !newProject.organizationName}
-                className="flex items-center gap-2 px-6 py-2 bg-amber-500 text-slate-900 rounded-lg font-medium hover:bg-amber-400 transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-6 py-2 bg-amber-500 text-gray-900 dark:text-white rounded-lg font-medium hover:bg-amber-400 transition-colors disabled:opacity-50"
               >
                 {creating ? (
                   <Loader2 className="w-5 h-5 animate-spin" />

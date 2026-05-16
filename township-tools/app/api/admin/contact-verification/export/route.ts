@@ -112,7 +112,7 @@ export async function GET(req: Request) {
   const authData = await auth();
   if (!authData?.userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!isAdmin(authData)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  const sErr = requireSuperadmin(); if (sErr) return sErr;
+  const sErr = await requireSuperadmin(); if (sErr) return sErr;
 
   const loaded = await loadContacts(req);
   if (loaded.error) return loaded.error;
@@ -123,7 +123,7 @@ export async function POST(req: Request) {
   const authData = await auth();
   if (!authData?.userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!isAdmin(authData)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  const sErr = requireSuperadmin(); if (sErr) return sErr;
+  const sErr = await requireSuperadmin(); if (sErr) return sErr;
 
   const loaded = await loadContacts(req);
   if (loaded.error) return loaded.error;

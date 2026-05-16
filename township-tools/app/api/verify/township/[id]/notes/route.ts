@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '../../../../../../lib/supabase';
-import { isSuperadminFromCookies } from '../../../../../../lib/auth/superadmin';
+import { isSuperadmin } from '../../../../../../lib/auth/superadmin';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -11,7 +11,7 @@ export async function GET(
   _req: Request,
   { params }: { params: { id: string } }
 ) {
-  if (!isSuperadminFromCookies()) {
+  if (!(await isSuperadmin())) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
   const supabase = createServerSupabaseClient();

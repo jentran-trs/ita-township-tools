@@ -5,6 +5,7 @@ import {
 } from "@clerk/nextjs";
 import "./globals.css";
 import SiteFooter from "../components/SiteFooter";
+import ThemeToggle from "../components/ThemeToggle";
 
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
@@ -21,8 +22,19 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
-        <body className="bg-slate-900 text-white">
+        <head>
+          {/* Apply saved dark/light preference BEFORE React hydrates so the
+              correct theme paints on first frame (avoids a flash of light
+              for users who prefer dark, or vice versa). */}
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `(function(){try{var t=localStorage.getItem('tt_theme');if(t==='dark'){document.documentElement.classList.add('dark');}}catch(e){}})();`,
+            }}
+          />
+        </head>
+        <body className="bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
           {children}
+          <ThemeToggle />
           <SiteFooter />
           {GA_MEASUREMENT_ID && (
             <>

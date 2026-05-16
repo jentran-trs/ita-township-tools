@@ -16,7 +16,7 @@ export async function POST(
   const authData = await auth();
   if (!authData?.userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!isAdmin(authData)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  const sErr = requireSuperadmin();
+  const sErr = await requireSuperadmin();
   if (sErr) return sErr;
 
   const supabase = createServerSupabaseClient();
@@ -38,7 +38,7 @@ export async function DELETE(
   const authData = await auth();
   if (!authData?.userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!isAdmin(authData)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  const sErr = requireSuperadmin();
+  const sErr = await requireSuperadmin();
   if (sErr) return sErr;
 
   const supabase = createServerSupabaseClient();

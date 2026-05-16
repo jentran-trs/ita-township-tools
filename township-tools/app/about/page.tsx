@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, Lock, Mail } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Mail, HeartHandshake, DollarSign } from "lucide-react";
 
 export const metadata = {
   title: "About this site — Township Tools",
@@ -8,98 +8,132 @@ export const metadata = {
 };
 
 const PERSONAL_EMAIL = "giang.jentran@gmail.com";
+const ITA_EMAIL = "jtran@ita-in.org";
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-md px-4 py-2.5 hover:bg-gray-100 mb-8 shadow-sm"
+          className="inline-flex items-center gap-2 text-base font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-md px-4 py-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 mb-8 shadow-sm"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Township Tools
         </Link>
 
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">About this site</h1>
-        <p className="text-base sm:text-lg text-gray-600 mb-8">
-          This site has two different kinds of tools. Here&apos;s the difference.
+        <h1 className="text-3xl sm:text-4xl font-bold mb-3">About this site</h1>
+        <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-400 mb-8">
+          Two kinds of tools live here. Here&apos;s the quick version.
         </p>
 
-        {/* Free / ITA section */}
-        <div className="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-6 sm:p-7 mb-6">
+        {/* Free / ITA */}
+        <div className="bg-emerald-50 dark:bg-emerald-950/40 border-2 border-emerald-200 dark:border-emerald-800 rounded-2xl p-6 sm:p-7 mb-6">
           <div className="flex items-center gap-2 mb-3">
-            <CheckCircle2 className="w-6 h-6 text-emerald-600" />
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
-              Free with ITA membership — no login needed
-            </h2>
+            <CheckCircle2 className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+            <h2 className="text-xl sm:text-2xl font-bold">Free with ITA membership</h2>
           </div>
-          <p className="text-base sm:text-lg text-gray-800 mb-3">
-            The <strong>SB 270 Scoring Tool</strong> and the{" "}
-            <strong>Contact Verification Portal</strong> are free for any Indiana township to use.
-            They are provided as part of what Indiana Township Association gives its members.
+          <p className="text-base sm:text-lg text-gray-800 dark:text-gray-200 mb-3">
+            Provided as part of what ITA gives its members. <strong>No account, no payment, no login.</strong>
           </p>
-          <p className="text-base sm:text-lg text-gray-800">
-            <strong>You do not need to create an account or sign in.</strong> Just open the tool
-            from the homepage and start using it. No payment, no subscription, no login.
+          <ul className="space-y-1.5 text-base sm:text-lg text-gray-800 dark:text-gray-200 list-disc list-inside">
+            <li>SB 270 Scoring Tool</li>
+            <li>Contact Verification Portal</li>
+          </ul>
+        </div>
+
+        {/* Paid / Jen's service */}
+        <div className="bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-200 dark:border-amber-800 rounded-2xl p-6 sm:p-7 mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <HeartHandshake className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+            <h2 className="text-xl sm:text-2xl font-bold">Paid add-on tools (sign in required)</h2>
+          </div>
+          <p className="text-base sm:text-lg text-gray-800 dark:text-gray-200 mb-3">
+            A separate service by <strong>Jen Tran</strong> — just a little extra help for
+            day-to-day township work. <strong>Not</strong> a replacement for ITA.
+          </p>
+          <ul className="space-y-1.5 text-base sm:text-lg text-gray-800 dark:text-gray-200 list-disc list-inside mb-3">
+            <li>Report Builder</li>
+            <li>Email Template Builder</li>
+            <li>Report Design Service</li>
+            <li>Custom-built tools</li>
+          </ul>
+          <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 italic">
+            Why is Jen connected to ITA? She&apos;s contracted by ITA to manage their official
+            website and provide tech support. The paid tools are her own private work.
           </p>
         </div>
 
-        {/* Paid section */}
-        <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-6 sm:p-7 mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <Lock className="w-6 h-6 text-amber-600" />
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
-              Extra tools — paid subscription (sign in required)
-            </h2>
+        {/* Pricing — bullet style */}
+        <div className="bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 rounded-2xl p-6 sm:p-7 mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <DollarSign className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+            <h2 className="text-xl sm:text-2xl font-bold">Pricing</h2>
           </div>
-          <p className="text-base sm:text-lg text-gray-800 mb-3">
-            All other tools on this site — including the <strong>Annual Report Builder</strong>,{" "}
-            <strong>Email Template Builder</strong>, and{" "}
-            <strong>Report Design Service</strong> — are a separate, paid service run by{" "}
-            <strong>Jen Tran</strong>. They require a sign-in because access is tied to a paid
-            subscription. <strong>They are not part of your ITA membership.</strong>
-          </p>
-          <p className="text-base sm:text-lg text-gray-800">
-            Jen is also separately hired by ITA to provide technical support and to manage ITA&apos;s
-            official website. That&apos;s how she built the two free tools above. But the paid
-            tools are her own work, offered to townships that want them.
-          </p>
+          <div className="space-y-4">
+            <div className="border-l-4 border-amber-400 pl-4">
+              <div className="font-bold text-lg sm:text-xl mb-1">
+                Subscription — <span className="text-amber-700 dark:text-amber-300">$10/mo or $96/yr</span>
+              </div>
+              <ul className="text-base sm:text-lg text-gray-700 dark:text-gray-300 list-disc list-inside space-y-0.5">
+                <li>Covers Report Builder + Email Template Builder</li>
+                <li>Annual saves 20% vs monthly</li>
+                <li>No long contracts — cancel anytime</li>
+              </ul>
+            </div>
+            <div className="border-l-4 border-blue-400 pl-4">
+              <div className="font-bold text-lg sm:text-xl mb-1">
+                Report Design Service — <span className="text-blue-700 dark:text-blue-300">custom quote</span>
+              </div>
+              <ul className="text-base sm:text-lg text-gray-700 dark:text-gray-300 list-disc list-inside space-y-0.5">
+                <li>Send materials, I design your annual report</li>
+                <li>Pay per project — no subscription needed</li>
+                <li>Price depends on sections + amount of content</li>
+              </ul>
+            </div>
+            <div className="border-l-4 border-purple-400 pl-4">
+              <div className="font-bold text-lg sm:text-xl mb-1">
+                Custom-built tools — <span className="text-purple-700 dark:text-purple-300">from $150</span>
+              </div>
+              <ul className="text-base sm:text-lg text-gray-700 dark:text-gray-300 list-disc list-inside space-y-0.5">
+                <li>Calculators, data trackers, document templates — built for your township</li>
+                <li>One-time build fee, priced by scope</li>
+                <li>10% annual maintenance fee starting year 2 to keep your tool running</li>
+                <li>May be offered to other townships too (with your blessing)</li>
+              </ul>
+            </div>
+          </div>
         </div>
 
-        {/* Where to direct questions */}
-        <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 sm:p-7 mb-6">
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">
-            Who to contact
-          </h2>
-          <ul className="space-y-3 text-base sm:text-lg text-gray-800">
+        {/* Who to contact */}
+        <div className="bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 rounded-2xl p-6 sm:p-7 mb-6">
+          <h2 className="text-xl sm:text-2xl font-bold mb-4">Who to contact</h2>
+          <ul className="space-y-2 text-base sm:text-lg text-gray-800 dark:text-gray-200 list-disc list-inside">
             <li>
-              <strong>Questions about your ITA membership:</strong> contact ITA staff.
+              <strong>Help with the free tools</strong> → Jen Tran at{" "}
+              <a
+                href={`mailto:${ITA_EMAIL}`}
+                className="text-emerald-700 dark:text-emerald-300 underline hover:text-emerald-900"
+              >
+                {ITA_EMAIL}
+              </a>
             </li>
             <li>
-              <strong>Help with the free tools:</strong> email Jen at{" "}
-              <a href={`mailto:${PERSONAL_EMAIL}`} className="text-amber-700 underline hover:text-amber-900">
+              <strong>Paid tools or subscription</strong> → Jen Tran at{" "}
+              <a
+                href={`mailto:${PERSONAL_EMAIL}`}
+                className="text-amber-700 dark:text-amber-300 underline hover:text-amber-900"
+              >
                 {PERSONAL_EMAIL}
               </a>
-              .
-            </li>
-            <li>
-              <strong>Questions about the paid tools or a subscription:</strong> email Jen at{" "}
-              <a href={`mailto:${PERSONAL_EMAIL}`} className="text-amber-700 underline hover:text-amber-900">
-                {PERSONAL_EMAIL}
-              </a>
-              .
             </li>
           </ul>
         </div>
 
-        {/* Subscribe CTA */}
-        <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 sm:p-8 text-center">
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
-            Want a subscription?
-          </h2>
-          <p className="text-base sm:text-lg text-gray-600 mb-5">
-            Email Jen for pricing and to set up your township.
+        {/* Email CTA */}
+        <div className="bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 rounded-2xl p-6 sm:p-8 text-center">
+          <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 mb-4">
+            Questions, quotes, or just curious? Send me a note.
           </p>
           <a
             href={`mailto:${PERSONAL_EMAIL}`}

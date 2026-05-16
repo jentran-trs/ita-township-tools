@@ -4,23 +4,23 @@ import { ArrowLeft, Info } from "lucide-react";
 
 export default function SignUpPage() {
   return (
-    <div className="min-h-screen flex flex-col items-center bg-gray-50 px-4 py-8 sm:py-12">
+    <div className="min-h-screen flex flex-col items-center bg-gray-50 dark:bg-gray-950 px-4 py-8 sm:py-12">
       <div className="w-full max-w-md mb-6">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-md px-4 py-2.5 hover:bg-gray-100 shadow-sm"
+          className="inline-flex items-center gap-2 text-base font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-md px-4 py-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 shadow-sm"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Township Tools
         </Link>
       </div>
-      <div className="w-full max-w-md mb-5 bg-amber-50 border-2 border-amber-200 rounded-lg p-4 flex items-start gap-3">
-        <Info className="w-5 h-5 text-amber-700 flex-shrink-0 mt-0.5" />
-        <p className="text-base text-gray-800">
+      <div className="w-full max-w-md mb-5 bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-200 dark:border-amber-800 rounded-lg p-4 flex items-start gap-3">
+        <Info className="w-5 h-5 text-amber-700 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+        <p className="text-base text-gray-800 dark:text-gray-200">
           Signing up creates an account for the <strong>paid tools only</strong> — an independent
           service by Jen Tran, not part of ITA membership. The free tools (SB 270 Scoring Tool,
           Contact Verification Portal) don&apos;t need an account — just open them from the{" "}
-          <Link href="/" className="underline text-amber-700 hover:text-amber-900">
+          <Link href="/" className="underline text-amber-700 dark:text-amber-400 hover:text-amber-900">
             homepage
           </Link>
           .

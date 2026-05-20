@@ -124,7 +124,7 @@ export default function Dashboard() {
                   title="Report Builder"
                   description="Build a polished annual report and export it as a print-ready PDF."
                   cta="Open tool"
-                  badge={{ label: "SUBSCRIPTION", className: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" }}
+                  badge={{ label: "ADD-ON", className: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" }}
                 />
               )}
 
@@ -154,7 +154,7 @@ export default function Dashboard() {
                   title="Email Template Builder"
                   description="Design professional email and newsletter templates to use in any email client."
                   cta="Open tool"
-                  badge={{ label: "SUBSCRIPTION", className: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" }}
+                  badge={{ label: "ADD-ON", className: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" }}
                 />
               )}
 

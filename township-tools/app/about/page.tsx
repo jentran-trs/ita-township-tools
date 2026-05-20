@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, Mail, HeartHandshake, DollarSign } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Mail, HeartHandshake } from "lucide-react";
 
 export const metadata = {
   title: "About this site — Township Tools",
@@ -64,40 +64,33 @@ export default function AboutPage() {
           </p>
         </div>
 
-        {/* Pricing — bullet style */}
+        {/* How to get access */}
         <div className="bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 rounded-2xl p-6 sm:p-7 mb-6">
           <div className="flex items-center gap-2 mb-4">
-            <DollarSign className="w-6 h-6 text-amber-600 dark:text-amber-400" />
-            <h2 className="text-xl sm:text-2xl font-bold">Pricing</h2>
+            <Mail className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+            <h2 className="text-xl sm:text-2xl font-bold">Interested in the paid tools?</h2>
           </div>
+          <p className="text-base sm:text-lg text-gray-700 dark:text-gray-300 mb-4">
+            Send Jen a note and she&apos;ll get you set up. Quick rundown of what&apos;s available:
+          </p>
           <div className="space-y-4">
             <div className="border-l-4 border-amber-400 pl-4">
-              <div className="font-bold text-lg sm:text-xl mb-1">
-                Subscription — <span className="text-amber-700 dark:text-amber-300">contact for pricing</span>
-              </div>
-              <ul className="text-base sm:text-lg text-gray-700 dark:text-gray-300 list-disc list-inside space-y-0.5">
-                <li>Covers Report Builder + Email Template Builder</li>
-                <li>No long contracts — cancel anytime</li>
-              </ul>
+              <div className="font-bold text-lg sm:text-xl mb-1">Report Builder + Email Template Builder</div>
+              <p className="text-base sm:text-lg text-gray-700 dark:text-gray-300">
+                Sign-in tools for day-to-day township work.
+              </p>
             </div>
             <div className="border-l-4 border-blue-400 pl-4">
-              <div className="font-bold text-lg sm:text-xl mb-1">
-                Report Design Service — <span className="text-blue-700 dark:text-blue-300">custom quote</span>
-              </div>
-              <ul className="text-base sm:text-lg text-gray-700 dark:text-gray-300 list-disc list-inside space-y-0.5">
-                <li>Send materials, I design your annual report</li>
-                <li>Pay per project — no subscription needed</li>
-              </ul>
+              <div className="font-bold text-lg sm:text-xl mb-1">Report Design Service</div>
+              <p className="text-base sm:text-lg text-gray-700 dark:text-gray-300">
+                Send Jen your materials, she designs your annual report for you.
+              </p>
             </div>
             <div className="border-l-4 border-purple-400 pl-4">
-              <div className="font-bold text-lg sm:text-xl mb-1">
-                Custom-built tools — <span className="text-purple-700 dark:text-purple-300">custom quote</span>
-              </div>
-              <ul className="text-base sm:text-lg text-gray-700 dark:text-gray-300 list-disc list-inside space-y-0.5">
-                <li>Calculators, data trackers, document templates — built for your township</li>
-                <li>One-time build, priced by scope</li>
-                <li>May be offered to other townships too (with your blessing)</li>
-              </ul>
+              <div className="font-bold text-lg sm:text-xl mb-1">Custom-built tools</div>
+              <p className="text-base sm:text-lg text-gray-700 dark:text-gray-300">
+                Calculators, data trackers, document templates — built specifically for your township.
+              </p>
             </div>
           </div>
         </div>
@@ -116,7 +109,7 @@ export default function AboutPage() {
               </a>
             </li>
             <li>
-              <strong>Paid tools or subscription</strong> → Jen Tran at{" "}
+              <strong>Access to the paid tools, or custom work</strong> → Jen Tran at{" "}
               <a
                 href={`mailto:${PERSONAL_EMAIL}`}
                 className="text-amber-700 dark:text-amber-300 underline hover:text-amber-900"
@@ -130,7 +123,7 @@ export default function AboutPage() {
         {/* Email CTA */}
         <div className="bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 rounded-2xl p-6 sm:p-8 text-center">
           <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 mb-4">
-            Questions, quotes, or just curious? Send me a note.
+            Questions or curious about the paid tools? Send me a note.
           </p>
           <a
             href={`mailto:${PERSONAL_EMAIL}`}

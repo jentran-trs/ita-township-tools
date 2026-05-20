@@ -242,8 +242,7 @@ export default function ProjectsPage() {
                 </h2>
                 <p className="text-base text-gray-700 dark:text-gray-300">
                   Send your materials (photos, text, stats, etc.) and I&apos;ll design your annual
-                  report for you. Pricing is custom — based on the number of sections and amount
-                  of content. Email <a href="mailto:giang.jentran@gmail.com" className="underline font-semibold text-blue-700 dark:text-blue-300">giang.jentran@gmail.com</a> for a quote.
+                  report for you. Email <a href="mailto:giang.jentran@gmail.com" className="underline font-semibold text-blue-700 dark:text-blue-300">giang.jentran@gmail.com</a> to get started.
                 </p>
               </div>
             </div>

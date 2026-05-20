@@ -23,7 +23,7 @@ const PERSONAL_EMAIL = "giang.jentran@gmail.com";
 const ITA_EMAIL = "jtran@ita-in.org";
 
 // Shared visual treatment for each top-level section header so the three
-// categories (Free / Subscription / Custom) read as peer-level groupings.
+// categories (Free / Sign-in / Custom) read as peer-level groupings.
 function SectionHeader({ badge, badgeColors, title, children }) {
   return (
     <div className="text-center mb-8 sm:mb-10">
@@ -143,22 +143,21 @@ export default function PublicLanding() {
 
         <SectionDivider />
 
-        {/* ───────── Section 2: Subscription-based tools ───────── */}
+        {/* ───────── Section 2: Sign-in tools ───────── */}
         <section>
           <SectionHeader
             badgeColors="bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
             badge={
               <>
                 <HeartHandshake className="w-4 h-4" />
-                A FRIENDLY ADD-ON · CONTACT FOR PRICING
+                A FRIENDLY ADD-ON · CONTACT JEN FOR ACCESS
               </>
             }
-            title="Subscription-based tools"
+            title="Sign-in tools"
           >
             <p className="text-base sm:text-lg text-gray-700 dark:text-gray-300 max-w-2xl mx-auto">
               These are friendly add-ons — just a little extra help for day-to-day township work,{" "}
-              <strong>not</strong> a replacement for what ITA provides. No long contracts. Cancel
-              anytime.
+              <strong>not</strong> a replacement for what ITA provides.
             </p>
             <p className="mt-2">
               <Link
@@ -212,14 +211,14 @@ export default function PublicLanding() {
             </div>
           </div>
 
-          {/* Subscribe contact CTA */}
+          {/* Access contact CTA */}
           <div className="mt-6 sm:mt-8 text-center">
             <a
-              href={`mailto:${PERSONAL_EMAIL}?subject=Township%20Tools%20subscription`}
+              href={`mailto:${PERSONAL_EMAIL}?subject=Township%20Tools%20access`}
               className="inline-flex items-center gap-2 px-6 py-3 bg-amber-500 text-white rounded-lg font-semibold text-base hover:bg-amber-600 transition-colors shadow-sm"
             >
               <Mail className="w-5 h-5" />
-              Get set up — email {PERSONAL_EMAIL}
+              Contact Jen for access — {PERSONAL_EMAIL}
             </a>
           </div>
         </section>
@@ -233,14 +232,13 @@ export default function PublicLanding() {
             badge={
               <>
                 <Wrench className="w-4 h-4" />
-                CUSTOM SERVICES · PRICED BY SCOPE
+                CUSTOM SERVICES · CONTACT JEN
               </>
             }
             title="Need something specific?"
           >
             <p className="text-base sm:text-lg text-gray-700 dark:text-gray-300 max-w-2xl mx-auto">
-              Pay-per-project services for townships that want something built or designed
-              specifically for them. No subscription required.
+              For townships that want something built or designed specifically for them.
             </p>
           </SectionHeader>
 
@@ -252,14 +250,13 @@ export default function PublicLanding() {
                   <FolderOpen className="w-7 h-7 sm:w-8 sm:h-8 text-blue-600 dark:text-blue-400" />
                 </div>
                 <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
-                  Custom quote
+                  Done for you
                 </span>
               </div>
               <h4 className="text-lg sm:text-xl font-bold mb-2">Report Design Service</h4>
               <div className="flex-1 mb-5">
                 <p className="text-base text-gray-600 dark:text-gray-400 mb-4">
-                  Send me your materials and I&apos;ll design your annual report for you. Pricing
-                  depends on the number of sections and amount of content — email me for a quote.
+                  Send me your materials and I&apos;ll design your annual report for you.
                 </p>
                 <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
                   <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
@@ -290,10 +287,10 @@ export default function PublicLanding() {
                 </div>
               </div>
               <a
-                href={`mailto:${PERSONAL_EMAIL}?subject=Report%20Design%20Service%20—%20quote%20request`}
+                href={`mailto:${PERSONAL_EMAIL}?subject=Report%20Design%20Service`}
                 className="inline-flex items-center justify-center gap-2 text-base font-semibold text-blue-700 dark:text-blue-300 border-2 border-blue-300 dark:border-blue-700 rounded-lg px-4 py-2.5 hover:bg-blue-50 dark:hover:bg-blue-900/30"
               >
-                <Mail className="w-4 h-4" /> Request a quote
+                <Mail className="w-4 h-4" /> Contact Jen
               </a>
               <p className="text-sm text-gray-500 dark:text-gray-400 text-center mt-2">
                 {PERSONAL_EMAIL}
@@ -307,7 +304,7 @@ export default function PublicLanding() {
                   <Wrench className="w-7 h-7 sm:w-8 sm:h-8 text-purple-600 dark:text-purple-400" />
                 </div>
                 <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300">
-                  Custom quote
+                  Built for you
                 </span>
               </div>
               <h4 className="text-lg sm:text-xl font-bold mb-2">Custom-Built Tools</h4>
@@ -319,7 +316,7 @@ export default function PublicLanding() {
                 href={`mailto:${PERSONAL_EMAIL}?subject=Custom%20tool%20for%20my%20township`}
                 className="inline-flex items-center justify-center gap-2 text-base font-semibold text-purple-700 dark:text-purple-300 border-2 border-purple-300 dark:border-purple-700 rounded-lg px-4 py-2.5 hover:bg-purple-50 dark:hover:bg-purple-900/30"
               >
-                <Mail className="w-4 h-4" /> Tell me your idea
+                <Mail className="w-4 h-4" /> Contact Jen
               </a>
               <p className="text-sm text-gray-500 dark:text-gray-400 text-center mt-2">
                 {PERSONAL_EMAIL}

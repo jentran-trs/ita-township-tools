@@ -73,11 +73,10 @@ export default function AboutPage() {
           <div className="space-y-4">
             <div className="border-l-4 border-amber-400 pl-4">
               <div className="font-bold text-lg sm:text-xl mb-1">
-                Subscription — <span className="text-amber-700 dark:text-amber-300">$10/mo or $96/yr</span>
+                Subscription — <span className="text-amber-700 dark:text-amber-300">contact for pricing</span>
               </div>
               <ul className="text-base sm:text-lg text-gray-700 dark:text-gray-300 list-disc list-inside space-y-0.5">
                 <li>Covers Report Builder + Email Template Builder</li>
-                <li>Annual saves 20% vs monthly</li>
                 <li>No long contracts — cancel anytime</li>
               </ul>
             </div>
@@ -88,17 +87,15 @@ export default function AboutPage() {
               <ul className="text-base sm:text-lg text-gray-700 dark:text-gray-300 list-disc list-inside space-y-0.5">
                 <li>Send materials, I design your annual report</li>
                 <li>Pay per project — no subscription needed</li>
-                <li>Price depends on sections + amount of content</li>
               </ul>
             </div>
             <div className="border-l-4 border-purple-400 pl-4">
               <div className="font-bold text-lg sm:text-xl mb-1">
-                Custom-built tools — <span className="text-purple-700 dark:text-purple-300">from $150</span>
+                Custom-built tools — <span className="text-purple-700 dark:text-purple-300">custom quote</span>
               </div>
               <ul className="text-base sm:text-lg text-gray-700 dark:text-gray-300 list-disc list-inside space-y-0.5">
                 <li>Calculators, data trackers, document templates — built for your township</li>
-                <li>One-time build fee, priced by scope</li>
-                <li>10% annual maintenance fee starting year 2 to keep your tool running</li>
+                <li>One-time build, priced by scope</li>
                 <li>May be offered to other townships too (with your blessing)</li>
               </ul>
             </div>

@@ -1,11 +1,34 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const PERSONAL_EMAIL = "giang.jentran@gmail.com";
 
-// Site-wide disclaimer footer. Lives at the bottom of every page via the root
-// layout. Distinguishes the two free ITA tools (Scoring Tool, Contact
+// Routes where the disclaimer footer is hidden. These are the paid / signed-in
+// pages where the visitor has already understood the distinction between the
+// free ITA tools and Jen's private paid service — the footer adds clutter
+// without value here.
+const HIDE_FOOTER_PREFIXES = [
+  "/dashboard",
+  "/admin",
+  "/projects",
+  "/tools/report-builder",
+  "/tools/email-builder",
+  "/asset-collection",
+  "/submit-assets",
+  "/submissions",
+];
+
+// Site-wide disclaimer footer. Lives at the bottom of every PUBLIC page via the
+// root layout. Distinguishes the two free ITA tools (Scoring Tool, Contact
 // Verification Portal — no login) from the paid independent tools.
 export default function SiteFooter() {
+  const pathname = usePathname() || "";
+  if (HIDE_FOOTER_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
+    return null;
+  }
+
   return (
     <footer className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 text-sm">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-2">

@@ -1,4 +1,4 @@
-import { escapeHtml, sanitizeHtmlForEmail, lightenColor, getContrastColor, generateCalendarLinks } from './shared';
+import { escapeHtml, sanitizeHtmlForEmail, lightenColor, getContrastColor, generateCalendarLinks, formatEventTimeRange } from './shared';
 
 const formatCalendarDate = (iso) => {
   if (!iso) return '';
@@ -152,8 +152,8 @@ const renderSection = (section, colors) => {
       const textAlign = align === 'left' ? 'left' : align === 'right' ? 'right' : 'center';
       const borderRadius = shape === 'circle' ? '50%' : shape === 'rounded' ? '8px' : '0';
       const sizeStyle = shape === 'circle' || shape === 'square'
-        ? `width: ${imgWidth}%; max-width: ${imgWidth === 100 ? '560' : Math.round(560 * imgWidth / 100)}px; aspect-ratio: 1 / 1; object-fit: cover;`
-        : `width: ${imgWidth}%; max-width: ${imgWidth === 100 ? '560' : Math.round(560 * imgWidth / 100)}px; height: auto;`;
+        ? `width: ${imgWidth}%; max-width: ${imgWidth === 100 ? '640' : Math.round(640 * imgWidth / 100)}px; aspect-ratio: 1 / 1; object-fit: cover;`
+        : `width: ${imgWidth}%; max-width: ${imgWidth === 100 ? '640' : Math.round(640 * imgWidth / 100)}px; height: auto;`;
       const imgTag = `<img src="${escapeHtml(data.url)}" alt="${escapeHtml(data.alt || '')}" style="${sizeStyle} border-radius: ${borderRadius}; display: inline-block;" />`;
       const content = data.linkUrl
         ? `<a href="${escapeHtml(data.linkUrl)}" target="_blank" style="text-decoration: none;">${imgTag}</a>`
@@ -355,6 +355,97 @@ const renderSection = (section, colors) => {
             <div style="font-family: ${FONT_STACK}; font-size: 16px; color: #333333; line-height: 1.9;">
               ${rows}
             </div>
+          </td>
+        </tr>`;
+    }
+
+    // ---------- Newsletter-format sections (also valid in email mode) ----------
+    // These were originally only handled by newsletterTemplate.js. Surfacing
+    // them here lets users mix story-format blocks (Featured Article, News
+    // Update, Upcoming Events) into a regular email if they want to.
+    case 'featuredArticle':
+      return `
+        <tr>
+          <td style="padding: 12px 40px;">
+            <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: ${lightenColor(c.primary, 0.95)}; border-radius: 6px; overflow: hidden;">
+              <tr>
+                <td style="border-top: 4px solid ${c.gold}; padding: 25px;">
+                  ${data.heading ? `<h2 style="margin: 0 0 15px 0; font-size: 22px; font-weight: bold; color: ${c.primary}; font-family: Georgia, serif;">${escapeHtml(data.heading)}</h2>` : ''}
+                  <div style="font-size: 16px; line-height: 1.6; color: #333333; font-family: Arial, sans-serif;">
+                    ${sanitizeHtmlForEmail(data.content)}
+                  </div>
+                  ${data.ctaText ? `
+                  <table cellpadding="0" cellspacing="0" border="0" style="margin-top: 20px;">
+                    <tr>
+                      <td style="background-color: ${c.gold}; border-radius: 5px; padding: 12px 28px;">
+                        <a href="${escapeHtml(data.ctaUrl || '#')}" style="color: ${getContrastColor(c.gold)}; text-decoration: none; font-size: 14px; font-weight: bold; font-family: Arial, sans-serif;">${escapeHtml(data.ctaText)}</a>
+                      </td>
+                    </tr>
+                  </table>` : ''}
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>`;
+
+    case 'newsSection':
+      return `
+        <tr>
+          <td style="padding: 10px 40px;">
+            ${data.heading ? `
+            <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 12px;">
+              <tr>
+                <td style="border-bottom: 2px solid ${c.gold}; padding-bottom: 8px;">
+                  <h2 style="margin: 0; font-size: 20px; font-weight: bold; color: ${c.primary}; font-family: Georgia, serif;">${escapeHtml(data.heading)}</h2>
+                </td>
+              </tr>
+            </table>` : ''}
+            <div style="font-size: 16px; line-height: 1.6; color: #333333; font-family: Arial, sans-serif;">
+              ${sanitizeHtmlForEmail(data.content)}
+            </div>
+          </td>
+        </tr>`;
+
+    case 'eventListing': {
+      const events = (data.events || []).filter(e => e.title);
+      return `
+        <tr>
+          <td style="padding: 10px 40px;">
+            ${data.heading ? `
+            <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 15px;">
+              <tr>
+                <td style="border-bottom: 2px solid ${c.gold}; padding-bottom: 8px;">
+                  <h2 style="margin: 0; font-size: 20px; font-weight: bold; color: ${c.primary}; font-family: Georgia, serif;">${escapeHtml(data.heading)}</h2>
+                </td>
+              </tr>
+            </table>` : ''}
+            ${events.map(ev => {
+              const cal = generateCalendarLinks(ev);
+              const calLinksHtml = cal ? `
+                  <p style="margin: 10px 0 0 0;">
+                    <a href="${cal.google}" target="_blank" style="background-color: #4285F4; color: #ffffff; text-decoration: none; padding: 7px 14px; font-size: 12px; font-family: Arial, sans-serif; margin-right: 6px; display: inline-block; border-radius: 4px;">+ Google Calendar</a>
+                    <a href="${cal.outlook}" target="_blank" style="background-color: #0078D4; color: #ffffff; text-decoration: none; padding: 7px 14px; font-size: 12px; font-family: Arial, sans-serif; margin-right: 6px; display: inline-block; border-radius: 4px;">+ Outlook Calendar</a>
+                    <a href="${cal.ics}" target="_blank" style="background-color: #333333; color: #ffffff; text-decoration: none; padding: 7px 14px; font-size: 12px; font-family: Arial, sans-serif; display: inline-block; border-radius: 4px;">+ Apple Calendar</a>
+                  </p>` : '';
+              const timeText = formatEventTimeRange(ev);
+              return `
+            <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 15px;">
+              <tr>
+                <td width="100" valign="top" style="padding-right: 15px;">
+                  <div style="background-color: ${c.primary}; color: #ffffff; text-align: center; padding: 10px 8px; border-radius: 5px; font-family: Arial, sans-serif; line-height: 1.3;">
+                    <div style="font-size: 12px; font-weight: bold;">${escapeHtml(ev.date)}</div>
+                    ${timeText ? `<div style="font-size: 11px; font-weight: normal; margin-top: 4px; opacity: 0.9;">${escapeHtml(timeText)}</div>` : ''}
+                  </div>
+                </td>
+                <td valign="top">
+                  <h3 style="margin: 0 0 4px 0; font-size: 16px; font-weight: bold; color: #333333; font-family: Arial, sans-serif;">${escapeHtml(ev.title)}</h3>
+                  ${ev.description ? `<p style="margin: 0 0 4px 0; font-size: 16px; color: #666666; line-height: 1.6; font-family: Arial, sans-serif;">${escapeHtml(ev.description)}</p>` : ''}
+                  ${ev.link ? `<a href="${escapeHtml(ev.link)}" style="color: ${c.gold}; text-decoration: none; font-size: 13px; font-weight: 600; font-family: Arial, sans-serif;">Learn more &rarr;</a>` : ''}
+                  ${calLinksHtml}
+                </td>
+              </tr>
+            </table>`;
+            }).join('')}
           </td>
         </tr>`;
     }
@@ -588,7 +679,7 @@ export const generateEmailHtml = (sections, colors, logo, logoHeight = 90) => {
   <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #e8e8e8;">
     <tr>
       <td style="padding: 30px 10px;">
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="640" align="center" style="max-width: 640px; background-color: #ffffff;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="720" align="center" style="max-width: 720px; background-color: #ffffff;">
           ${bodyHtml}
         </table>
       </td>

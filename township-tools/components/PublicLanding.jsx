@@ -150,7 +150,7 @@ export default function PublicLanding() {
             badge={
               <>
                 <HeartHandshake className="w-4 h-4" />
-                A FRIENDLY ADD-ON · $10/MO OR $96/YR
+                A FRIENDLY ADD-ON · CONTACT FOR PRICING
               </>
             }
             title="Subscription-based tools"
@@ -307,16 +307,13 @@ export default function PublicLanding() {
                   <Wrench className="w-7 h-7 sm:w-8 sm:h-8 text-purple-600 dark:text-purple-400" />
                 </div>
                 <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300">
-                  From $150
+                  Custom quote
                 </span>
               </div>
               <h4 className="text-lg sm:text-xl font-bold mb-2">Custom-Built Tools</h4>
-              <p className="text-base text-gray-600 dark:text-gray-400 mb-3 flex-1">
+              <p className="text-base text-gray-600 dark:text-gray-400 mb-5 flex-1">
                 Have a specific idea? I&apos;ll build a small tool just for your township —
                 calculators, data trackers, document templates, automation scripts.
-              </p>
-              <p className="text-sm italic text-gray-500 dark:text-gray-400 mb-5">
-                After year 1, a 10% annual maintenance fee keeps your tool running.
               </p>
               <a
                 href={`mailto:${PERSONAL_EMAIL}?subject=Custom%20tool%20for%20my%20township`}

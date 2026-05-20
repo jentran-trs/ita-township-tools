@@ -150,7 +150,7 @@ const COLOR_LABELS = {
   gold: 'Highlight / Gold',
 };
 
-const BrandSettings = ({ logo, setLogo, logoUrl, setLogoUrl, logoHeight, setLogoHeight, themeColors, setThemeColors, onSaveDefaults, onClearDefaults }) => {
+const BrandSettings = ({ logo, setLogo, logoUrl, setLogoUrl, logoPath, setLogoPath, logoHeight, setLogoHeight, themeColors, setThemeColors, onSaveDefaults, onClearDefaults }) => {
   const [expanded, setExpanded] = useState(true);
   const [defaultsSaved, setDefaultsSaved] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
@@ -169,7 +169,20 @@ const BrandSettings = ({ logo, setLogo, logoUrl, setLogoUrl, logoHeight, setLogo
     const res = await fetch('/api/email-builder/upload-logo', { method: 'POST', body: fd });
     const json = await res.json();
     if (!res.ok) throw new Error(json.error || 'Upload failed');
-    return json.url;
+    return { url: json.url, path: json.path };
+  };
+
+  // Best-effort delete from Supabase. Doesn't block UI on failure — if the
+  // file can't be deleted (e.g. network blip) the user can still proceed.
+  const deleteHostedLogo = async (path) => {
+    if (!path) return;
+    try {
+      await fetch('/api/email-builder/upload-logo', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path }),
+      });
+    } catch {}
   };
 
   const handleLogoUpload = (e) => {
@@ -177,6 +190,9 @@ const BrandSettings = ({ logo, setLogo, logoUrl, setLogoUrl, logoHeight, setLogo
     if (!file) return;
     setLogoUploading(true);
     setHostError('');
+
+    // If replacing an existing hosted logo, clean up the old file in the bucket.
+    const previousPath = logoPath;
 
     // 1) Read locally for instant preview + theme color extraction.
     const reader = new FileReader();
@@ -189,10 +205,13 @@ const BrandSettings = ({ logo, setLogo, logoUrl, setLogoUrl, logoHeight, setLogo
 
         // 2) Upload to Supabase so the email has a hostable URL.
         uploadToHost(file)
-          .then((url) => {
+          .then(({ url, path }) => {
             setLogoUrl(url);
+            if (setLogoPath) setLogoPath(path || null);
             setHostedFeedback(true);
             setTimeout(() => setHostedFeedback(false), 2500);
+            // Now that the new one is hosted, delete the previous one.
+            if (previousPath) deleteHostedLogo(previousPath);
           })
           .catch((err) => setHostError(err.message || 'Could not host the image.'))
           .finally(() => setLogoUploading(false));
@@ -202,6 +221,17 @@ const BrandSettings = ({ logo, setLogo, logoUrl, setLogoUrl, logoHeight, setLogo
     };
     reader.onerror = () => { setLogoUploading(false); setHostError('Could not read the image.'); };
     reader.readAsDataURL(file);
+  };
+
+  // Trash button: clear the logo locally AND remove the hosted file from
+  // Supabase storage so it doesn't sit there forever.
+  const handleRemoveLogo = async () => {
+    const pathToDelete = logoPath;
+    setLogo(null);
+    setLogoUrl('');
+    if (setLogoPath) setLogoPath(null);
+    setHostError('');
+    if (pathToDelete) deleteHostedLogo(pathToDelete);
   };
 
   const handleColorChange = (key, value) => {
@@ -229,7 +259,8 @@ const BrandSettings = ({ logo, setLogo, logoUrl, setLogoUrl, logoHeight, setLogo
                 <div className="relative">
                   <img src={logoUrl || logo} alt="Logo" className="w-16 h-16 object-contain bg-white rounded-lg border border-slate-600 p-1" />
                   <button
-                    onClick={() => setLogo(null)}
+                    onClick={handleRemoveLogo}
+                    title="Remove logo (deletes from storage too)"
                     className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white hover:bg-red-400"
                   >
                     <Trash2 className="w-3 h-3" />

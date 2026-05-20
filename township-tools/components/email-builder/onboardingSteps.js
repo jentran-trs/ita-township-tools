@@ -1,56 +1,55 @@
+// Guided tour steps. Each step targets an element on the page via a
+// `[data-tour="..."]` attribute (added on the corresponding component).
+// Steps are kept short and beginner-friendly — the audience is older
+// township staff who haven't used a builder before.
 const ONBOARDING_STEPS = [
   {
-    target: 'template-type',
-    title: 'Choose Your Template Type',
-    description: 'Start by selecting whether you want to build an Email or a Newsletter. Each type has its own set of specialized sections.',
-    position: 'right',
-  },
-  {
-    target: 'examples',
-    title: 'Example Templates',
-    description: 'Load a pre-built example to see every section type in action with realistic township content. Great for learning the tool!',
-    position: 'right',
-  },
-  {
-    target: 'templates',
-    title: 'Save & Load Templates',
-    description: 'Save your work as reusable templates. Load them later to quickly create new emails based on previous designs.',
-    position: 'right',
-  },
-  {
-    target: 'section-list',
-    title: 'Your Sections',
-    description: 'This is your section list. Drag to reorder, click to select, and use the arrows or trash icon to move or delete sections.',
-    position: 'right',
-  },
-  {
     target: 'add-section',
-    title: 'Add New Sections',
-    description: 'Click here to add content sections like text blocks, images, alerts, meeting details, and more to your template.',
+    title: '1. Add elements to your email',
+    description:
+      'This is your toolbox. Click any element here (or drag it onto the canvas) to add it to your email. Try clicking "Rich Text" — it adds a paragraph block you can type into.',
     position: 'right',
-  },
-  {
-    target: 'brand-settings',
-    title: 'Brand Settings',
-    description: 'Upload your township logo and customize theme colors. Save defaults so they\'re automatically applied to new templates.',
-    position: 'bottom',
   },
   {
     target: 'editor',
-    title: 'Section Editor',
-    description: 'Edit each section\'s content here. Click a section in the sidebar to scroll to its editor. Rich text formatting is available for most text fields.',
+    title: '2. Edit on the canvas',
+    description:
+      'Your email shows up here. Click any text to edit it. Hover over a section to see options for moving, deleting, or opening its settings.',
     position: 'left',
   },
   {
-    target: 'generate',
-    title: 'Preview & Generate',
-    description: 'When you\'re ready, click Preview to generate the HTML email. You can then copy the HTML and paste it into your email client.',
-    position: 'bottom',
+    target: 'brand-settings',
+    title: '3. Set your brand',
+    description:
+      'Upload your township logo and pick your colors. The colors are pulled automatically from your logo, but you can override any of them.',
+    position: 'left',
+  },
+  {
+    target: 'examples',
+    title: '4. Start from an example',
+    description:
+      'Not sure where to start? Load one of the example templates and adjust the content. Great for learning what each element does.',
+    position: 'left',
+  },
+  {
+    target: 'templates',
+    title: '5. Save your work',
+    description:
+      'Save your finished design as a reusable template. Next month, just load it and update the dates — no rebuilding required.',
+    position: 'left',
   },
   {
     target: 'top-bar',
-    title: 'Save Your Work',
-    description: 'Use Save Draft to preserve work-in-progress, or Save as Template to create a reusable template. The help button (?) restarts this tour anytime.',
+    title: '6. Draft &amp; preview',
+    description:
+      'Use Draft to save your work-in-progress on this device. When you\'re ready, click Preview to generate the HTML you can paste into Gmail, Outlook, or any email tool.',
+    position: 'bottom',
+  },
+  {
+    target: 'generate',
+    title: '7. Copy the HTML',
+    description:
+      'After previewing, click "Copy HTML" — then paste it into your email client. That\'s it!',
     position: 'bottom',
   },
 ];

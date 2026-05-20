@@ -1,4 +1,17 @@
-import { escapeHtml, sanitizeHtmlForEmail, lightenColor, getContrastColor, generateCalendarLinks } from './shared';
+import { escapeHtml, sanitizeHtmlForEmail, lightenColor, getContrastColor, generateCalendarLinks, formatEventTimeRange } from './shared';
+
+// Resolve the single-line subtitle under the newsletter name. New templates
+// store this in `data.edition` (free-form text). Legacy templates stored a
+// volume/issue/date triad — render that as before so old drafts don't lose
+// their subtitle.
+const newsletterEditionLabel = (data) => {
+  if (data?.edition) return escapeHtml(data.edition);
+  const parts = [];
+  if (data?.volume) parts.push(`Volume ${escapeHtml(data.volume)}`);
+  if (data?.issue) parts.push(`${escapeHtml(data.issue)} Issue`);
+  if (data?.date) parts.push(escapeHtml(data.date));
+  return parts.join(' &middot; ');
+};
 
 const renderSection = (section, colors) => {
   const { type, data } = section;
@@ -14,7 +27,7 @@ const renderSection = (section, colors) => {
               <tr>
                 <td style="border-top: 2px solid ${c.gold}; padding-top: 10px;">
                   <p style="margin: 0; font-size: 13px; color: ${lightenColor(c.primary, 0.6)}; font-family: Arial, sans-serif; letter-spacing: 2px; text-transform: uppercase;">
-                    ${data.volume ? `Volume ${escapeHtml(data.volume)}` : ''}${data.volume && data.issue ? ' &middot; ' : ''}${data.issue ? `${escapeHtml(data.issue)} Issue` : ''}${(data.volume || data.issue) && data.date ? ' &middot; ' : ''}${data.date ? escapeHtml(data.date) : ''}
+                    ${newsletterEditionLabel(data)}
                   </p>
                 </td>
               </tr>
@@ -86,12 +99,14 @@ const renderSection = (section, colors) => {
                     <a href="${cal.outlook}" target="_blank" style="background-color: #0078D4; color: #ffffff; text-decoration: none; padding: 7px 14px; font-size: 12px; font-family: Arial, sans-serif; margin-right: 6px; display: inline-block; border-radius: 4px;">+ Outlook Calendar</a>
                     <a href="${cal.ics}" target="_blank" style="background-color: #333333; color: #ffffff; text-decoration: none; padding: 7px 14px; font-size: 12px; font-family: Arial, sans-serif; display: inline-block; border-radius: 4px;">+ Apple Calendar</a>
                   </p>` : '';
+              const timeText = formatEventTimeRange(ev);
               return `
             <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 15px;">
               <tr>
-                <td width="80" valign="top" style="padding-right: 15px;">
-                  <div style="background-color: ${c.primary}; color: #ffffff; text-align: center; padding: 10px 8px; border-radius: 5px; font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; line-height: 1.3;">
-                    ${escapeHtml(ev.date)}
+                <td width="100" valign="top" style="padding-right: 15px;">
+                  <div style="background-color: ${c.primary}; color: #ffffff; text-align: center; padding: 10px 8px; border-radius: 5px; font-family: Arial, sans-serif; line-height: 1.3;">
+                    <div style="font-size: 12px; font-weight: bold;">${escapeHtml(ev.date)}</div>
+                    ${timeText ? `<div style="font-size: 11px; font-weight: normal; margin-top: 4px; opacity: 0.9;">${escapeHtml(timeText)}</div>` : ''}
                   </div>
                 </td>
                 <td valign="top">
@@ -178,8 +193,8 @@ const renderSection = (section, colors) => {
       const textAlign = align === 'left' ? 'left' : align === 'right' ? 'right' : 'center';
       const borderRadius = shape === 'circle' ? '50%' : '0';
       const sizeStyle = shape === 'circle' || shape === 'square'
-        ? `width: ${imgWidth}%; max-width: ${imgWidth === 100 ? '520' : Math.round(520 * imgWidth / 100)}px; aspect-ratio: 1 / 1; object-fit: cover;`
-        : `width: ${imgWidth}%; max-width: ${imgWidth === 100 ? '520' : Math.round(520 * imgWidth / 100)}px; height: auto;`;
+        ? `width: ${imgWidth}%; max-width: ${imgWidth === 100 ? '640' : Math.round(640 * imgWidth / 100)}px; aspect-ratio: 1 / 1; object-fit: cover;`
+        : `width: ${imgWidth}%; max-width: ${imgWidth === 100 ? '640' : Math.round(640 * imgWidth / 100)}px; height: auto;`;
       const imgTag = `<img src="${escapeHtml(data.url)}" alt="${escapeHtml(data.alt || '')}" style="${sizeStyle} border-radius: ${borderRadius}; display: inline-block;" />`;
       const content = data.linkUrl
         ? `<a href="${escapeHtml(data.linkUrl)}" target="_blank" style="text-decoration: none;">${imgTag}</a>`
@@ -481,7 +496,7 @@ export const generateNewsletterHtml = (sections, colors, logo, logoHeight = 90) 
             <tr>
               <td style="border-top: 2px solid ${colors.gold}; padding-top: 10px;">
                 <p style="margin: 0; font-size: 13px; color: ${lightenColor(colors.primary, 0.6)}; font-family: Arial, sans-serif; letter-spacing: 2px; text-transform: uppercase;">
-                  ${firstSection.data.volume ? `Volume ${escapeHtml(firstSection.data.volume)}` : ''}${firstSection.data.volume && firstSection.data.issue ? ' &middot; ' : ''}${firstSection.data.issue ? `${escapeHtml(firstSection.data.issue)} Issue` : ''}${(firstSection.data.volume || firstSection.data.issue) && firstSection.data.date ? ' &middot; ' : ''}${firstSection.data.date ? escapeHtml(firstSection.data.date) : ''}
+                  ${newsletterEditionLabel(firstSection.data)}
                 </p>
               </td>
             </tr>
@@ -506,7 +521,7 @@ export const generateNewsletterHtml = (sections, colors, logo, logoHeight = 90) 
   <title>Newsletter</title>
   <style type="text/css">
     /* Responsive styles */
-    @media only screen and (max-width: 620px) {
+    @media only screen and (max-width: 720px) {
       .email-container { width: 100% !important; }
       .email-container td { padding-left: 20px !important; padding-right: 20px !important; }
     }
@@ -521,7 +536,7 @@ export const generateNewsletterHtml = (sections, colors, logo, logoHeight = 90) 
   <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f4f4f7;">
     <tr>
       <td align="center" style="padding: 20px 10px;">
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" class="email-container" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="720" class="email-container" style="max-width: 720px; width: 100%; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
           ${bodyHtml}
         </table>
       </td>

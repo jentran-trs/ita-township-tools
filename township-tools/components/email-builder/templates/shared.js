@@ -111,6 +111,29 @@ export const generateCalendarLinks = (ev) => {
   return { google, outlook, ics: icsDataUri };
 };
 
+// Format a 24-hour time string ("13:00") as 12-hour with AM/PM ("1:00 PM").
+// Returns an empty string for falsy input.
+export const formatTime12 = (time) => {
+  if (!time) return '';
+  const [hStr, mStr] = String(time).split(':');
+  const h = parseInt(hStr, 10);
+  if (Number.isNaN(h)) return String(time);
+  const m = mStr || '00';
+  const period = h >= 12 ? 'PM' : 'AM';
+  const display = ((h + 11) % 12) + 1;
+  return `${display}:${m} ${period}`;
+};
+
+// Format an event's start/end times as a single readable string. Falls back
+// to a free-form `time` field if the user typed one directly.
+export const formatEventTimeRange = (ev) => {
+  if (ev?.time) return ev.time;
+  const start = formatTime12(ev?.startTime);
+  const end = formatTime12(ev?.endTime);
+  if (start && end) return `${start} – ${end}`;
+  return start;
+};
+
 // Get a readable text color (black or white) for a background
 export const getContrastColor = (hex) => {
   const num = parseInt(hex.replace('#', ''), 16);

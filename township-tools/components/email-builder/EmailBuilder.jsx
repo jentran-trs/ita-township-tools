@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Eye, Copy, Check, RotateCw, X, Save, Plus, HelpCircle, Pencil } from 'lucide-react';
 import SectionCatalog from './SectionCatalog';
+import SettingsPanel from './SettingsPanel';
 import BuilderCanvas from './BuilderCanvas';
 import PreviewPanel from './PreviewPanel';
 import { generateEmailHtml } from './templates/emailTemplate';
@@ -19,7 +20,7 @@ const DEFAULT_EMAIL_COLORS = {
 const createDefaultSections = (type) => {
   if (type === 'newsletter') {
     return [
-      { id: generateId(), type: 'newsletterTitle', data: { name: '', volume: '', issue: '', date: '' }, locked: true },
+      { id: generateId(), type: 'newsletterTitle', data: { name: '', edition: '' }, locked: true },
       { id: generateId(), type: 'footer', data: { orgName: '', website: '', tagline: '' }, locked: true },
     ];
   }
@@ -35,6 +36,10 @@ const EmailBuilder = () => {
   const [templateType, setTemplateType] = useState('email');
   const [logo, setLogo] = useState(null);
   const [logoUrl, setLogoUrl] = useState('');
+  // Supabase storage path of the currently hosted logo (so we can DELETE it
+  // from the bucket when the user clicks the trash button or uploads a new
+  // logo). Null if the logo was pasted as a URL rather than uploaded.
+  const [logoPath, setLogoPath] = useState(null);
   const [logoHeight, setLogoHeight] = useState(90);
   const [themeColors, setThemeColors] = useState(DEFAULT_EMAIL_COLORS);
   const [sections, setSections] = useState(() => createDefaultSections('email'));
@@ -66,6 +71,7 @@ const EmailBuilder = () => {
         if (parsed.templateType) setTemplateType(parsed.templateType);
         if (parsed.logo) setLogo(parsed.logo);
         if (parsed.logoUrl) setLogoUrl(parsed.logoUrl);
+        if (parsed.logoPath) setLogoPath(parsed.logoPath);
         if (parsed.logoHeight) setLogoHeight(parsed.logoHeight);
         if (parsed.themeColors) setThemeColors(parsed.themeColors);
         if (parsed.sections) setSections(parsed.sections);
@@ -118,7 +124,7 @@ const EmailBuilder = () => {
 
   const handleSaveDraft = useCallback(() => {
     try {
-      const draft = { templateType, logo, logoUrl, logoHeight, themeColors, sections };
+      const draft = { templateType, logo, logoUrl, logoPath, logoHeight, themeColors, sections };
       localStorage.setItem(`${LS_PREFIX}draft`, JSON.stringify(draft));
       setSavedFeedback(true);
       setTimeout(() => setSavedFeedback(false), 2000);
@@ -263,31 +269,18 @@ const EmailBuilder = () => {
 
   return (
     <div className="flex h-[calc(100vh-56px)]">
-      {/* Left Panel - Section Catalog + Brand Settings */}
-      <div className="w-72 flex-shrink-0">
+      {/* Left Panel — all draggable elements (email + newsletter + universal). */}
+      <div className="w-80 flex-shrink-0">
         <SectionCatalog
-          templateType={templateType}
-          onTemplateSwitch={handleTemplateSwitch}
-          savedTemplates={savedTemplates}
-          onLoadTemplate={handleLoadTemplate}
-          onDeleteTemplate={handleDeleteTemplate}
-          onSaveTemplate={handleSaveTemplate}
-          logo={logo} setLogo={setLogo}
-          logoUrl={logoUrl} setLogoUrl={setLogoUrl}
-          logoHeight={logoHeight} setLogoHeight={setLogoHeight}
-          themeColors={themeColors} setThemeColors={setThemeColors}
-          onSaveDefaults={handleSaveDefaults}
-          onClearDefaults={handleClearDefaults}
+          onAddSection={(type) => addSectionAtIndex(type, sections.length)}
         />
       </div>
 
       {/* Center - Canvas + Top Bar */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Top Bar */}
-        <div className="flex items-center justify-between px-4 py-2.5 bg-slate-800 border-b border-slate-700/50 flex-shrink-0">
-          <h2 className="text-sm font-bold text-white">
-            {templateType === 'newsletter' ? 'Newsletter' : 'Email'} Builder
-          </h2>
+        <div className="flex items-center justify-between px-4 py-2.5 bg-slate-800 border-b border-slate-700/50 flex-shrink-0" data-tour="top-bar">
+          <h2 className="text-sm font-bold text-white">Email Builder</h2>
           <div className="flex items-center gap-2">
             <button onClick={handleNew}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-700 text-slate-300 rounded-lg font-medium hover:bg-slate-600 hover:text-white transition-colors text-xs">
@@ -340,14 +333,14 @@ const EmailBuilder = () => {
                 Edit
               </button>
             ) : (
-              <button onClick={handleGenerate}
+              <button onClick={handleGenerate} data-tour="generate"
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 text-slate-900 rounded-lg font-medium hover:bg-amber-400 transition-colors text-xs">
                 <Eye className="w-3.5 h-3.5" />
                 Preview
               </button>
             )}
             {generatedHtml && (
-              <button onClick={handleCopy}
+              <button onClick={handleCopy} data-tour="generate"
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-500 transition-colors text-xs">
                 {copiedFeedback ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                 {copiedFeedback ? 'Copied!' : 'Copy HTML'}
@@ -361,7 +354,7 @@ const EmailBuilder = () => {
         </div>
 
         {/* Canvas or HTML Preview */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden" data-tour="editor">
           {showPreview && generatedHtml ? (
             <PreviewPanel html={generatedHtml} onClose={() => setShowPreview(false)} />
           ) : (
@@ -379,6 +372,23 @@ const EmailBuilder = () => {
             />
           )}
         </div>
+      </div>
+
+      {/* Right Panel — Brand & Colors, Examples, My Templates. */}
+      <div className="w-80 flex-shrink-0">
+        <SettingsPanel
+          savedTemplates={savedTemplates}
+          onLoadTemplate={handleLoadTemplate}
+          onDeleteTemplate={handleDeleteTemplate}
+          onSaveTemplate={handleSaveTemplate}
+          logo={logo} setLogo={setLogo}
+          logoUrl={logoUrl} setLogoUrl={setLogoUrl}
+          logoPath={logoPath} setLogoPath={setLogoPath}
+          logoHeight={logoHeight} setLogoHeight={setLogoHeight}
+          themeColors={themeColors} setThemeColors={setThemeColors}
+          onSaveDefaults={handleSaveDefaults}
+          onClearDefaults={handleClearDefaults}
+        />
       </div>
 
       {/* Onboarding Guide */}

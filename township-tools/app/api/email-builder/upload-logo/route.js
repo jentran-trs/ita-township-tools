@@ -9,6 +9,8 @@ const BUCKET = 'email-builder-logos';
 const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 const ALLOWED_TYPES = new Set(['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp', 'image/svg+xml']);
 
+// POST — upload a new logo. Returns { url, path }. The `path` is what the
+// client stores so it can later call DELETE to remove this specific file.
 export async function POST(request) {
   try {
     const authData = await auth();
@@ -43,7 +45,40 @@ export async function POST(request) {
     }
 
     const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(filePath);
-    return NextResponse.json({ url: urlData.publicUrl });
+    return NextResponse.json({ url: urlData.publicUrl, path: filePath });
+  } catch (err) {
+    return NextResponse.json({ error: 'Server error.', details: err.message }, { status: 500 });
+  }
+}
+
+// DELETE — remove a previously-uploaded logo from Supabase storage.
+// Body: { path: string }. Verifies that the path starts with the current
+// Clerk user's ID prefix, so users can only delete their own files.
+export async function DELETE(request) {
+  try {
+    const authData = await auth();
+    if (!authData?.userId) {
+      return NextResponse.json({ error: 'Sign in to delete a logo.' }, { status: 401 });
+    }
+
+    const body = await request.json().catch(() => ({}));
+    const filePath = (body?.path || '').toString();
+    if (!filePath) {
+      return NextResponse.json({ error: 'No path provided.' }, { status: 400 });
+    }
+    // Defense in depth: a user must only be able to delete files inside their
+    // own userId folder. Reject anything that doesn't match the prefix.
+    if (!filePath.startsWith(`${authData.userId}/`)) {
+      return NextResponse.json({ error: 'You can only delete your own logos.' }, { status: 403 });
+    }
+
+    const supabase = createServerSupabaseClient();
+    const { error: deleteError } = await supabase.storage.from(BUCKET).remove([filePath]);
+    if (deleteError) {
+      return NextResponse.json({ error: 'Delete failed.', details: deleteError.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ ok: true });
   } catch (err) {
     return NextResponse.json({ error: 'Server error.', details: err.message }, { status: 500 });
   }

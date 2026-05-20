@@ -3,14 +3,32 @@ import { GripVertical, Trash2, Lock, Plus, Settings, X, ChevronDown } from 'luci
 import { EditableText, EditableRichText, RichTextToolbar, ConfigInput, ConfigPanel } from './InlineEditable';
 
 // ─── Section Labels ─────────────────────────────────────────────────────────
+// Names here must match the labels the user sees in the left-panel catalog
+// (SectionCatalog.jsx), so the on-canvas hover tag and the draggable item
+// read the same thing.
 const SECTION_LABELS = {
-  header: 'Header', contentBody: 'Content Body', image: 'Image', highlighted: 'Highlighted',
-  importantNotice: 'Important Notice', ctaButton: 'CTA Button', meetingDetails: 'Meeting Details',
-  resourceLinks: 'Resource Links', signature: 'Signature', footer: 'Footer',
-  newsletterTitle: 'Newsletter Title', featuredArticle: 'Featured Article',
-  eventListing: 'Event Listing', newsSection: 'News Section', highlightBanner: 'Highlight Banner',
-  memberResources: 'Member Resources', alertBox: 'Alert Box', twoColumn: 'Two Column',
-  list: 'List', greeting: 'Greeting', closing: 'Closing & Sign-off', divider: 'Divider',
+  header: 'Header',
+  contentBody: 'Rich Text',
+  image: 'Image',
+  highlighted: 'Highlighted Card',
+  importantNotice: 'Important Notice',
+  ctaButton: 'Button',
+  meetingDetails: 'Meeting Details',
+  resourceLinks: 'Resource Links',
+  signature: 'Signature',
+  footer: 'Footer',
+  newsletterTitle: 'Newsletter Title',
+  featuredArticle: 'Featured Article',
+  eventListing: 'Upcoming Events',
+  newsSection: 'News Update',
+  highlightBanner: 'Navy Callout',
+  memberResources: 'Member Resources',
+  alertBox: 'Alert Box',
+  twoColumn: 'Two Column',
+  list: 'List',
+  greeting: 'Greeting',
+  closing: 'Closing & Sign-off',
+  divider: 'Divider',
 };
 
 // ─── Sections that have config panels ───────────────────────────────────────
@@ -58,7 +76,15 @@ const InlineSection = ({ section, onChange, themeColors, logo, logoHeight, onRic
       );
 
     // ── Newsletter Title ────────────────────────────────────────────────
-    case 'newsletterTitle':
+    case 'newsletterTitle': {
+      // Use the new single-line edition field; fall back to the legacy
+      // vol/issue/date for templates created before the simplification.
+      const legacyLine = [
+        data.volume ? `Volume ${data.volume}` : '',
+        data.issue ? `${data.issue} Issue` : '',
+        data.date || '',
+      ].filter(Boolean).join(' · ');
+      const editionValue = data.edition !== undefined ? data.edition : legacyLine;
       return (
         <div style={{ backgroundColor: c.primary }} className="px-10 py-8 text-center">
           {logo && (
@@ -73,20 +99,17 @@ const InlineSection = ({ section, onChange, themeColors, logo, logoHeight, onRic
             placeholder="Newsletter Name"
             className="text-xl font-bold text-white m-0 focus:bg-white/10 rounded px-1"
           />
-          <div className="flex items-center justify-center gap-2 mt-2 text-xs text-white/60">
-            <span>Vol.</span>
-            <EditableText value={data.volume || ''} onChange={(v) => onChange({ volume: v })} placeholder="1"
-              className="focus:bg-white/10 rounded px-1 text-white/60" />
-            <span>·</span>
-            <span>Issue</span>
-            <EditableText value={data.issue || ''} onChange={(v) => onChange({ issue: v })} placeholder="1"
-              className="focus:bg-white/10 rounded px-1 text-white/60" />
-            <span>·</span>
-            <EditableText value={data.date || ''} onChange={(v) => onChange({ date: v })} placeholder="Date"
-              className="focus:bg-white/10 rounded px-1 text-white/60" />
+          <div className="mt-2 text-xs text-white/60">
+            <EditableText
+              value={editionValue}
+              onChange={(v) => onChange({ edition: v, volume: '', issue: '', date: '' })}
+              placeholder="Spring 2026 · Q4 2026 · March 2026 Issue"
+              className="focus:bg-white/10 rounded px-1 text-white/60"
+            />
           </div>
         </div>
       );
+    }
 
     // ── Greeting (legacy support) ────────────────────────────────────────
     case 'greeting': {
@@ -560,28 +583,32 @@ const InlineSection = ({ section, onChange, themeColors, logo, logoHeight, onRic
       );
 
     // ── Featured Article ────────────────────────────────────────────────
+    // Field names match the template renderer + example template: `heading`
+    // (title) and `content` (rich text). Earlier inline render used
+    // `headline`/`summary` which caused content from loaded examples to not
+    // show up on the canvas.
     case 'featuredArticle':
       return (
         <div className="px-10 py-5 bg-white">
           <div className="border-l-4 pl-4" style={{ borderColor: c.gold }}>
             <EditableText
-              tag="p"
-              value={data.headline || ''}
-              onChange={(v) => onChange({ headline: v })}
+              tag="h2"
+              value={data.heading || data.headline || ''}
+              onChange={(v) => onChange({ heading: v })}
               placeholder="Featured Article Headline"
-              className="font-bold text-gray-800 focus:bg-amber-50 rounded px-1"
-              style={{ fontSize: '16px' }}
+              className="font-bold m-0 focus:bg-amber-50 rounded px-1"
+              style={{ fontSize: '22px', color: c.primary, fontFamily: 'Georgia, serif' }}
             />
-            <EditableText
-              tag="p"
-              value={data.summary || ''}
-              onChange={(v) => onChange({ summary: v })}
-              placeholder="Article summary..."
-              className="text-gray-600 mt-1 focus:bg-amber-50 rounded px-1"
+            <EditableRichText
+              value={data.content || data.summary || ''}
+              onChange={(v) => onChange({ content: v })}
+              placeholder="Article content..."
+              onFocus={onRichFocus}
+              className="text-gray-700 mt-3 focus:bg-amber-50/50 rounded px-1"
               style={{ fontSize: '16px', lineHeight: 1.6 }}
             />
             {data.ctaText && (
-              <span className="inline-block mt-2 px-3 py-1.5 text-xs font-bold rounded" style={{ backgroundColor: c.gold, color: '#1a1a1a' }}>
+              <span className="inline-block mt-3 px-4 py-2 text-sm font-bold rounded" style={{ backgroundColor: c.gold, color: '#1a1a1a' }}>
                 {data.ctaText}
               </span>
             )}
@@ -615,6 +642,24 @@ const InlineSection = ({ section, onChange, themeColors, logo, logoHeight, onRic
     // ── Event Listing ───────────────────────────────────────────────────
     case 'eventListing': {
       const events = data.events || [];
+      // Time shown directly under the date in the left block so all the
+      // descriptive text on the right starts at a consistent left edge.
+      const fmt12 = (t) => {
+        if (!t) return '';
+        const [hStr, mStr] = String(t).split(':');
+        const h = parseInt(hStr, 10);
+        if (Number.isNaN(h)) return String(t);
+        const m = mStr || '00';
+        const period = h >= 12 ? 'PM' : 'AM';
+        const display = ((h + 11) % 12) + 1;
+        return `${display}:${m} ${period}`;
+      };
+      const eventTimeText = (e) => {
+        if (e?.time) return e.time;
+        const s = fmt12(e?.startTime); const en = fmt12(e?.endTime);
+        if (s && en) return `${s} – ${en}`;
+        return s;
+      };
       return (
         <div className="px-10 py-5 bg-white">
           <EditableText
@@ -627,22 +672,25 @@ const InlineSection = ({ section, onChange, themeColors, logo, logoHeight, onRic
           />
           {events.filter(e => e.title).length > 0 ? (
             <div className="space-y-2">
-              {events.filter(e => e.title).map((evt, i) => (
-                <div key={i} className="flex gap-3 items-start">
-                  {evt.date && (
-                    <div className="flex-shrink-0 text-center text-white text-xs font-bold rounded px-2 py-2" style={{ backgroundColor: c.primary, minWidth: '70px', lineHeight: 1.3 }}>
-                      {evt.date}
+              {events.filter(e => e.title).map((evt, i) => {
+                const time = eventTimeText(evt);
+                return (
+                  <div key={i} className="flex gap-3 items-start">
+                    {(evt.date || time) && (
+                      <div className="flex-shrink-0 text-center text-white rounded px-2 py-2" style={{ backgroundColor: c.primary, minWidth: '90px', lineHeight: 1.3 }}>
+                        {evt.date && <div className="text-xs font-bold">{evt.date}</div>}
+                        {time && <div className="text-[11px] font-normal opacity-90 mt-1">{time}</div>}
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <p className="font-bold text-gray-800" style={{ fontSize: '16px' }}>{evt.title}</p>
+                      {evt.location && <p className="text-xs text-gray-500">{evt.location}</p>}
+                      {evt.description && <p className="text-gray-600 mt-1" style={{ fontSize: '14px' }}>{evt.description}</p>}
+                      {evt.link && <a href={evt.link} className="text-xs font-semibold mt-1 inline-block" style={{ color: c.gold }}>Learn more →</a>}
                     </div>
-                  )}
-                  <div className="flex-1">
-                    <p className="font-bold text-gray-800" style={{ fontSize: '16px' }}>{evt.title}</p>
-                    {evt.startTime && <p className="text-xs text-gray-500">{evt.startTime}{evt.endTime ? ` – ${evt.endTime}` : ''}</p>}
-                    {evt.location && <p className="text-xs text-gray-500">{evt.location}</p>}
-                    {evt.description && <p className="text-gray-600 mt-1" style={{ fontSize: '14px' }}>{evt.description}</p>}
-                    {evt.link && <a href={evt.link} className="text-xs font-semibold mt-1 inline-block" style={{ color: c.gold }}>Learn more →</a>}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="text-xs text-gray-300 italic">Add events in settings...</p>
@@ -979,63 +1027,82 @@ const SectionConfigPanel = ({ section, onChange, themeColors }) => {
         onChange({ events: updated });
       };
       return (
-        <div className="space-y-2">
+        <div className="space-y-4">
           {events.map((evt, i) => (
-            <div key={i} className="p-2 bg-white border border-gray-200 rounded space-y-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-medium text-gray-400">Event {i + 1}</span>
+            <div
+              key={i}
+              className="bg-white rounded-lg border border-gray-300 border-l-4 border-l-amber-500 shadow-sm overflow-hidden"
+            >
+              {/* Event header with prominent number badge + collapsible title */}
+              <div className="flex items-center justify-between gap-2 px-3 py-2 bg-amber-50 border-b border-amber-200">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <span className="flex-shrink-0 inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-500 text-white text-xs font-bold">
+                    {i + 1}
+                  </span>
+                  <span className="text-xs font-bold text-amber-900 uppercase tracking-wide truncate">
+                    Event {i + 1}
+                    {evt.title ? <span className="ml-1.5 text-amber-800 normal-case font-medium">— {evt.title}</span> : ''}
+                  </span>
+                </div>
                 {events.length > 1 && (
-                  <button onClick={(e) => { e.stopPropagation(); onChange({ events: events.filter((_, j) => j !== i) }); }}
-                    className="p-0.5 text-red-400 hover:text-red-600"><X className="w-3 h-3" /></button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onChange({ events: events.filter((_, j) => j !== i) }); }}
+                    title={`Remove Event ${i + 1}`}
+                    className="flex-shrink-0 p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
                 )}
               </div>
-              <ConfigInput label="Event Title" value={evt.title} placeholder="e.g. Annual Spring Clean-Up"
-                onChange={(v) => updateEvt(i, 'title', v)} />
-              <div className="grid grid-cols-3 gap-1">
-                <div>
-                  <label className="block text-[10px] font-medium text-gray-400 mb-0.5">Date</label>
-                  <input type="date" value={evt.calendarDate || ''} onChange={(e) => updateEvt(i, 'calendarDate', e.target.value)}
-                    onClick={(e) => e.stopPropagation()}
-                    className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-gray-800 text-xs focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30" />
+              <div className="p-3 space-y-2">
+                <ConfigInput label="Event Title" value={evt.title} placeholder="e.g. Annual Spring Clean-Up"
+                  onChange={(v) => updateEvt(i, 'title', v)} />
+                <div className="grid grid-cols-3 gap-1">
+                  <div>
+                    <label className="block text-[10px] font-medium text-gray-400 mb-0.5">Date</label>
+                    <input type="date" value={evt.calendarDate || ''} onChange={(e) => updateEvt(i, 'calendarDate', e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-gray-800 text-xs focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-medium text-gray-400 mb-0.5">Start Time</label>
+                    <input type="time" value={evt.startTime || ''} onChange={(e) => updateEvt(i, 'startTime', e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-gray-800 text-xs focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-medium text-gray-400 mb-0.5">End Time</label>
+                    <input type="time" value={evt.endTime || ''} onChange={(e) => updateEvt(i, 'endTime', e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-gray-800 text-xs focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30" />
+                  </div>
                 </div>
+                <ConfigInput label="Location (optional)" value={evt.location} placeholder="e.g. Town Hall, 123 Main St"
+                  onChange={(v) => updateEvt(i, 'location', v)} />
                 <div>
-                  <label className="block text-[10px] font-medium text-gray-400 mb-0.5">Start Time</label>
-                  <input type="time" value={evt.startTime || ''} onChange={(e) => updateEvt(i, 'startTime', e.target.value)}
+                  <label className="block text-[10px] font-medium text-gray-400 mb-0.5">Recurrence</label>
+                  <select value={evt.recurrence || 'one-time'} onChange={(e) => updateEvt(i, 'recurrence', e.target.value)}
                     onClick={(e) => e.stopPropagation()}
-                    className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-gray-800 text-xs focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30" />
+                    className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-gray-800 text-xs focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30">
+                    <option value="one-time">One-time event</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="biweekly">Every 2 weeks</option>
+                    <option value="monthly">Monthly</option>
+                  </select>
                 </div>
-                <div>
-                  <label className="block text-[10px] font-medium text-gray-400 mb-0.5">End Time</label>
-                  <input type="time" value={evt.endTime || ''} onChange={(e) => updateEvt(i, 'endTime', e.target.value)}
-                    onClick={(e) => e.stopPropagation()}
-                    className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-gray-800 text-xs focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30" />
-                </div>
+                <ConfigInput label="Description (optional)" value={evt.description} placeholder="Brief event description"
+                  onChange={(v) => updateEvt(i, 'description', v)} />
+                <ConfigInput label="Link URL (optional)" value={evt.link} placeholder="https://..."
+                  onChange={(v) => updateEvt(i, 'link', v)} />
+                {evt.calendarDate && evt.startTime && (
+                  <p className="text-[10px] text-emerald-600">Calendar links will be auto-generated in preview.</p>
+                )}
               </div>
-              <ConfigInput label="Location (optional)" value={evt.location} placeholder="e.g. Town Hall, 123 Main St"
-                onChange={(v) => updateEvt(i, 'location', v)} />
-              <div>
-                <label className="block text-[10px] font-medium text-gray-400 mb-0.5">Recurrence</label>
-                <select value={evt.recurrence || 'one-time'} onChange={(e) => updateEvt(i, 'recurrence', e.target.value)}
-                  onClick={(e) => e.stopPropagation()}
-                  className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-gray-800 text-xs focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30">
-                  <option value="one-time">One-time event</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="biweekly">Every 2 weeks</option>
-                  <option value="monthly">Monthly</option>
-                </select>
-              </div>
-              <ConfigInput label="Description (optional)" value={evt.description} placeholder="Brief event description"
-                onChange={(v) => updateEvt(i, 'description', v)} />
-              <ConfigInput label="Link URL (optional)" value={evt.link} placeholder="https://..."
-                onChange={(v) => updateEvt(i, 'link', v)} />
-              {evt.calendarDate && evt.startTime && (
-                <p className="text-[10px] text-emerald-600">Calendar links will be auto-generated in preview.</p>
-              )}
             </div>
           ))}
           <button onClick={(e) => { e.stopPropagation(); onChange({ events: [...events, { title: '', calendarDate: '', startTime: '', endTime: '', date: '', description: '', location: '', recurrence: 'one-time', link: '' }] }); }}
-            className="flex items-center gap-1 text-[10px] text-amber-600 hover:text-amber-700 font-medium">
-            <Plus className="w-3 h-3" /> Add Event
+            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 border-2 border-dashed border-amber-300 text-amber-700 hover:bg-amber-50 hover:border-amber-400 rounded-md text-xs font-semibold">
+            <Plus className="w-3.5 h-3.5" /> Add another event
           </button>
         </div>
       );
@@ -1230,7 +1297,7 @@ const BuilderCanvas = ({
         .inline-editable-rich a { color: #2563eb; text-decoration: underline; cursor: pointer; }
       `}</style>
 
-      <div className="max-w-[620px] mx-auto my-8">
+      <div className="max-w-[720px] mx-auto my-8">
         {/* Rich Text Toolbar - floats above canvas */}
         <div className="sticky top-2 z-50 flex justify-center mb-2">
           <RichTextToolbar visible={richToolbarVisible} />
@@ -1248,7 +1315,8 @@ const BuilderCanvas = ({
 
             return (
               <React.Fragment key={section.id}>
-                {/* Drop zone for catalog drags */}
+                {/* Drop zone for catalog drags — always visible (and tall) during a drag
+                    so older users don't have to hunt for a thin invisible target. */}
                 {isDraggingFromCatalog && !isFirst && (
                   <div
                     onDragOver={(e) => { e.preventDefault(); setDragOverIndex(index); }}
@@ -1257,17 +1325,15 @@ const BuilderCanvas = ({
                       const t = e.dataTransfer.getData('application/x-section-type');
                       if (t) handleCatalogDrop(t, index);
                     }}
-                    className={`transition-all duration-200 ${
+                    className={`transition-all duration-150 flex items-center justify-center ${
                       dragOverIndex === index
-                        ? 'h-10 bg-amber-500/10 border-y-2 border-dashed border-amber-500/50 flex items-center justify-center'
-                        : 'h-1 hover:h-6 hover:bg-amber-500/5'
+                        ? 'h-14 bg-amber-100 border-y-4 border-dashed border-amber-500'
+                        : 'h-8 bg-amber-50/60 border-y-2 border-dashed border-amber-300 hover:h-12 hover:bg-amber-100/80'
                     }`}
                   >
-                    {dragOverIndex === index && (
-                      <span className="text-xs text-amber-500/70 font-medium flex items-center gap-1">
-                        <Plus className="w-3 h-3" /> Drop here
-                      </span>
-                    )}
+                    <span className={`text-sm font-semibold flex items-center gap-1.5 ${dragOverIndex === index ? 'text-amber-700' : 'text-amber-600/80'}`}>
+                      <Plus className="w-4 h-4" /> Drop here
+                    </span>
                   </div>
                 )}
 
@@ -1350,7 +1416,7 @@ const BuilderCanvas = ({
                   )}
                 </div>
 
-                {/* Drop zone after last section */}
+                {/* Drop zone after last section — same always-visible treatment */}
                 {isDraggingFromCatalog && isLast && (
                   <div
                     onDragOver={(e) => { e.preventDefault(); setDragOverIndex(sections.length); }}
@@ -1359,10 +1425,10 @@ const BuilderCanvas = ({
                       const t = e.dataTransfer.getData('application/x-section-type');
                       if (t) handleCatalogDrop(t, sections.length);
                     }}
-                    className={`transition-all duration-200 ${
+                    className={`transition-all duration-150 flex items-center justify-center ${
                       dragOverIndex === sections.length
-                        ? 'h-10 bg-amber-500/10 border-y-2 border-dashed border-amber-500/50 flex items-center justify-center'
-                        : 'h-1 hover:h-6 hover:bg-amber-500/5'
+                        ? 'h-14 bg-amber-100 border-y-4 border-dashed border-amber-500'
+                        : 'h-8 bg-amber-50/60 border-y-2 border-dashed border-amber-300 hover:h-12 hover:bg-amber-100/80'
                     }`}
                   >
                     {dragOverIndex === sections.length && (

@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Newspaper, ChevronDown, ChevronRight, BookOpen, FolderOpen, FileText, Trash2, Plus, X, GripVertical, Palette } from 'lucide-react';
-import EXAMPLE_TEMPLATES from './exampleTemplates';
-import BrandSettings from './BrandSettings';
+import { GripVertical, Plus, ChevronDown, ChevronRight, MousePointer2 } from 'lucide-react';
 
 // Core email-mode elements. Header + Footer are defaults (locked at top/bottom),
 // so they aren't draggable from the catalog.
@@ -15,26 +13,18 @@ const EMAIL_SECTIONS = [
   { type: 'divider', label: 'Divider', desc: 'Orange accent rule between sections', icon: '—', color: 'orange' },
 ];
 
+// Newsletter-format story blocks. These appear below the Email Elements
+// group regardless of which mode the user picked at the top — users can mix
+// any element into either kind of document.
 const NEWSLETTER_SECTIONS = [
-  { type: 'featuredArticle', label: 'Featured Article', desc: 'Headline article with CTA', icon: '★', color: 'amber' },
-  { type: 'newsSection', label: 'News Section', desc: 'Heading + rich text news', icon: 'N', color: 'blue' },
-  { type: 'eventListing', label: 'Event Listing', desc: 'Repeatable event items', icon: 'E', color: 'purple' },
-  { type: 'highlightBanner', label: 'Highlight Banner', desc: 'CTA banner with button', icon: '!', color: 'emerald' },
-  { type: 'memberResources', label: 'Member Resources', desc: 'Bulleted resource list', icon: 'R', color: 'green' },
+  { type: 'featuredArticle', label: 'Featured Article', desc: 'Main story with optional CTA', icon: '★', color: 'amber' },
+  { type: 'newsSection', label: 'News Update', desc: 'Heading + short news paragraph', icon: 'N', color: 'blue' },
+  { type: 'eventListing', label: 'Upcoming Events', desc: 'List of upcoming events', icon: 'E', color: 'purple' },
 ];
 
-// Newsletter mode still uses the broader catalog.
-const NEWSLETTER_SHARED_SECTIONS = [
-  { type: 'contentBody', label: 'Content Body', desc: 'Rich text content block', icon: 'C', color: 'blue' },
-  { type: 'image', label: 'Image', desc: 'Image from URL with sizing & shape', icon: 'I', color: 'cyan' },
-  { type: 'highlighted', label: 'Highlighted', desc: 'Colored border emphasis block', icon: '!', color: 'amber' },
-  { type: 'importantNotice', label: 'Important Notice', desc: 'Yellow notice box', icon: 'i', color: 'yellow' },
-  { type: 'ctaButton', label: 'CTA Button', desc: 'Call-to-action button with link', icon: 'B', color: 'amber' },
-  { type: 'meetingDetails', label: 'Meeting Details', desc: 'Date, time, ID & join link', icon: 'M', color: 'indigo' },
-  { type: 'resourceLinks', label: 'Resource Links', desc: 'List of clickable links', icon: 'R', color: 'blue' },
-  { type: 'twoColumn', label: 'Two Column', desc: 'Side-by-side content columns', icon: '⫼', color: 'teal' },
-  { type: 'list', label: 'List', desc: 'Bullet or numbered list', icon: '≡', color: 'orange' },
-  { type: 'closing', label: 'Closing & Sign-off', desc: 'Closing remarks with signature', icon: '✉', color: 'rose' },
+// Image is its own utility element — useful in any kind of email.
+const UNIVERSAL_SECTIONS = [
+  { type: 'image', label: 'Image', desc: 'A single image from a URL or upload', icon: 'I', color: 'cyan' },
 ];
 
 const COLOR_MAP = {
@@ -53,7 +43,7 @@ const COLOR_MAP = {
   green: 'bg-green-500/20 text-green-400 border-green-500/30',
 };
 
-const DraggableSectionItem = ({ item }) => {
+const DraggableSectionItem = ({ item, onAdd }) => {
   const colorClass = COLOR_MAP[item.color] || COLOR_MAP.blue;
 
   const handleDragStart = (e) => {
@@ -61,11 +51,21 @@ const DraggableSectionItem = ({ item }) => {
     e.dataTransfer.effectAllowed = 'copy';
   };
 
+  // Click-to-add fallback: if drag-and-drop is hard (older users on
+  // touchpads/touchscreens), clicking the catalog item adds the section
+  // straight to the end of the canvas.
+  const handleClick = () => {
+    if (onAdd) onAdd(item.type);
+  };
+
   return (
-    <div
+    <button
+      type="button"
       draggable
       onDragStart={handleDragStart}
-      className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg border border-slate-700/50 bg-slate-800/50 cursor-grab active:cursor-grabbing hover:bg-slate-700/50 hover:border-slate-600 transition-all group"
+      onClick={handleClick}
+      title="Drag onto the canvas — or click to add to the end"
+      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg border border-slate-700/50 bg-slate-800/50 cursor-grab active:cursor-grabbing hover:bg-slate-700/50 hover:border-amber-500 transition-all group text-left"
     >
       <GripVertical className="w-3.5 h-3.5 text-slate-600 group-hover:text-slate-400 flex-shrink-0" />
       <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 ${colorClass}`}>
@@ -75,221 +75,78 @@ const DraggableSectionItem = ({ item }) => {
         <p className="text-sm text-slate-300 font-medium leading-tight">{item.label}</p>
         <p className="text-[11px] text-slate-500 leading-tight mt-0.5">{item.desc}</p>
       </div>
-    </div>
+      <Plus className="w-3.5 h-3.5 text-slate-600 group-hover:text-amber-500 flex-shrink-0" />
+    </button>
   );
 };
 
-const SectionCatalog = ({
-  templateType,
-  onTemplateSwitch,
-  savedTemplates,
-  onLoadTemplate,
-  onDeleteTemplate,
-  onSaveTemplate,
-  // Brand settings props
-  logo, setLogo, logoUrl, setLogoUrl, logoHeight, setLogoHeight,
-  themeColors, setThemeColors, onSaveDefaults, onClearDefaults,
-}) => {
-  const [showBrand, setShowBrand] = useState(true);
-  const [showExamples, setShowExamples] = useState(false);
-  const [showTemplates, setShowTemplates] = useState(false);
-  const [showSaveInput, setShowSaveInput] = useState(false);
-  const [newTemplateName, setNewTemplateName] = useState('');
-
-  const sections = templateType === 'newsletter'
-    ? [...NEWSLETTER_SECTIONS, ...NEWSLETTER_SHARED_SECTIONS]
-    : EMAIL_SECTIONS;
-
+// Left-side panel: ALL draggable elements (email + newsletter + universal).
+// No more email/newsletter toggle — every element is always available, and
+// users compose any kind of email by mixing whatever blocks fit their needs.
+const SectionCatalog = ({ onAddSection }) => {
+  const [showHelp, setShowHelp] = useState(false);
   return (
     <div className="h-full flex flex-col bg-slate-900 border-r border-slate-700/50">
-      {/* Template Type Toggle */}
-      <div className="p-3 border-b border-slate-700/50">
-        <div className="flex bg-slate-800 rounded-lg p-0.5">
-          <button
-            onClick={() => onTemplateSwitch('email')}
-            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              templateType === 'email' ? 'bg-amber-500 text-slate-900' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Mail className="w-4 h-4" />
-            Email
-          </button>
-          <button
-            onClick={() => onTemplateSwitch('newsletter')}
-            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              templateType === 'newsletter' ? 'bg-amber-500 text-slate-900' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Newspaper className="w-4 h-4" />
-            Newsletter
-          </button>
-        </div>
+      {/* Collapsible quick-start. Closed by default; one tap to peek. */}
+      <div className="p-2 border-b border-slate-700/50">
+        <button
+          onClick={() => setShowHelp(!showHelp)}
+          className="w-full flex items-center justify-between gap-2 px-2 py-1.5 text-xs font-medium text-amber-400 hover:text-amber-300 rounded"
+        >
+          <span className="flex items-center gap-1.5">
+            <MousePointer2 className="w-3.5 h-3.5" />
+            Quick start
+          </span>
+          {showHelp ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+        </button>
+        {showHelp && (
+          <ol className="mt-1.5 mb-1 px-2 text-xs text-slate-300 space-y-1 list-decimal list-inside leading-snug">
+            <li>Click an element below.</li>
+            <li>Edit colors &amp; logo on the right.</li>
+            <li>Hit <span className="text-amber-300 font-semibold">Preview</span> → Copy HTML.</li>
+          </ol>
+        )}
       </div>
 
       {/* Sections Catalog */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-3">
-          <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2 px-1">
-            Drag sections to canvas
-          </p>
-          {templateType === 'newsletter' && (
-            <>
-              <p className="text-[10px] font-semibold text-amber-500/70 uppercase tracking-wider mb-1.5 mt-3 px-1">Newsletter</p>
-              <div className="space-y-1.5 mb-3">
-                {NEWSLETTER_SECTIONS.map(item => (
-                  <DraggableSectionItem key={item.type} item={item} />
-                ))}
-              </div>
-              <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5 px-1">General</p>
-            </>
-          )}
-          <div className="space-y-1.5">
-            {(templateType === 'newsletter' ? NEWSLETTER_SHARED_SECTIONS : sections).map(item => (
-              <DraggableSectionItem key={item.type} item={item} />
-            ))}
+      <div className="flex-1 overflow-y-auto" data-tour="add-section">
+        <div className="p-3 space-y-4">
+          {/* Email elements */}
+          <div>
+            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5 px-1">
+              Email elements
+            </p>
+            <div className="space-y-1.5">
+              {EMAIL_SECTIONS.map(item => (
+                <DraggableSectionItem key={item.type} item={item} onAdd={onAddSection} />
+              ))}
+            </div>
+          </div>
+
+          {/* Newsletter elements */}
+          <div>
+            <p className="text-[10px] font-semibold text-amber-500/70 uppercase tracking-wider mb-1.5 px-1">
+              Newsletter elements
+            </p>
+            <div className="space-y-1.5">
+              {NEWSLETTER_SECTIONS.map(item => (
+                <DraggableSectionItem key={item.type} item={item} onAdd={onAddSection} />
+              ))}
+            </div>
+          </div>
+
+          {/* Universal */}
+          <div>
+            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5 px-1">
+              Universal
+            </p>
+            <div className="space-y-1.5">
+              {UNIVERSAL_SECTIONS.map(item => (
+                <DraggableSectionItem key={item.type} item={item} onAdd={onAddSection} />
+              ))}
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* Brand Settings */}
-      <div className="border-t border-slate-700/50">
-        <button
-          onClick={() => setShowBrand(!showBrand)}
-          className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider hover:text-white transition-colors"
-        >
-          <span className="flex items-center gap-1.5">
-            <Palette className="w-3.5 h-3.5" />
-            Brand & Colors
-          </span>
-          {showBrand ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-        </button>
-        {showBrand && (
-          <div className="px-2 pb-2">
-            <BrandSettings
-              logo={logo} setLogo={setLogo}
-              logoUrl={logoUrl} setLogoUrl={setLogoUrl}
-              logoHeight={logoHeight} setLogoHeight={setLogoHeight}
-              themeColors={themeColors} setThemeColors={setThemeColors}
-              onSaveDefaults={onSaveDefaults} onClearDefaults={onClearDefaults}
-            />
-          </div>
-        )}
-      </div>
-
-      {/* Templates */}
-      <div className="border-t border-slate-700/50">
-        {/* Example Templates */}
-        <button
-          onClick={() => setShowExamples(!showExamples)}
-          className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-amber-500/80 uppercase tracking-wider hover:text-amber-400 transition-colors"
-        >
-          <span className="flex items-center gap-1.5">
-            <BookOpen className="w-3.5 h-3.5" />
-            Examples
-          </span>
-          {showExamples ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-        </button>
-        {showExamples && (
-          <div className="px-3 pb-2 space-y-1.5">
-            {EXAMPLE_TEMPLATES.map(t => (
-              <div key={t.id} className="flex items-center gap-1.5">
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-slate-300 truncate">{t.name}</p>
-                </div>
-                <button
-                  onClick={() => onLoadTemplate(t)}
-                  className="px-2 py-1 bg-amber-500/20 text-amber-500 rounded text-[10px] font-medium hover:bg-amber-500 hover:text-slate-900 transition-colors"
-                >
-                  Load
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Saved Templates */}
-        <button
-          onClick={() => setShowTemplates(!showTemplates)}
-          className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider hover:text-white transition-colors border-t border-slate-700/50"
-        >
-          <span className="flex items-center gap-1.5">
-            <FolderOpen className="w-3.5 h-3.5" />
-            My Templates
-            {savedTemplates.length > 0 && (
-              <span className="text-[10px] bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded-full font-medium normal-case">
-                {savedTemplates.length}
-              </span>
-            )}
-          </span>
-          {showTemplates ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-        </button>
-        {showTemplates && (
-          <div className="px-3 pb-2 space-y-1.5">
-            {showSaveInput ? (
-              <div className="flex gap-1.5">
-                <input
-                  type="text"
-                  value={newTemplateName}
-                  onChange={(e) => setNewTemplateName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && newTemplateName.trim()) {
-                      onSaveTemplate(newTemplateName);
-                      setNewTemplateName('');
-                      setShowSaveInput(false);
-                    }
-                  }}
-                  placeholder="Template name..."
-                  autoFocus
-                  className="flex-1 px-2 py-1.5 bg-slate-700 border border-slate-600 rounded text-white text-xs placeholder-slate-500 focus:outline-none focus:border-amber-500"
-                />
-                <button
-                  onClick={() => { onSaveTemplate(newTemplateName); setNewTemplateName(''); setShowSaveInput(false); }}
-                  className="px-2 py-1.5 bg-amber-500 text-slate-900 rounded text-xs font-medium hover:bg-amber-400"
-                >
-                  Save
-                </button>
-                <button
-                  onClick={() => { setShowSaveInput(false); setNewTemplateName(''); }}
-                  className="px-1.5 text-slate-500 hover:text-white"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => setShowSaveInput(true)}
-                className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 border border-dashed border-slate-600 rounded text-xs text-slate-400 hover:text-amber-500 hover:border-amber-500/50 transition-colors"
-              >
-                <Plus className="w-3 h-3" />
-                Save Current
-              </button>
-            )}
-            {savedTemplates.length === 0 ? (
-              <p className="text-xs text-slate-600 text-center py-1">No saved templates</p>
-            ) : (
-              savedTemplates.map(t => (
-                <div key={t.id} className="flex items-center gap-1.5 group">
-                  <FileText className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-slate-300 truncate">{t.name}</p>
-                  </div>
-                  <button
-                    onClick={() => onLoadTemplate(t)}
-                    className="px-2 py-1 bg-slate-700 text-slate-300 rounded text-[10px] font-medium hover:bg-amber-500 hover:text-slate-900 transition-colors"
-                  >
-                    Load
-                  </button>
-                  <button
-                    onClick={() => onDeleteTemplate(t.id)}
-                    className="p-1 text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
-        )}
       </div>
     </div>
   );

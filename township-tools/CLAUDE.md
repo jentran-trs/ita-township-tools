@@ -46,3 +46,14 @@ Required in `.env.local`:
 ### Deployment
 
 Deployed to Vercel. After deployment, add the Vercel URL to Clerk Dashboard > Configure > Domains.
+
+### Certificate Generator
+
+ITA superadmins create training courses and import attendee rosters; attendees retrieve their certificates as PDFs from a public lookup page. PDFs are rendered on demand client-side from the same React template — never stored.
+
+- Schema: `supabase-schema-v16-certificates.sql` (tables prefixed `cert_*`; `certificates` is the per-attendee credential table).
+- Visual template: `components/certificates/Certificate.tsx` plus the SVG ornaments under `components/certificates/ornaments/`. Fixed 1100×850 render, fonts loaded via `next/font/google` in `lib/certificates/fonts.ts`.
+- Admin UI: `/admin/certificates` (list), `/admin/certificates/new`, `/admin/certificates/[courseId]`, `/admin/certificates/[courseId]/import`, `/admin/certificates/signatures`, `/admin/certificates/preview`. All gated by `isSuperadmin()`.
+- Public UI: `/certificates` (email lookup), `/certificates/verify` and `/certificates/verify/[credentialId]` (credential check). These routes are in `isPublicRoute` and excluded from the middleware matcher.
+- PDF download: `components/certificates/CertificateDownloadButton.tsx` lazy-loads `html2canvas` + `jspdf`, captures an off-screen 1100×850 Certificate instance, and downloads an 11×8.5 in landscape PDF. The QR code on each certificate encodes the absolute verify URL via `lib/certificates/verify-url.ts` — set `NEXT_PUBLIC_APP_URL` in production so the QR points at the deployed origin.
+- Storage: signature PNGs and per-course logos live in the existing `report-assets` Supabase Storage bucket. No PDFs are ever uploaded.

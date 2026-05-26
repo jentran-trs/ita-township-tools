@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser, useOrganization, useAuth } from "@clerk/nextjs";
-import { ArrowLeft, Loader2, Upload, Download, RefreshCw, Bell, Settings, Save, Lock, LogOut, Mail, ListChecks, Search, X } from "lucide-react";
+import { ArrowLeft, Loader2, Upload, Download, RefreshCw, Bell, Settings, Save, Lock, LogOut, Mail, ListChecks, Search, X, Map } from "lucide-react";
+import AdminManageTownshipsModal from "@/components/AdminManageTownshipsModal";
 
 type CountyStat = {
   id: string;
@@ -66,6 +67,14 @@ export default function ContactVerificationAdminPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [contactResults, setContactResults] = useState<any[]>([]);
+  const [manageOpen, setManageOpen] = useState(false);
+
+  const reloadTree = useCallback(() => {
+    fetch("/api/verify/locations")
+      .then((r) => r.json())
+      .then((d) => setSearchTree(d.regions || []))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (isLoaded && !isAdmin) router.push("/dashboard");
@@ -280,6 +289,15 @@ export default function ContactVerificationAdminPage() {
               className="flex items-center gap-2 text-sm font-medium text-gray-700 px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
             >
               <ListChecks className="w-4 h-4" /> Recent changes
+            </button>
+            <button
+              onClick={() => {
+                reloadTree();
+                setManageOpen(true);
+              }}
+              className="flex items-center gap-2 text-sm font-medium text-gray-700 px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+            >
+              <Map className="w-4 h-4" /> Manage townships
             </button>
             <button
               onClick={() => router.push("/admin/contact-verification/import")}
@@ -540,6 +558,16 @@ export default function ContactVerificationAdminPage() {
           </div>
         )}
       </div>
+
+      <AdminManageTownshipsModal
+        open={manageOpen}
+        tree={searchTree}
+        onClose={() => setManageOpen(false)}
+        onChanged={() => {
+          reloadTree();
+          load();
+        }}
+      />
     </div>
   );
 }

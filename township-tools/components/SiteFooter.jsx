@@ -18,6 +18,7 @@ const HIDE_FOOTER_PREFIXES = [
   "/asset-collection",
   "/submit-assets",
   "/submissions",
+  "/certificates",
 ];
 
 // Site-wide disclaimer footer. Lives at the bottom of every PUBLIC page via the

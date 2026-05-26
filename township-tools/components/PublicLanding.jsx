@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  Award,
   Building2,
   ClipboardCheck,
   FileText,
@@ -92,17 +93,17 @@ export default function PublicLanding() {
         {/* ───────── Section 1: Free with ITA ───────── */}
         <section>
 
-          <div className="grid sm:grid-cols-2 gap-5 sm:gap-6">
+          <div className="grid sm:grid-cols-2 gap-5 sm:gap-6 max-w-3xl mx-auto">
             {/* SB 270 Scoring Tool */}
             <button
               onClick={() => router.push("/tools/scoring-tool")}
-              className="bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 rounded-2xl p-8 sm:p-10 text-left hover:border-emerald-400 dark:hover:border-emerald-500 hover:shadow-lg transition-all group"
+              className="bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 rounded-2xl p-7 sm:p-8 text-left hover:border-emerald-400 dark:hover:border-emerald-500 hover:shadow-lg transition-all group"
             >
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-purple-100 dark:bg-purple-900/40 rounded-2xl flex items-center justify-center mb-5 group-hover:bg-purple-200 dark:group-hover:bg-purple-900/60 transition-colors">
-                <ClipboardCheck className="w-8 h-8 sm:w-10 sm:h-10 text-purple-600 dark:text-purple-400" />
+              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-purple-100 dark:bg-purple-900/40 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-purple-200 dark:group-hover:bg-purple-900/60 transition-colors">
+                <ClipboardCheck className="w-7 h-7 sm:w-8 sm:h-8 text-purple-600 dark:text-purple-400" />
               </div>
               <h3 className="text-xl sm:text-2xl font-bold mb-2">SB 270 Scoring Tool</h3>
-              <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 mb-5">
+              <p className="text-base text-gray-600 dark:text-gray-400 mb-5">
                 Find out if your township is a Designated or Recipient township under SB 270.
               </p>
               <div className="inline-flex items-center gap-2 text-base sm:text-lg font-semibold text-purple-700 dark:text-purple-300 group-hover:text-purple-800">
@@ -113,19 +114,20 @@ export default function PublicLanding() {
             {/* Contact Verification */}
             <button
               onClick={() => router.push("/verify-contacts")}
-              className="bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 rounded-2xl p-8 sm:p-10 text-left hover:border-emerald-400 dark:hover:border-emerald-500 hover:shadow-lg transition-all group"
+              className="bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 rounded-2xl p-7 sm:p-8 text-left hover:border-emerald-400 dark:hover:border-emerald-500 hover:shadow-lg transition-all group"
             >
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-rose-100 dark:bg-rose-900/40 rounded-2xl flex items-center justify-center mb-5 group-hover:bg-rose-200 dark:group-hover:bg-rose-900/60 transition-colors">
-                <MapPin className="w-8 h-8 sm:w-10 sm:h-10 text-rose-600 dark:text-rose-400" />
+              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-rose-100 dark:bg-rose-900/40 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-rose-200 dark:group-hover:bg-rose-900/60 transition-colors">
+                <MapPin className="w-7 h-7 sm:w-8 sm:h-8 text-rose-600 dark:text-rose-400" />
               </div>
               <h3 className="text-xl sm:text-2xl font-bold mb-2">Verify Your Contacts</h3>
-              <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 mb-5">
+              <p className="text-base text-gray-600 dark:text-gray-400 mb-5">
                 Check and update your township&apos;s officials, addresses, and email addresses.
               </p>
               <div className="inline-flex items-center gap-2 text-base sm:text-lg font-semibold text-rose-700 dark:text-rose-300 group-hover:text-rose-800">
                 Open tool <ArrowRight className="w-5 h-5" />
               </div>
             </button>
+
           </div>
 
           {/* Tech-support contact CTA — routes to Jen's ITA email since these

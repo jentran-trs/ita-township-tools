@@ -3,7 +3,7 @@
 import { UserButton, OrganizationSwitcher, useUser, useOrganization, useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Building2, FileText, Users, ArrowRight, ShieldCheck, FolderOpen, Mail, ClipboardCheck, MapPin } from "lucide-react";
+import { Building2, FileText, Users, ArrowRight, ShieldCheck, FolderOpen, Mail, ClipboardCheck, MapPin, Award } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
 export default function Dashboard() {
@@ -114,6 +114,20 @@ export default function Dashboard() {
                 badge={{ label: "FREE", className: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300" }}
               />
 
+              {isSuperadmin && (
+                <ToolCard
+                  onClick={() => router.push("/certificates")}
+                  icon={<Award className="w-7 h-7 sm:w-8 sm:h-8 text-amber-600 dark:text-amber-400" />}
+                  iconBg="bg-amber-100 dark:bg-amber-900/40"
+                  hoverBorder="hover:border-amber-400 dark:hover:border-amber-500"
+                  accentText="text-amber-700 dark:text-amber-300"
+                  title="Find Your Certificate"
+                  description="Attended an ITA training? Enter your email to download a PDF of every certificate issued to you."
+                  cta="Open tool"
+                  badge={{ label: "ITA ONLY", className: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" }}
+                />
+              )}
+
               {isAdmin && (
                 <ToolCard
                   onClick={() => router.push("/tools/report-builder")}
@@ -134,14 +148,14 @@ export default function Dashboard() {
                 iconBg="bg-blue-100 dark:bg-blue-900/40"
                 hoverBorder="hover:border-blue-400 dark:hover:border-blue-500"
                 accentText="text-blue-700 dark:text-blue-300"
-                title={isAdmin ? "View Report Assets" : "Submit Report Assets"}
+                title={isSuperadmin ? "View Report Assets" : "Submit Report Assets"}
                 description={
-                  isAdmin
+                  isSuperadmin
                     ? "Generate and design reports from submitted assets."
                     : "Custom report design service by Jen Tran — send your materials and I'll design your annual report. See example reports inside."
                 }
-                cta={isAdmin ? "View assets" : "Submit assets"}
-                badge={isAdmin ? undefined : { label: "CUSTOM SERVICE", className: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300" }}
+                cta={isSuperadmin ? "View assets" : "Submit assets"}
+                badge={isSuperadmin ? undefined : { label: "CUSTOM SERVICE", className: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300" }}
               />
 
               {isAdmin && (
@@ -167,6 +181,20 @@ export default function Dashboard() {
                   accentText="text-amber-700 dark:text-amber-300"
                   title="Contact Verification (Admin)"
                   description="Track verification progress across all townships, import xlsx, and export updated lists."
+                  cta="Open tool"
+                  badge={{ label: "ITA ONLY", className: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" }}
+                />
+              )}
+
+              {isSuperadmin && (
+                <ToolCard
+                  onClick={() => router.push("/admin/certificates")}
+                  icon={<Award className="w-7 h-7 sm:w-8 sm:h-8 text-indigo-600 dark:text-indigo-400" />}
+                  iconBg="bg-indigo-100 dark:bg-indigo-900/40"
+                  hoverBorder="hover:border-indigo-400 dark:hover:border-indigo-500"
+                  accentText="text-indigo-700 dark:text-indigo-300"
+                  title="Certificate Generator (Admin)"
+                  description="Create training courses, import attendees, and issue credential IDs. Attendees download their PDFs from the public lookup page."
                   cta="Open tool"
                   badge={{ label: "ITA ONLY", className: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" }}
                 />

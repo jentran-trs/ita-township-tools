@@ -113,7 +113,7 @@ PDFs are not stored — they are rendered on demand from the data above using a 
 ## 9. Infrastructure Note
 PDF-on-demand architecture keeps long-term storage costs near zero. Database rows for thousands of certificates are negligible.
 
-- **Supabase Pro** ($25/mo) — needed for headroom on database and bandwidth as the tool scales over the years. ITA-funded.
+- **Supabase Free** — sufficient for this tool. ITA's total audience is ~1,350 people, so download volume cannot realistically exceed Supabase Free's 5 GB/month bandwidth cap (which would require ~20,000 PDF downloads). Database and file storage needs are well under the Free tier limits. Revisit if existing Township Tools usage on the shared Supabase project starts approaching the Free caps.
 - **Vercel Hobby** — the tool is designed to run within Hobby's 10s function timeout. Only attendees generate PDFs, one at a time on demand, which completes well under the limit.
 
 Because PDFs are not stored, **archiving is not needed** — all historical certificates remain retrievable indefinitely at no additional storage cost.

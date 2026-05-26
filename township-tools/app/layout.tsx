@@ -4,7 +4,6 @@ import {
   ClerkProvider,
 } from "@clerk/nextjs";
 import "./globals.css";
-import SiteFooter from "../components/SiteFooter";
 import ThemeToggle from "../components/ThemeToggle";
 
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
@@ -35,7 +34,6 @@ export default function RootLayout({
         <body className="bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
           {children}
           <ThemeToggle />
-          <SiteFooter />
           {GA_MEASUREMENT_ID && (
             <>
               <Script

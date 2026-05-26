@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useUser, useOrganization, useAuth } from "@clerk/nextjs";
-import { ArrowLeft, Loader2, Download, RotateCcw, CheckCircle2, ExternalLink, Filter, MoveRight, X, Pencil, Send } from "lucide-react";
+import { ArrowLeft, Loader2, Download, RotateCcw, CheckCircle2, ExternalLink, Filter, MoveRight, X, Pencil, Send, Search } from "lucide-react";
 import AdminContactEditModal from "../../../../../components/AdminContactEditModal";
 
 type Stat = {
@@ -82,6 +82,7 @@ export default function DrillDownPage() {
   const [townshipFilters, setTownshipFilters] = useState<Set<string>>(new Set());
   const [emailStatusFilters, setEmailStatusFilters] = useState<Set<string>>(new Set());
   const [amoFilter, setAmoFilter] = useState<"all" | "synced" | "unsynced">("all");
+  const [contactQuery, setContactQuery] = useState("");
   const [markingAmo, setMarkingAmo] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [exporting, setExporting] = useState(false);
@@ -130,6 +131,7 @@ export default function DrillDownPage() {
     (raw || "").toLowerCase().trim() || "__none__";
 
   const filteredContacts = useMemo(() => {
+    const q = contactQuery.trim().toLowerCase();
     return contacts.filter((c) => {
       if (statusFilters.size > 0 && !statusFilters.has(c.review_status)) return false;
       if (townshipFilters.size > 0 && !townshipFilters.has(c.township_id)) return false;
@@ -137,9 +139,22 @@ export default function DrillDownPage() {
         return false;
       if (amoFilter === "synced" && !c.amo_updated_at) return false;
       if (amoFilter === "unsynced" && c.amo_updated_at) return false;
+      if (q) {
+        const hay = [
+          c.first_name,
+          c.last_name,
+          c.title,
+          c.email,
+          c.phone,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
       return true;
     });
-  }, [contacts, statusFilters, townshipFilters, emailStatusFilters, amoFilter]);
+  }, [contacts, statusFilters, townshipFilters, emailStatusFilters, amoFilter, contactQuery]);
 
   const amoCounts = useMemo(() => {
     let synced = 0;
@@ -466,6 +481,26 @@ export default function DrillDownPage() {
         </div>
 
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4 mb-3 space-y-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by name, title, email, or phone…"
+              value={contactQuery}
+              onChange={(e) => setContactQuery(e.target.value)}
+              className="w-full border border-gray-300 rounded-md pl-10 pr-9 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-gray-300"
+            />
+            {contactQuery && (
+              <button
+                onClick={() => setContactQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
+                aria-label="Clear search"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
           {townshipOptions.length > 1 && (
             <div className="flex items-start gap-2 flex-wrap">
               <span className="flex items-center gap-1 text-xs font-medium text-gray-600 mt-1">
@@ -594,13 +629,15 @@ export default function DrillDownPage() {
             {(townshipFilters.size > 0 ||
               statusFilters.size > 0 ||
               emailStatusFilters.size > 0 ||
-              amoFilter !== "all") && (
+              amoFilter !== "all" ||
+              contactQuery.trim().length > 0) && (
               <button
                 onClick={() => {
                   setTownshipFilters(new Set());
                   setStatusFilters(new Set());
                   setEmailStatusFilters(new Set());
                   setAmoFilter("all");
+                  setContactQuery("");
                 }}
                 className="ml-2 text-gray-700 underline"
               >

@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>ITA Training Certificate — Ribbon Banner</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600;1,700&family=Pinyon+Script&family=Cutive+Mono&display=swap" rel="stylesheet" />
+
+<style>
+  html, body { margin:0; padding:0; height:100%; background:#2c3247; font-family:'Cormorant Garamond', serif; }
+  body { overflow:hidden; display:flex; align-items:center; justify-content:center; }
+  .stage { position:relative; }
+  .cert-shadow { box-shadow: 0 30px 80px -20px rgba(0,0,0,0.55), 0 0 0 1px rgba(0,0,0,0.2); }
+
+  /* Print: page is 11 × 8.5 landscape; certificate is rendered at its true size */
+  @media print {
+    html, body { background:#fff; }
+    body { display:block; overflow:visible; }
+    .stage { transform: none !important; }
+    .no-print { display:none !important; }
+    @page { size: 11in 8.5in; margin: 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Viewport-scaled stage. The certificate inside is fixed at 1100 × 850 (= 11 × 8.5 in @ 100dpi). -->
+<div id="stage" class="stage">
+  <div id="root" class="cert-shadow"></div>
+</div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="certificate/Ornaments.jsx"></script>
+<script type="text/babel" src="certificate/RibbonCert.jsx"></script>
+
+<script type="text/babel" data-presets="env,react">
+  const { useEffect, useState } = React;
+  const { TweaksPanel, TweakSection, TweakRadio, TweakToggle, TweakSelect, TweakButton, useTweaks } = window;
+
+  const CERT_DEFAULTS = /*EDITMODE-BEGIN*/{
+    "dataset": "template",
+    "signerCount": 2,
+    "goldAccent": true,
+    "showSprigs": true,
+    "paper": "white"
+  }/*EDITMODE-END*/;
+
+  const App = () => {
+    const [t, setTweak] = useTweaks(CERT_DEFAULTS);
+
+    // Pick dataset
+    const data =
+      t.dataset === "sample1" ? window.SAMPLE_DATA :
+      t.dataset === "sample2" ? window.SAMPLE_DATA_2 :
+      window.TEMPLATE_DATA;
+
+    // Scale the 1100×850 stage to fit viewport
+    useEffect(() => {
+      const fit = () => {
+        const stage = document.getElementById('stage');
+        if (!stage) return;
+        const pad = 40;
+        const sx = (window.innerWidth - pad * 2) / 1100;
+        const sy = (window.innerHeight - pad * 2) / 850;
+        const s = Math.min(sx, sy, 1.4);
+        stage.style.transform = `scale(${s})`;
+        stage.style.transformOrigin = "center center";
+      };
+      fit();
+      window.addEventListener('resize', fit);
+      return () => window.removeEventListener('resize', fit);
+    }, []);
+
+    return (
+      <>
+        <window.RibbonCertificate
+          data={data}
+          signerCount={t.signerCount}
+          goldAccent={t.goldAccent}
+          showSprigs={t.showSprigs}
+          paper={t.paper}
+        />
+
+        <div className="no-print">
+          <TweaksPanel title="Tweaks">
+            <TweakSection label="Data">
+              <TweakRadio label="Dataset" value={t.dataset} onChange={v => setTweak('dataset', v)}
+                options={[
+                  { value: 'sample1', label: 'Sample A' },
+                  { value: 'sample2', label: 'Sample B' },
+                  { value: 'template', label: 'Tokens' },
+                ]} />
+              <div style={{ fontSize: 11, color: '#666', margin: '-4px 12px 8px', lineHeight: 1.4 }}>
+                <strong>Tokens</strong> renders <code>{'{{recipient_name}}'}</code>-style placeholders for your JS generator.
+              </div>
+            </TweakSection>
+
+            <TweakSection label="Layout">
+              <TweakRadio label="Signatures" value={t.signerCount} onChange={v => setTweak('signerCount', Number(v))}
+                options={[
+                  { value: 1, label: 'One' },
+                  { value: 2, label: 'Two' },
+                  { value: 3, label: 'Three' },
+                ]} />
+              <TweakToggle label="Corner sprigs" value={t.showSprigs} onChange={v => setTweak('showSprigs', v)} />
+            </TweakSection>
+
+            <TweakSection label="Style">
+              <TweakToggle label="Gold accents" value={t.goldAccent} onChange={v => setTweak('goldAccent', v)} />
+              <TweakSelect label="Paper" value={t.paper} onChange={v => setTweak('paper', v)}
+                options={[
+                  { value: 'cream',  label: 'Cream (warm)' },
+                  { value: 'ivory',  label: 'Ivory (deeper)' },
+                  { value: 'white',  label: 'White (clean)' },
+                ]} />
+            </TweakSection>
+
+            <TweakSection label="Output">
+              <TweakButton label="Print / Save as PDF" onClick={() => window.print()} />
+              <div style={{ fontSize: 11, color: '#666', margin: '4px 12px 0', lineHeight: 1.4 }}>
+                Prints at 11 × 8.5 in landscape. Every dynamic value is marked with <code>data-field</code> so your generator can inject content.
+              </div>
+            </TweakSection>
+          </TweaksPanel>
+        </div>
+      </>
+    );
+  };
+
+  ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+
+</body>
+</html>

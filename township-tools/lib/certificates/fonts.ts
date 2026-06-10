@@ -1,4 +1,4 @@
-import { Cormorant_Garamond, Pinyon_Script, Cutive_Mono } from 'next/font/google';
+import { Cormorant_Garamond, Cutive_Mono, Playfair_Display } from 'next/font/google';
 
 export const cormorant = Cormorant_Garamond({
   subsets: ['latin'],
@@ -7,11 +7,13 @@ export const cormorant = Cormorant_Garamond({
   variable: '--font-cormorant',
 });
 
-export const pinyon = Pinyon_Script({
+// Recipient name — a formal high-contrast diploma serif, far more legible than
+// the Pinyon Script it replaced while keeping the ceremonial feel.
+export const playfair = Playfair_Display({
   subsets: ['latin'],
-  weight: ['400'],
+  weight: ['400', '500', '600', '700'],
   display: 'swap',
-  variable: '--font-pinyon',
+  variable: '--font-playfair',
 });
 
 export const cutive = Cutive_Mono({
@@ -21,4 +23,4 @@ export const cutive = Cutive_Mono({
   variable: '--font-cutive',
 });
 
-export const certFontsClassName = `${cormorant.variable} ${pinyon.variable} ${cutive.variable}`;
+export const certFontsClassName = `${cormorant.variable} ${cutive.variable} ${playfair.variable}`;

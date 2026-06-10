@@ -10,7 +10,7 @@ import {
   NAVY,
   PAPER,
 } from '@/lib/certificates/theme';
-import { cormorant, cutive, pinyon } from '@/lib/certificates/fonts';
+import { cormorant, cutive, playfair } from '@/lib/certificates/fonts';
 import { GuillocheBorder } from './ornaments/GuillocheBorder';
 import { CornerFleuron } from './ornaments/CornerFleuron';
 import { RibbonBanner } from './ornaments/RibbonBanner';
@@ -22,7 +22,7 @@ import { VerifySeal } from './ornaments/VerifySeal';
 // html2canvas can resolve the family from getComputedStyle without depending
 // on a parent's CSS custom property — which it doesn't always honor.
 const FF_BODY = `${cormorant.style.fontFamily}, Georgia, serif`;
-const FF_SCRIPT = `${pinyon.style.fontFamily}, "Brush Script MT", cursive`;
+const FF_NAME = `${playfair.style.fontFamily}, Georgia, serif`;
 const FF_MONO = `${cutive.style.fontFamily}, monospace`;
 
 export type CertificateSignature = {
@@ -69,14 +69,15 @@ function formatHours(hours: number | string) {
 
 // Recipient name shrinks just enough so it doesn't wrap past two lines —
 // any more and the signature row below gets pushed down off the page.
-// Pinyon Script at 86px fits ~27 chars on one line in the 860px content
-// width; bands below give 1- or 2-line layouts at most.
+// Playfair Display (a serif) renders far more compactly than the Pinyon
+// Script this replaced, so the bands are smaller: ~56px fits ~27 chars on
+// one line in the 860px content width. Bands give 1- or 2-line layouts.
 function getRecipientNameFontSize(name: string): number {
   const len = name.length;
-  if (len <= 22) return 86;
-  if (len <= 32) return 74;
-  if (len <= 44) return 62;
-  return 52;
+  if (len <= 22) return 56;
+  if (len <= 32) return 46;
+  if (len <= 44) return 38;
+  return 32;
 }
 
 // Course name shrinks as it gets longer so it stays within the safe content
@@ -253,15 +254,16 @@ export function Certificate({ data, innerRef }: Props) {
             width: '100%',
           }}
         >
-          {/* Recipient name (Pinyon Script). Font scales down for long
+          {/* Recipient name (Playfair Display). Font scales down for long
               names so the block stays at most two wrapped lines and the
               signature row below doesn't get pushed past the bottom border. */}
           <div
             style={{
-              fontFamily: FF_SCRIPT,
+              fontFamily: FF_NAME,
+              fontWeight: 600,
               fontSize: getRecipientNameFontSize(fullName),
               color: NAVY,
-              lineHeight: 1,
+              lineHeight: 1.1,
               marginTop: 16,
               padding: '0 24px',
               maxWidth: '100%',

@@ -114,19 +114,20 @@ export default function Dashboard() {
                 badge={{ label: "FREE", className: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300" }}
               />
 
-              {isSuperadmin && (
-                <ToolCard
-                  onClick={() => router.push("/certificates")}
-                  icon={<Award className="w-7 h-7 sm:w-8 sm:h-8 text-amber-600 dark:text-amber-400" />}
-                  iconBg="bg-amber-100 dark:bg-amber-900/40"
-                  hoverBorder="hover:border-amber-400 dark:hover:border-amber-500"
-                  accentText="text-amber-700 dark:text-amber-300"
-                  title="Find Your Certificate"
-                  description="Attended an ITA training? Enter your email to download a PDF of every certificate issued to you."
-                  cta="Open tool"
-                  badge={{ label: "ITA ONLY", className: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" }}
-                />
-              )}
+              {/* Visible to any signed-in org member (the whole grid only renders
+                  when an organization is active, so non-members never see it).
+                  The /certificates page itself stays public-by-URL for beta sharing. */}
+              <ToolCard
+                onClick={() => router.push("/certificates")}
+                icon={<Award className="w-7 h-7 sm:w-8 sm:h-8 text-amber-600 dark:text-amber-400" />}
+                iconBg="bg-amber-100 dark:bg-amber-900/40"
+                hoverBorder="hover:border-amber-400 dark:hover:border-amber-500"
+                accentText="text-amber-700 dark:text-amber-300"
+                title="Find Your Certificate"
+                description="Attended an ITA training? Enter your email to download a PDF of every certificate issued to you."
+                cta="Open tool"
+                badge={{ label: "BETA", className: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" }}
+              />
 
               {isAdmin && (
                 <ToolCard

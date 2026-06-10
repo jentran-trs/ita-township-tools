@@ -198,6 +198,20 @@ export function CourseForm({ mode, initial, existingCourseIds, defaultSignature,
 
   return (
     <div className="space-y-6">
+      {mode === 'edit' && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={onDelete}
+            disabled={deleting}
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/40 rounded-lg hover:bg-red-100 dark:hover:bg-red-950/60 disabled:opacity-50"
+          >
+            <Trash2 className="w-4 h-4" />
+            {deleting ? 'Deleting…' : 'Delete Course'}
+          </button>
+        </div>
+      )}
+
       {error && (
         <div
           ref={errorRef}
@@ -406,20 +420,7 @@ export function CourseForm({ mode, initial, existingCourseIds, defaultSignature,
         </SubSection>
       </div>
 
-      <div className="flex items-center justify-between gap-3 pt-2">
-        <div>
-          {mode === 'edit' && (
-            <button
-              type="button"
-              onClick={onDelete}
-              disabled={deleting}
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-sm text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg disabled:opacity-50"
-            >
-              <Trash2 className="w-4 h-4" />
-              {deleting ? 'Deleting…' : 'Delete course'}
-            </button>
-          )}
-        </div>
+      <div className="flex items-center justify-end gap-3 pt-2">
         <div className="flex items-center gap-2">
           <button
             type="button"

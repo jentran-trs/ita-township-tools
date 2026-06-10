@@ -63,6 +63,16 @@ export default async function CertificatesLookupPage() {
             Enter the email you used to register for an ITA training. We&apos;ll show every active
             certificate tied to that email so you can download a PDF copy.
           </p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xl mx-auto mt-3">
+            Questions about your certificates? Email{' '}
+            <a
+              href="mailto:jtran@ita-in.org"
+              className="font-medium text-amber-700 dark:text-amber-400 underline hover:text-amber-800 dark:hover:text-amber-300"
+            >
+              jtran@ita-in.org
+            </a>
+            .
+          </p>
         </div>
 
         {/* SBOA disclosure — attendees are responsible for submitting proof

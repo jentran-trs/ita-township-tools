@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Info, Loader2, RotateCcw, ShieldOff, X } from 'lucide-react';
+import { Info, Loader2, RotateCcw, ShieldOff, UserPlus, X } from 'lucide-react';
 
 type Cert = {
   id: string;
@@ -33,6 +33,9 @@ export function AttendeesTable({ certificates, courseId }: { certificates: Cert[
   const [query, setQuery] = useState('');
   const [revokingCert, setRevokingCert] = useState<Cert | null>(null);
   const [revokeReason, setRevokeReason] = useState('');
+  const [adding, setAdding] = useState(false);
+  const [addSubmitting, setAddSubmitting] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
 
   const filtered = certificates.filter((c) => {
     if (filter !== 'all' && c.status !== filter) return false;
@@ -95,11 +98,65 @@ export function AttendeesTable({ certificates, courseId }: { certificates: Cert[
     }
   };
 
+  const openAdd = () => {
+    setAddError(null);
+    setAdding(true);
+  };
+
+  const onAddSubmit = async (values: {
+    first: string;
+    last: string;
+    email: string;
+    township: string;
+    county: string;
+  }) => {
+    setAddSubmitting(true);
+    setAddError(null);
+    try {
+      const res = await fetch(`/api/admin/certificates/courses/${courseId}/attendees`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Add failed');
+      setAdding(false);
+      router.refresh();
+    } catch (e: any) {
+      setAddError(e.message || 'Add failed');
+    } finally {
+      setAddSubmitting(false);
+    }
+  };
+
   if (!certificates.length) {
     return (
-      <div className="bg-white dark:bg-gray-900 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl p-10 text-center text-sm text-gray-500">
-        No attendees imported yet. Upload an xlsx or CSV file to issue certificates.
-      </div>
+      <>
+        <div className="bg-white dark:bg-gray-900 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl p-10 text-center">
+          <p className="text-sm text-gray-500">
+            No attendees yet. Import an xlsx or CSV file to issue certificates, or add someone manually.
+          </p>
+          <button
+            type="button"
+            onClick={openAdd}
+            className="mt-4 inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold bg-amber-500 text-white rounded-lg hover:bg-amber-600"
+          >
+            <UserPlus className="w-4 h-4" />
+            Add participant
+          </button>
+        </div>
+        {adding && (
+          <AddParticipantModal
+            onCancel={() => {
+              if (addSubmitting) return;
+              setAdding(false);
+            }}
+            onSubmit={onAddSubmit}
+            submitting={addSubmitting}
+            error={addError}
+          />
+        )}
+      </>
     );
   }
 
@@ -146,6 +203,14 @@ export function AttendeesTable({ certificates, courseId }: { certificates: Cert[
             </button>
           ))}
         </div>
+        <button
+          type="button"
+          onClick={openAdd}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold bg-amber-500 text-white rounded-lg hover:bg-amber-600"
+        >
+          <UserPlus className="w-4 h-4" />
+          Add participant
+        </button>
         <div className="ml-auto text-xs text-gray-500">
           {filtered.length} of {certificates.length} shown
         </div>
@@ -250,6 +315,187 @@ export function AttendeesTable({ certificates, courseId }: { certificates: Cert[
           submitting={!!busyId}
         />
       )}
+
+      {adding && (
+        <AddParticipantModal
+          onCancel={() => {
+            if (addSubmitting) return;
+            setAdding(false);
+          }}
+          onSubmit={onAddSubmit}
+          submitting={addSubmitting}
+          error={addError}
+        />
+      )}
+    </div>
+  );
+}
+
+function AddParticipantModal({
+  onSubmit,
+  onCancel,
+  submitting,
+  error,
+}: {
+  onSubmit: (values: {
+    first: string;
+    last: string;
+    email: string;
+    township: string;
+    county: string;
+  }) => void;
+  onCancel: () => void;
+  submitting: boolean;
+  error: string | null;
+}) {
+  const [first, setFirst] = useState('');
+  const [last, setLast] = useState('');
+  const [email, setEmail] = useState('');
+  const [township, setTownship] = useState('');
+  const [county, setCounty] = useState('');
+
+  const canSubmit = !!first.trim() && !!last.trim() && !!email.trim() && !submitting;
+
+  const submit = () => {
+    if (!canSubmit) return;
+    onSubmit({ first, last, email, township, county });
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+      role="dialog"
+      aria-modal="true"
+      onClick={onCancel}
+    >
+      <div
+        className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl w-full max-w-md shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="px-5 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <UserPlus className="w-5 h-5 text-amber-600" />
+            <h3 className="font-semibold">Add participant</h3>
+          </div>
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={submitting}
+            className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 disabled:opacity-50"
+            aria-label="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="px-5 py-4 space-y-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Manually issue a certificate for someone who wasn&apos;t in the imported roster. They&apos;ll
+            be able to download it from the public lookup using the email below.
+          </p>
+
+          {error && (
+            <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-800 dark:text-red-300 text-sm rounded-lg px-4 py-2">
+              {error}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <ModalField label="First name" required>
+              <input
+                type="text"
+                value={first}
+                onChange={(e) => setFirst(e.target.value)}
+                disabled={submitting}
+                className={modalInputCls}
+              />
+            </ModalField>
+            <ModalField label="Last name" required>
+              <input
+                type="text"
+                value={last}
+                onChange={(e) => setLast(e.target.value)}
+                disabled={submitting}
+                className={modalInputCls}
+              />
+            </ModalField>
+            <ModalField label="Email" required className="sm:col-span-2">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={submitting}
+                placeholder="name@example.com"
+                className={modalInputCls}
+              />
+            </ModalField>
+            <ModalField label="Township">
+              <input
+                type="text"
+                value={township}
+                onChange={(e) => setTownship(e.target.value)}
+                disabled={submitting}
+                className={modalInputCls}
+              />
+            </ModalField>
+            <ModalField label="County">
+              <input
+                type="text"
+                value={county}
+                onChange={(e) => setCounty(e.target.value)}
+                disabled={submitting}
+                placeholder="e.g. Hancock"
+                className={modalInputCls}
+              />
+            </ModalField>
+          </div>
+        </div>
+
+        <div className="px-5 py-3 bg-gray-50 dark:bg-gray-800/40 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={submitting}
+            className="px-3 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={submit}
+            disabled={!canSubmit}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:opacity-50"
+          >
+            {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+            Add participant
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const modalInputCls =
+  'w-full px-3 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400';
+
+function ModalField({
+  label,
+  required,
+  className,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={className}>
+      <label className="block text-sm font-medium mb-1.5">
+        {label}
+        {required && <span className="text-red-600 ml-0.5">*</span>}
+      </label>
+      {children}
     </div>
   );
 }

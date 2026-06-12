@@ -110,12 +110,13 @@ export function LiveBoard({
                     disabled={busyId === q.id}
                     title="Dismiss (remove from board)"
                     aria-label="Dismiss question"
-                    className="absolute top-3 right-3 w-8 h-8 inline-flex items-center justify-center rounded-full bg-gray-200 text-gray-500 dark:bg-slate-700/70 dark:text-slate-300 hover:bg-red-600 hover:text-white disabled:opacity-50 transition-colors"
+                    className="absolute top-3 right-3 inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors shadow-sm"
                   >
                     <X className="w-4 h-4" />
+                    Dismiss
                   </button>
                 )}
-                <p className={`text-2xl sm:text-3xl leading-snug font-medium text-gray-900 dark:text-white ${canDismiss ? 'pr-10' : ''}`}>
+                <p className={`text-2xl sm:text-3xl leading-snug font-medium text-gray-900 dark:text-white ${canDismiss ? 'pr-32' : ''}`}>
                   {q.question}
                 </p>
                 <p className="mt-4 text-lg text-amber-600 dark:text-amber-300 font-semibold">

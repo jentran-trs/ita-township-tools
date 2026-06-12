@@ -3,7 +3,7 @@
 import { UserButton, OrganizationSwitcher, useUser, useOrganization, useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Building2, FileText, Users, ArrowRight, ShieldCheck, FolderOpen, Mail, ClipboardCheck, MapPin, Award } from "lucide-react";
+import { Building2, FileText, Users, ArrowRight, ShieldCheck, FolderOpen, Mail, ClipboardCheck, MapPin, Award, MessageSquare } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 
 export default function Dashboard() {
@@ -196,6 +196,20 @@ export default function Dashboard() {
                   accentText="text-indigo-700 dark:text-indigo-300"
                   title="Certificate Generator (Admin)"
                   description="Create training courses, import attendees, and issue credential IDs. Attendees download their PDFs from the public lookup page."
+                  cta="Open tool"
+                  badge={{ label: "ITA ONLY", className: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" }}
+                />
+              )}
+
+              {isSuperadmin && (
+                <ToolCard
+                  onClick={() => router.push("/admin/live-qa")}
+                  icon={<MessageSquare className="w-7 h-7 sm:w-8 sm:h-8 text-rose-600 dark:text-rose-400" />}
+                  iconBg="bg-rose-100 dark:bg-rose-900/40"
+                  hoverBorder="hover:border-rose-400 dark:hover:border-rose-500"
+                  accentText="text-rose-700 dark:text-rose-300"
+                  title="Live Q&A (Admin)"
+                  description="Run live audience Q&A at meetings. Attendees submit questions; approve the best onto a screencast board and copy them into your Teams chat."
                   cta="Open tool"
                   badge={{ label: "ITA ONLY", className: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" }}
                 />

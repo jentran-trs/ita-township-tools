@@ -5,7 +5,7 @@ import { CheckCircle2, Loader2, Send } from 'lucide-react';
 
 const PROFILE_KEY = 'lqa_profile';
 const LAST_SUBMIT_KEY = 'lqa_last_submit';
-const COOLDOWN_MS = 15000;
+const COOLDOWN_MS = 5000;
 const MAX_QUESTION = 1000;
 
 type Profile = { name?: string; township?: string; county?: string };

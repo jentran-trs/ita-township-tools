@@ -26,7 +26,9 @@ export async function GET(req: Request) {
     .select('id, question, name, township, county, approved_at')
     .eq('session_id', session.id)
     .eq('status', 'approved')
-    .order('approved_at', { ascending: false });
+    // Oldest approved first so newly approved questions appear UNDER the
+    // existing ones on the screencast board (they stack at the bottom).
+    .order('approved_at', { ascending: true });
   if (qErr) return NextResponse.json({ error: qErr.message }, { status: 500 });
 
   return NextResponse.json({

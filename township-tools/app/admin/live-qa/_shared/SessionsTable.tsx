@@ -10,6 +10,7 @@ import {
   Check,
   Copy,
   Download,
+  ExternalLink,
   Loader2,
   Pencil,
   Plus,
@@ -285,10 +286,7 @@ export function SessionsTable({ initialSessions }: { initialSessions: Session[] 
 
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <CopyLinkRow label="Attendee submit link" path={`/qa/${s.submit_code}`} />
-                <CopyLinkRow
-                  label="Screencast board (you can dismiss)"
-                  path={`/admin/live-qa/${s.id}/present`}
-                />
+                <CopyLinkRow label="Screencast board" path={`/admin/live-qa/${s.id}/present`} />
               </div>
             </div>
           ))}
@@ -316,6 +314,15 @@ function CopyLinkRow({ label, path }: { label: string; path: string }) {
         <div className="text-xs font-medium text-gray-500">{label}</div>
         <div className="text-xs font-mono truncate text-gray-700 dark:text-gray-300">{path}</div>
       </div>
+      <a
+        href={path}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 flex-shrink-0"
+      >
+        <ExternalLink className="w-3.5 h-3.5" />
+        Open
+      </a>
       <button
         type="button"
         onClick={onCopy}

@@ -50,6 +50,14 @@ export async function PATCH(req: Request, { params }: RouteParams) {
     .select()
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Leaving the board (dismiss) or coming back (restore) should never keep this
+  // question as the "now answering" one — clear the pointer if it matches so a
+  // restore returns it as a regular question. Best-effort; ignored pre-v23.
+  if (body.action === 'dismiss' || body.action === 'restore') {
+    await supabase.from('lqa_sessions').update({ current_question_id: null }).eq('current_question_id', params.id);
+  }
+
   return NextResponse.json({ ok: true, question: data });
 }
 

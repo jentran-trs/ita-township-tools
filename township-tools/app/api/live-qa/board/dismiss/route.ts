@@ -42,5 +42,13 @@ export async function POST(req: Request) {
     .eq('session_id', session.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+  // If this was the "now answering" question, clear the pointer so a later
+  // restore brings it back as a regular question. Best-effort; ignored pre-v23.
+  await supabase
+    .from('lqa_sessions')
+    .update({ current_question_id: null })
+    .eq('id', session.id)
+    .eq('current_question_id', questionId);
+
   return NextResponse.json({ ok: true });
 }

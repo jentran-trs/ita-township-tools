@@ -12,14 +12,21 @@ type Params = { params: { code: string } };
 
 function fmtDateTime(iso: string) {
   try {
-    return new Date(iso).toLocaleString('en-US', {
-      timeZone: 'America/Indiana/Indianapolis',
+    const d = new Date(iso);
+    const tz = 'America/Indiana/Indianapolis';
+    const date = d.toLocaleDateString('en-US', {
+      timeZone: tz,
       month: 'short',
       day: 'numeric',
+      year: 'numeric',
+    });
+    const time = d.toLocaleTimeString('en-US', {
+      timeZone: tz,
       hour: 'numeric',
       minute: '2-digit',
       timeZoneName: 'short',
     });
+    return `${date} at ${time}`;
   } catch {
     return iso;
   }

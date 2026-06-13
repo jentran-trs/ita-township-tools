@@ -41,6 +41,9 @@ export function QaBoard({ sessionId, initial }: { sessionId: string; initial: Bu
   // Organizer-typed question.
   const [addText, setAddText] = useState('');
   const [addBusy, setAddBusy] = useState(false);
+  // Inline delete confirmation (no native confirm dialog, which the browser can
+  // permanently suppress via "prevent additional dialogs").
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const bucketsRef = useRef(buckets);
   bucketsRef.current = buckets;
@@ -217,7 +220,7 @@ export function QaBoard({ sessionId, initial }: { sessionId: string; initial: Bu
   };
 
   const del = async (q: Question) => {
-    if (!confirm('Permanently delete this question?')) return;
+    setConfirmDelete(null);
     setBusyId(q.id);
     setError(null);
     try {
@@ -320,21 +323,44 @@ export function QaBoard({ sessionId, initial }: { sessionId: string; initial: Bu
         >
           {buckets.dismissed.map((q) => (
             <QCard key={q.id} q={q} anim={anim[q.id]} entering={false} muted>
-              <ActionBtn
-                onClick={() => animate(q, 'restore')}
-                disabled={!!anim[q.id]}
-                icon={<RotateCcw className="w-4 h-4" />}
-                label="Restore"
-                tone="amber"
-              />
-              <ActionBtn onClick={() => onCopy(q)} icon={<Copy className="w-4 h-4" />} label="Copy" />
-              <ActionBtn
-                onClick={() => del(q)}
-                disabled={busyId === q.id || !!anim[q.id]}
-                icon={<Trash2 className="w-4 h-4" />}
-                label="Delete"
-                tone="red"
-              />
+              {confirmDelete === q.id ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-semibold text-red-700 dark:text-red-300">
+                    Delete permanently?
+                  </span>
+                  <ActionBtn
+                    onClick={() => del(q)}
+                    disabled={busyId === q.id}
+                    icon={<Trash2 className="w-4 h-4" />}
+                    label="Yes, delete"
+                    tone="red"
+                  />
+                  <ActionBtn
+                    onClick={() => setConfirmDelete(null)}
+                    icon={<X className="w-4 h-4" />}
+                    label="Cancel"
+                    tone="amber"
+                  />
+                </div>
+              ) : (
+                <>
+                  <ActionBtn
+                    onClick={() => animate(q, 'restore')}
+                    disabled={!!anim[q.id]}
+                    icon={<RotateCcw className="w-4 h-4" />}
+                    label="Restore"
+                    tone="amber"
+                  />
+                  <ActionBtn onClick={() => onCopy(q)} icon={<Copy className="w-4 h-4" />} label="Copy" />
+                  <ActionBtn
+                    onClick={() => setConfirmDelete(q.id)}
+                    disabled={busyId === q.id || !!anim[q.id]}
+                    icon={<Trash2 className="w-4 h-4" />}
+                    label="Delete"
+                    tone="red"
+                  />
+                </>
+              )}
             </QCard>
           ))}
         </Lane>

@@ -41,6 +41,8 @@ export function SessionsTable({ initialSessions }: { initialSessions: Session[] 
   const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
+  // Inline delete confirmation (no native confirm dialog).
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const onCreate = async () => {
     const title = newTitle.trim();
@@ -112,16 +114,8 @@ export function SessionsTable({ initialSessions }: { initialSessions: Session[] 
     }
   };
 
-  const onDelete = async (s: Session) => {
-    const total = s.pending_count + s.approved_count + s.dismissed_count;
-    if (
-      !confirm(
-        total > 0
-          ? `Delete "${s.title}" and its ${total} question${total === 1 ? '' : 's'}? This is permanent.`
-          : `Delete "${s.title}"? This is permanent.`
-      )
-    )
-      return;
+  const doDelete = async (s: Session) => {
+    setConfirmDeleteId(null);
     setBusyId(s.id);
     setError(null);
     try {
@@ -266,7 +260,7 @@ export function SessionsTable({ initialSessions }: { initialSessions: Session[] 
                   </button>
                   <button
                     type="button"
-                    onClick={() => onDelete(s)}
+                    onClick={() => setConfirmDeleteId(s.id)}
                     disabled={busyId === s.id}
                     className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/40 rounded-lg hover:bg-red-100 dark:hover:bg-red-950/60 disabled:opacity-50"
                     title="Delete session"
@@ -282,6 +276,38 @@ export function SessionsTable({ initialSessions }: { initialSessions: Session[] 
                   </Link>
                 </div>
               </div>
+
+              {confirmDeleteId === s.id && (
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-lg px-3 py-2">
+                  <span className="text-sm text-red-800 dark:text-red-300">
+                    Delete <strong>{s.title}</strong>
+                    {s.pending_count + s.approved_count + s.dismissed_count > 0
+                      ? ` and its ${s.pending_count + s.approved_count + s.dismissed_count} question${
+                          s.pending_count + s.approved_count + s.dismissed_count === 1 ? '' : 's'
+                        }`
+                      : ''}
+                    ? This can&apos;t be undone.
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => doDelete(s)}
+                      disabled={busyId === s.id}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                    >
+                      {busyId === s.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                      Delete
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDeleteId(null)}
+                      className="px-3 py-1.5 text-sm bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <CopyLinkRow label="Attendee submit link" path={`/qa/${s.submit_code}`} />

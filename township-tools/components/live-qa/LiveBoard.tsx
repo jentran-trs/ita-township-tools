@@ -461,8 +461,10 @@ export function LiveBoard({
             {/* Sticky QR sidebar — large, always scannable beside the questions. */}
             {qr && (
               <aside className="w-full lg:w-80 flex-shrink-0 order-1 lg:order-2 lg:sticky lg:top-28">
-                <div className="bg-white border border-gray-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm text-center">
-                  <div className="text-base font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400 mb-3">
+                {/* Panel stays white in both themes (the QR needs a light
+                    background), so its text is always dark — no dark: variants. */}
+                <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm text-center">
+                  <div className="text-base font-bold uppercase tracking-wider text-gray-500 mb-3">
                     Scan to ask a question
                   </div>
                   <a href={submitUrl} target="_blank" rel="noopener noreferrer" className="block">
@@ -473,9 +475,9 @@ export function LiveBoard({
                       className="w-full max-w-[300px] mx-auto rounded-lg"
                     />
                   </a>
-                  <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-700">
-                    <div className="text-base font-semibold text-gray-600 dark:text-slate-300">Or visit</div>
-                    <div className="mt-1 inline-block px-3 py-1.5 rounded-lg bg-amber-100 dark:bg-amber-500/20 text-xl font-extrabold text-amber-700 dark:text-amber-300">
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <div className="text-base font-semibold text-gray-600">Or visit</div>
+                    <div className="mt-1 inline-block px-3 py-1.5 rounded-lg bg-amber-100 text-xl font-extrabold text-amber-700">
                       www.ita-in.org
                     </div>
                   </div>

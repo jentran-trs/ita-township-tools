@@ -16,6 +16,16 @@ input::placeholder, textarea::placeholder {
   color: #94a3b8; /* slate-400 */
 }
 
+/* In dark mode the default above would be dark-on-dark (invisible). Class-based
+   dark mode puts `.dark` on <html>, so override input text to light there. */
+.dark input, .dark textarea, .dark select {
+  color: #f1f5f9; /* slate-100 */
+}
+
+.dark input::placeholder, .dark textarea::placeholder {
+  color: #64748b; /* slate-500 */
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

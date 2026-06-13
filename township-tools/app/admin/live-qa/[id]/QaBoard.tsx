@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Copy, Loader2, MonitorPlay, Plus, RotateCcw, Trash2, X } from 'lucide-react';
 import { copyText } from '@/lib/live-qa/clipboard';
+import { townshipLabel } from '@/lib/live-qa/format';
 
 const POLL_MS = 3000;
 const MARK_MS = 420; // "Dismissed"/"Restored" flash before collapsing
@@ -235,7 +236,7 @@ export function QaBoard({ sessionId, initial }: { sessionId: string; initial: Bu
   };
 
   const onCopy = async (q: Question) => {
-    const tail = [q.township, q.county && `${q.county} County`].filter(Boolean).join(', ');
+    const tail = [townshipLabel(q.township), q.county && `${q.county} County`].filter(Boolean).join(', ');
     await copyText(`"${q.question}" — ${q.name}${tail ? `, ${tail}` : ''}`);
   };
 
@@ -418,7 +419,9 @@ function QCard({
   muted?: boolean;
   children: React.ReactNode;
 }) {
-  const meta = [q.name, q.township, q.county && `${q.county} County`].filter(Boolean).join(' · ');
+  const meta = [q.name, townshipLabel(q.township), q.county && `${q.county} County`]
+    .filter(Boolean)
+    .join(' · ');
   return (
     <div
       className={`grid transition-all duration-[420ms] ease-in-out ${entering ? 'opacity-0 translate-y-3' : ''}`}

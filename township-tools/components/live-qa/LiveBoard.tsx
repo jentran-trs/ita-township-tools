@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Check, KeyRound, Loader2, X } from 'lucide-react';
+import { townshipLabel } from '@/lib/live-qa/format';
 
 const POLL_MS = 4000;
 const MARK_MS = 450; // how long the red "Dismissed" flash shows before collapsing
@@ -354,7 +355,7 @@ export function LiveBoard({
                           {q.question}
                         </p>
                         <p className="mt-4 text-lg text-amber-600 dark:text-amber-300 font-semibold">
-                          {[q.name, q.township, q.county && `${q.county} County`]
+                          {[q.name, townshipLabel(q.township), q.county && `${q.county} County`]
                             .filter(Boolean)
                             .join(' · ')}
                         </p>

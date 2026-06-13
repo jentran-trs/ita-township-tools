@@ -37,13 +37,17 @@ export default async function LiveQaConsolePage({ params }: Params) {
   const initial = {
     live: rows
       .filter((r: any) => r.status !== 'dismissed')
-      .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()),
+      .sort(
+        (a: any, b: any) =>
+          new Date(a.approved_at || a.created_at).getTime() -
+          new Date(b.approved_at || b.created_at).getTime()
+      ),
     dismissed: rows.filter((r: any) => r.status === 'dismissed').sort((a: any, b: any) => byTime(a.dismissed_at, b.dismissed_at)),
   };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
-      <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+      <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-30 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <BackLink href="/admin/live-qa">Live Q&amp;A</BackLink>
@@ -59,10 +63,10 @@ export default async function LiveQaConsolePage({ params }: Params) {
               href={`/qa/board/${session.board_code}`}
               target="_blank"
               className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
-              title="Open the screencast board in a new tab"
+              title="Open the Live Question Screen in a new tab"
             >
               <MonitorPlay className="w-4 h-4" />
-              Screencast board
+              Live Question Screen
             </Link>
             <a
               href={`/api/admin/live-qa/sessions/${session.id}/export`}

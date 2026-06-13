@@ -35,7 +35,7 @@ export default async function LiveQaSessionsPage() {
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
           Create a session for each meeting. Share its submit link with attendees; their questions
-          appear live on a screencast board you can present, and you can copy them into your Teams
+          appear live on a Live Question Screen you can present, and you can copy them into your Teams
           chat or dismiss them when done.
         </p>
         <SessionsTable initialSessions={(sessions as any) || []} />

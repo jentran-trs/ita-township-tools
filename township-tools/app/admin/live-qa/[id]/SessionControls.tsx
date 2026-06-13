@@ -96,7 +96,7 @@ export function SessionControls({
         onClick={openPasscode}
         disabled={busy}
         className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50"
-        title="Set, change, or remove the passcode presenters use to open the screencast board"
+        title="Set, change, or remove the passcode presenters use to open the Live Question Screen"
       >
         <KeyRound className="w-4 h-4" />
         {passcode ? 'Change passcode' : 'Set passcode'}
@@ -146,7 +146,7 @@ export function SessionControls({
 
             <div className="px-5 py-4 space-y-3">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Anyone with this passcode and the board link can open the screencast board and
+                Anyone with this passcode and the board link can open the Live Question Screen and
                 dismiss questions. Leave it blank (or use Remove) to make the board read-only.
               </p>
               {pcError && <div className="text-sm text-red-600 dark:text-red-400">{pcError}</div>}

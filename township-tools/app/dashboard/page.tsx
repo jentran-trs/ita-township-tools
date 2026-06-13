@@ -209,7 +209,7 @@ export default function Dashboard() {
                   hoverBorder="hover:border-rose-400 dark:hover:border-rose-500"
                   accentText="text-rose-700 dark:text-rose-300"
                   title="Live Q&A (Admin)"
-                  description="Run live audience Q&A at meetings. Attendees submit questions that appear live on a screencast board; copy them into your Teams chat and dismiss when done."
+                  description="Run live audience Q&A at meetings. Attendees submit questions that appear on a Live Question Screen you present; copy them into your Teams chat and dismiss when done."
                   cta="Open tool"
                   badge={{ label: "ITA ONLY", className: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" }}
                 />

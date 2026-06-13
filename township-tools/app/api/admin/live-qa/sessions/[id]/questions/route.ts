@@ -33,12 +33,13 @@ export async function GET(_req: Request, { params }: RouteParams) {
   const byTime = (a: string | null, b: string | null) =>
     new Date(b || 0).getTime() - new Date(a || 0).getTime();
 
-  // No approval step: anything not dismissed is live on the board. Oldest first
-  // (newest at the bottom, matching the screencast board); most-recently
-  // dismissed first in the dismissed lane.
+  // No approval step: anything not dismissed is live on the board. Ordered by
+  // when it joined the board (approved_at), so newly submitted AND restored
+  // questions land at the bottom, matching the screencast.
+  const boardTime = (r: any) => new Date(r.approved_at || r.created_at).getTime();
   const live = rows
     .filter((r) => r.status !== 'dismissed')
-    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    .sort((a, b) => boardTime(a) - boardTime(b));
   const dismissed = rows
     .filter((r) => r.status === 'dismissed')
     .sort((a, b) => byTime(a.dismissed_at, b.dismissed_at));

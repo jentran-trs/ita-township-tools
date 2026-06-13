@@ -311,7 +311,7 @@ export function SessionsTable({ initialSessions }: { initialSessions: Session[] 
 
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <CopyLinkRow label="Attendee submit link" path={`/qa/${s.submit_code}`} />
-                <CopyLinkRow label="Screencast board" path={`/qa/board/${s.board_code}`} />
+                <CopyLinkRow label="Live Question Screen" path={`/qa/board/${s.board_code}`} />
               </div>
             </div>
           ))}

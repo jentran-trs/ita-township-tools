@@ -28,9 +28,16 @@ export async function GET(req: Request) {
     .eq('session_id', session.id)
     // Everything that hasn't been dismissed is on the board (no approval step).
     .neq('status', 'dismissed')
-    // Oldest first so newly submitted questions stack UNDER the existing ones.
-    .order('created_at', { ascending: true });
+    // By board-join time so new AND restored questions stack UNDER the existing
+    // ones (restored questions get a fresh approved_at).
+    .order('approved_at', { ascending: true, nullsFirst: true });
   if (qErr) return NextResponse.json({ error: qErr.message }, { status: 500 });
+
+  // Total questions ever submitted (any status) — the engagement counter.
+  const { count: totalCount } = await supabase
+    .from('lqa_questions')
+    .select('id', { count: 'exact', head: true })
+    .eq('session_id', session.id);
 
   return NextResponse.json({
     session: {
@@ -40,5 +47,6 @@ export async function GET(req: Request) {
       current_question_id: session.current_question_id ?? null,
     },
     questions: questions || [],
+    total_count: totalCount ?? 0,
   });
 }

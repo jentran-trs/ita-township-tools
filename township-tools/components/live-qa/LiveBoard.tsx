@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Check, KeyRound, Loader2, Megaphone, X } from 'lucide-react';
+import { Check, KeyRound, Loader2, Megaphone, MessageSquare, X } from 'lucide-react';
 import { townshipLabel } from '@/lib/live-qa/format';
 
 const POLL_MS = 4000;
@@ -44,6 +44,8 @@ export function LiveBoard({
   const seededRef = useRef(false);
   // The question currently being answered (synced via the session).
   const [currentId, setCurrentId] = useState<string | null>(null);
+  // Total questions submitted so far (engagement counter).
+  const [total, setTotal] = useState(0);
 
   // Passcode presenter unlock.
   const [unlocked, setUnlocked] = useState(false);
@@ -145,6 +147,7 @@ export function LiveBoard({
       }
       setQuestions(merged);
       setCurrentId(json.session?.current_question_id ?? null);
+      setTotal(json.total_count ?? 0);
       // Animate genuinely new arrivals in (skip the very first paint).
       if (seededRef.current && newIds.length) markEntering(newIds);
       seededRef.current = true;
@@ -316,14 +319,32 @@ export function LiveBoard({
                 />
               </a>
             )}
-            <p className="text-3xl sm:text-4xl font-semibold text-gray-700 dark:text-slate-200">
-              {loaded ? 'Scan the code to submit a question' : 'Loading…'}
+            <p
+              className={`font-extrabold tracking-tight ${
+                loaded && total > 0
+                  ? 'text-5xl sm:text-6xl text-amber-600 dark:text-amber-400 animate-pulse'
+                  : 'text-3xl sm:text-4xl text-gray-700 dark:text-slate-200'
+              }`}
+            >
+              {!loaded
+                ? 'Loading…'
+                : total > 0
+                ? 'Waiting for your next question…'
+                : 'Scan the code to submit a question'}
             </p>
+            {loaded && total > 0 && (
+              <p className="mt-3 text-xl sm:text-2xl font-medium text-gray-600 dark:text-slate-300">
+                Scan the code to keep them coming!
+              </p>
+            )}
             <p className="mt-5 text-2xl sm:text-3xl text-gray-600 dark:text-slate-300 font-medium">
               Or visit
             </p>
             <div className="mt-2 inline-block px-6 py-3 rounded-xl bg-amber-100 dark:bg-amber-500/20 text-4xl sm:text-5xl font-extrabold text-amber-700 dark:text-amber-300">
               www.ita-in.org
+            </div>
+            <div className="mt-8 w-full max-w-xs">
+              <QuestionCounter total={total} />
             </div>
             <p className="mt-5 text-base text-gray-400 dark:text-slate-400">
               Questions will appear here as they come in.
@@ -459,11 +480,42 @@ export function LiveBoard({
                     </div>
                   </div>
                 </div>
+                <div className="mt-4">
+                  <QuestionCounter total={total} />
+                </div>
               </aside>
             )}
           </div>
         )}
       </main>
+    </div>
+  );
+}
+
+// Big square "questions received" counter (matches the QR box). The number
+// updates quietly as questions arrive — no flashing, to avoid distracting the
+// audience.
+function QuestionCounter({ total }: { total: number }) {
+  return (
+    <div className="relative aspect-square w-full overflow-hidden rounded-3xl shadow-xl ring-1 ring-black/5 flex flex-col items-center justify-center text-center p-5 text-white bg-gradient-to-br from-amber-400 to-orange-500">
+      {/* soft decorative glow */}
+      <div className="pointer-events-none absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/20 blur-2xl" />
+      <div className="relative flex items-center justify-center gap-2 text-white/90">
+        <MessageSquare className="w-6 h-6 flex-shrink-0" />
+        <span className="text-lg sm:text-xl font-bold uppercase tracking-wide">Questions received</span>
+      </div>
+      <div
+        className={`relative mt-1 font-black tabular-nums leading-none drop-shadow-md ${
+          String(total).length >= 4
+            ? 'text-6xl sm:text-7xl'
+            : String(total).length === 3
+            ? 'text-7xl sm:text-8xl'
+            : 'text-8xl sm:text-9xl'
+        }`}
+      >
+        {total}
+      </div>
+      <div className="relative mt-2 text-base sm:text-lg font-semibold text-white/85">and counting!</div>
     </div>
   );
 }

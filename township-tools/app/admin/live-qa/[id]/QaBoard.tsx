@@ -25,8 +25,11 @@ type Question = {
 type Anim = { kind: 'dismiss' | 'restore'; phase: 'mark' | 'collapse' };
 type Buckets = { live: Question[]; dismissed: Question[] };
 
-const byCreatedAsc = (a: Question, b: Question) =>
-  new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+// "Board join" order: when the question (re)joined the board. Restored questions
+// get a fresh approved_at, so they land at the bottom like new submissions.
+const byBoardOrder = (a: Question, b: Question) =>
+  new Date(a.approved_at || a.created_at).getTime() -
+  new Date(b.approved_at || b.created_at).getTime();
 const byDismissedDesc = (a: Question, b: Question) =>
   new Date(b.dismissed_at || 0).getTime() - new Date(a.dismissed_at || 0).getTime();
 
@@ -173,7 +176,7 @@ export function QaBoard({ sessionId, initial }: { sessionId: string; initial: Bu
         const card = cardById.get(id);
         if (card) live.push(card);
       });
-      live.sort(byCreatedAsc);
+      live.sort(byBoardOrder);
       dismissed.sort(byDismissedDesc);
 
       const prevLiveIds = new Set(prev.live.map((c) => c.id));
@@ -316,7 +319,7 @@ export function QaBoard({ sessionId, initial }: { sessionId: string; initial: Bu
           icon={<MonitorPlay className="w-4 h-4" />}
           count={buckets.live.length}
           accent="emerald"
-          empty="Submitted questions appear here and on the screencast board."
+          empty="Submitted questions appear here and on the Live Question Screen."
         >
           {(currentId
             ? [
@@ -405,9 +408,19 @@ export function QaBoard({ sessionId, initial }: { sessionId: string; initial: Bu
   );
 }
 
-const ACCENT: Record<string, string> = {
-  emerald: 'text-emerald-700 dark:text-emerald-300',
-  gray: 'text-gray-600 dark:text-gray-400',
+const SECTION: Record<'emerald' | 'gray', { section: string; header: string; badge: string }> = {
+  emerald: {
+    section: 'bg-emerald-50/70 dark:bg-emerald-950/20 border-2 border-emerald-300 dark:border-emerald-900/60',
+    header:
+      'bg-emerald-100/70 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-900/60 text-emerald-800 dark:text-emerald-300',
+    badge: 'bg-emerald-600 text-white',
+  },
+  gray: {
+    section: 'bg-gray-100 dark:bg-gray-900/50 border-2 border-gray-300 dark:border-gray-700',
+    header:
+      'bg-gray-200/80 dark:bg-gray-800/70 border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400',
+    badge: 'bg-gray-500 text-white',
+  },
 };
 
 function Lane({
@@ -425,14 +438,13 @@ function Lane({
   empty: string;
   children: React.ReactNode;
 }) {
+  const s = SECTION[accent];
   return (
-    <section className="bg-gray-100/60 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-800 rounded-xl flex flex-col min-h-[200px]">
-      <div className={`flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-gray-800 font-semibold ${ACCENT[accent]}`}>
+    <section className={`rounded-xl flex flex-col min-h-[200px] shadow-sm ${s.section}`}>
+      <div className={`flex items-center gap-2 px-4 py-3 border-b font-semibold rounded-t-xl ${s.header}`}>
         {icon}
         <span>{title}</span>
-        <span className="ml-auto text-xs font-bold bg-white dark:bg-gray-800 rounded-full px-2 py-0.5">
-          {count}
-        </span>
+        <span className={`ml-auto text-xs font-bold rounded-full px-2 py-0.5 ${s.badge}`}>{count}</span>
       </div>
       <div className="p-3 overflow-auto max-h-[68vh]">
         {count === 0 ? <p className="text-sm text-gray-400 text-center py-8">{empty}</p> : children}

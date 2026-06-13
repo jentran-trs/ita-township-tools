@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import { Download, MonitorPlay } from 'lucide-react';
 import { isSuperadmin } from '@/lib/auth/superadmin';
 import { createServerSupabaseClient } from '@/lib/supabase';
+import { portalState } from '@/lib/live-qa/format';
 import { BackLink } from '../_shared/BackLink';
 import { SessionControls } from './SessionControls';
 import { SubmissionWindow } from './SubmissionWindow';
@@ -54,7 +55,14 @@ export default async function LiveQaConsolePage({ params }: Params) {
             <div className="min-w-0">
               <h1 className="text-lg sm:text-xl font-bold truncate">{session.title}</h1>
               <div className="text-xs text-gray-500">
-                {session.status === 'open' ? 'Accepting questions' : 'Archived — submissions closed'}
+                {(() => {
+                  const state = portalState(session, Date.now());
+                  return state === 'open'
+                    ? 'Accepting questions'
+                    : state === 'closed'
+                    ? 'Closed — submission window ended'
+                    : 'Archived — submissions closed';
+                })()}
               </div>
             </div>
           </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -18,6 +18,7 @@ import {
   X,
 } from 'lucide-react';
 import { copyText } from '@/lib/live-qa/clipboard';
+import { portalState } from '@/lib/live-qa/format';
 
 type Session = {
   id: string;
@@ -30,6 +31,8 @@ type Session = {
   approved_count: number;
   dismissed_count: number;
   last_question_at: string | null;
+  submit_opens_at?: string | null;
+  submit_closes_at?: string | null;
 };
 
 export function SessionsTable({ initialSessions }: { initialSessions: Session[] }) {
@@ -43,6 +46,15 @@ export function SessionsTable({ initialSessions }: { initialSessions: Session[] 
   const [editTitle, setEditTitle] = useState('');
   // Inline delete confirmation (no native confirm dialog).
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  // Re-evaluated periodically so a portal flips to "Closed" when its window
+  // ends, without needing a manual refresh. Starts at 0 to avoid an SSR/client
+  // hydration mismatch; the effect sets the real time on mount.
+  const [now, setNow] = useState(0);
+  useEffect(() => {
+    setNow(Date.now());
+    const id = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(id);
+  }, []);
 
   const onCreate = async () => {
     const title = newTitle.trim();
@@ -222,15 +234,20 @@ export function SessionsTable({ initialSessions }: { initialSessions: Session[] 
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
-                      <span
-                        className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                          s.status === 'open'
-                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
-                            : 'bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
-                        }`}
-                      >
-                        {s.status === 'open' ? 'Open' : 'Archived'}
-                      </span>
+                      {(() => {
+                        const state = portalState(s, now);
+                        return (
+                          <span
+                            className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                              state === 'open'
+                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'
+                                : 'bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
+                            }`}
+                          >
+                            {state === 'open' ? 'Open' : state === 'closed' ? 'Closed' : 'Archived'}
+                          </span>
+                        );
+                      })()}
                     </div>
                   )}
                   <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">

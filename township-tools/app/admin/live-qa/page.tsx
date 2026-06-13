@@ -13,10 +13,21 @@ export default async function LiveQaSessionsPage() {
   }
 
   const supabase = createServerSupabaseClient();
-  const { data: sessions } = await supabase
+  const { data: summary } = await supabase
     .from('lqa_session_summary')
     .select('*')
     .order('created_at', { ascending: false });
+
+  // The summary view predates the window columns, so pull submit_opens_at /
+  // submit_closes_at from the table (select('*') stays graceful pre-v22) and
+  // merge them in so the list can show the effective Open/Closed state.
+  const { data: windowRows } = await supabase.from('lqa_sessions').select('*');
+  const windowById = new Map((windowRows || []).map((r: any) => [r.id, r]));
+  const sessions = (summary || []).map((s: any) => ({
+    ...s,
+    submit_opens_at: windowById.get(s.id)?.submit_opens_at ?? null,
+    submit_closes_at: windowById.get(s.id)?.submit_closes_at ?? null,
+  }));
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100">

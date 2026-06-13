@@ -94,7 +94,7 @@ export function SubmitForm({
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-8 text-center">
         <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-4" />
         <h2 className="text-xl font-bold mb-1">Question submitted!</h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 max-w-sm mx-auto">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
           It&apos;ll appear on the screen shortly. Got another? Send it below.
         </p>
         <button

@@ -20,6 +20,15 @@ export async function GET(_req: Request, { params }: RouteParams) {
     .eq('session_id', params.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+  // Which question is currently being answered (mirrors the screencast).
+  // select('*') stays graceful before the v23 column exists.
+  const { data: sessionRow } = await supabase
+    .from('lqa_sessions')
+    .select('*')
+    .eq('id', params.id)
+    .maybeSingle();
+  const currentQuestionId = (sessionRow as any)?.current_question_id ?? null;
+
   const rows = data || [];
   const byTime = (a: string | null, b: string | null) =>
     new Date(b || 0).getTime() - new Date(a || 0).getTime();
@@ -34,7 +43,7 @@ export async function GET(_req: Request, { params }: RouteParams) {
     .filter((r) => r.status === 'dismissed')
     .sort((a, b) => byTime(a.dismissed_at, b.dismissed_at));
 
-  return NextResponse.json({ live, dismissed });
+  return NextResponse.json({ live, dismissed, current_question_id: currentQuestionId });
 }
 
 // POST — superadmin types a question straight onto the board.

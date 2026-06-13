@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Check, KeyRound, Loader2, X } from 'lucide-react';
+import { Check, KeyRound, Loader2, Megaphone, X } from 'lucide-react';
 import { townshipLabel } from '@/lib/live-qa/format';
 
 const POLL_MS = 4000;
@@ -42,6 +42,8 @@ export function LiveBoard({
   // Cards entering the board (new submission or restored) get a fade/slide-in.
   const [entering, setEntering] = useState<Record<string, boolean>>({});
   const seededRef = useRef(false);
+  // The question currently being answered (synced via the session).
+  const [currentId, setCurrentId] = useState<string | null>(null);
 
   // Passcode presenter unlock.
   const [unlocked, setUnlocked] = useState(false);
@@ -142,6 +144,7 @@ export function LiveBoard({
         }
       }
       setQuestions(merged);
+      setCurrentId(json.session?.current_question_id ?? null);
       // Animate genuinely new arrivals in (skip the very first paint).
       if (seededRef.current && newIds.length) markEntering(newIds);
       seededRef.current = true;
@@ -231,6 +234,18 @@ export function LiveBoard({
     }, MARK_MS + COLLAPSE_MS);
   };
 
+  // Set / clear the question being answered (passcode-authorized).
+  const setHighlight = (questionId: string | null) => {
+    setCurrentId(questionId); // optimistic; poll reconciles
+    fetch('/api/live-qa/board/highlight', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ board_code: boardCode, passcode, question_id: questionId }),
+    }).catch(() => {});
+  };
+
+  const currentQ = currentId ? questions.find((q) => q.id === currentId) || null : null;
+
   // ---- Passcode gate (presenter must unlock before the board shows) ----
   if (passcodeSet && !unlocked) {
     return (
@@ -317,7 +332,44 @@ export function LiveBoard({
         ) : (
           <div className="flex flex-col lg:flex-row gap-6 items-start">
             <div className="flex-1 min-w-0 w-full order-2 lg:order-1">
-            {questions.map((q) => {
+            {/* Now Answering — the highlighted question, separated from the list. */}
+            {currentQ && (
+              <div className="mb-6 rounded-2xl border-4 border-amber-400 dark:border-amber-500/60 bg-amber-100 dark:bg-amber-500/15 shadow-lg p-6 sm:p-8">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <span className="inline-flex items-center gap-2 text-base font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">
+                    <span className="relative flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500" />
+                    </span>
+                    Now answering
+                  </span>
+                  {unlocked && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHighlight(null);
+                        onDismiss(currentQ.id);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 shadow-sm"
+                    >
+                      <X className="w-4 h-4" />
+                      Dismiss
+                    </button>
+                  )}
+                </div>
+                <p className="text-3xl sm:text-4xl leading-snug font-semibold text-gray-900 dark:text-white">
+                  {currentQ.question}
+                </p>
+                <p className="mt-4 text-xl text-amber-700 dark:text-amber-300 font-semibold">
+                  {[currentQ.name, townshipLabel(currentQ.township), currentQ.county && `${currentQ.county} County`]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </p>
+              </div>
+            )}
+            {questions
+              .filter((q) => q.id !== currentId)
+              .map((q) => {
               const phase = dismissing[q.id];
               return (
                 <div
@@ -330,28 +382,11 @@ export function LiveBoard({
                   <div className="overflow-hidden min-h-0">
                     <div className="pb-5">
                       <div
-                        className={`relative bg-white border border-gray-200 shadow-sm dark:bg-slate-800 dark:border-slate-700 dark:shadow-lg rounded-2xl p-6 sm:p-7 transition-transform duration-300 ${
+                        className={`relative bg-gray-100 border-2 border-gray-300 shadow-md dark:bg-slate-800 dark:border-slate-600 dark:shadow-lg rounded-2xl p-6 sm:p-7 transition-transform duration-300 ${
                           phase ? 'scale-[0.99]' : ''
                         }`}
                       >
-                        {unlocked && (
-                          <button
-                            type="button"
-                            onClick={() => onDismiss(q.id)}
-                            disabled={!!phase}
-                            title="Dismiss (remove from board)"
-                            aria-label="Dismiss question"
-                            className="absolute top-3 right-3 z-10 inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors shadow-sm"
-                          >
-                            <X className="w-4 h-4" />
-                            Dismiss
-                          </button>
-                        )}
-                        <p
-                          className={`text-[27px] sm:text-[33px] leading-snug font-medium text-gray-900 dark:text-white ${
-                            unlocked ? 'pr-32' : ''
-                          }`}
-                        >
+                        <p className="text-[27px] sm:text-[33px] leading-snug font-medium text-gray-900 dark:text-white">
                           {q.question}
                         </p>
                         <p className="mt-4 text-lg text-amber-600 dark:text-amber-300 font-semibold">
@@ -359,6 +394,28 @@ export function LiveBoard({
                             .filter(Boolean)
                             .join(' · ')}
                         </p>
+
+                        {unlocked && (
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setHighlight(q.id)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm"
+                            >
+                              <Megaphone className="w-4 h-4" />
+                              Answer this
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onDismiss(q.id)}
+                              disabled={!!phase}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 shadow-sm"
+                            >
+                              <X className="w-4 h-4" />
+                              Dismiss
+                            </button>
+                          </div>
+                        )}
 
                         {unlocked && (
                           <div

@@ -41,6 +41,10 @@ export async function PATCH(req: Request, { params }: RouteParams) {
   if ('submit_closes_at' in (body || {})) {
     patch.submit_closes_at = body.submit_closes_at || null;
   }
+  if ('current_question_id' in (body || {})) {
+    patch.current_question_id =
+      typeof body.current_question_id === 'string' ? body.current_question_id : null;
+  }
   // The submission window must be ordered: opens strictly before closes.
   if (patch.submit_opens_at && patch.submit_closes_at) {
     if (new Date(patch.submit_opens_at).getTime() >= new Date(patch.submit_closes_at).getTime()) {

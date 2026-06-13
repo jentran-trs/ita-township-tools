@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Copy, Loader2, MonitorPlay, Plus, RotateCcw, Trash2, X } from 'lucide-react';
+import { Copy, Loader2, Megaphone, MonitorPlay, Plus, RotateCcw, Trash2, X } from 'lucide-react';
 import { copyText } from '@/lib/live-qa/clipboard';
 import { townshipLabel } from '@/lib/live-qa/format';
 
@@ -45,6 +45,8 @@ export function QaBoard({ sessionId, initial }: { sessionId: string; initial: Bu
   // Inline delete confirmation (no native confirm dialog, which the browser can
   // permanently suppress via "prevent additional dialogs").
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  // The question currently being answered (mirrors the screencast).
+  const [currentId, setCurrentId] = useState<string | null>(null);
 
   const bucketsRef = useRef(buckets);
   bucketsRef.current = buckets;
@@ -176,6 +178,7 @@ export function QaBoard({ sessionId, initial }: { sessionId: string; initial: Bu
 
       const prevLiveIds = new Set(prev.live.map((c) => c.id));
       setBuckets({ live, dismissed });
+      setCurrentId(json.current_question_id ?? null);
 
       if (externalDismiss.length) runDismissAnim(externalDismiss, false);
 
@@ -240,6 +243,20 @@ export function QaBoard({ sessionId, initial }: { sessionId: string; initial: Bu
     await copyText(`"${q.question}" — ${q.name}${tail ? `, ${tail}` : ''}`);
   };
 
+  const setHighlight = async (questionId: string | null) => {
+    setCurrentId(questionId); // optimistic; poll reconciles
+    try {
+      await fetch(`/api/admin/live-qa/sessions/${sessionId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ current_question_id: questionId }),
+      });
+    } catch {
+      /* ignore; next poll corrects */
+    }
+    load();
+  };
+
   const onAdd = async () => {
     const question = addText.trim();
     if (!question) return;
@@ -301,8 +318,26 @@ export function QaBoard({ sessionId, initial }: { sessionId: string; initial: Bu
           accent="emerald"
           empty="Submitted questions appear here and on the screencast board."
         >
-          {buckets.live.map((q) => (
-            <QCard key={q.id} q={q} anim={anim[q.id]} entering={!!entering[q.id]}>
+          {(currentId
+            ? [
+                ...buckets.live.filter((q) => q.id === currentId),
+                ...buckets.live.filter((q) => q.id !== currentId),
+              ]
+            : buckets.live
+          ).map((q) => (
+            <QCard
+              key={q.id}
+              q={q}
+              anim={anim[q.id]}
+              entering={!!entering[q.id]}
+              highlighted={q.id === currentId}
+            >
+              <ActionBtn
+                onClick={() => setHighlight(q.id === currentId ? null : q.id)}
+                icon={<Megaphone className="w-4 h-4" />}
+                label={q.id === currentId ? 'Stop' : 'Answer this'}
+                tone={q.id === currentId ? 'amber' : 'answer'}
+              />
               <ActionBtn onClick={() => onCopy(q)} icon={<Copy className="w-4 h-4" />} label="Copy" />
               <ActionBtn
                 onClick={() => runDismissAnim([q.id], true)}
@@ -411,12 +446,14 @@ function QCard({
   anim,
   entering,
   muted,
+  highlighted,
   children,
 }: {
   q: Question;
   anim?: Anim;
   entering: boolean;
   muted?: boolean;
+  highlighted?: boolean;
   children: React.ReactNode;
 }) {
   const meta = [q.name, townshipLabel(q.township), q.county && `${q.county} County`]
@@ -430,10 +467,18 @@ function QCard({
       <div className="overflow-hidden min-h-0">
         <div className="pb-2">
           <div
-            className={`relative bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-3 transition-transform duration-300 ${
-              muted ? 'opacity-75' : ''
-            } ${anim ? 'scale-[0.99]' : ''}`}
+            className={`relative rounded-lg p-3 transition-transform duration-300 ${
+              highlighted
+                ? 'bg-amber-50 dark:bg-amber-500/10 border-2 border-amber-400 dark:border-amber-500/50 ring-1 ring-amber-300'
+                : 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800'
+            } ${muted ? 'opacity-75' : ''} ${anim ? 'scale-[0.99]' : ''}`}
           >
+            {highlighted && (
+              <div className="mb-1.5 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">
+                <Megaphone className="w-3.5 h-3.5" />
+                Now answering
+              </div>
+            )}
             <p className="text-sm leading-snug whitespace-pre-wrap break-words">{q.question}</p>
             <p className="mt-2 text-xs text-gray-500">{meta}</p>
             <div className="mt-2 flex flex-wrap gap-1.5">{children}</div>
@@ -460,6 +505,8 @@ function QCard({
 const TONE: Record<string, string> = {
   // Copy — primary action (paste into Teams), filled so it stands out.
   default: 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm',
+  // Answer this — mark as the question being answered.
+  answer: 'bg-amber-500 text-white hover:bg-amber-600 shadow-sm',
   // Dismiss — prominent red-tinted button.
   gray: 'bg-red-100 text-red-700 border border-red-200 hover:bg-red-200 dark:bg-red-950/50 dark:text-red-300 dark:border-red-900',
   // Restore

@@ -13,9 +13,10 @@ export async function GET(req: Request) {
 
   const supabase = createServerSupabaseClient();
 
+  // select('*') so this keeps working before the v23 current_question_id column exists.
   const { data: session, error: sErr } = await supabase
     .from('lqa_sessions')
-    .select('id, title, status, board_passcode')
+    .select('*')
     .eq('board_code', code)
     .maybeSingle();
   if (sErr) return NextResponse.json({ error: sErr.message }, { status: 500 });
@@ -32,7 +33,12 @@ export async function GET(req: Request) {
   if (qErr) return NextResponse.json({ error: qErr.message }, { status: 500 });
 
   return NextResponse.json({
-    session: { title: session.title, status: session.status, passcode_set: !!session.board_passcode },
+    session: {
+      title: session.title,
+      status: session.status,
+      passcode_set: !!session.board_passcode,
+      current_question_id: session.current_question_id ?? null,
+    },
     questions: questions || [],
   });
 }

@@ -1,19 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  Check,
-  Copy,
-  Inbox,
-  Loader2,
-  MonitorPlay,
-  RotateCcw,
-  Trash2,
-  X,
-} from 'lucide-react';
+import { Copy, Loader2, MonitorPlay, Plus, RotateCcw, Trash2, X } from 'lucide-react';
 import { copyText } from '@/lib/live-qa/clipboard';
 
 const POLL_MS = 3000;
+const MARK_MS = 420; // "Dismissed"/"Restored" flash before collapsing
+const COLLAPSE_MS = 420; // pull-up collapse duration
+const ENTER_MS = 520; // entrance fade/slide-in duration
 
 type Question = {
   id: string;
@@ -27,12 +21,106 @@ type Question = {
   dismissed_at: string | null;
 };
 
-type Buckets = { pending: Question[]; approved: Question[]; dismissed: Question[] };
+type Anim = { kind: 'dismiss' | 'restore'; phase: 'mark' | 'collapse' };
+type Buckets = { live: Question[]; dismissed: Question[] };
+
+const byCreatedAsc = (a: Question, b: Question) =>
+  new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+const byDismissedDesc = (a: Question, b: Question) =>
+  new Date(b.dismissed_at || 0).getTime() - new Date(a.dismissed_at || 0).getTime();
 
 export function QaBoard({ sessionId, initial }: { sessionId: string; initial: Buckets }) {
   const [buckets, setBuckets] = useState<Buckets>(initial);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Cards mid leaving-animation (dismiss/restore) stay pinned to their current
+  // lane until the animation finishes.
+  const [anim, setAnim] = useState<Record<string, Anim>>({});
+  // Cards entering a lane (new submission or restored) get a fade/slide-in.
+  const [entering, setEntering] = useState<Record<string, boolean>>({});
+  // Organizer-typed question.
+  const [addText, setAddText] = useState('');
+  const [addBusy, setAddBusy] = useState(false);
+
+  const bucketsRef = useRef(buckets);
+  bucketsRef.current = buckets;
+  const animRef = useRef(anim);
+  animRef.current = anim;
+  const seededRef = useRef(false);
+
+  const markEntering = (ids: string[]) => {
+    if (!ids.length) return;
+    setEntering((e) => {
+      const n = { ...e };
+      ids.forEach((id) => (n[id] = true));
+      return n;
+    });
+    setTimeout(() => {
+      setEntering((e) => {
+        const n = { ...e };
+        ids.forEach((id) => (n[id] = false));
+        return n;
+      });
+    }, 30);
+    setTimeout(() => {
+      setEntering((e) => {
+        const n = { ...e };
+        ids.forEach((id) => delete n[id]);
+        return n;
+      });
+    }, ENTER_MS + 60);
+  };
+
+  // Plays the red "Dismissed" flash + pull-up for one or more cards. callApi is
+  // false when the dismiss already happened elsewhere (e.g. the screencast) and
+  // we're only mirroring the effect. On completion the cards move to the
+  // dismissed lane locally so the next poll doesn't re-trigger the effect.
+  const runDismissAnim = (ids: string[], callApi: boolean) => {
+    if (!ids.length) return;
+    setAnim((a) => {
+      const n = { ...a };
+      ids.forEach((id) => {
+        if (!n[id]) n[id] = { kind: 'dismiss', phase: 'mark' };
+      });
+      return n;
+    });
+    if (callApi) {
+      ids.forEach((id) =>
+        fetch(`/api/admin/live-qa/questions/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'dismiss' }),
+        }).catch(() => {})
+      );
+    }
+    setTimeout(() => {
+      setAnim((a) => {
+        const n = { ...a };
+        ids.forEach((id) => {
+          if (n[id]) n[id] = { ...n[id], phase: 'collapse' };
+        });
+        return n;
+      });
+    }, MARK_MS);
+    setTimeout(() => {
+      const idSet = new Set(ids);
+      const nowIso = new Date().toISOString();
+      setBuckets((b) => ({
+        live: b.live.filter((c) => !idSet.has(c.id)),
+        dismissed: [
+          ...b.live
+            .filter((c) => idSet.has(c.id))
+            .map((c) => ({ ...c, status: 'dismissed' as const, dismissed_at: c.dismissed_at || nowIso })),
+          ...b.dismissed,
+        ].sort(byDismissedDesc),
+      }));
+      setAnim((a) => {
+        const n = { ...a };
+        ids.forEach((id) => delete n[id]);
+        return n;
+      });
+    }, MARK_MS + COLLAPSE_MS);
+  };
 
   const load = useCallback(async () => {
     try {
@@ -41,11 +129,59 @@ export function QaBoard({ sessionId, initial }: { sessionId: string; initial: Bu
       });
       if (!res.ok) return;
       const json = await res.json();
-      setBuckets({
-        pending: json.pending || [],
-        approved: json.approved || [],
-        dismissed: json.dismissed || [],
+      const serverLive: Question[] = json.live || [];
+      const serverDismissed: Question[] = json.dismissed || [];
+
+      const a = animRef.current;
+      const prev = bucketsRef.current;
+      const cardById = new Map<string, Question>();
+      [...prev.live, ...prev.dismissed, ...serverLive, ...serverDismissed].forEach((c) =>
+        cardById.set(c.id, c)
+      );
+
+      // A question dismissed elsewhere (e.g. from the screencast board) leaves
+      // server-live and lands in server-dismissed. Detect those so the console
+      // plays the dismiss effect too, instead of the card just vanishing.
+      const externalDismiss = prev.live
+        .filter(
+          (c) =>
+            !serverLive.some((s) => s.id === c.id) &&
+            serverDismissed.some((s) => s.id === c.id) &&
+            !a[c.id]
+        )
+        .map((c) => c.id);
+      const extSet = new Set(externalDismiss);
+
+      // Natural lanes minus anything animating, then pin animating cards to the
+      // lane they started in so they finish their effect there.
+      const live = serverLive.filter((c) => !a[c.id]);
+      const dismissed = serverDismissed.filter((c) => !a[c.id] && !extSet.has(c.id));
+      Object.keys(a).forEach((id) => {
+        const card = cardById.get(id);
+        if (!card) return;
+        if (a[id].kind === 'dismiss') live.push(card);
+        else dismissed.push(card);
       });
+      // Keep externally-dismissed cards on the board until their effect plays.
+      externalDismiss.forEach((id) => {
+        const card = cardById.get(id);
+        if (card) live.push(card);
+      });
+      live.sort(byCreatedAsc);
+      dismissed.sort(byDismissedDesc);
+
+      const prevLiveIds = new Set(prev.live.map((c) => c.id));
+      setBuckets({ live, dismissed });
+
+      if (externalDismiss.length) runDismissAnim(externalDismiss, false);
+
+      if (seededRef.current) {
+        const newIds = live
+          .filter((c) => !prevLiveIds.has(c.id) && !a[c.id] && !extSet.has(c.id))
+          .map((c) => c.id);
+        markEntering(newIds);
+      }
+      seededRef.current = true;
     } catch {
       /* keep last good state on transient errors */
     }
@@ -58,20 +194,38 @@ export function QaBoard({ sessionId, initial }: { sessionId: string; initial: Bu
     return () => clearInterval(id);
   }, []);
 
-  const act = async (q: Question, action: 'approve' | 'dismiss' | 'restore' | 'delete') => {
+  const animate = (q: Question, kind: 'dismiss' | 'restore') => {
+    if (anim[q.id]) return;
+    setError(null);
+    setAnim((a) => ({ ...a, [q.id]: { kind, phase: 'mark' } }));
+    fetch(`/api/admin/live-qa/questions/${q.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: kind }),
+    }).catch(() => {});
+    setTimeout(() => {
+      setAnim((a) => (a[q.id] ? { ...a, [q.id]: { ...a[q.id], phase: 'collapse' } } : a));
+    }, MARK_MS);
+    setTimeout(() => {
+      setAnim((a) => {
+        const n = { ...a };
+        delete n[q.id];
+        return n;
+      });
+      load();
+    }, MARK_MS + COLLAPSE_MS);
+  };
+
+  const del = async (q: Question) => {
+    if (!confirm('Permanently delete this question?')) return;
     setBusyId(q.id);
     setError(null);
     try {
-      const res = await fetch(`/api/admin/live-qa/questions/${q.id}`, {
-        method: action === 'delete' ? 'DELETE' : 'PATCH',
-        headers: action === 'delete' ? undefined : { 'Content-Type': 'application/json' },
-        body: action === 'delete' ? undefined : JSON.stringify({ action }),
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error || 'Action failed');
-      await load(); // reconcile from server (source of truth)
+      const res = await fetch(`/api/admin/live-qa/questions/${q.id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Delete failed');
+      await load();
     } catch (e: any) {
-      setError(e.message || 'Action failed');
+      setError(e.message || 'Delete failed');
     } finally {
       setBusyId(null);
     }
@@ -79,8 +233,31 @@ export function QaBoard({ sessionId, initial }: { sessionId: string; initial: Bu
 
   const onCopy = async (q: Question) => {
     const tail = [q.township, q.county && `${q.county} County`].filter(Boolean).join(', ');
-    const text = `"${q.question}" — ${q.name}${tail ? `, ${tail}` : ''}`;
-    await copyText(text);
+    await copyText(`"${q.question}" — ${q.name}${tail ? `, ${tail}` : ''}`);
+  };
+
+  const onAdd = async () => {
+    const question = addText.trim();
+    if (!question) return;
+    setAddBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/live-qa/sessions/${sessionId}/questions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error || 'Add failed');
+      }
+      setAddText('');
+      await load(); // new question shows in On board (animates in)
+    } catch (e: any) {
+      setError(e.message || 'Add failed');
+    } finally {
+      setAddBusy(false);
+    }
   };
 
   return (
@@ -91,59 +268,49 @@ export function QaBoard({ sessionId, initial }: { sessionId: string; initial: Bu
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Incoming */}
-        <Lane
-          title="Incoming"
-          icon={<Inbox className="w-4 h-4" />}
-          count={buckets.pending.length}
-          accent="indigo"
-          empty="No new questions yet."
+      {/* Organizer can type a question straight onto the board. */}
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={addText}
+          onChange={(e) => setAddText(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && onAdd()}
+          placeholder="Type a question to put on the board…"
+          className="flex-1 px-3 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400"
+        />
+        <button
+          type="button"
+          onClick={onAdd}
+          disabled={addBusy || !addText.trim()}
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:opacity-50"
         >
-          {buckets.pending.map((q) => (
-            <Card key={q.id} q={q} busy={busyId === q.id}>
-              <ActionBtn onClick={() => onCopy(q)} icon={<Copy className="w-3.5 h-3.5" />} label="Copy" />
-              <ActionBtn
-                onClick={() => act(q, 'approve')}
-                disabled={busyId === q.id}
-                icon={<Check className="w-3.5 h-3.5" />}
-                label="Approve"
-                tone="emerald"
-              />
-              <ActionBtn
-                onClick={() => act(q, 'dismiss')}
-                disabled={busyId === q.id}
-                icon={<X className="w-3.5 h-3.5" />}
-                label="Dismiss"
-                tone="gray"
-              />
-            </Card>
-          ))}
-        </Lane>
+          {addBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+          Add to board
+        </button>
+      </div>
 
-        {/* Approved / on board */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Lane
           title="On board"
           icon={<MonitorPlay className="w-4 h-4" />}
-          count={buckets.approved.length}
+          count={buckets.live.length}
           accent="emerald"
-          empty="Approve a question to show it on the board."
+          empty="Submitted questions appear here and on the screencast board."
         >
-          {buckets.approved.map((q) => (
-            <Card key={q.id} q={q} busy={busyId === q.id}>
-              <ActionBtn onClick={() => onCopy(q)} icon={<Copy className="w-3.5 h-3.5" />} label="Copy" />
+          {buckets.live.map((q) => (
+            <QCard key={q.id} q={q} anim={anim[q.id]} entering={!!entering[q.id]}>
+              <ActionBtn onClick={() => onCopy(q)} icon={<Copy className="w-4 h-4" />} label="Copy" />
               <ActionBtn
-                onClick={() => act(q, 'dismiss')}
-                disabled={busyId === q.id}
-                icon={<X className="w-3.5 h-3.5" />}
+                onClick={() => runDismissAnim([q.id], true)}
+                disabled={!!anim[q.id]}
+                icon={<X className="w-4 h-4" />}
                 label="Dismiss"
                 tone="gray"
               />
-            </Card>
+            </QCard>
           ))}
         </Lane>
 
-        {/* Dismissed */}
         <Lane
           title="Dismissed"
           icon={<Trash2 className="w-4 h-4" />}
@@ -152,25 +319,23 @@ export function QaBoard({ sessionId, initial }: { sessionId: string; initial: Bu
           empty="Dismissed questions show here. You can restore them."
         >
           {buckets.dismissed.map((q) => (
-            <Card key={q.id} q={q} busy={busyId === q.id} muted>
+            <QCard key={q.id} q={q} anim={anim[q.id]} entering={false} muted>
               <ActionBtn
-                onClick={() => act(q, 'restore')}
-                disabled={busyId === q.id}
-                icon={<RotateCcw className="w-3.5 h-3.5" />}
+                onClick={() => animate(q, 'restore')}
+                disabled={!!anim[q.id]}
+                icon={<RotateCcw className="w-4 h-4" />}
                 label="Restore"
                 tone="amber"
               />
-              <ActionBtn onClick={() => onCopy(q)} icon={<Copy className="w-3.5 h-3.5" />} label="Copy" />
+              <ActionBtn onClick={() => onCopy(q)} icon={<Copy className="w-4 h-4" />} label="Copy" />
               <ActionBtn
-                onClick={() => {
-                  if (confirm('Permanently delete this question?')) act(q, 'delete');
-                }}
-                disabled={busyId === q.id}
-                icon={<Trash2 className="w-3.5 h-3.5" />}
+                onClick={() => del(q)}
+                disabled={busyId === q.id || !!anim[q.id]}
+                icon={<Trash2 className="w-4 h-4" />}
                 label="Delete"
                 tone="red"
               />
-            </Card>
+            </QCard>
           ))}
         </Lane>
       </div>
@@ -179,7 +344,6 @@ export function QaBoard({ sessionId, initial }: { sessionId: string; initial: Bu
 }
 
 const ACCENT: Record<string, string> = {
-  indigo: 'text-indigo-700 dark:text-indigo-300',
   emerald: 'text-emerald-700 dark:text-emerald-300',
   gray: 'text-gray-600 dark:text-gray-400',
 };
@@ -195,7 +359,7 @@ function Lane({
   title: string;
   icon: React.ReactNode;
   count: number;
-  accent: 'indigo' | 'emerald' | 'gray';
+  accent: 'emerald' | 'gray';
   empty: string;
   children: React.ReactNode;
 }) {
@@ -208,48 +372,71 @@ function Lane({
           {count}
         </span>
       </div>
-      <div className="p-3 space-y-2 overflow-auto max-h-[68vh]">
-        {count === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-8">{empty}</p>
-        ) : (
-          children
-        )}
+      <div className="p-3 overflow-auto max-h-[68vh]">
+        {count === 0 ? <p className="text-sm text-gray-400 text-center py-8">{empty}</p> : children}
       </div>
     </section>
   );
 }
 
-function Card({
+function QCard({
   q,
-  busy,
+  anim,
+  entering,
   muted,
   children,
 }: {
   q: Question;
-  busy: boolean;
+  anim?: Anim;
+  entering: boolean;
   muted?: boolean;
   children: React.ReactNode;
 }) {
   const meta = [q.name, q.township, q.county && `${q.county} County`].filter(Boolean).join(' · ');
   return (
     <div
-      className={`bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-3 ${
-        muted ? 'opacity-75' : ''
-      } ${busy ? 'animate-pulse' : ''}`}
+      className={`grid transition-all duration-[420ms] ease-in-out ${entering ? 'opacity-0 translate-y-3' : ''}`}
+      style={{ gridTemplateRows: anim?.phase === 'collapse' ? '0fr' : '1fr' }}
     >
-      <p className="text-sm leading-snug whitespace-pre-wrap break-words">{q.question}</p>
-      <p className="mt-2 text-xs text-gray-500">{meta}</p>
-      <div className="mt-2 flex flex-wrap gap-1.5">{children}</div>
+      <div className="overflow-hidden min-h-0">
+        <div className="pb-2">
+          <div
+            className={`relative bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-3 transition-transform duration-300 ${
+              muted ? 'opacity-75' : ''
+            } ${anim ? 'scale-[0.99]' : ''}`}
+          >
+            <p className="text-sm leading-snug whitespace-pre-wrap break-words">{q.question}</p>
+            <p className="mt-2 text-xs text-gray-500">{meta}</p>
+            <div className="mt-2 flex flex-wrap gap-1.5">{children}</div>
+
+            {anim && (
+              <div
+                className={`absolute inset-0 rounded-lg flex items-center justify-center gap-2 text-white ${
+                  anim.kind === 'dismiss' ? 'bg-red-600/95' : 'bg-emerald-600/95'
+                }`}
+              >
+                {anim.kind === 'dismiss' ? <X className="w-5 h-5" /> : <RotateCcw className="w-5 h-5" />}
+                <span className="text-base font-bold uppercase tracking-wide">
+                  {anim.kind === 'dismiss' ? 'Dismissed' : 'Restored'}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
 const TONE: Record<string, string> = {
-  default: 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800',
-  emerald: 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40',
-  amber: 'text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40',
-  gray: 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800',
-  red: 'text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40',
+  // Copy — primary action (paste into Teams), filled so it stands out.
+  default: 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm',
+  // Dismiss — prominent red-tinted button.
+  gray: 'bg-red-100 text-red-700 border border-red-200 hover:bg-red-200 dark:bg-red-950/50 dark:text-red-300 dark:border-red-900',
+  // Restore
+  amber: 'bg-amber-100 text-amber-800 border border-amber-200 hover:bg-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-900',
+  // Delete
+  red: 'bg-red-600 text-white hover:bg-red-700 shadow-sm',
 };
 
 function ActionBtn({
@@ -270,7 +457,7 @@ function ActionBtn({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md disabled:opacity-50 ${TONE[tone]}`}
+      className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-lg disabled:opacity-50 transition-colors ${TONE[tone]}`}
     >
       {icon}
       {label}

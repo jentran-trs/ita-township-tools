@@ -9,14 +9,14 @@ export const metadata = {
 
 type Params = { params: { code: string } };
 
-// Public, read-only display of approved questions (no dismiss controls). The
-// logged-in screencaster uses /admin/live-qa/[id]/present instead, which can
-// dismiss. This route stays available for a clean second-screen display.
+// Public screencast board. Shows approved questions + a QR of the submit page.
+// Presenting (dismissing) unlocks with the session passcode the superadmin set —
+// no login required. Read-only if no passcode is set.
 export default async function QaBoardPage({ params }: Params) {
   const supabase = createServerSupabaseClient();
   const { data: session } = await supabase
     .from('lqa_sessions')
-    .select('title')
+    .select('title, submit_code, board_passcode')
     .eq('board_code', params.code)
     .maybeSingle();
 
@@ -28,5 +28,12 @@ export default async function QaBoardPage({ params }: Params) {
     );
   }
 
-  return <LiveBoard boardCode={params.code} title={session.title} />;
+  return (
+    <LiveBoard
+      boardCode={params.code}
+      title={session.title}
+      submitCode={session.submit_code}
+      passcodeSet={!!session.board_passcode}
+    />
+  );
 }

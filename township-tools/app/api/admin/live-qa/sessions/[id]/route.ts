@@ -31,6 +31,25 @@ export async function PATCH(req: Request, { params }: RouteParams) {
     }
     patch.status = body.status;
   }
+  if ('board_passcode' in (body || {})) {
+    const pc = typeof body.board_passcode === 'string' ? body.board_passcode.trim() : '';
+    patch.board_passcode = pc || null; // blank clears the passcode
+  }
+  if ('submit_opens_at' in (body || {})) {
+    patch.submit_opens_at = body.submit_opens_at || null;
+  }
+  if ('submit_closes_at' in (body || {})) {
+    patch.submit_closes_at = body.submit_closes_at || null;
+  }
+  // The submission window must be ordered: opens strictly before closes.
+  if (patch.submit_opens_at && patch.submit_closes_at) {
+    if (new Date(patch.submit_opens_at).getTime() >= new Date(patch.submit_closes_at).getTime()) {
+      return NextResponse.json(
+        { error: 'The opening time must be before the closing time.' },
+        { status: 400 }
+      );
+    }
+  }
   if (Object.keys(patch).length === 0) {
     return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
   }

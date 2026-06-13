@@ -240,8 +240,7 @@ export function SessionsTable({ initialSessions }: { initialSessions: Session[] 
                     </div>
                   )}
                   <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
-                    <span>{s.pending_count} incoming</span>
-                    <span>{s.approved_count} on board</span>
+                    <span>{s.pending_count + s.approved_count} on board</span>
                     <span>{s.dismissed_count} dismissed</span>
                   </div>
                 </div>
@@ -286,7 +285,7 @@ export function SessionsTable({ initialSessions }: { initialSessions: Session[] 
 
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <CopyLinkRow label="Attendee submit link" path={`/qa/${s.submit_code}`} />
-                <CopyLinkRow label="Screencast board" path={`/admin/live-qa/${s.id}/present`} />
+                <CopyLinkRow label="Screencast board" path={`/qa/board/${s.board_code}`} />
               </div>
             </div>
           ))}

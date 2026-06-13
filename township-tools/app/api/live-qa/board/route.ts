@@ -15,7 +15,7 @@ export async function GET(req: Request) {
 
   const { data: session, error: sErr } = await supabase
     .from('lqa_sessions')
-    .select('id, title, status')
+    .select('id, title, status, board_passcode')
     .eq('board_code', code)
     .maybeSingle();
   if (sErr) return NextResponse.json({ error: sErr.message }, { status: 500 });
@@ -25,14 +25,14 @@ export async function GET(req: Request) {
     .from('lqa_questions')
     .select('id, question, name, township, county, approved_at')
     .eq('session_id', session.id)
-    .eq('status', 'approved')
-    // Oldest approved first so newly approved questions appear UNDER the
-    // existing ones on the screencast board (they stack at the bottom).
-    .order('approved_at', { ascending: true });
+    // Everything that hasn't been dismissed is on the board (no approval step).
+    .neq('status', 'dismissed')
+    // Oldest first so newly submitted questions stack UNDER the existing ones.
+    .order('created_at', { ascending: true });
   if (qErr) return NextResponse.json({ error: qErr.message }, { status: 500 });
 
   return NextResponse.json({
-    session: { title: session.title, status: session.status },
+    session: { title: session.title, status: session.status, passcode_set: !!session.board_passcode },
     questions: questions || [],
   });
 }

@@ -1,16 +1,22 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
-import { CheckCircle2, Loader2, Send } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { CheckCircle2, Clock, Loader2, Send } from 'lucide-react';
 
 const PROFILE_KEY = 'lqa_profile';
-const LAST_SUBMIT_KEY = 'lqa_last_submit';
-const COOLDOWN_MS = 5000;
 const MAX_QUESTION = 1000;
 
 type Profile = { name?: string; township?: string; county?: string };
 
-export function SubmitForm({ submitCode, open }: { submitCode: string; open: boolean }) {
+export function SubmitForm({
+  submitCode,
+  open,
+  notice,
+}: {
+  submitCode: string;
+  open: boolean;
+  notice?: string;
+}) {
   const [question, setQuestion] = useState('');
   const [name, setName] = useState('');
   const [township, setTownship] = useState('');
@@ -19,12 +25,8 @@ export function SubmitForm({ submitCode, open }: { submitCode: string; open: boo
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
-  const [cooldown, setCooldown] = useState(0);
-  const cooldownTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Autofill identity from a prior submission ON THIS DEVICE (localStorage —
-  // never IP, since convention attendees share venue WiFi). The question is
-  // always left blank.
+  // Autofill identity from a prior submission ON THIS DEVICE (localStorage).
   useEffect(() => {
     try {
       const raw = localStorage.getItem(PROFILE_KEY);
@@ -34,31 +36,10 @@ export function SubmitForm({ submitCode, open }: { submitCode: string; open: boo
         if (p.township) setTownship(p.township);
         if (p.county) setCounty(p.county);
       }
-      const last = parseInt(localStorage.getItem(LAST_SUBMIT_KEY) || '0', 10);
-      const remaining = COOLDOWN_MS - (Date.now() - last);
-      if (remaining > 0) startCooldown(Math.ceil(remaining / 1000));
     } catch {
       /* ignore storage errors */
     }
-    return () => {
-      if (cooldownTimer.current) clearInterval(cooldownTimer.current);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const startCooldown = (seconds: number) => {
-    setCooldown(seconds);
-    if (cooldownTimer.current) clearInterval(cooldownTimer.current);
-    cooldownTimer.current = setInterval(() => {
-      setCooldown((c) => {
-        if (c <= 1) {
-          if (cooldownTimer.current) clearInterval(cooldownTimer.current);
-          return 0;
-        }
-        return c - 1;
-      });
-    }, 1000);
-  };
 
   const onSubmit = async () => {
     setError(null);
@@ -82,19 +63,16 @@ export function SubmitForm({ submitCode, open }: { submitCode: string; open: boo
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Submission failed');
 
-      // Remember identity on this device for the next question.
       try {
         localStorage.setItem(
           PROFILE_KEY,
           JSON.stringify({ name: name.trim(), township: township.trim(), county: county.trim() })
         );
-        localStorage.setItem(LAST_SUBMIT_KEY, String(Date.now()));
       } catch {
         /* ignore */
       }
       setQuestion('');
       setSent(true);
-      startCooldown(Math.ceil(COOLDOWN_MS / 1000));
     } catch (e: any) {
       setError(e.message || 'Submission failed');
     } finally {
@@ -105,20 +83,19 @@ export function SubmitForm({ submitCode, open }: { submitCode: string; open: boo
   if (!open) {
     return (
       <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-300 rounded-xl p-6 text-center">
-        <h2 className="font-semibold mb-1">This Q&amp;A is closed</h2>
-        <p className="text-sm">It&apos;s no longer accepting new questions. Thanks for attending!</p>
+        <Clock className="w-8 h-8 mx-auto mb-2" />
+        <p className="text-sm font-medium">{notice || 'This Q&A isn’t accepting questions right now.'}</p>
       </div>
     );
   }
 
-  // Confirmation screen after a successful submission.
   if (sent) {
     return (
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-8 text-center">
         <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-4" />
         <h2 className="text-xl font-bold mb-1">Question submitted!</h2>
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 max-w-sm mx-auto">
-          It&apos;ll appear on screen once an organizer approves it. Got another? Send it below.
+          It&apos;ll appear on the screen shortly. Got another? Send it below.
         </p>
         <button
           type="button"
@@ -126,17 +103,14 @@ export function SubmitForm({ submitCode, open }: { submitCode: string; open: boo
             setError(null);
             setSent(false);
           }}
-          disabled={cooldown > 0}
-          className="inline-flex items-center justify-center gap-2 px-5 py-3 text-base font-semibold text-white bg-amber-500 rounded-lg hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="inline-flex items-center justify-center gap-2 px-5 py-3 text-base font-semibold text-white bg-amber-500 rounded-lg hover:bg-amber-600 transition-colors"
         >
           <Send className="w-5 h-5" />
-          {cooldown > 0 ? `Submit another in ${cooldown}s` : 'Submit another question'}
+          Submit another question
         </button>
       </div>
     );
   }
-
-  const disabled = submitting || cooldown > 0;
 
   return (
     <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-5 sm:p-6 space-y-4">
@@ -224,19 +198,11 @@ export function SubmitForm({ submitCode, open }: { submitCode: string; open: boo
       <button
         type="button"
         onClick={onSubmit}
-        disabled={disabled}
+        disabled={submitting}
         className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 text-base font-semibold text-white bg-amber-500 rounded-lg hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
-        {submitting ? (
-          <Loader2 className="w-5 h-5 animate-spin" />
-        ) : (
-          <Send className="w-5 h-5" />
-        )}
-        {submitting
-          ? 'Submitting…'
-          : cooldown > 0
-          ? `Wait ${cooldown}s to submit again`
-          : 'Submit question'}
+        {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+        {submitting ? 'Submitting…' : 'Submit question'}
       </button>
     </div>
   );

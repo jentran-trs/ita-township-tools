@@ -10,13 +10,45 @@ export const metadata = {
 
 type Params = { params: { code: string } };
 
+function fmtDateTime(iso: string) {
+  try {
+    return new Date(iso).toLocaleString('en-US', {
+      timeZone: 'America/Indiana/Indianapolis',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      timeZoneName: 'short',
+    });
+  } catch {
+    return iso;
+  }
+}
+
 export default async function QaSubmitPage({ params }: Params) {
   const supabase = createServerSupabaseClient();
+  // select('*') keeps this working before the v22 window columns exist.
   const { data: session } = await supabase
     .from('lqa_sessions')
-    .select('title, status, submit_code')
+    .select('*')
     .eq('submit_code', params.code)
     .maybeSingle();
+
+  // Effective open state: archived, or outside the optional submission window.
+  let open = false;
+  let notice: string | undefined;
+  if (session) {
+    const now = Date.now();
+    if (session.status !== 'open') {
+      notice = 'This Q&A is closed. Thanks for attending!';
+    } else if (session.submit_opens_at && now < new Date(session.submit_opens_at).getTime()) {
+      notice = `Question portal will open on ${fmtDateTime(session.submit_opens_at)}. Check back then!`;
+    } else if (session.submit_closes_at && now > new Date(session.submit_closes_at).getTime()) {
+      notice = `Question portal closed on ${fmtDateTime(session.submit_closes_at)}.`;
+    } else {
+      open = true;
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 flex flex-col">
@@ -40,11 +72,10 @@ export default async function QaSubmitPage({ params }: Params) {
             <div className="mb-6">
               <h1 className="text-2xl sm:text-3xl font-bold mb-1">{session.title}</h1>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Submit a question for this session. An organizer reviews questions before they appear
-                on screen.
+                Submit a question for this session — it&apos;ll appear on the screen shortly.
               </p>
             </div>
-            <SubmitForm submitCode={session.submit_code} open={session.status === 'open'} />
+            <SubmitForm submitCode={session.submit_code} open={open} notice={notice} />
           </>
         )}
       </main>

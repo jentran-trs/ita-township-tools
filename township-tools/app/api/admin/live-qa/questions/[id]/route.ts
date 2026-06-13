@@ -32,7 +32,8 @@ export async function PATCH(req: Request, { params }: RouteParams) {
       patch = { status: 'dismissed', dismissed_at: now };
       break;
     case 'restore':
-      patch = { status: 'pending', approved_at: null, dismissed_at: null };
+      // Back onto the board (no approval step).
+      patch = { status: 'approved', approved_at: now, dismissed_at: null };
       break;
     default:
       return NextResponse.json(

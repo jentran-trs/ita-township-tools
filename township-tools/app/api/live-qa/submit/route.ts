@@ -41,9 +41,10 @@ export async function POST(req: Request) {
 
   const supabase = createServerSupabaseClient();
 
+  // select('*') so this keeps working even before the v22 window columns exist.
   const { data: session, error: sErr } = await supabase
     .from('lqa_sessions')
-    .select('id, status')
+    .select('*')
     .eq('submit_code', submitCode)
     .maybeSingle();
   if (sErr) return NextResponse.json({ error: sErr.message }, { status: 500 });
@@ -55,16 +56,32 @@ export async function POST(req: Request) {
     );
   }
 
+  // Optional submission window.
+  const now = Date.now();
+  if (session.submit_opens_at && now < new Date(session.submit_opens_at).getTime()) {
+    return NextResponse.json(
+      { error: 'Question submissions for this session haven’t opened yet.' },
+      { status: 423 }
+    );
+  }
+  if (session.submit_closes_at && now > new Date(session.submit_closes_at).getTime()) {
+    return NextResponse.json(
+      { error: 'Question submissions for this session have closed.' },
+      { status: 423 }
+    );
+  }
+
+  // No approval step — questions go straight onto the screencast board.
   const { error: insErr } = await supabase.from('lqa_questions').insert({
     session_id: session.id,
     question,
     name,
     township,
     county,
-    status: 'pending',
+    status: 'approved',
+    approved_at: new Date().toISOString(),
   });
   if (insErr) return NextResponse.json({ error: insErr.message }, { status: 500 });
 
-  // Never echo the row — nothing is public until an organizer approves it.
   return NextResponse.json({ ok: true });
 }

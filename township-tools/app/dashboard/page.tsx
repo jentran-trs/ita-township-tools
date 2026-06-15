@@ -114,9 +114,8 @@ export default function Dashboard() {
                 badge={{ label: "FREE", className: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300" }}
               />
 
-              {/* Visible to any signed-in org member (the whole grid only renders
-                  when an organization is active, so non-members never see it).
-                  The /certificates page itself stays public-by-URL for beta sharing. */}
+              {/* Public free tool — also linked from the public landing page.
+                  The /certificates page is reachable without login. */}
               <ToolCard
                 onClick={() => router.push("/certificates")}
                 icon={<Award className="w-7 h-7 sm:w-8 sm:h-8 text-amber-600 dark:text-amber-400" />}
@@ -126,7 +125,7 @@ export default function Dashboard() {
                 title="Find Your Certificate"
                 description="Attended an ITA training? Enter your email to download a PDF of every certificate issued to you."
                 cta="Open tool"
-                badge={{ label: "BETA", className: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" }}
+                badge={{ label: "FREE", className: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300" }}
               />
 
               {isAdmin && (

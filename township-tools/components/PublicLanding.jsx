@@ -93,7 +93,7 @@ export default function PublicLanding() {
         {/* ───────── Section 1: Free with ITA ───────── */}
         <section>
 
-          <div className="grid sm:grid-cols-2 gap-5 sm:gap-6 max-w-3xl mx-auto">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 max-w-5xl mx-auto">
             {/* SB 270 Scoring Tool */}
             <button
               onClick={() => router.push("/tools/scoring-tool")}
@@ -124,6 +124,23 @@ export default function PublicLanding() {
                 Check and update your township&apos;s officials, addresses, and email addresses.
               </p>
               <div className="inline-flex items-center gap-2 text-base sm:text-lg font-semibold text-rose-700 dark:text-rose-300 group-hover:text-rose-800">
+                Open tool <ArrowRight className="w-5 h-5" />
+              </div>
+            </button>
+
+            {/* Find Your Certificate — public lookup, no login needed */}
+            <button
+              onClick={() => router.push("/certificates")}
+              className="bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 rounded-2xl p-7 sm:p-8 text-left hover:border-emerald-400 dark:hover:border-emerald-500 hover:shadow-lg transition-all group"
+            >
+              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-amber-100 dark:bg-amber-900/40 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-amber-200 dark:group-hover:bg-amber-900/60 transition-colors">
+                <Award className="w-7 h-7 sm:w-8 sm:h-8 text-amber-600 dark:text-amber-400" />
+              </div>
+              <h3 className="text-xl sm:text-2xl font-bold mb-2">Find Your Certificate</h3>
+              <p className="text-base text-gray-600 dark:text-gray-400 mb-5">
+                Attended an ITA training? Enter your email to download a PDF copy of your certificate.
+              </p>
+              <div className="inline-flex items-center gap-2 text-base sm:text-lg font-semibold text-amber-700 dark:text-amber-300 group-hover:text-amber-800">
                 Open tool <ArrowRight className="w-5 h-5" />
               </div>
             </button>

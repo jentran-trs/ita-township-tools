@@ -68,7 +68,7 @@ export default function PublicLanding() {
             className="flex items-center gap-2 px-4 sm:px-5 py-2.5 bg-amber-500 text-white rounded-lg text-base font-semibold hover:bg-amber-600 transition-colors shadow-sm"
           >
             <LogIn className="w-4 h-4" />
-            Sign in
+            Admin Login
           </button>
         </div>
       </header>

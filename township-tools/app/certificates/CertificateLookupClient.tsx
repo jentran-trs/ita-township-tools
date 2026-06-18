@@ -248,7 +248,7 @@ export function CertificateLookupClient({
             }`}
           >
             <Mail className="w-4 h-4" />
-            By email
+            Search by email
           </button>
           <button
             type="button"
@@ -260,7 +260,7 @@ export function CertificateLookupClient({
             }`}
           >
             <User className="w-4 h-4" />
-            By name
+            Search by name
           </button>
         </div>
 

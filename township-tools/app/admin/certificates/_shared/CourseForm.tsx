@@ -107,7 +107,6 @@ export function CourseForm({ mode, initial, existingCourseIds, defaultSignature,
     const hours = parseFloat(form.hours);
     if (!Number.isFinite(hours) || hours < 0) return 'Hours must be a non-negative number';
     if (!form.course_date) return 'Course date is required';
-    if (!form.syllabus_file_url) return 'Upload a course syllabus (PDF or Word document)';
     if (form.signatures.length !== 1) return 'A course must have exactly one signer';
     const s = form.signatures[0];
     if (!s.signer_name.trim()) return 'Signer name is required';
@@ -330,8 +329,7 @@ export function CourseForm({ mode, initial, existingCourseIds, defaultSignature,
         <SubSection index={3} title="Course syllabus">
           <Field
             label="Course Syllabus"
-            required
-            hint="PDF or Word document. Shown on the public verify page linked by the certificate's QR code."
+            hint="Optional. PDF or Word document. Shown on the public verify page linked by the certificate's QR code."
             className="sm:col-span-2"
           >
             <SyllabusFileUpload

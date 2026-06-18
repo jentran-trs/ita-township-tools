@@ -63,6 +63,9 @@ export function ImportClient({ courseId, courseLabel }: { courseId: string; cour
       } else {
         setResult(json);
         setPreview(null);
+        // Invalidate the cached course page so the attendee list is fresh when
+        // the superadmin returns to it (preserves this result view's state).
+        router.refresh();
       }
     } catch (e: any) {
       setError(e.message || 'Import failed');
@@ -89,7 +92,14 @@ export function ImportClient({ courseId, courseLabel }: { courseId: string; cour
       )}
 
       {result ? (
-        <CommitResult result={result} onDone={() => router.push(`/admin/certificates/${courseId}`)} onAgain={onReset} />
+        <CommitResult
+          result={result}
+          onDone={() => {
+            router.push(`/admin/certificates/${courseId}`);
+            router.refresh(); // ensure the attendee list reflects the import
+          }}
+          onAgain={onReset}
+        />
       ) : (
         <>
           {/* Upload card */}

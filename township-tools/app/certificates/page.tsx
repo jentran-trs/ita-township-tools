@@ -60,8 +60,9 @@ export default async function CertificatesLookupPage() {
           <Award className="w-12 h-12 text-amber-600 dark:text-amber-400 mx-auto mb-4" />
           <h1 className="text-3xl sm:text-4xl font-bold mb-2">Find your training certificate</h1>
           <p className="text-base text-gray-600 dark:text-gray-400 max-w-xl mx-auto">
-            Enter the email you used to register for an ITA training. We&apos;ll show every active
-            certificate tied to that email so you can download a PDF copy.
+            Look up your ITA training certificate by the email you registered with — or by your
+            first and last name. We&apos;ll show every active certificate we find so you can download
+            a PDF copy.
           </p>
           <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xl mx-auto mt-3">
             Questions about your certificates? Email{' '}

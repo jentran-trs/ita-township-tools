@@ -16,25 +16,33 @@ export async function POST(req: Request) {
     return NextResponse.json({ certificates: [] });
   }
 
-  const raw = typeof body?.email === 'string' ? body.email : '';
-  const email = raw.toLowerCase().trim();
-
-  // Reject malformed input quietly — return empty so we don't leak which
-  // emails exist. (The caller renders the same empty-state regardless.)
-  if (!email || !isLikelyEmail(email)) {
-    return NextResponse.json({ certificates: [] });
-  }
+  const email = (typeof body?.email === 'string' ? body.email : '').toLowerCase().trim();
+  const first = (typeof body?.first === 'string' ? body.first : '').trim();
+  const last = (typeof body?.last === 'string' ? body.last : '').trim();
 
   const supabase = createServerSupabaseClient();
 
-  const { data: certs, error: certErr } = await supabase
+  let query = supabase
     .from('certificates')
     .select(
       'credential_id, attendee_first, attendee_last, attendee_email, attendee_township, attendee_county, course_id, issued_at'
     )
-    .eq('attendee_email', email)
     .eq('status', 'active')
     .order('issued_at', { ascending: false });
+
+  // Look up by email, or by exact (case-insensitive) first + last name. Reject
+  // insufficient/malformed input quietly with an empty result so we don't leak
+  // which records exist — the caller renders the same empty state regardless.
+  if (email) {
+    if (!isLikelyEmail(email)) return NextResponse.json({ certificates: [] });
+    query = query.eq('attendee_email', email);
+  } else if (first && last) {
+    query = query.ilike('attendee_first', first).ilike('attendee_last', last);
+  } else {
+    return NextResponse.json({ certificates: [] });
+  }
+
+  const { data: certs, error: certErr } = await query;
   if (certErr) return NextResponse.json({ error: certErr.message }, { status: 500 });
 
   if (!certs || certs.length === 0) {

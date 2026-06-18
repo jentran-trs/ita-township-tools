@@ -58,10 +58,13 @@ export function CertificateLookupClient({
 }: {
   availableCourses?: AvailableCourse[];
 }) {
+  const [mode, setMode] = useState<'email' | 'name'>('email');
   const [email, setEmail] = useState('');
+  const [first, setFirst] = useState('');
+  const [last, setLast] = useState('');
   const [preCourseFilter, setPreCourseFilter] = useState<string>('all');
   const [submitted, setSubmitted] = useState(false);
-  const [searchedEmail, setSearchedEmail] = useState('');
+  const [searchedLabel, setSearchedLabel] = useState('');
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<CertCard[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -137,20 +140,32 @@ export function CertificateLookupClient({
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const v = email.trim();
-    if (!v) return;
+    const emailV = email.trim();
+    const firstV = first.trim();
+    const lastV = last.trim();
+    let body: Record<string, string>;
+    let label: string;
+    if (mode === 'email') {
+      if (!emailV) return;
+      body = { email: emailV };
+      label = emailV;
+    } else {
+      if (!firstV || !lastV) return;
+      body = { first: firstV, last: lastV };
+      label = `${firstV} ${lastV}`;
+    }
     setError(null);
     setLoading(true);
     try {
       const res = await fetch('/api/certificates/lookup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: v }),
+        body: JSON.stringify(body),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Lookup failed');
       setResults(json.certificates || []);
-      setSearchedEmail(v);
+      setSearchedLabel(label);
       setSubmitted(true);
       // Carry the pre-search filters into the post-results filters so the
       // attendee's selection is honored on the result list.
@@ -221,32 +236,96 @@ export function CertificateLookupClient({
           </div>
         )}
 
-        <label htmlFor="lookup-email" className="block text-sm font-medium mb-1.5">
-          Your email
-        </label>
-        <div className="flex flex-col sm:flex-row gap-2">
-          <div className="relative flex-1">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              id="lookup-email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              autoComplete="email"
-              required
-              className="w-full pl-10 pr-3 py-2.5 text-base bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400"
-            />
-          </div>
+        {/* Search by email or by first + last name. */}
+        <div className="inline-flex rounded-lg border border-gray-300 dark:border-gray-700 p-0.5 bg-gray-100 dark:bg-gray-800">
           <button
-            type="submit"
-            disabled={loading}
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:opacity-60"
+            type="button"
+            onClick={() => setMode('email')}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md ${
+              mode === 'email'
+                ? 'bg-white dark:bg-gray-900 shadow-sm text-gray-900 dark:text-gray-100'
+                : 'text-gray-500 dark:text-gray-400'
+            }`}
           >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-            Find certificates
+            <Mail className="w-4 h-4" />
+            By email
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('name')}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md ${
+              mode === 'name'
+                ? 'bg-white dark:bg-gray-900 shadow-sm text-gray-900 dark:text-gray-100'
+                : 'text-gray-500 dark:text-gray-400'
+            }`}
+          >
+            <User className="w-4 h-4" />
+            By name
           </button>
         </div>
+
+        {mode === 'email' ? (
+          <div>
+            <label htmlFor="lookup-email" className="block text-sm font-medium mb-1.5">
+              Your email
+            </label>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="relative flex-1">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  id="lookup-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  autoComplete="email"
+                  className="w-full pl-10 pr-3 py-2.5 text-base bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:opacity-60"
+              >
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                Find certificates
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <label className="block text-sm font-medium mb-1.5">Your name</label>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                value={first}
+                onChange={(e) => setFirst(e.target.value)}
+                placeholder="First name"
+                autoComplete="given-name"
+                className="flex-1 px-3 py-2.5 text-base bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400"
+              />
+              <input
+                type="text"
+                value={last}
+                onChange={(e) => setLast(e.target.value)}
+                placeholder="Last name"
+                autoComplete="family-name"
+                className="flex-1 px-3 py-2.5 text-base bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400"
+              />
+              <button
+                type="submit"
+                disabled={loading}
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:opacity-60"
+              >
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                Find certificates
+              </button>
+            </div>
+            <p className="mt-1.5 text-xs text-gray-500">
+              Enter the first and last name exactly as you registered for the training.
+            </p>
+          </div>
+        )}
       </form>
 
       {error && (
@@ -258,7 +337,7 @@ export function CertificateLookupClient({
       {submitted && !loading && (
         <div className="mt-8">
           {results.length === 0 ? (
-            <EmptyState searchedEmail={searchedEmail} />
+            <EmptyState label={searchedLabel} />
           ) : (
             <>
               <div className="mb-4 flex items-center justify-between gap-3 flex-wrap">
@@ -266,12 +345,12 @@ export function CertificateLookupClient({
                   {filtersActive && filtered.length !== results.length ? (
                     <>
                       Showing <strong>{filtered.length}</strong> of {results.length} certificate
-                      {results.length === 1 ? '' : 's'} for <strong>{searchedEmail}</strong>.
+                      {results.length === 1 ? '' : 's'} for <strong>{searchedLabel}</strong>.
                     </>
                   ) : (
                     <>
                       Showing {results.length} certificate{results.length === 1 ? '' : 's'} for{' '}
-                      <strong>{searchedEmail}</strong>.
+                      <strong>{searchedLabel}</strong>.
                     </>
                   )}
                 </div>
@@ -373,13 +452,13 @@ export function CertificateLookupClient({
   );
 }
 
-function EmptyState({ searchedEmail }: { searchedEmail: string }) {
+function EmptyState({ label }: { label: string }) {
   return (
     <div className="bg-white dark:bg-gray-900 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl p-8 text-center">
       <Award className="w-10 h-10 mx-auto text-gray-300 dark:text-gray-700 mb-3" />
       <div className="font-semibold mb-1">No certificates found</div>
       <p className="text-sm text-gray-600 dark:text-gray-400 max-w-md mx-auto">
-        We couldn&apos;t find any active certificates for {searchedEmail ? <strong>{searchedEmail}</strong> : 'that email'}.
+        We couldn&apos;t find any active certificates for {label ? <strong>{label}</strong> : 'that search'}.
         If you believe this is an error, please contact the Indiana Township Association so they can verify your roster entry.
       </p>
     </div>

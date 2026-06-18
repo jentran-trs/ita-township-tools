@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Award,
@@ -13,7 +12,6 @@ import {
   LogIn,
   MapPin,
   CheckCircle2,
-  HeartHandshake,
   Wrench,
   ExternalLink,
 } from "lucide-react";
@@ -23,8 +21,8 @@ const PERSONAL_EMAIL = "giang.jentran@gmail.com";
 // goes to Jen's ITA address so it lands in the right inbox.
 const ITA_EMAIL = "jtran@ita-in.org";
 
-// Shared visual treatment for each top-level section header so the three
-// categories (Free / Sign-in / Custom) read as peer-level groupings.
+// Shared visual treatment for each top-level section header so the
+// categories (Free / Custom) read as peer-level groupings.
 function SectionHeader({ badge, badgeColors, title, children }) {
   return (
     <div className="text-center mb-8 sm:mb-10">
@@ -39,7 +37,7 @@ function SectionHeader({ badge, badgeColors, title, children }) {
   );
 }
 
-// A thick horizontal break between top-level sections so the eye sees three
+// A thick horizontal break between top-level sections so the eye sees
 // distinct categories rather than one long scroll.
 function SectionDivider() {
   return (
@@ -160,87 +158,6 @@ export default function PublicLanding() {
           </div>
         </section>
 
-        <SectionDivider />
-
-        {/* ───────── Section 2: Sign-in tools ───────── */}
-        <section>
-          <SectionHeader
-            badgeColors="bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
-            badge={
-              <>
-                <HeartHandshake className="w-4 h-4" />
-                A FRIENDLY ADD-ON · CONTACT JEN FOR ACCESS
-              </>
-            }
-            title="Sign-in tools"
-          >
-            <p className="text-base sm:text-lg text-gray-700 dark:text-gray-300 max-w-2xl mx-auto">
-              These are friendly add-ons — just a little extra help for day-to-day township work,{" "}
-              <strong>not</strong> a replacement for what ITA provides.
-            </p>
-            <p className="mt-2">
-              <Link
-                href="/about"
-                className="text-amber-700 dark:text-amber-400 underline hover:text-amber-900 dark:hover:text-amber-300"
-              >
-                How it works
-              </Link>
-            </p>
-          </SectionHeader>
-
-          <div className="grid sm:grid-cols-2 gap-5 sm:gap-6">
-            {/* Report Builder */}
-            <div className="bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 rounded-2xl p-6 sm:p-7 flex flex-col">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-amber-100 dark:bg-amber-900/40 rounded-xl flex items-center justify-center">
-                  <FileText className="w-7 h-7 sm:w-8 sm:h-8 text-amber-600 dark:text-amber-400" />
-                </div>
-              </div>
-              <h4 className="text-lg sm:text-xl font-bold mb-2">Report Builder</h4>
-              <p className="text-base text-gray-600 dark:text-gray-400 mb-5 flex-1">
-                Build a polished annual report and export it as a print-ready PDF — much faster
-                than starting from scratch in Word.
-              </p>
-              <button
-                onClick={() => router.push("/sign-in")}
-                className="inline-flex items-center justify-center gap-2 text-base font-semibold text-amber-700 dark:text-amber-300 border-2 border-amber-300 dark:border-amber-700 rounded-lg px-4 py-2.5 hover:bg-amber-50 dark:hover:bg-amber-900/30"
-              >
-                <LogIn className="w-4 h-4" /> Sign in to use
-              </button>
-            </div>
-
-            {/* Email Template Builder */}
-            <div className="bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 rounded-2xl p-6 sm:p-7 flex flex-col">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-emerald-100 dark:bg-emerald-900/40 rounded-xl flex items-center justify-center">
-                  <Mail className="w-7 h-7 sm:w-8 sm:h-8 text-emerald-600 dark:text-emerald-400" />
-                </div>
-              </div>
-              <h4 className="text-lg sm:text-xl font-bold mb-2">Email Template Builder</h4>
-              <p className="text-base text-gray-600 dark:text-gray-400 mb-5 flex-1">
-                Design professional newsletters and email updates. Copy the HTML and paste into
-                any email client — no design skills required.
-              </p>
-              <button
-                onClick={() => router.push("/sign-in")}
-                className="inline-flex items-center justify-center gap-2 text-base font-semibold text-emerald-700 dark:text-emerald-300 border-2 border-emerald-300 dark:border-emerald-700 rounded-lg px-4 py-2.5 hover:bg-emerald-50 dark:hover:bg-emerald-900/30"
-              >
-                <LogIn className="w-4 h-4" /> Sign in to use
-              </button>
-            </div>
-          </div>
-
-          {/* Access contact CTA */}
-          <div className="mt-6 sm:mt-8 text-center">
-            <a
-              href={`mailto:${PERSONAL_EMAIL}?subject=Township%20Tools%20access`}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-amber-500 text-white rounded-lg font-semibold text-base hover:bg-amber-600 transition-colors shadow-sm"
-            >
-              <Mail className="w-5 h-5" />
-              Contact Jen for access — {PERSONAL_EMAIL}
-            </a>
-          </div>
-        </section>
 
         <SectionDivider />
 

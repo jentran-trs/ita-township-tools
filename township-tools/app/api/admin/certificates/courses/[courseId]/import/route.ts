@@ -40,8 +40,8 @@ export async function POST(req: Request, { params }: RouteParams) {
   if (!['preview', 'commit'].includes(mode)) {
     return NextResponse.json({ error: 'mode must be preview or commit' }, { status: 400 });
   }
-  if (!['skip', 'reissue'].includes(dupePolicy)) {
-    return NextResponse.json({ error: 'dupePolicy must be skip or reissue' }, { status: 400 });
+  if (!['skip', 'reissue', 'update'].includes(dupePolicy)) {
+    return NextResponse.json({ error: 'dupePolicy must be skip, reissue, or update' }, { status: 400 });
   }
 
   const supabase = createServerSupabaseClient();
@@ -99,9 +99,12 @@ export async function POST(req: Request, { params }: RouteParams) {
   // Commit mode: insert credential rows. Honor dupePolicy:
   //   skip    → ignore rows that are already-issued
   //   reissue → mark existing active row(s) reissued, then insert a new row
+  //   update  → keep the existing certificate (same credential_id) and just
+  //             refresh its township/county from the file
   const inserted: any[] = [];
   const skipped: any[] = [];
   const reissuedOld: string[] = [];
+  const updated: string[] = [];
 
   for (let i = 0; i < rows.length; i++) {
     const r = rows[i];
@@ -121,9 +124,9 @@ export async function POST(req: Request, { params }: RouteParams) {
         });
         continue;
       }
-      // Mark active certs for the SAME identity (email + first + last) in
-      // this course as reissued. We refuse to touch certificates that share
-      // the email but belong to a different person.
+      // Active certs for the SAME identity (email + first + last) in this
+      // course. We never touch certificates that share the email but belong to
+      // a different person.
       const { data: olds } = await supabase
         .from('certificates')
         .select('id, attendee_first, attendee_last')
@@ -135,6 +138,24 @@ export async function POST(req: Request, { params }: RouteParams) {
           recipientKey(r.email, o.attendee_first, o.attendee_last) ===
           recipientKey(r.email, r.first, r.last)
       );
+
+      if (dupePolicy === 'update') {
+        // Backfill township/county on the existing certificate — SAME
+        // credential_id, so attendees re-download the very same certificate.
+        if (matching.length) {
+          const ids = matching.map((o: any) => o.id);
+          await supabase
+            .from('certificates')
+            .update({ attendee_township: r.township, attendee_county: r.county })
+            .in('id', ids);
+          updated.push(...ids);
+        } else {
+          skipped.push({ row_number: r.row_number, reason: 'No matching active certificate to update' });
+        }
+        continue;
+      }
+
+      // reissue: mark the old active row(s) reissued, then insert a fresh one.
       if (matching.length) {
         const ids = matching.map((o: any) => o.id);
         await supabase.from('certificates').update({ status: 'reissued' }).in('id', ids);
@@ -182,7 +203,12 @@ export async function POST(req: Request, { params }: RouteParams) {
     ok: true,
     mode: 'commit',
     course,
-    written: { inserted_count: inserted.length, skipped_count: skipped.length, reissued_count: reissuedOld.length },
+    written: {
+      inserted_count: inserted.length,
+      skipped_count: skipped.length,
+      reissued_count: reissuedOld.length,
+      updated_count: updated.length,
+    },
     inserted: inserted.map((r) => ({ id: r.id, credential_id: r.credential_id, email: r.attendee_email })),
     skipped,
   });

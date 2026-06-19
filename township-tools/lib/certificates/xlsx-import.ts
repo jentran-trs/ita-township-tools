@@ -18,6 +18,7 @@ type ColumnIndex = {
   email: number;
   township: number;
   county: number;
+  organization: number;
 };
 
 const HEADER_ALIASES: Record<keyof ColumnIndex, string[]> = {
@@ -26,6 +27,10 @@ const HEADER_ALIASES: Record<keyof ColumnIndex, string[]> = {
   email: ['email', 'emailaddress', 'mail', 'e-mail'],
   township: ['township', 'twp'],
   county: ['county'],
+  // AMO exports combine township + county into one "Organization" column,
+  // e.g. "Pleasant Township, Steuben County". Used only when there are no
+  // dedicated township/county columns.
+  organization: ['organization', 'org'],
 };
 
 function normalizeHeader(h: string): string {
@@ -48,7 +53,7 @@ function valueToString(v: any): string {
 }
 
 function findColumns(headerCells: any[]): { index: ColumnIndex; missing: string[] } {
-  const idx: ColumnIndex = { first: -1, last: -1, email: -1, township: -1, county: -1 };
+  const idx: ColumnIndex = { first: -1, last: -1, email: -1, township: -1, county: -1, organization: -1 };
   for (let c = 0; c < headerCells.length; c++) {
     const norm = normalizeHeader(valueToString(headerCells[c]));
     if (!norm) continue;
@@ -124,8 +129,19 @@ export async function parseAttendeeWorkbook(buffer: Buffer, filename: string): P
     const first = valueToString(r[index.first]);
     const last = valueToString(r[index.last]);
     const email = valueToString(r[index.email]);
-    const township = index.township >= 0 ? valueToString(r[index.township]) : '';
-    const county = index.county >= 0 ? valueToString(r[index.county]) : '';
+    let township = index.township >= 0 ? valueToString(r[index.township]) : '';
+    let county = index.county >= 0 ? valueToString(r[index.county]) : '';
+
+    // No dedicated township/county columns? Derive them from a combined
+    // "Organization" column like "Pleasant Township, Steuben County".
+    if (!township && !county && index.organization >= 0) {
+      const org = valueToString(r[index.organization]);
+      if (/township|county/i.test(org)) {
+        const split = splitOrganization(org);
+        township = split.township;
+        county = split.county;
+      }
+    }
 
     // Skip wholly empty rows
     if (!first && !last && !email) continue;
@@ -140,7 +156,9 @@ export async function parseAttendeeWorkbook(buffer: Buffer, filename: string): P
       first,
       last,
       email: email.toLowerCase().trim(),
-      township: township || null,
+      // Store the bare township name ("Oregon"); the certificate appends the
+      // word "Township" when displaying.
+      township: stripTownshipSuffix(township) || null,
       county: stripCountySuffix(county) || null,
       row_number: rowNumber,
       issues,
@@ -153,6 +171,28 @@ export async function parseAttendeeWorkbook(buffer: Buffer, filename: string): P
 function stripCountySuffix(v: string): string {
   // "Hancock County" → "Hancock"; pass through if no trailing County
   return v.replace(/\s+county\s*$/i, '').trim();
+}
+
+function stripTownshipSuffix(v: string): string {
+  // "Oregon Township" → "Oregon"; pass through if no trailing Township
+  return v.replace(/\s+township\s*$/i, '').trim();
+}
+
+// Split a combined "Township, County" organization string into its parts.
+// "Pleasant Township, Steuben County" → { township: 'Pleasant Township',
+// county: 'Steuben County' }. County suffix is stripped later by the caller.
+function splitOrganization(org: string): { township: string; county: string } {
+  const parts = org
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  let township = '';
+  let county = '';
+  for (const part of parts) {
+    if (!county && /\bcounty\s*$/i.test(part)) county = part;
+    else if (!township) township = part;
+  }
+  return { township, county };
 }
 
 /**

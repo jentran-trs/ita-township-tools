@@ -11,6 +11,7 @@ import {
   PAPER,
 } from '@/lib/certificates/theme';
 import { cormorant, cutive, playfair } from '@/lib/certificates/fonts';
+import { townshipLabel } from '@/lib/certificates/township';
 import { GuillocheBorder } from './ornaments/GuillocheBorder';
 import { CornerFleuron } from './ornaments/CornerFleuron';
 import { RibbonBanner } from './ornaments/RibbonBanner';
@@ -155,7 +156,8 @@ export function Certificate({ data, innerRef }: Props) {
 
   const locationLine = (() => {
     const parts: string[] = [];
-    if (recipient.township) parts.push(recipient.township);
+    const twp = townshipLabel(recipient.township);
+    if (twp) parts.push(twp);
     if (recipient.county) parts.push(`${recipient.county} County`);
     return parts.length ? parts.join(', ') : null;
   })();

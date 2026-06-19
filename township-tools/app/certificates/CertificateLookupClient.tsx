@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { Award, Calendar, Filter, GraduationCap, Loader2, Mail, MapPin, Search, User, Users, X } from 'lucide-react';
 import { CertificateDownloadButton } from '@/components/certificates/CertificateDownloadButton';
+import { townshipLabel } from '@/lib/certificates/township';
 
 type Sig = {
   signer_name: string;
@@ -500,7 +501,7 @@ function CertificateCard({ cert }: { cert: CertCard }) {
             </Pair>
             {(cert.attendee_township || cert.attendee_county) && (
               <Pair icon={<MapPin className="w-4 h-4" />} label="Location">
-                {[cert.attendee_township, cert.attendee_county && `${cert.attendee_county} County`]
+                {[townshipLabel(cert.attendee_township), cert.attendee_county && `${cert.attendee_county} County`]
                   .filter(Boolean)
                   .join(', ')}
               </Pair>

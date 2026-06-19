@@ -27,7 +27,7 @@ type PreviewResponse = {
 type CommitResponse = {
   ok: boolean;
   mode: 'commit';
-  written: { inserted_count: number; skipped_count: number; reissued_count: number };
+  written: { inserted_count: number; skipped_count: number; reissued_count: number; updated_count: number };
   inserted: { id: string; credential_id: string; email: string }[];
   skipped: { row_number: number; reason: string }[];
 };
@@ -40,7 +40,7 @@ export function ImportClient({ courseId, courseLabel }: { courseId: string; cour
   const [result, setResult] = useState<CommitResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [dupePolicy, setDupePolicy] = useState<'skip' | 'reissue'>('skip');
+  const [dupePolicy, setDupePolicy] = useState<'skip' | 'reissue' | 'update'>('skip');
 
   const submit = async (mode: 'preview' | 'commit') => {
     if (!file) return setError('Pick a file first.');
@@ -176,6 +176,7 @@ export function ImportClient({ courseId, courseLabel }: { courseId: string; cour
                   className="px-2 py-1.5 text-sm bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-md"
                 >
                   <option value="skip">Keep their existing certificate</option>
+                  <option value="update">Update township/county (keep same certificate &amp; ID)</option>
                   <option value="reissue">Replace it with a new certificate</option>
                 </select>
               </label>
@@ -205,7 +206,7 @@ function PreviewBlock({
   onReset,
 }: {
   preview: PreviewResponse;
-  dupePolicy: 'skip' | 'reissue';
+  dupePolicy: 'skip' | 'reissue' | 'update';
   loading: boolean;
   onCommit: () => void;
   onReset: () => void;
@@ -221,6 +222,8 @@ function PreviewBlock({
             Review the list before importing.{' '}
             {dupePolicy === 'skip'
               ? 'People who already have a certificate for this course will be left as-is.'
+              : dupePolicy === 'update'
+              ? 'People who already have a certificate keep it (same ID) — only their township/county is refreshed from this file.'
               : 'People who already have a certificate will get a fresh one; their old certificate becomes invalid.'}
           </p>
         </div>
@@ -244,16 +247,21 @@ function PreviewBlock({
           <RotateCcw className="w-4 h-4" />
           Start over
         </button>
-        <button
-          type="button"
-          onClick={onCommit}
-          disabled={loading || summary.valid + (dupePolicy === 'reissue' ? summary.alreadyIssued : 0) === 0}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50"
-        >
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-          Issue {summary.valid + (dupePolicy === 'reissue' ? summary.alreadyIssued : 0)} certificate
-          {summary.valid + (dupePolicy === 'reissue' ? summary.alreadyIssued : 0) === 1 ? '' : 's'}
-        </button>
+        {(() => {
+          const acted = summary.valid + (dupePolicy === 'skip' ? 0 : summary.alreadyIssued);
+          const verb = dupePolicy === 'update' ? 'Update' : 'Issue';
+          return (
+            <button
+              type="button"
+              onClick={onCommit}
+              disabled={loading || acted === 0}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50"
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+              {verb} {acted} certificate{acted === 1 ? '' : 's'}
+            </button>
+          );
+        })()}
       </div>
 
       <div className="overflow-x-auto">
@@ -289,6 +297,8 @@ function PreviewBlock({
                       label={
                         dupePolicy === 'skip'
                           ? 'Already has a certificate — will skip'
+                          : dupePolicy === 'update'
+                          ? 'Already has a certificate — will update township/county'
                           : 'Already has a certificate — will replace'
                       }
                     />
@@ -321,16 +331,29 @@ function CommitResult({
         <h2 className="text-lg font-semibold">Import complete</h2>
       </div>
       <div className="text-sm text-gray-700 dark:text-gray-300 space-y-1 mb-4">
-        <div>
-          Issued <strong>{result.written.inserted_count}</strong> new certificate
-          {result.written.inserted_count === 1 ? '' : 's'}.
-        </div>
+        {result.written.inserted_count > 0 && (
+          <div>
+            Issued <strong>{result.written.inserted_count}</strong> new certificate
+            {result.written.inserted_count === 1 ? '' : 's'}.
+          </div>
+        )}
+        {result.written.updated_count > 0 && (
+          <div>
+            Updated <strong>{result.written.updated_count}</strong> existing certificate
+            {result.written.updated_count === 1 ? '' : 's'} (same credential ID).
+          </div>
+        )}
         {result.written.reissued_count > 0 && (
           <div>Re-issued <strong>{result.written.reissued_count}</strong> existing.</div>
         )}
         {result.written.skipped_count > 0 && (
           <div className="text-gray-500">Skipped {result.written.skipped_count} row{result.written.skipped_count === 1 ? '' : 's'}.</div>
         )}
+        {result.written.inserted_count === 0 &&
+          result.written.updated_count === 0 &&
+          result.written.reissued_count === 0 && (
+            <div className="text-gray-500">No certificates were created or changed.</div>
+          )}
       </div>
       {result.skipped.length > 0 && (
         <details className="mb-4">

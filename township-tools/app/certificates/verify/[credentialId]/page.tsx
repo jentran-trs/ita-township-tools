@@ -12,6 +12,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { createServerSupabaseClient } from '@/lib/supabase';
+import { townshipLabel } from '@/lib/certificates/township';
 
 export const dynamic = 'force-dynamic';
 
@@ -196,7 +197,7 @@ function CertSummary({ cert, course }: { cert: any; course: any }) {
         </Pair>
         {(cert.attendee_township || cert.attendee_county) && (
           <Pair icon={<MapPin className="w-4 h-4" />} label="Location">
-            {[cert.attendee_township, cert.attendee_county && `${cert.attendee_county} County`]
+            {[townshipLabel(cert.attendee_township), cert.attendee_county && `${cert.attendee_county} County`]
               .filter(Boolean)
               .join(', ')}
           </Pair>

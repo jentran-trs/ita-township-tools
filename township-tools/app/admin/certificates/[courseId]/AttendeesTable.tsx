@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Info, Loader2, RotateCcw, ShieldOff, UserPlus, X } from 'lucide-react';
+import { townshipLabel } from '@/lib/certificates/township';
 
 type Cert = {
   id: string;
@@ -238,7 +239,7 @@ export function AttendeesTable({ certificates, courseId }: { certificates: Cert[
                   </td>
                   <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{c.attendee_email}</td>
                   <td className="px-3 py-2 text-gray-600 dark:text-gray-400">
-                    {[c.attendee_township, c.attendee_county && `${c.attendee_county} County`]
+                    {[townshipLabel(c.attendee_township), c.attendee_county && `${c.attendee_county} County`]
                       .filter(Boolean)
                       .join(', ') || '—'}
                   </td>

@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AlertTriangle, Check, FileUp, Loader2, RotateCcw, Upload } from 'lucide-react';
+import { townshipLabel } from '@/lib/certificates/township';
 
 type ParsedRow = {
   first: string;
@@ -284,7 +285,7 @@ function PreviewBlock({
                 </td>
                 <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{r.email || '—'}</td>
                 <td className="px-3 py-2 text-gray-500">
-                  {[r.township, r.county && `${r.county} County`].filter(Boolean).join(', ') || '—'}
+                  {[townshipLabel(r.township), r.county && `${r.county} County`].filter(Boolean).join(', ') || '—'}
                 </td>
                 <td className="px-3 py-2">
                   {r.issues.length ? (

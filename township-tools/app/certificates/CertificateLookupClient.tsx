@@ -531,8 +531,15 @@ function CertificateCard({ cert }: { cert: CertCard }) {
           </div>
           <div className="text-xl sm:text-2xl font-bold leading-tight mb-3">{fullName}</div>
 
-          <div className="text-xs text-gray-500 font-mono mb-1">{cert.course.course_id}</div>
-          <h2 className="text-base sm:text-lg font-semibold leading-snug mb-2">{cert.course.name}</h2>
+          {/* Course name highlighted so it's easy to spot which training each
+              certificate is for. */}
+          <div className="mb-3">
+            <div className="inline-flex items-center gap-2 bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 rounded-lg px-3 py-1.5 border border-amber-200 dark:border-amber-800">
+              <GraduationCap className="w-4 h-4 flex-shrink-0" />
+              <h2 className="text-base sm:text-lg font-bold leading-snug">{cert.course.name}</h2>
+            </div>
+            <div className="text-xs text-gray-500 font-mono mt-1">{cert.course.course_id}</div>
+          </div>
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-sm">
             <Pair icon={<Calendar className="w-4 h-4" />} label="Date">
               {formatDate(cert.course.course_date)}

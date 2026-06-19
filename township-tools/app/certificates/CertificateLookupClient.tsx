@@ -137,6 +137,28 @@ export function CertificateLookupClient({
     });
   }, [results, filter, courseFilter, yearFilter]);
 
+  // Group the filtered results by course so a multi-course / multi-person
+  // (shared email) result set is easy to scan. Courses newest-first; people
+  // within a course alphabetical by name.
+  const groupedByCourse = useMemo(() => {
+    const map = new Map<string, { course: CertCard['course']; certs: CertCard[] }>();
+    for (const c of filtered) {
+      const g = map.get(c.course.course_id);
+      if (g) g.certs.push(c);
+      else map.set(c.course.course_id, { course: c.course, certs: [c] });
+    }
+    const groups = Array.from(map.values());
+    groups.sort((a, b) => (b.course.course_date || '').localeCompare(a.course.course_date || ''));
+    for (const g of groups) {
+      g.certs.sort((a, b) =>
+        `${a.attendee_last} ${a.attendee_first}`
+          .toLowerCase()
+          .localeCompare(`${b.attendee_last} ${b.attendee_first}`.toLowerCase())
+      );
+    }
+    return groups;
+  }, [filtered]);
+
   const filtersActive = courseFilter !== 'all' || yearFilter !== 'all' || filter.trim() !== '';
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -439,9 +461,28 @@ export function CertificateLookupClient({
                   No certificates match these filters. Try clearing them or adjusting your search.
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {filtered.map((c) => (
-                    <CertificateCard key={c.credential_id} cert={c} />
+                <div className="space-y-8">
+                  {groupedByCourse.map((g) => (
+                    <section key={g.course.course_id} className="space-y-4">
+                      {/* Per-course heading — shown when results span more than
+                          one course, so attendees can jump to the one they need. */}
+                      {groupedByCourse.length > 1 && (
+                        <div className="flex items-baseline justify-between gap-3 border-b border-gray-200 dark:border-gray-800 pb-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <GraduationCap className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                            <h3 className="text-base sm:text-lg font-bold truncate">{g.course.name}</h3>
+                          </div>
+                          <span className="text-xs text-gray-500 flex-shrink-0 whitespace-nowrap">
+                            {g.certs.length} cert{g.certs.length === 1 ? '' : 's'} · {formatDate(g.course.course_date)}
+                          </span>
+                        </div>
+                      )}
+                      <div className="space-y-4">
+                        {g.certs.map((c) => (
+                          <CertificateCard key={c.credential_id} cert={c} />
+                        ))}
+                      </div>
+                    </section>
                   ))}
                 </div>
               )}
@@ -500,7 +541,7 @@ function CertificateCard({ cert }: { cert: CertCard }) {
               {cert.course.hours.toFixed(1)} · {METHOD_LABEL[cert.course.method]}
             </Pair>
             {(cert.attendee_township || cert.attendee_county) && (
-              <Pair icon={<MapPin className="w-4 h-4" />} label="Location">
+              <Pair icon={<MapPin className="w-4 h-4" />} label="Organization" wide>
                 {[townshipLabel(cert.attendee_township), cert.attendee_county && `${cert.attendee_county} County`]
                   .filter(Boolean)
                   .join(', ')}
@@ -548,16 +589,18 @@ function Pair({
   icon,
   label,
   children,
+  wide,
 }: {
   icon: React.ReactNode;
   label: string;
   children: React.ReactNode;
+  wide?: boolean;
 }) {
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-gray-400 dark:text-gray-500 flex-shrink-0">{icon}</span>
-      <span className="text-gray-500 dark:text-gray-400">{label}:</span>
-      <span className="font-medium truncate">{children}</span>
+    <div className={`flex items-start gap-2 ${wide ? 'sm:col-span-2' : ''}`}>
+      <span className="text-gray-400 dark:text-gray-500 flex-shrink-0 mt-0.5">{icon}</span>
+      <span className="text-gray-500 dark:text-gray-400 flex-shrink-0">{label}:</span>
+      <span className={`font-medium ${wide ? 'break-words' : 'truncate'}`}>{children}</span>
     </div>
   );
 }

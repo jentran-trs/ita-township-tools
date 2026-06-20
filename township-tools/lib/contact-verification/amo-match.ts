@@ -37,12 +37,21 @@ export async function parseAmoWorkbook(buffer: Buffer): Promise<AmoRow[]> {
 
   const header = ((ws.getRow(1).values as any[]) || []).slice(1).map(cell);
   const col = (name: string) => header.findIndex((h) => norm(h) === norm(name));
+  // First matching header wins — accepts both the AMO report ("Email Address")
+  // and our own export format ("Email").
+  const colAny = (...names: string[]) => {
+    for (const n of names) {
+      const i = col(n);
+      if (i !== -1) return i;
+    }
+    return -1;
+  };
   const ci = {
-    id: col('Individual AMO ID'),
-    first: col('First Name'),
-    last: col('Last Name'),
-    email: col('Email Address'),
-    org: col('Organization Name'),
+    id: colAny('Individual AMO ID'),
+    first: colAny('First Name'),
+    last: colAny('Last Name'),
+    email: colAny('Email Address', 'Email'),
+    org: colAny('Organization Name'),
   };
   if (ci.id === -1) {
     throw new Error('Could not find an "Individual AMO ID" column. Use the AMO Individual Report export.');

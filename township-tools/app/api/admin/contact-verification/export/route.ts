@@ -42,7 +42,7 @@ const SIMPLE_COLUMNS = [
   ...ORG_ADDRESS_COLUMNS,
   { header: 'First Name', key: 'first_name' },
   { header: 'Last Name', key: 'last_name' },
-  { header: 'Email', key: 'email' },
+  { header: 'Email Address', key: 'email' },
   { header: 'Title', key: 'title' },
   { header: 'Phone Number', key: 'phone' },
   ...AMO_FLAG_COLUMNS,

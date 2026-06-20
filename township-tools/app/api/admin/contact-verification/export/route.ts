@@ -13,13 +13,13 @@ export const maxDuration = 60;
 // own structured set (county comes from the township's county).
 const ORG_ADDRESS_COLUMNS = [
   { header: 'Address', key: 'org_addr_line1' },
-  { header: 'Address 2', key: 'org_addr_line2' },
+  { header: 'Address2', key: 'org_addr_line2' },
   { header: 'City', key: 'org_addr_city' },
   { header: 'State', key: 'org_addr_state' },
   { header: 'Zip Code', key: 'org_addr_zip' },
   { header: 'Country', key: 'org_addr_country' },
   { header: 'Organization Mailing Address', key: 'org_mail_line1' },
-  { header: 'Organization Mailing Address 2', key: 'org_mail_line2' },
+  { header: 'Organization Mailing Address2', key: 'org_mail_line2' },
   { header: 'Organization Mailing Address City', key: 'org_mail_city' },
   { header: 'Organization Mailing Address State', key: 'org_mail_state' },
   { header: 'Organization Mailing Address Zip Code', key: 'org_mail_zip' },
@@ -27,8 +27,9 @@ const ORG_ADDRESS_COLUMNS = [
   { header: 'Organization Mailing Address Country', key: 'org_mail_country' },
 ];
 
-// Constant flags AMO expects, same value for every exported row.
+// Flags AMO expects. Login/Member Type are constant; Username mirrors the email.
 const AMO_FLAG_COLUMNS = [
+  { header: 'Username', key: 'username' },
   { header: 'Login Enabled Y/N', key: 'login_enabled' },
   { header: 'Member Type', key: 'member_type' },
 ];
@@ -249,6 +250,7 @@ async function buildResponse(loaded: any) {
     org_mail_zip: m.zip,
     org_mail_county: hasMailing ? townshipCounty : '',
     org_mail_country: m.country,
+    username: c.email || '',
     login_enabled: '1',
     member_type: 'Individual in Township',
     first_name: c.first_name || '',

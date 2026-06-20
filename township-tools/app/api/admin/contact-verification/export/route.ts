@@ -10,9 +10,10 @@ export const maxDuration = 60;
 
 // Simple 8-column format: location context + the core contact fields.
 const SIMPLE_COLUMNS = [
+  { header: 'Individual AMO ID', key: 'amo_individual_id' },
   { header: 'Region', key: 'region' },
   { header: 'County', key: 'county' },
-  { header: 'Township', key: 'township' },
+  { header: 'Organization Name', key: 'organization_name' },
   { header: 'First Name', key: 'first_name' },
   { header: 'Last Name', key: 'last_name' },
   { header: 'Email', key: 'email' },
@@ -22,9 +23,10 @@ const SIMPLE_COLUMNS = [
 
 // Detailed columns for full audit-style export.
 const DETAILED_COLUMNS = [
+  { header: 'Individual AMO ID', key: 'amo_individual_id' },
   { header: 'Region', key: 'region' },
   { header: 'County', key: 'county' },
-  { header: 'Township', key: 'township' },
+  { header: 'Organization Name', key: 'organization_name' },
   { header: 'First Name', key: 'first_name' },
   { header: 'Last Name', key: 'last_name' },
   { header: 'Title', key: 'title' },
@@ -39,6 +41,16 @@ const DETAILED_COLUMNS = [
   { header: 'AMO Synced At', key: 'amo_updated_at' },
   { header: 'AMO Synced By', key: 'amo_updated_by' },
 ];
+
+// AMO's "Organization" field format, e.g. "Vernon Township, Hancock County".
+// Appends "Township"/"County" only when not already present.
+function organizationName(township: string, county: string): string {
+  const t = (township || '').trim();
+  const c = (county || '').trim();
+  const twp = t ? (/\btownship\s*$/i.test(t) ? t : `${t} Township`) : '';
+  const cty = c ? (/\bcounty\s*$/i.test(c) ? c : `${c} County`) : '';
+  return [twp, cty].filter(Boolean).join(', ');
+}
 
 function csvEscape(value: any): string {
   if (value === null || value === undefined) return '';
@@ -82,7 +94,7 @@ async function loadContacts(req: Request) {
       `id, first_name, last_name, title, email, phone, email_status,
        previous_email, previous_email_status,
        review_status, reviewed_at, reviewed_by_name,
-       amo_updated_at, amo_updated_by,
+       amo_updated_at, amo_updated_by, amo_individual_id,
        cv_townships:township_id ( id, name, street_address, mailing_address,
          cv_counties:county_id ( id, name, cv_regions:region_id ( id, name ) )
        )`
@@ -134,9 +146,14 @@ async function buildResponse(loaded: any) {
   const { contacts, format, variant, scope, id, contactIds } = loaded;
 
   const rows = (contacts || []).map((c: any) => ({
+    amo_individual_id: c.amo_individual_id || '',
     region: c.cv_townships?.cv_counties?.cv_regions?.name || '',
     county: c.cv_townships?.cv_counties?.name || '',
     township: c.cv_townships?.name || '',
+    organization_name: organizationName(
+      c.cv_townships?.name || '',
+      c.cv_townships?.cv_counties?.name || ''
+    ),
     first_name: c.first_name || '',
     last_name: c.last_name || '',
     title: c.title || '',

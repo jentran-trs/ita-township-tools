@@ -8,12 +8,27 @@ import { requireSuperadmin } from '../../../../../lib/auth/superadmin';
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
-// Simple 8-column format: location context + the core contact fields.
+// Organization (township) address. The parsed columns use AMO's exact headers
+// so they map on re-import; the "(raw)" columns carry the exact stored text as
+// a fallback for review.
+const ORG_ADDRESS_COLUMNS = [
+  { header: 'Organization Street Address', key: 'org_addr_line1' },
+  { header: 'Organization Street Address 2', key: 'org_addr_line2' },
+  { header: 'Organization Street City', key: 'org_addr_city' },
+  { header: 'Organization Street State', key: 'org_addr_state' },
+  { header: 'Organization Street Zip Code', key: 'org_addr_zip' },
+  { header: 'Organization Street Country', key: 'org_addr_country' },
+  { header: 'Organization Address (raw)', key: 'org_street_raw' },
+  { header: 'Organization Mailing Address (raw)', key: 'org_mailing_raw' },
+];
+
+// Simple format: location context + the core contact fields.
 const SIMPLE_COLUMNS = [
   { header: 'Individual AMO ID', key: 'amo_individual_id' },
   { header: 'Region', key: 'region' },
   { header: 'County', key: 'county' },
   { header: 'Organization Name', key: 'organization_name' },
+  ...ORG_ADDRESS_COLUMNS,
   { header: 'First Name', key: 'first_name' },
   { header: 'Last Name', key: 'last_name' },
   { header: 'Email', key: 'email' },
@@ -27,6 +42,7 @@ const DETAILED_COLUMNS = [
   { header: 'Region', key: 'region' },
   { header: 'County', key: 'county' },
   { header: 'Organization Name', key: 'organization_name' },
+  ...ORG_ADDRESS_COLUMNS,
   { header: 'First Name', key: 'first_name' },
   { header: 'Last Name', key: 'last_name' },
   { header: 'Title', key: 'title' },
@@ -41,6 +57,50 @@ const DETAILED_COLUMNS = [
   { header: 'AMO Synced At', key: 'amo_updated_at' },
   { header: 'AMO Synced By', key: 'amo_updated_by' },
 ];
+
+// Best-effort split of the portal's single free-text township address into
+// AMO's structured fields. The data is inconsistent ("St, City, State, Zip" vs
+// "St, City State Zip", state as "IN"/"Indiana", no country), so this is a
+// convenience parse — the raw value is exported alongside for review.
+function parseAddress(raw: string): {
+  line1: string;
+  line2: string;
+  city: string;
+  state: string;
+  zip: string;
+  country: string;
+} {
+  const out = { line1: '', line2: '', city: '', state: '', zip: '', country: '' };
+  const s = (raw || '').trim();
+  if (!s) return out;
+  out.country = 'United States';
+
+  let rest = s;
+  const zipMatch = rest.match(/(\d{5}(?:-\d{4})?)\s*$/);
+  if (zipMatch) {
+    out.zip = zipMatch[1];
+    rest = rest.slice(0, zipMatch.index).replace(/[,\s]+$/, '');
+  }
+  const parts = rest.split(',').map((p) => p.trim()).filter(Boolean);
+  if (parts.length >= 3) {
+    out.state = parts[parts.length - 1];
+    out.city = parts[parts.length - 2];
+    out.line1 = parts.slice(0, parts.length - 2).join(', ');
+  } else if (parts.length === 2) {
+    const tail = parts[1].split(/\s+/);
+    if (tail.length >= 2) {
+      out.state = tail[tail.length - 1];
+      out.city = tail.slice(0, -1).join(' ');
+    } else {
+      out.city = parts[1];
+    }
+    out.line1 = parts[0];
+  } else if (parts.length === 1) {
+    out.line1 = parts[0];
+  }
+  if (out.state && out.state.length <= 3) out.state = out.state.toUpperCase();
+  return out;
+}
 
 // AMO's "Organization" field format, e.g. "Vernon Township, Hancock County".
 // Appends "Township"/"County" only when not already present.
@@ -145,7 +205,10 @@ export async function POST(req: Request) {
 async function buildResponse(loaded: any) {
   const { contacts, format, variant, scope, id, contactIds } = loaded;
 
-  const rows = (contacts || []).map((c: any) => ({
+  const rows = (contacts || []).map((c: any) => {
+    const street = c.cv_townships?.street_address || '';
+    const a = parseAddress(street);
+    return {
     amo_individual_id: c.amo_individual_id || '',
     region: c.cv_townships?.cv_counties?.cv_regions?.name || '',
     county: c.cv_townships?.cv_counties?.name || '',
@@ -154,6 +217,14 @@ async function buildResponse(loaded: any) {
       c.cv_townships?.name || '',
       c.cv_townships?.cv_counties?.name || ''
     ),
+    org_addr_line1: a.line1,
+    org_addr_line2: a.line2,
+    org_addr_city: a.city,
+    org_addr_state: a.state,
+    org_addr_zip: a.zip,
+    org_addr_country: a.country,
+    org_street_raw: street,
+    org_mailing_raw: c.cv_townships?.mailing_address || '',
     first_name: c.first_name || '',
     last_name: c.last_name || '',
     title: c.title || '',
@@ -167,7 +238,8 @@ async function buildResponse(loaded: any) {
     reviewed_at: c.reviewed_at ? new Date(c.reviewed_at).toISOString() : '',
     amo_updated_at: c.amo_updated_at ? new Date(c.amo_updated_at).toISOString() : '',
     amo_updated_by: c.amo_updated_by || '',
-  }));
+    };
+  });
 
   rows.sort((a: any, b: any) => {
     const k = (r: any) => `${r.region}|${r.county}|${r.township}|${r.last_name}|${r.first_name}`;

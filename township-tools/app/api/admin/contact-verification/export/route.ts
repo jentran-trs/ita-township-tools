@@ -8,18 +8,29 @@ import { requireSuperadmin } from '../../../../../lib/auth/superadmin';
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
-// Organization (township) address. The parsed columns use AMO's exact headers
-// so they map on re-import; the "(raw)" columns carry the exact stored text as
-// a fallback for review.
+// Organization (township) address, parsed from the portal's free-text fields.
+// Street address uses AMO's individual-address headers; mailing address has its
+// own structured set (county comes from the township's county).
 const ORG_ADDRESS_COLUMNS = [
-  { header: 'Organization Street Address', key: 'org_addr_line1' },
-  { header: 'Organization Street Address 2', key: 'org_addr_line2' },
-  { header: 'Organization Street City', key: 'org_addr_city' },
-  { header: 'Organization Street State', key: 'org_addr_state' },
-  { header: 'Organization Street Zip Code', key: 'org_addr_zip' },
-  { header: 'Organization Street Country', key: 'org_addr_country' },
-  { header: 'Organization Address (raw)', key: 'org_street_raw' },
-  { header: 'Organization Mailing Address (raw)', key: 'org_mailing_raw' },
+  { header: 'Address', key: 'org_addr_line1' },
+  { header: 'Address 2', key: 'org_addr_line2' },
+  { header: 'City', key: 'org_addr_city' },
+  { header: 'State', key: 'org_addr_state' },
+  { header: 'Zip Code', key: 'org_addr_zip' },
+  { header: 'Country', key: 'org_addr_country' },
+  { header: 'Organization Mailing Address', key: 'org_mail_line1' },
+  { header: 'Organization Mailing Address 2', key: 'org_mail_line2' },
+  { header: 'Organization Mailing Address City', key: 'org_mail_city' },
+  { header: 'Organization Mailing Address State', key: 'org_mail_state' },
+  { header: 'Organization Mailing Address Zip Code', key: 'org_mail_zip' },
+  { header: 'Organization Mailing Address County', key: 'org_mail_county' },
+  { header: 'Organization Mailing Address Country', key: 'org_mail_country' },
+];
+
+// Constant flags AMO expects, same value for every exported row.
+const AMO_FLAG_COLUMNS = [
+  { header: 'Login Enabled Y/N', key: 'login_enabled' },
+  { header: 'Member Type', key: 'member_type' },
 ];
 
 // Simple format: location context + the core contact fields.
@@ -34,6 +45,7 @@ const SIMPLE_COLUMNS = [
   { header: 'Email', key: 'email' },
   { header: 'Title', key: 'title' },
   { header: 'Phone Number', key: 'phone' },
+  ...AMO_FLAG_COLUMNS,
 ];
 
 // Detailed columns for full audit-style export.
@@ -56,6 +68,7 @@ const DETAILED_COLUMNS = [
   { header: 'Reviewed At', key: 'reviewed_at' },
   { header: 'AMO Synced At', key: 'amo_updated_at' },
   { header: 'AMO Synced By', key: 'amo_updated_by' },
+  ...AMO_FLAG_COLUMNS,
 ];
 
 // Best-effort split of the portal's single free-text township address into
@@ -208,6 +221,12 @@ async function buildResponse(loaded: any) {
   const rows = (contacts || []).map((c: any) => {
     const street = c.cv_townships?.street_address || '';
     const a = parseAddress(street);
+    // Mailing: "Same as street address" → reuse the street parse; blank → blank.
+    const mailingRaw = c.cv_townships?.mailing_address || '';
+    const mailingSource = /same as/i.test(mailingRaw) ? street : mailingRaw;
+    const m = parseAddress(mailingSource);
+    const hasMailing = mailingSource.trim().length > 0;
+    const townshipCounty = c.cv_townships?.cv_counties?.name || '';
     return {
     amo_individual_id: c.amo_individual_id || '',
     region: c.cv_townships?.cv_counties?.cv_regions?.name || '',
@@ -223,8 +242,15 @@ async function buildResponse(loaded: any) {
     org_addr_state: a.state,
     org_addr_zip: a.zip,
     org_addr_country: a.country,
-    org_street_raw: street,
-    org_mailing_raw: c.cv_townships?.mailing_address || '',
+    org_mail_line1: m.line1,
+    org_mail_line2: m.line2,
+    org_mail_city: m.city,
+    org_mail_state: m.state,
+    org_mail_zip: m.zip,
+    org_mail_county: hasMailing ? townshipCounty : '',
+    org_mail_country: m.country,
+    login_enabled: '1',
+    member_type: 'Individual in Township',
     first_name: c.first_name || '',
     last_name: c.last_name || '',
     title: c.title || '',

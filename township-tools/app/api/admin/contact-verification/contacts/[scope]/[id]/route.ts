@@ -39,10 +39,10 @@ export async function GET(
   const { data, error } = await supabase
     .from('cv_contacts')
     .select(
-      `id, first_name, last_name, title, email, phone, email_status,
+      `id, township_id, first_name, last_name, title, email, phone, email_status,
        previous_email, previous_email_status,
        review_status, reviewed_at, reviewed_by_name,
-       amo_updated_at, amo_updated_by,
+       amo_updated_at, amo_updated_by, amo_individual_id,
        cv_townships:township_id ( id, name,
          cv_counties:county_id ( id, name, cv_regions:region_id ( id, name ) )
        )`
@@ -68,6 +68,7 @@ export async function GET(
     reviewed_at: c.reviewed_at,
     amo_updated_at: c.amo_updated_at,
     amo_updated_by: c.amo_updated_by,
+    amo_individual_id: c.amo_individual_id || '',
     region_name: c.cv_townships?.cv_counties?.cv_regions?.name || '',
     county_name: c.cv_townships?.cv_counties?.name || '',
     township_name: c.cv_townships?.name || '',

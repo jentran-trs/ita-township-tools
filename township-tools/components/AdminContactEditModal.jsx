@@ -27,6 +27,7 @@ export default function AdminContactEditModal({ contact, onClose, onSaved }) {
     email: "",
     phone: "",
     email_status: "",
+    amo_individual_id: "",
   });
   // Tracks whether email_status comes from the preset dropdown or a custom "Other..." value.
   const [statusMode, setStatusMode] = useState("clear");
@@ -58,6 +59,7 @@ export default function AdminContactEditModal({ contact, onClose, onSaved }) {
       email: contact.email || "",
       phone: formatPhone(contact.phone || ""),
       email_status: status,
+      amo_individual_id: contact.amo_individual_id || "",
     });
     setStatusMode(mode);
     setKeepUnreviewed(true);
@@ -92,6 +94,11 @@ export default function AdminContactEditModal({ contact, onClose, onSaved }) {
 
   if (!contact) return null;
 
+  // Only expose the AMO ID field where the contact was loaded with it (the
+  // admin contacts list). On the public portal it's absent, so we never send it
+  // — avoids blanking an existing ID.
+  const canEditAmo = "amo_individual_id" in contact;
+
   const moveRegion = tree.find((r) => r.id === moveRegionId);
   const moveCounty = moveRegion?.counties?.find((c) => c.id === moveCountyId);
   const movePending = moveTownshipId && moveTownshipId !== contact.township_id;
@@ -113,6 +120,7 @@ export default function AdminContactEditModal({ contact, onClose, onSaved }) {
             email: draft.email,
             phone: draft.phone,
             email_status: draft.email_status || null,
+            ...(canEditAmo ? { amo_individual_id: draft.amo_individual_id.trim() || null } : {}),
           },
           keepUnreviewed,
         }),
@@ -262,6 +270,24 @@ export default function AdminContactEditModal({ contact, onClose, onSaved }) {
               />
             )}
           </div>
+
+          {canEditAmo && (
+            <label className="block">
+              <span className="block text-sm font-medium text-gray-700 mb-1">AMO Individual ID</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="e.g. 1424320"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-base text-gray-900"
+                value={draft.amo_individual_id}
+                onChange={setField("amo_individual_id")}
+              />
+              <span className="block text-xs text-gray-500 mt-1">
+                Links this contact to AMO so an export re-imports onto the right record. Leave blank
+                if they aren&apos;t in AMO.
+              </span>
+            </label>
+          )}
 
           <div className="border border-blue-200 bg-blue-50/40 rounded-md p-3 space-y-2">
             <div className="flex items-center gap-1.5 text-xs font-semibold text-blue-900 uppercase tracking-wide">

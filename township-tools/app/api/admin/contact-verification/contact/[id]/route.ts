@@ -67,6 +67,13 @@ export async function PATCH(
     }
   }
 
+  // AMO Individual ID is a manual sync field — set it directly without counting
+  // it as a contact-data change (so it doesn't clear the AMO sync stamp below).
+  if ('amo_individual_id' in changes) {
+    const v = changes.amo_individual_id;
+    update.amo_individual_id = v === '' || v === undefined || v === null ? null : String(v).trim();
+  }
+
   // Any change to the contact's data invalidates the previous AMO sync.
   if (dataChanged && existing.amo_updated_at) {
     update.amo_updated_at = null;

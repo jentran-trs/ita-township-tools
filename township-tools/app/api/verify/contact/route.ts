@@ -141,6 +141,10 @@ export async function PATCH(req: Request) {
         update.amo_updated_at = null;
         update.amo_updated_by = null;
       }
+      if (existing.mailchimp_updated_at) {
+        update.mailchimp_updated_at = null;
+        update.mailchimp_updated_by = null;
+      }
     }
     // Always clear the email-only snapshot too (legacy + display layer).
     update.previous_email = null;
@@ -196,6 +200,11 @@ export async function PATCH(req: Request) {
       if (existing.amo_updated_at) {
         update.amo_updated_at = null;
         update.amo_updated_by = null;
+      }
+      // ...and the previous MailChimp sync, for the same reason.
+      if (existing.mailchimp_updated_at) {
+        update.mailchimp_updated_at = null;
+        update.mailchimp_updated_by = null;
       }
     }
   }

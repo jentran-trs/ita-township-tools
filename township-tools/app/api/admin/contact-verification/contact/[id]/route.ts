@@ -80,6 +80,12 @@ export async function PATCH(
     update.amo_updated_by = null;
   }
 
+  // ...and likewise the previous MailChimp sync.
+  if (dataChanged && existing.mailchimp_updated_at) {
+    update.mailchimp_updated_at = null;
+    update.mailchimp_updated_by = null;
+  }
+
   // Snapshot the original values on first edit so a future "Undo" can restore
   // them — same behavior as the user-facing PATCH path.
   if (!existing.original_values && existing.review_status !== 'newly_added') {

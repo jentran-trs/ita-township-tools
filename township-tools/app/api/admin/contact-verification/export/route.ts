@@ -69,6 +69,8 @@ const DETAILED_COLUMNS = [
   { header: 'Reviewed At', key: 'reviewed_at' },
   { header: 'AMO Synced At', key: 'amo_updated_at' },
   { header: 'AMO Synced By', key: 'amo_updated_by' },
+  { header: 'MailChimp Synced At', key: 'mailchimp_updated_at' },
+  { header: 'MailChimp Synced By', key: 'mailchimp_updated_by' },
   ...AMO_FLAG_COLUMNS,
 ];
 
@@ -169,6 +171,7 @@ async function loadContacts(req: Request) {
        previous_email, previous_email_status,
        review_status, reviewed_at, reviewed_by_name,
        amo_updated_at, amo_updated_by, amo_individual_id,
+       mailchimp_updated_at, mailchimp_updated_by,
        cv_townships:township_id ( id, name, street_address, mailing_address,
          cv_counties:county_id ( id, name, cv_regions:region_id ( id, name ) )
        )`
@@ -266,6 +269,8 @@ async function buildResponse(loaded: any) {
     reviewed_at: c.reviewed_at ? new Date(c.reviewed_at).toISOString() : '',
     amo_updated_at: c.amo_updated_at ? new Date(c.amo_updated_at).toISOString() : '',
     amo_updated_by: c.amo_updated_by || '',
+    mailchimp_updated_at: c.mailchimp_updated_at ? new Date(c.mailchimp_updated_at).toISOString() : '',
+    mailchimp_updated_by: c.mailchimp_updated_by || '',
     };
   });
 

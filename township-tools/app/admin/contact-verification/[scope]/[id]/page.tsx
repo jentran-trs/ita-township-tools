@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useUser, useOrganization, useAuth } from "@clerk/nextjs";
-import { ArrowLeft, Loader2, Download, RotateCcw, CheckCircle2, ExternalLink, Filter, MoveRight, X, Pencil, Send, Search } from "lucide-react";
+import { ArrowLeft, Loader2, Download, RotateCcw, CheckCircle2, ExternalLink, Filter, MoveRight, X, Pencil, Send, Search, Mail } from "lucide-react";
 import AdminContactEditModal from "../../../../../components/AdminContactEditModal";
 
 type Stat = {
@@ -48,6 +48,8 @@ type Contact = {
   reviewed_by_name: string | null;
   amo_updated_at: string | null;
   amo_updated_by: string | null;
+  mailchimp_updated_at: string | null;
+  mailchimp_updated_by: string | null;
   region_name: string;
   county_name: string;
   township_name: string;
@@ -82,8 +84,10 @@ export default function DrillDownPage() {
   const [townshipFilters, setTownshipFilters] = useState<Set<string>>(new Set());
   const [emailStatusFilters, setEmailStatusFilters] = useState<Set<string>>(new Set());
   const [amoFilter, setAmoFilter] = useState<"all" | "synced" | "unsynced">("all");
+  const [mailchimpFilter, setMailchimpFilter] = useState<"all" | "synced" | "unsynced">("all");
   const [contactQuery, setContactQuery] = useState("");
   const [markingAmo, setMarkingAmo] = useState(false);
+  const [markingMailchimp, setMarkingMailchimp] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [exporting, setExporting] = useState(false);
   const [detailed, setDetailed] = useState(false);
@@ -139,6 +143,8 @@ export default function DrillDownPage() {
         return false;
       if (amoFilter === "synced" && !c.amo_updated_at) return false;
       if (amoFilter === "unsynced" && c.amo_updated_at) return false;
+      if (mailchimpFilter === "synced" && !c.mailchimp_updated_at) return false;
+      if (mailchimpFilter === "unsynced" && c.mailchimp_updated_at) return false;
       if (q) {
         const hay = [
           c.first_name,
@@ -154,13 +160,23 @@ export default function DrillDownPage() {
       }
       return true;
     });
-  }, [contacts, statusFilters, townshipFilters, emailStatusFilters, amoFilter, contactQuery]);
+  }, [contacts, statusFilters, townshipFilters, emailStatusFilters, amoFilter, mailchimpFilter, contactQuery]);
 
   const amoCounts = useMemo(() => {
     let synced = 0;
     let unsynced = 0;
     for (const c of contacts) {
       if (c.amo_updated_at) synced += 1;
+      else unsynced += 1;
+    }
+    return { synced, unsynced };
+  }, [contacts]);
+
+  const mailchimpCounts = useMemo(() => {
+    let synced = 0;
+    let unsynced = 0;
+    for (const c of contacts) {
+      if (c.mailchimp_updated_at) synced += 1;
       else unsynced += 1;
     }
     return { synced, unsynced };
@@ -267,6 +283,39 @@ export default function DrillDownPage() {
     for (const c of contacts) {
       if (!selected.has(c.id)) continue;
       if (c.amo_updated_at) syncedCount += 1;
+      else unsyncedCount += 1;
+    }
+    return { syncedCount, unsyncedCount };
+  }, [contacts, selected]);
+
+  const markMailchimpSynced = async (synced: boolean) => {
+    if (selected.size === 0) return;
+    const verb = synced ? "mark synced to MailChimp" : "clear the MailChimp sync flag for";
+    if (!confirm(`Are you sure you want to ${verb} ${selected.size} contact${selected.size === 1 ? "" : "s"}?`)) return;
+    setMarkingMailchimp(true);
+    try {
+      const res = await fetch("/api/admin/contact-verification/contacts/mark-mailchimp-synced", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contactIds: Array.from(selected), synced }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed");
+      await load();
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setMarkingMailchimp(false);
+    }
+  };
+
+  const selectedMailchimpState = useMemo(() => {
+    if (selected.size === 0) return { syncedCount: 0, unsyncedCount: 0 };
+    let syncedCount = 0;
+    let unsyncedCount = 0;
+    for (const c of contacts) {
+      if (!selected.has(c.id)) continue;
+      if (c.mailchimp_updated_at) syncedCount += 1;
       else unsyncedCount += 1;
     }
     return { syncedCount, unsyncedCount };
@@ -592,6 +641,34 @@ export default function DrillDownPage() {
             })}
           </div>
 
+          <div className="flex items-start gap-2 flex-wrap">
+            <span className="flex items-center gap-1 text-xs font-medium text-gray-600 mt-1">
+              <Filter className="w-3 h-3" /> MailChimp sync:
+            </span>
+            {(["all", "synced", "unsynced"] as const).map((opt) => {
+              const active = mailchimpFilter === opt;
+              const label =
+                opt === "all"
+                  ? `All (${contacts.length})`
+                  : opt === "synced"
+                  ? `Synced to MailChimp (${mailchimpCounts.synced})`
+                  : `Not synced (${mailchimpCounts.unsynced})`;
+              return (
+                <button
+                  key={opt}
+                  onClick={() => setMailchimpFilter(opt)}
+                  className={`text-xs px-2.5 py-1 rounded-full border ${
+                    active
+                      ? "bg-gray-900 text-white border-gray-900"
+                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+
           {emailStatusOptions.length > 0 && (
             <div className="flex items-start gap-2 flex-wrap">
               <span className="flex items-center gap-1 text-xs font-medium text-gray-600 mt-1">
@@ -630,6 +707,7 @@ export default function DrillDownPage() {
               statusFilters.size > 0 ||
               emailStatusFilters.size > 0 ||
               amoFilter !== "all" ||
+              mailchimpFilter !== "all" ||
               contactQuery.trim().length > 0) && (
               <button
                 onClick={() => {
@@ -637,6 +715,7 @@ export default function DrillDownPage() {
                   setStatusFilters(new Set());
                   setEmailStatusFilters(new Set());
                   setAmoFilter("all");
+                  setMailchimpFilter("all");
                   setContactQuery("");
                 }}
                 className="ml-2 text-gray-700 underline"
@@ -702,6 +781,28 @@ export default function DrillDownPage() {
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 Unmark {selectedAmoState.syncedCount} from AMO
+              </button>
+            )}
+            {selectedMailchimpState.unsyncedCount > 0 && (
+              <button
+                onClick={() => markMailchimpSynced(true)}
+                disabled={markingMailchimp}
+                title="Stamp selected contacts as pushed to MailChimp. Any future edit clears the stamp."
+                className="flex items-center gap-1 text-sm font-medium text-amber-700 border border-amber-300 bg-amber-50 px-3 py-1.5 rounded-md hover:bg-amber-100 disabled:opacity-50"
+              >
+                <Mail className="w-3.5 h-3.5" />
+                Mark {selectedMailchimpState.unsyncedCount} synced to MailChimp
+              </button>
+            )}
+            {selectedMailchimpState.syncedCount > 0 && (
+              <button
+                onClick={() => markMailchimpSynced(false)}
+                disabled={markingMailchimp}
+                title="Clear the MailChimp sync stamp on selected contacts."
+                className="flex items-center gap-1 text-sm font-medium text-gray-700 border border-gray-300 px-3 py-1.5 rounded-md hover:bg-gray-50 disabled:opacity-50"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                Unmark {selectedMailchimpState.syncedCount} from MailChimp
               </button>
             )}
             <button
@@ -773,6 +874,9 @@ export default function DrillDownPage() {
                           <ContactStatusBadge status={c.review_status} />
                           {c.amo_updated_at && (
                             <AmoSyncedPill at={c.amo_updated_at} by={c.amo_updated_by} />
+                          )}
+                          {c.mailchimp_updated_at && (
+                            <MailchimpSyncedPill at={c.mailchimp_updated_at} by={c.mailchimp_updated_by} />
                           )}
                         </div>
                       </td>
@@ -1059,6 +1163,20 @@ function AmoSyncedPill({ at, by }: { at: string; by: string | null }) {
       title={title}
     >
       <Send className="w-3 h-3" /> AMO · {dateLabel}
+    </span>
+  );
+}
+
+function MailchimpSyncedPill({ at, by }: { at: string; by: string | null }) {
+  const d = new Date(at);
+  const dateLabel = d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  const title = by ? `Marked synced to MailChimp on ${d.toLocaleString()} by ${by}` : `Marked synced to MailChimp on ${d.toLocaleString()}`;
+  return (
+    <span
+      className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full border whitespace-nowrap bg-amber-50 text-amber-800 border-amber-300"
+      title={title}
+    >
+      <Mail className="w-3 h-3" /> MailChimp · {dateLabel}
     </span>
   );
 }

@@ -270,20 +270,32 @@ export default function VerifyLanding() {
                   type="text"
                   required
                   placeholder="Jane Doe"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400"
+                  className={`w-full border rounded-md px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 ${
+                    attempted && !nameValid ? "border-red-500 ring-1 ring-red-500" : "border-gray-300"
+                  }`}
                   value={reviewerName}
                   onChange={(e) => setReviewerName(e.target.value)}
                 />
+                {attempted && !nameValid && (
+                  <p className="mt-1 text-xs text-red-600">Please enter your name.</p>
+                )}
               </Field>
               <Field label="Email address" required>
                 <input
                   type="email"
                   required
                   placeholder="jane@township.gov"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400"
+                  className={`w-full border rounded-md px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 ${
+                    attempted && !emailValid ? "border-red-500 ring-1 ring-red-500" : "border-gray-300"
+                  }`}
                   value={reviewerEmail}
                   onChange={(e) => setReviewerEmail(e.target.value)}
                 />
+                {attempted && !emailValid && (
+                  <p className="mt-1 text-xs text-red-600">
+                    Please enter a valid email address (e.g. jane@township.gov).
+                  </p>
+                )}
               </Field>
             </div>
           </Section>

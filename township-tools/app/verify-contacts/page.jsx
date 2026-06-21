@@ -43,6 +43,7 @@ export default function VerifyLanding() {
   const [loading, setLoading] = useState(true);
   const [savedReviewer, setSavedReviewer] = useState(null);
   const [identityConfirmed, setIdentityConfirmed] = useState(false);
+  const [attempted, setAttempted] = useState(false);
 
   useEffect(() => {
     if (searchParams.get("finished") === "1") {
@@ -97,8 +98,18 @@ export default function VerifyLanding() {
   const emailValid = /\S+@\S+\.\S+/.test(reviewerEmail.trim());
   const ready = identityConfirmed && nameValid && emailValid && !!region && !!county && !!township;
 
+  const missing = [];
+  if (!nameValid) missing.push("your name");
+  if (!emailValid) missing.push("a valid email address");
+  if (!region) missing.push("your region");
+  if (!county) missing.push("your county");
+  if (!township) missing.push("your township");
+
   const go = () => {
-    if (!ready) return;
+    if (!ready) {
+      setAttempted(true);
+      return;
+    }
     saveReviewer({
       reviewerName: reviewerName.trim(),
       reviewerEmail: reviewerEmail.trim(),
@@ -362,17 +373,22 @@ export default function VerifyLanding() {
 
         <button
           onClick={go}
-          disabled={!ready}
-          className="mt-2 w-full flex items-center justify-center gap-2 bg-gray-900 text-white text-base font-semibold px-4 py-3 rounded-md hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed"
+          className={`mt-2 w-full flex items-center justify-center gap-2 text-white text-base font-semibold px-4 py-3 rounded-md ${
+            ready ? "bg-gray-900 hover:bg-gray-800" : "bg-gray-500 hover:bg-gray-600"
+          }`}
         >
           Continue to my township
           <ArrowRight className="w-4 h-4" />
         </button>
-        {!ready && (
+        {attempted && !ready ? (
+          <p className="mt-3 text-sm text-red-600 text-center">
+            Please add {missing.join(", ")} to continue.
+          </p>
+        ) : !ready ? (
           <p className="mt-3 text-xs text-gray-500 text-center">
             Fill in all the fields above to continue.
           </p>
-        )}
+        ) : null}
         </>
         )}
       </div>

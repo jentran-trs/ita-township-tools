@@ -1449,6 +1449,9 @@ function ContactForm({ draft, setDraft, onCancel, onSave, busy, isNew }) {
         >
           <input type="email" className={inputClass("email")} value={draft.email} onChange={set("email")} />
           {errorFor("email")}
+          <span className="block text-sm text-gray-500 mt-1">
+            By providing an email address, this contact opts in to receive email updates from ITA at this address.
+          </span>
         </Field>
         <Field label="Phone number (optional)" full>
           <input

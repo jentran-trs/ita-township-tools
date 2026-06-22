@@ -314,8 +314,8 @@ const ScoringTool = () => {
             key={item.name}
             className={`flex items-start gap-3 border rounded-xl p-3 cursor-pointer transition-all ${
               isChecked
-                ? 'border-amber-500 bg-amber-500/10'
-                : 'border-slate-600 bg-slate-800/50 hover:border-slate-500'
+                ? 'border-amber-500 bg-amber-50'
+                : 'border-slate-300 bg-slate-50 hover:border-slate-400'
             }`}
           >
             <input
@@ -325,7 +325,7 @@ const ScoringTool = () => {
               className="mt-0.5 w-4 h-4 accent-amber-500 rounded"
             />
             <div>
-              <span className="text-sm text-slate-200 leading-snug">{item.label}</span>
+              <span className="text-sm text-slate-700 leading-snug">{item.label}</span>
               <span className="block text-xs text-slate-500 mt-1">{item.hint}</span>
             </div>
           </label>
@@ -345,8 +345,8 @@ const ScoringTool = () => {
               key={`${name}-${i}`}
               className={`flex-1 min-w-[220px] border rounded-xl p-3 cursor-pointer transition-all ${
                 isSelected
-                  ? 'border-amber-500 bg-amber-500/10'
-                  : 'border-slate-600 bg-slate-800/50 hover:border-slate-500'
+                  ? 'border-amber-500 bg-amber-50'
+                  : 'border-slate-300 bg-slate-50 hover:border-slate-400'
               }`}
             >
               <div className="flex gap-3 items-start">
@@ -358,7 +358,7 @@ const ScoringTool = () => {
                   className="mt-0.5 w-4 h-4 accent-amber-500"
                 />
                 <div>
-                  <span className="text-sm text-slate-200 leading-snug">{opt.label}</span>
+                  <span className="text-sm text-slate-700 leading-snug">{opt.label}</span>
                   <span className="block text-xs text-slate-500 mt-1">{opt.hint}</span>
                 </div>
               </div>
@@ -372,18 +372,18 @@ const ScoringTool = () => {
   return (
     <div className="max-w-[980px] mx-auto px-4 py-6 pb-16">
       {/* Header */}
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 mb-5 shadow-lg">
-        <h1 className="text-xl font-bold text-white mb-1.5">SB 270 Township Self-Scoring Tool</h1>
-        <p className="text-sm text-slate-300 leading-relaxed">
-          Answer each question, then select <strong className="text-slate-200">Calculate Score</strong>. A total of{' '}
-          <strong className="text-amber-500">4+ points</strong> indicates &ldquo;Designated Township&rdquo; under SB 270.
+      <div className="bg-white border border-slate-200 rounded-xl p-5 mb-5 shadow-sm">
+        <h1 className="text-xl font-bold text-slate-900 mb-1.5">SB 270 Township Self-Scoring Tool</h1>
+        <p className="text-sm text-slate-600 leading-relaxed">
+          Answer each question, then select <strong className="text-slate-800">Calculate Score</strong>. A total of{' '}
+          <strong className="text-amber-600">4+ points</strong> indicates &ldquo;Designated Township&rdquo; under SB 270.
         </p>
       </div>
 
       {/* Disclaimer */}
-      <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 mb-5 shadow-lg">
-        <h2 className="text-base font-bold text-amber-500 mb-3">Disclaimer — SB270 Scorecard on Township Mergers</h2>
-        <div className="text-sm text-slate-300 leading-relaxed space-y-3 mb-4">
+      <div className="bg-white border border-slate-200 rounded-xl p-5 mb-5 shadow-sm">
+        <h2 className="text-base font-bold text-amber-600 mb-3">Disclaimer — SB270 Scorecard on Township Mergers</h2>
+        <div className="text-sm text-slate-600 leading-relaxed space-y-3 mb-4">
           <p>
             This legislative scorecard has been prepared by the Indiana Township Association for informational purposes only. While every effort has been made to ensure accuracy, the Association cannot guarantee that the conclusions, ratings, or methodologies presented here will align with any analysis or scorecard produced by the Indiana Department of Local Government Finance.
           </p>
@@ -396,9 +396,9 @@ const ScoringTool = () => {
         </div>
         <div ref={infoRef} className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
           <div>
-            <label className="flex items-center gap-2 text-sm text-slate-300 mb-1.5">
+            <label className="flex items-center gap-2 text-sm text-slate-600 mb-1.5">
               <Building2 className="w-3.5 h-3.5" />
-              Township Name <span className="text-red-400">*</span>
+              Township Name <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -406,15 +406,15 @@ const ScoringTool = () => {
               onChange={(e) => setTownshipName(e.target.value)}
               required
               placeholder="e.g. Vernon Township"
-              className={`w-full px-3 py-2 bg-slate-900 border rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors ${
-                infoWarning && !townshipName.trim() ? 'border-red-500' : 'border-slate-600'
+              className={`w-full px-3 py-2 bg-white border rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 transition-colors ${
+                infoWarning && !townshipName.trim() ? 'border-red-500' : 'border-slate-300'
               }`}
             />
           </div>
           <div>
-            <label className="flex items-center gap-2 text-sm text-slate-300 mb-1.5">
+            <label className="flex items-center gap-2 text-sm text-slate-600 mb-1.5">
               <User className="w-3.5 h-3.5" />
-              Your Full Name (First &amp; Last) <span className="text-red-400">*</span>
+              Your Full Name (First &amp; Last) <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -422,14 +422,14 @@ const ScoringTool = () => {
               onChange={(e) => setPersonName(e.target.value)}
               required
               placeholder="e.g. Jane Smith"
-              className={`w-full px-3 py-2 bg-slate-900 border rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors ${
-                infoWarning && personName.trim().split(/\s+/).length < 2 ? 'border-red-500' : 'border-slate-600'
+              className={`w-full px-3 py-2 bg-white border rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-500 transition-colors ${
+                infoWarning && personName.trim().split(/\s+/).length < 2 ? 'border-red-500' : 'border-slate-300'
               }`}
             />
           </div>
         </div>
         {infoWarning && (
-          <div className="flex items-center gap-2 text-amber-500 text-sm font-medium mb-3">
+          <div className="flex items-center gap-2 text-amber-600 text-sm font-medium mb-3">
             <AlertTriangle className="w-4 h-4 flex-shrink-0" />
             Please fill in your Township Name and Full Name before proceeding.
           </div>
@@ -449,7 +449,7 @@ const ScoringTool = () => {
             }}
             className="w-5 h-5 accent-amber-500 rounded flex-shrink-0"
           />
-          <span className="text-sm text-slate-200 font-semibold group-hover:text-white transition-colors">
+          <span className="text-sm text-slate-700 font-semibold group-hover:text-slate-900 transition-colors">
             I have read and understand this disclaimer
           </span>
         </label>
@@ -468,35 +468,35 @@ const ScoringTool = () => {
               key={q.id}
               ref={(el) => (questionRefs.current[qIndex] = el)}
               onClick={() => setActiveQuestionIndex(qIndex)}
-              className={`bg-slate-700 border rounded-xl p-4 shadow-sm transition-all duration-300 cursor-pointer ${
+              className={`bg-white border rounded-xl p-4 shadow-sm transition-all duration-300 cursor-pointer ${
                 showIncomplete
-                  ? 'border-red-500/60'
+                  ? 'border-red-400'
                   : qIndex === activeQuestionIndex
                     ? 'border-amber-500 ring-1 ring-amber-500/30'
-                    : 'border-slate-600'
+                    : 'border-slate-200'
               } ${getQuestionOpacity(qIndex)}`}
             >
               <div className="flex items-center justify-between gap-3 mb-2">
-                <h2 className="text-base font-semibold text-white flex items-center gap-2">
-                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-500/15 text-amber-500 text-xs font-bold flex-shrink-0">{qIndex + 1}</span>
+                <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2">
+                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-700 text-xs font-bold flex-shrink-0">{qIndex + 1}</span>
                   {q.title}
-                  {showIncomplete && <span className="text-red-400 text-xs font-normal">(answer required)</span>}
+                  {showIncomplete && <span className="text-red-500 text-xs font-normal">(answer required)</span>}
                 </h2>
-                <span className="inline-flex items-center gap-1.5 bg-amber-500/15 text-amber-500 border border-amber-500/30 px-2.5 py-1 rounded-full font-bold text-xs whitespace-nowrap">
+                <span className="inline-flex items-center gap-1.5 bg-amber-100 text-amber-700 border border-amber-300 px-2.5 py-1 rounded-full font-bold text-xs whitespace-nowrap">
                   {q.badge}
                 </span>
               </div>
-              <p className="text-xs text-slate-300 leading-snug mb-3">{q.description}</p>
+              <p className="text-xs text-slate-600 leading-snug mb-3">{q.description}</p>
               {q.statuteNote && (
-                <p className="text-xs text-slate-400 leading-snug mb-3 italic">
+                <p className="text-xs text-slate-500 leading-snug mb-3 italic">
                   {q.statuteNote}{' '}
-                  <a href={q.statuteLink} target="_blank" rel="noopener noreferrer" className="text-amber-500 underline hover:text-amber-400 not-italic">
+                  <a href={q.statuteLink} target="_blank" rel="noopener noreferrer" className="text-amber-600 underline hover:text-amber-700 not-italic">
                     Click here to view definition on page 17.
                   </a>
                 </p>
               )}
               {q.checkboxItems && (
-                <p className="text-xs text-amber-500/80 font-medium mb-2">Check each year that applies</p>
+                <p className="text-xs text-amber-600 font-medium mb-2">Check each year that applies</p>
               )}
               {q.options ? (
                 renderOptions(q.options, q.id)
@@ -506,7 +506,7 @@ const ScoringTool = () => {
                 <div className="space-y-3">
                   {q.subQuestions.map((sub) => (
                     <div key={sub.name}>
-                      <div className="inline-block text-xs font-bold text-amber-500 bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded-full uppercase tracking-wide mb-1.5">{sub.yearLabel}</div>
+                      <div className="inline-block text-xs font-bold text-amber-700 bg-amber-100 border border-amber-300 px-2.5 py-1 rounded-full uppercase tracking-wide mb-1.5">{sub.yearLabel}</div>
                       {renderOptions(sub.options, sub.name)}
                     </div>
                   ))}
@@ -527,7 +527,7 @@ const ScoringTool = () => {
           </button>
           <button
             onClick={resetAll}
-            className="flex items-center gap-2 px-5 py-3 bg-slate-700 text-slate-200 border border-slate-600 rounded-xl font-bold text-sm hover:bg-slate-600 transition-colors"
+            className="flex items-center gap-2 px-5 py-3 bg-white text-slate-700 border border-slate-300 rounded-xl font-bold text-sm hover:bg-slate-100 transition-colors"
           >
             <RotateCcw className="w-4 h-4" />
             Reset
@@ -537,14 +537,14 @@ const ScoringTool = () => {
 
       {/* Results */}
       {showResult && (
-        <div ref={resultRef} className="mt-5 bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg">
+        <div ref={resultRef} className="mt-5 bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
           {warning ? (
             <div>
-              <div className="flex items-center gap-3 text-amber-500 font-bold text-sm mb-3">
+              <div className="flex items-center gap-3 text-amber-600 font-bold text-sm mb-3">
                 <AlertTriangle className="w-5 h-5 flex-shrink-0" />
                 Please complete all required fields before calculating.
               </div>
-              <div className="text-xs text-slate-300 space-y-1">
+              <div className="text-xs text-slate-600 space-y-1">
                 {(!townshipName.trim() || !personName.trim()) && (
                   <div><span className="text-slate-500">Missing required fields: </span>
                     {[!townshipName.trim() && 'Township Name', personName.trim().split(/\s+/).length < 2 && 'Full Name (First & Last)'].filter(Boolean).join(', ')}
@@ -562,16 +562,16 @@ const ScoringTool = () => {
               <div className="flex flex-wrap gap-4 items-center justify-between mb-4">
                 <div>
                   {townshipName && (
-                    <div className="text-sm text-slate-300 mb-1">{townshipName}</div>
+                    <div className="text-sm text-slate-600 mb-1">{townshipName}</div>
                   )}
-                  <div className="text-4xl font-black text-white">{totalScore}</div>
-                  <div className="text-sm text-slate-300 font-semibold -mt-0.5">Total Points</div>
+                  <div className="text-4xl font-black text-slate-900">{totalScore}</div>
+                  <div className="text-sm text-slate-600 font-semibold -mt-0.5">Total Points</div>
                 </div>
                 <div
                   className={`inline-flex items-center px-4 py-2 rounded-full font-bold text-sm border ${
                     isDesignated
-                      ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
-                      : 'bg-blue-500/20 text-blue-400 border-blue-500/40'
+                      ? 'bg-amber-100 text-amber-700 border-amber-300'
+                      : 'bg-blue-100 text-blue-700 border-blue-300'
                   }`}
                 >
                   {isDesignated ? 'Designated Township (4+)' : 'Recipient Township (0\u20133)'}
@@ -583,13 +583,13 @@ const ScoringTool = () => {
                 {breakdown.map((item, i) => (
                   <div
                     key={i}
-                    className="flex items-center justify-between gap-3 px-3 py-2 border border-dashed border-slate-600 rounded-xl bg-slate-900/50 text-sm"
+                    className="flex items-center justify-between gap-3 px-3 py-2 border border-dashed border-slate-300 rounded-xl bg-slate-50 text-sm"
                   >
-                    <span className="text-slate-300">
-                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-500/15 text-amber-500 text-[10px] font-bold mr-2 align-middle">{item.questionNum}</span>
+                    <span className="text-slate-600">
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold mr-2 align-middle">{item.questionNum}</span>
                       {item.label}
                     </span>
-                    <strong className={item.points > 0 ? 'text-amber-500' : 'text-slate-500'}>{item.points}</strong>
+                    <strong className={item.points > 0 ? 'text-amber-600' : 'text-slate-400'}>{item.points}</strong>
                   </div>
                 ))}
               </div>

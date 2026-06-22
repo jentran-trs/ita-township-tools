@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
-import { Loader2, ArrowRight, ArrowLeft, User, MapPin, UserCheck, CheckCircle2, X, Clock, HelpCircle, Search } from "lucide-react";
+import { Loader2, ArrowRight, ArrowLeft, User, MapPin, UserCheck, CheckCircle2, X, Clock, HelpCircle, Search, RotateCw } from "lucide-react";
 
 const REVIEWER_KEY = "cv_reviewer_v1";
 
@@ -41,6 +41,7 @@ export default function VerifyLanding() {
   const [reviewerName, setReviewerName] = useState("");
   const [reviewerEmail, setReviewerEmail] = useState("");
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [savedReviewer, setSavedReviewer] = useState(null);
   const [identityConfirmed, setIdentityConfirmed] = useState(false);
   const [attempted, setAttempted] = useState(false);
@@ -53,6 +54,39 @@ export default function VerifyLanding() {
     }
   }, [searchParams]);
 
+  // Load the region/county/township tree with a hard timeout so a stalled
+  // request (flaky network, firewall, cold-start blip) surfaces a retry prompt
+  // instead of spinning forever. Settings load best-effort alongside it.
+  const loadLocations = () => {
+    setLoading(true);
+    setLoadError(false);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 15000);
+    fetch("/api/verify/locations", { signal: controller.signal })
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then((data) => {
+        setTree(data.regions || []);
+        setLoading(false);
+      })
+      .catch(() => {
+        setLoadError(true);
+        setLoading(false);
+      })
+      .finally(() => clearTimeout(timer));
+
+    fetch("/api/verify/settings")
+      .then((r) => r.json())
+      .then((d) => {
+        setVerificationDeadline(d.verification_deadline || null);
+        setPortalLocked(!!d.portal_locked);
+        setPortalReopen(d.portal_reopen || null);
+      })
+      .catch(() => {});
+  };
+
   useEffect(() => {
     const saved = loadReviewer();
     if (saved && saved.reviewerName && saved.reviewerEmail) {
@@ -62,21 +96,7 @@ export default function VerifyLanding() {
     } else {
       setIdentityConfirmed(true);
     }
-    fetch("/api/verify/locations")
-      .then((r) => r.json())
-      .then((data) => {
-        setTree(data.regions || []);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-    fetch("/api/verify/settings")
-      .then((r) => r.json())
-      .then((d) => {
-        setVerificationDeadline(d.verification_deadline || null);
-        setPortalLocked(!!d.portal_locked);
-        setPortalReopen(d.portal_reopen || null);
-      })
-      .catch(() => {});
+    loadLocations();
   }, []);
 
   const confirmAsSaved = () => {
@@ -122,6 +142,32 @@ export default function VerifyLanding() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
+        <div className="max-w-md w-full bg-white border border-gray-200 rounded-lg shadow-sm p-6 text-center">
+          <h1 className="text-lg font-semibold text-gray-900 mb-1">
+            We couldn&apos;t load the township list
+          </h1>
+          <p className="text-sm text-gray-600 mb-5">
+            This is usually a brief network hiccup. Please check your connection and try again.
+            If it keeps happening, reach out to{" "}
+            <a href="mailto:jtran@ita-in.org" className="text-blue-700 underline">
+              jtran@ita-in.org
+            </a>
+            .
+          </p>
+          <button
+            onClick={loadLocations}
+            className="inline-flex items-center justify-center gap-2 bg-gray-900 text-white text-base font-semibold px-5 py-2.5 rounded-md hover:bg-gray-800"
+          >
+            <RotateCw className="w-4 h-4" /> Try again
+          </button>
+        </div>
       </div>
     );
   }

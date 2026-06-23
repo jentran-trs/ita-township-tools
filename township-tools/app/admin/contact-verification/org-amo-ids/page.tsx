@@ -22,6 +22,15 @@ type Summary = {
   unmatched: number;
 };
 
+type Unresolved = {
+  id: string;
+  name: string | null;
+  county: string | null;
+  orgName: string;
+  current: string | null;
+  candidateIds?: string[];
+};
+
 export default function OrgAmoIdAssignPage() {
   const [authorized, setAuthorized] = useState<boolean | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -30,6 +39,11 @@ export default function OrgAmoIdAssignPage() {
   const [result, setResult] = useState<{ updated_count: number; failed_count: number; summary: Summary } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [unmatched, setUnmatched] = useState<Unresolved[]>([]);
+  const [ambiguous, setAmbiguous] = useState<Unresolved[]>([]);
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [savedIds, setSavedIds] = useState<Record<string, string | null>>({});
 
   useEffect(() => {
     fetch("/api/admin/contact-verification/auth")
@@ -56,10 +70,41 @@ export default function OrgAmoIdAssignPage() {
         setResult(json);
         setSummary(null);
       }
+      const um: Unresolved[] = json.unmatched_list || [];
+      const am: Unresolved[] = json.ambiguous_list || [];
+      setUnmatched(um);
+      setAmbiguous(am);
+      setSavedIds({});
+      // Prefill ambiguous inputs with the first candidate; unmatched with any
+      // existing value so the admin only has to confirm or correct.
+      const d: Record<string, string> = {};
+      for (const t of am) d[t.id] = t.current || t.candidateIds?.[0] || "";
+      for (const t of um) d[t.id] = t.current || "";
+      setDrafts(d);
     } catch (e: any) {
       setError(e.message || "Failed");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const manualSave = async (townshipId: string) => {
+    const amoId = (drafts[townshipId] || "").trim();
+    setSavingId(townshipId);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/contact-verification/org-amo-ids", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ townshipId, amoId }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed");
+      setSavedIds((prev) => ({ ...prev, [townshipId]: amoId || null }));
+    } catch (e: any) {
+      setError(e.message || "Failed");
+    } finally {
+      setSavingId(null);
     }
   };
 
@@ -68,6 +113,10 @@ export default function OrgAmoIdAssignPage() {
     setSummary(null);
     setResult(null);
     setError(null);
+    setUnmatched([]);
+    setAmbiguous([]);
+    setDrafts({});
+    setSavedIds({});
     if (inputRef.current) inputRef.current.value = "";
   };
 
@@ -249,10 +298,132 @@ export default function OrgAmoIdAssignPage() {
                 )}
               </>
             )}
+
+            {(ambiguous.length > 0 || unmatched.length > 0) && (
+              <section className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-5">
+                <h2 className="font-semibold mb-1">Assign the rest manually</h2>
+                <p className="text-xs text-gray-500 mb-4">
+                  These townships weren&rsquo;t assigned automatically. Look up the Organization AMO
+                  ID in the AMO report and enter it here. Leave blank and save to clear an ID.
+                </p>
+
+                {ambiguous.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="text-sm font-semibold text-amber-700 dark:text-amber-400 mb-2">
+                      Ambiguous — same name, more than one ID in the report ({ambiguous.length})
+                    </h3>
+                    <ul className="space-y-3">
+                      {ambiguous.map((t) => (
+                        <ManualRow
+                          key={t.id}
+                          t={t}
+                          value={drafts[t.id] ?? ""}
+                          saved={t.id in savedIds}
+                          savedValue={savedIds[t.id]}
+                          saving={savingId === t.id}
+                          onChange={(v) => setDrafts((d) => ({ ...d, [t.id]: v }))}
+                          onSave={() => manualSave(t.id)}
+                        />
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {unmatched.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                      Not in the report ({unmatched.length})
+                    </h3>
+                    <ul className="space-y-3">
+                      {unmatched.map((t) => (
+                        <ManualRow
+                          key={t.id}
+                          t={t}
+                          value={drafts[t.id] ?? ""}
+                          saved={t.id in savedIds}
+                          savedValue={savedIds[t.id]}
+                          saving={savingId === t.id}
+                          onChange={(v) => setDrafts((d) => ({ ...d, [t.id]: v }))}
+                          onSave={() => manualSave(t.id)}
+                        />
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </section>
+            )}
           </>
         )}
       </main>
     </div>
+  );
+}
+
+function ManualRow({
+  t,
+  value,
+  saved,
+  savedValue,
+  saving,
+  onChange,
+  onSave,
+}: {
+  t: Unresolved;
+  value: string;
+  saved: boolean;
+  savedValue: string | null;
+  saving: boolean;
+  onChange: (v: string) => void;
+  onSave: () => void;
+}) {
+  return (
+    <li className="flex flex-wrap items-center gap-3 border border-gray-200 dark:border-gray-800 rounded-lg px-3 py-2">
+      <div className="flex-1 min-w-[12rem]">
+        <div className="text-sm font-medium">{t.orgName || t.name || "(unnamed)"}</div>
+        {t.candidateIds && t.candidateIds.length > 0 && (
+          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-gray-500">
+            <span>Report IDs:</span>
+            {t.candidateIds.map((id) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => onChange(id)}
+                className="px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 font-mono hover:bg-amber-200"
+              >
+                {id}
+              </button>
+            ))}
+          </div>
+        )}
+        {!t.candidateIds && t.current && (
+          <div className="mt-0.5 text-xs text-gray-500">
+            Current: <span className="font-mono">{t.current}</span>
+          </div>
+        )}
+      </div>
+      <input
+        type="text"
+        inputMode="numeric"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Organization AMO ID"
+        className="w-44 px-3 py-1.5 text-sm font-mono bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg"
+      />
+      <button
+        type="button"
+        onClick={onSave}
+        disabled={saving}
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50"
+      >
+        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+        Save
+      </button>
+      {saved && (
+        <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+          {savedValue ? "Saved" : "Cleared"}
+        </span>
+      )}
+    </li>
   );
 }
 

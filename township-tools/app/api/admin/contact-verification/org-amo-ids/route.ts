@@ -71,8 +71,15 @@ export async function POST(req: Request) {
     unmatched: result.unmatched,
   };
 
+  // Townships that won't be assigned automatically — returned so the admin can
+  // assign them by hand from the UI.
+  const unresolved = {
+    unmatched_list: result.unmatchedList,
+    ambiguous_list: result.ambiguousList,
+  };
+
   if (mode === 'preview') {
-    return NextResponse.json({ ok: true, mode: 'preview', summary });
+    return NextResponse.json({ ok: true, mode: 'preview', summary, ...unresolved });
   }
 
   // Commit: apply only the changed assignments, in concurrency-limited batches.
@@ -93,5 +100,32 @@ export async function POST(req: Request) {
     for (const r of res) (r ? updated++ : failed++);
   }
 
-  return NextResponse.json({ ok: true, mode: 'commit', summary, updated_count: updated, failed_count: failed });
+  return NextResponse.json({ ok: true, mode: 'commit', summary, updated_count: updated, failed_count: failed, ...unresolved });
+}
+
+// PATCH  application/json { townshipId, amoId }
+// Manually set (or clear, with an empty amoId) one township's Organization AMO
+// ID — used to resolve the unmatched/ambiguous rows the upload left behind.
+export async function PATCH(req: Request) {
+  const sErr = await requireSuperadmin();
+  if (sErr) return sErr;
+
+  let body: any = null;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+  const townshipId = String(body?.townshipId || '').trim();
+  const amoId = String(body?.amoId ?? '').trim();
+  if (!townshipId) return NextResponse.json({ error: 'townshipId is required' }, { status: 400 });
+
+  const supabase = createServerSupabaseClient();
+  const { error } = await supabase
+    .from('cv_townships')
+    .update({ amo_organization_id: amoId || null })
+    .eq('id', townshipId);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  return NextResponse.json({ ok: true, townshipId, amoId: amoId || null });
 }

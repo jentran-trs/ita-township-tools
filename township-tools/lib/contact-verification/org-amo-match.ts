@@ -59,10 +59,22 @@ export async function parseOrgWorkbook(buffer: Buffer): Promise<OrgRow[]> {
   return rows;
 }
 
+// A township that needs manual attention, with enough context to assign it by hand.
+export type UnresolvedTownship = {
+  id: string;
+  name: string | null;
+  county: string | null;
+  orgName: string;
+  current: string | null;
+  candidateIds?: string[]; // present for ambiguous rows
+};
+
 export type OrgMatchResult = {
   matches: { townshipId: string; amoId: string; current: string | null }[];
   ambiguous: number;
   unmatched: number;
+  ambiguousList: UnresolvedTownship[];
+  unmatchedList: UnresolvedTownship[];
 };
 
 export function matchTownships(orgs: OrgRow[], townships: CvTownship[]): OrgMatchResult {
@@ -75,13 +87,21 @@ export function matchTownships(orgs: OrgRow[], townships: CvTownship[]): OrgMatc
   }
 
   const matches: OrgMatchResult['matches'] = [];
-  let ambiguous = 0;
-  let unmatched = 0;
+  const ambiguousList: UnresolvedTownship[] = [];
+  const unmatchedList: UnresolvedTownship[] = [];
 
   for (const t of townships) {
-    const key = norm(orgName(t.name, t.county));
+    const display = orgName(t.name, t.county);
+    const base = {
+      id: t.id,
+      name: t.name,
+      county: t.county ?? null,
+      orgName: display,
+      current: t.amo_organization_id ?? null,
+    };
+    const key = norm(display);
     if (!key || !byOrg.has(key)) {
-      unmatched++;
+      unmatchedList.push(base);
       continue;
     }
     const cands = byOrg.get(key)!;
@@ -89,9 +109,21 @@ export function matchTownships(orgs: OrgRow[], townships: CvTownship[]): OrgMatc
     if (ids.length === 1) {
       matches.push({ townshipId: t.id, amoId: ids[0], current: t.amo_organization_id ?? null });
     } else {
-      ambiguous++;
+      ambiguousList.push({ ...base, candidateIds: ids });
     }
   }
 
-  return { matches, ambiguous, unmatched };
+  // Surface the rows that still need attention first.
+  const sortByName = (a: UnresolvedTownship, b: UnresolvedTownship) =>
+    a.orgName.localeCompare(b.orgName);
+  ambiguousList.sort(sortByName);
+  unmatchedList.sort(sortByName);
+
+  return {
+    matches,
+    ambiguous: ambiguousList.length,
+    unmatched: unmatchedList.length,
+    ambiguousList,
+    unmatchedList,
+  };
 }

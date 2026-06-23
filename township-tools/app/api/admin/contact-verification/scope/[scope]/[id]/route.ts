@@ -40,7 +40,7 @@ export async function GET(
   if (townshipIds.length) {
     const { data: tRows } = await supabase
       .from('cv_townships')
-      .select('id, slug, county_id, cv_counties:county_id ( slug, region_id, cv_regions:region_id ( slug ) )')
+      .select('id, slug, county_id, amo_organization_id, cv_counties:county_id ( slug, region_id, cv_regions:region_id ( slug ) )')
       .in('id', townshipIds);
     const slugMap = new Map<string, any>();
     for (const t of tRows || []) {
@@ -48,6 +48,7 @@ export async function GET(
         township_slug: t.slug,
         county_slug: (t as any).cv_counties?.slug,
         region_slug: (t as any).cv_counties?.cv_regions?.slug,
+        amo_organization_id: (t as any).amo_organization_id || '',
       });
     }
     stats = (stats || []).map((s: any) => ({ ...s, ...(slugMap.get(s.township_id) || {}) }));

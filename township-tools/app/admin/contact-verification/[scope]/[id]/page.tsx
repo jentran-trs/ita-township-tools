@@ -19,6 +19,7 @@ type Stat = {
   township_status: string;
   contact_total: number;
   contact_reviewed: number;
+  amo_organization_id?: string | null;
 };
 
 type Audit = {
@@ -46,6 +47,7 @@ type Contact = {
   previous_email_status: string | null;
   review_status: string;
   reviewed_by_name: string | null;
+  amo_individual_id: string | null;
   amo_updated_at: string | null;
   amo_updated_by: string | null;
   mailchimp_updated_at: string | null;
@@ -473,6 +475,7 @@ export default function DrillDownPage() {
             <thead className="bg-gray-50 text-left text-gray-500">
               <tr>
                 {scope !== "township" && <th className="px-4 py-2 font-medium">Township</th>}
+                {scope !== "township" && <th className="px-4 py-2 font-medium">Org AMO ID</th>}
                 <th className="px-4 py-2 font-medium">Status</th>
                 <th className="px-4 py-2 font-medium text-right">Reviewed</th>
                 <th className="px-4 py-2 font-medium text-right">Total</th>
@@ -486,6 +489,11 @@ export default function DrillDownPage() {
                     <td className="px-4 py-2 text-gray-900">
                       {scope === "region" ? `${s.county_name} · ` : ""}
                       {s.township_name}
+                    </td>
+                  )}
+                  {scope !== "township" && (
+                    <td className="px-4 py-2 font-mono text-xs text-gray-700">
+                      {s.amo_organization_id || <span className="text-gray-400">—</span>}
                     </td>
                   )}
                   <td className="px-4 py-2">
@@ -831,6 +839,7 @@ export default function DrillDownPage() {
                   </th>
                   <th className="px-3 py-2 font-medium">Name</th>
                   <th className="px-3 py-2 font-medium">Email · Phone</th>
+                  <th className="px-3 py-2 font-medium">AMO ID</th>
                   {scope !== "township" && <th className="px-3 py-2 font-medium">Township</th>}
                   <th className="px-3 py-2 font-medium">Status</th>
                   <th className="px-3 py-2 font-medium w-12"></th>
@@ -862,6 +871,9 @@ export default function DrillDownPage() {
                             {c.previous_email_status ? ` (${c.previous_email_status})` : ""}
                           </div>
                         )}
+                      </td>
+                      <td className="px-3 py-2 font-mono text-xs text-gray-700">
+                        {c.amo_individual_id || <span className="text-gray-400">—</span>}
                       </td>
                       {scope !== "township" && (
                         <td className="px-3 py-2 text-gray-700 text-xs">

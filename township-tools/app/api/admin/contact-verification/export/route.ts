@@ -35,7 +35,10 @@ const AMO_FLAG_COLUMNS = [
 ];
 
 // Simple format: location context + the core contact fields.
+// Organization AMO ID leads, then Individual AMO ID — so an AMO import attaches
+// each individual to the existing organization instead of creating a new one.
 const SIMPLE_COLUMNS = [
+  { header: 'Organization AMO ID', key: 'amo_organization_id' },
   { header: 'Individual AMO ID', key: 'amo_individual_id' },
   { header: 'Region', key: 'region' },
   { header: 'County', key: 'county' },
@@ -51,6 +54,7 @@ const SIMPLE_COLUMNS = [
 
 // Detailed columns for full audit-style export.
 const DETAILED_COLUMNS = [
+  { header: 'Organization AMO ID', key: 'amo_organization_id' },
   { header: 'Individual AMO ID', key: 'amo_individual_id' },
   { header: 'Region', key: 'region' },
   { header: 'County', key: 'county' },
@@ -172,7 +176,7 @@ async function loadContacts(req: Request) {
        review_status, reviewed_at, reviewed_by_name,
        amo_updated_at, amo_updated_by, amo_individual_id,
        mailchimp_updated_at, mailchimp_updated_by,
-       cv_townships:township_id ( id, name, street_address, mailing_address,
+       cv_townships:township_id ( id, name, street_address, mailing_address, amo_organization_id,
          cv_counties:county_id ( id, name, cv_regions:region_id ( id, name ) )
        )`
     )
@@ -232,6 +236,7 @@ async function buildResponse(loaded: any) {
     const hasMailing = mailingSource.trim().length > 0;
     const townshipCounty = c.cv_townships?.cv_counties?.name || '';
     return {
+    amo_organization_id: c.cv_townships?.amo_organization_id || '',
     amo_individual_id: c.amo_individual_id || '',
     region: c.cv_townships?.cv_counties?.cv_regions?.name || '',
     county: c.cv_townships?.cv_counties?.name || '',

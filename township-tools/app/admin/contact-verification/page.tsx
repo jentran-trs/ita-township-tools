@@ -297,6 +297,12 @@ export default function ContactVerificationAdminPage() {
               <Upload className="w-4 h-4" /> Assign AMO IDs
             </button>
             <button
+              onClick={() => router.push("/admin/contact-verification/org-amo-ids")}
+              className="flex items-center gap-2 text-sm font-medium text-gray-700 px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+            >
+              <Upload className="w-4 h-4" /> Assign Org IDs
+            </button>
+            <button
               onClick={() => {
                 reloadTree();
                 setManageOpen(true);

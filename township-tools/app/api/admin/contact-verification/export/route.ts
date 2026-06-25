@@ -139,6 +139,19 @@ function csvEscape(value: any): string {
   return s;
 }
 
+// Every township here is in Indiana, so the State column should read "Indiana".
+// Normalize the parsed value: spell out IN / Ind. / blank as "Indiana", but keep
+// an explicitly different state if one ever shows up. When the address itself is
+// empty, leave State blank so the row stays internally consistent.
+function indianaState(raw: string, hasAddr: boolean): string {
+  const s = (raw || '').trim();
+  if (s) {
+    if (/^(in|ind|indiana)\.?$/i.test(s)) return 'Indiana';
+    return s;
+  }
+  return hasAddr ? 'Indiana' : '';
+}
+
 async function loadContacts(req: Request) {
   const url = new URL(req.url);
   const scope = url.searchParams.get('scope');
@@ -233,6 +246,7 @@ async function buildResponse(loaded: any) {
     const mailingRaw = c.cv_townships?.mailing_address || '';
     const mailingSource = /same as/i.test(mailingRaw) ? street : mailingRaw;
     const m = parseAddress(mailingSource);
+    const hasStreet = street.trim().length > 0;
     const hasMailing = mailingSource.trim().length > 0;
     const townshipCounty = c.cv_townships?.cv_counties?.name || '';
     return {
@@ -248,13 +262,13 @@ async function buildResponse(loaded: any) {
     org_addr_line1: a.line1,
     org_addr_line2: a.line2,
     org_addr_city: a.city,
-    org_addr_state: a.state,
+    org_addr_state: indianaState(a.state, hasStreet),
     org_addr_zip: a.zip,
     org_addr_country: a.country,
     org_mail_line1: m.line1,
     org_mail_line2: m.line2,
     org_mail_city: m.city,
-    org_mail_state: m.state,
+    org_mail_state: indianaState(m.state, hasMailing),
     org_mail_zip: m.zip,
     org_mail_county: hasMailing ? townshipCounty : '',
     org_mail_country: m.country,

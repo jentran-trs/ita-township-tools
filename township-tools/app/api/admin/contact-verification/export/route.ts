@@ -172,6 +172,19 @@ async function loadContacts(req: Request) {
     body?.contactIds ??
     (idsParam ? idsParam.split(',').map((s) => s.trim()).filter(Boolean) : null);
 
+  // AMO export intent — required so the Username column is only ever included
+  // when creating NEW individuals. An "update" export must omit Username to avoid
+  // clobbering existing AMO logins.
+  const amoMode = (url.searchParams.get('amoMode') || body?.amoMode || '') as string;
+  if (amoMode !== 'update' && amoMode !== 'new') {
+    return {
+      error: NextResponse.json(
+        { error: 'Provide amoMode=update or amoMode=new' },
+        { status: 400 }
+      ),
+    };
+  }
+
   if (!contactIds && (!scope || !id)) {
     return { error: NextResponse.json({ error: 'Provide contactIds or scope+id' }, { status: 400 }) };
   }
@@ -211,7 +224,7 @@ async function loadContacts(req: Request) {
 
   const { data: contacts, error } = await query;
   if (error) return { error: NextResponse.json({ error: error.message }, { status: 500 }) };
-  return { contacts, format, variant, scope, id, contactIds };
+  return { contacts, format, variant, scope, id, contactIds, amoMode };
 }
 
 export async function GET(req: Request) {
@@ -237,7 +250,7 @@ export async function POST(req: Request) {
 }
 
 async function buildResponse(loaded: any) {
-  const { contacts, format, variant, scope, id, contactIds } = loaded;
+  const { contacts, format, variant, scope, id, contactIds, amoMode } = loaded;
 
   const rows = (contacts || []).map((c: any) => {
     const street = c.cv_townships?.street_address || '';
@@ -298,7 +311,9 @@ async function buildResponse(loaded: any) {
     return k(a).localeCompare(k(b));
   });
 
-  const columns = variant === 'detailed' ? DETAILED_COLUMNS : SIMPLE_COLUMNS;
+  // "AMO update" exports omit Username so existing AMO logins aren't overwritten.
+  let columns = variant === 'detailed' ? DETAILED_COLUMNS : SIMPLE_COLUMNS;
+  if (amoMode === 'update') columns = columns.filter((c) => c.key !== 'username');
 
   const baseLabel = contactIds && contactIds.length
     ? `selected-${contactIds.length}`

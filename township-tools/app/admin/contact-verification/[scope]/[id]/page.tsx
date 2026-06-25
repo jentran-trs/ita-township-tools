@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useUser, useOrganization, useAuth } from "@clerk/nextjs";
 import { ArrowLeft, Loader2, Download, RotateCcw, CheckCircle2, ExternalLink, Filter, MoveRight, X, Pencil, Send, Search, Mail } from "lucide-react";
 import AdminContactEditModal from "../../../../../components/AdminContactEditModal";
+import AmoExportModal, { AmoMode } from "../../../../../components/AmoExportModal";
 
 type Stat = {
   region_id: string;
@@ -92,6 +93,8 @@ export default function DrillDownPage() {
   const [markingMailchimp, setMarkingMailchimp] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [exporting, setExporting] = useState(false);
+  // Holds the export to run once the superadmin picks an AMO mode in the modal.
+  const [pendingExport, setPendingExport] = useState<null | ((mode: AmoMode) => void)>(null);
   const [detailed, setDetailed] = useState(false);
   const [showMoveModal, setShowMoveModal] = useState(false);
   const [moveTree, setMoveTree] = useState<any[]>([]);
@@ -350,13 +353,26 @@ export default function DrillDownPage() {
   const moveRegion = moveTree.find((r: any) => r.id === moveRegionId);
   const moveCounty = moveRegion?.counties?.find((c: any) => c.id === moveCountyId);
 
-  const exportSelected = async (format: "xlsx" | "csv") => {
+  // Open the AMO-mode chooser, then run `run(mode)` with the picked mode.
+  const askExport = (run: (mode: AmoMode) => void) => {
+    setPendingExport(() => (mode: AmoMode) => {
+      setPendingExport(null);
+      run(mode);
+    });
+  };
+
+  // GET-style exports (whole scope / single township) navigate the browser.
+  const exportUrl = (params: string) => (mode: AmoMode) => {
+    window.location.href = `/api/admin/contact-verification/export?${params}&amoMode=${mode}`;
+  };
+
+  const exportSelected = async (format: "xlsx" | "csv", amoMode: AmoMode) => {
     if (selected.size === 0) return;
     const variant = detailed ? "detailed" : "simple";
     setExporting(true);
     try {
       const res = await fetch(
-        `/api/admin/contact-verification/export?format=${format}&variant=${variant}`,
+        `/api/admin/contact-verification/export?format=${format}&variant=${variant}&amoMode=${amoMode}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -449,7 +465,9 @@ export default function DrillDownPage() {
             </label>
             <button
               onClick={() =>
-                (window.location.href = `/api/admin/contact-verification/export?scope=${scope}&id=${id}&format=xlsx&variant=${detailed ? "detailed" : "simple"}`)
+                askExport(
+                  exportUrl(`scope=${scope}&id=${id}&format=xlsx&variant=${detailed ? "detailed" : "simple"}`)
+                )
               }
               className="flex items-center gap-2 text-sm px-3 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800"
             >
@@ -457,7 +475,9 @@ export default function DrillDownPage() {
             </button>
             <button
               onClick={() =>
-                (window.location.href = `/api/admin/contact-verification/export?scope=${scope}&id=${id}&format=csv&variant=${detailed ? "detailed" : "simple"}`)
+                askExport(
+                  exportUrl(`scope=${scope}&id=${id}&format=csv&variant=${detailed ? "detailed" : "simple"}`)
+                )
               }
               className="flex items-center gap-2 text-sm font-medium text-gray-700 px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
             >
@@ -511,12 +531,16 @@ export default function DrillDownPage() {
                           <ExternalLink className="w-3 h-3" /> View list
                         </a>
                       )}
-                      <a
-                        href={`/api/admin/contact-verification/export?scope=township&id=${s.township_id}&format=xlsx&variant=${detailed ? "detailed" : "simple"}`}
+                      <button
+                        onClick={() =>
+                          askExport(
+                            exportUrl(`scope=township&id=${s.township_id}&format=xlsx&variant=${detailed ? "detailed" : "simple"}`)
+                          )
+                        }
                         className="flex items-center gap-1 text-xs font-medium text-gray-700 px-2 py-1 border border-gray-300 rounded-md hover:bg-gray-50"
                       >
                         <Download className="w-3 h-3" /> Export
-                      </a>
+                      </button>
                       {s.township_status === "completed" && (
                         <button
                           onClick={() => reopen(s.township_id)}
@@ -738,14 +762,14 @@ export default function DrillDownPage() {
           <div className="sticky top-2 z-10 mb-3 flex items-center gap-2 flex-wrap bg-white border border-gray-300 rounded-lg shadow-sm px-3 py-2">
             <span className="text-sm text-gray-700 font-medium">{selected.size} selected</span>
             <button
-              onClick={() => exportSelected("xlsx")}
+              onClick={() => askExport((mode) => exportSelected("xlsx", mode))}
               disabled={exporting}
               className="flex items-center gap-1 text-sm font-medium text-white bg-gray-900 px-3 py-1.5 rounded-md hover:bg-gray-800 disabled:opacity-50"
             >
               <Download className="w-3.5 h-3.5" /> Export selected (xlsx)
             </button>
             <button
-              onClick={() => exportSelected("csv")}
+              onClick={() => askExport((mode) => exportSelected("csv", mode))}
               disabled={exporting}
               className="flex items-center gap-1 text-sm font-medium text-gray-700 border border-gray-300 px-3 py-1.5 rounded-md hover:bg-gray-50 disabled:opacity-50"
             >
@@ -1019,6 +1043,12 @@ export default function DrillDownPage() {
         contact={editingContact}
         onClose={() => setEditingContact(null)}
         onSaved={load}
+      />
+
+      <AmoExportModal
+        open={pendingExport !== null}
+        onCancel={() => setPendingExport(null)}
+        onChoose={(mode) => pendingExport?.(mode)}
       />
     </div>
   );

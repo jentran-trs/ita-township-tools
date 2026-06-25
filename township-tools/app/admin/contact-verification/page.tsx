@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useUser, useOrganization, useAuth } from "@clerk/nextjs";
 import { ArrowLeft, Loader2, Upload, Download, RefreshCw, Bell, Settings, Save, Lock, LogOut, Mail, ListChecks, Search, X, Map } from "lucide-react";
 import AdminManageTownshipsModal from "@/components/AdminManageTownshipsModal";
+import AmoExportModal, { AmoMode } from "@/components/AmoExportModal";
 
 type CountyStat = {
   id: string;
@@ -68,6 +69,15 @@ export default function ContactVerificationAdminPage() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [contactResults, setContactResults] = useState<any[]>([]);
   const [manageOpen, setManageOpen] = useState(false);
+  // Holds the export to run once an AMO mode is chosen in the modal.
+  const [pendingExport, setPendingExport] = useState<null | ((mode: AmoMode) => void)>(null);
+
+  const askExport = (params: string) => {
+    setPendingExport(() => (mode: AmoMode) => {
+      setPendingExport(null);
+      window.location.href = `/api/admin/contact-verification/export?${params}&amoMode=${mode}`;
+    });
+  };
 
   const reloadTree = useCallback(() => {
     fetch("/api/verify/locations")
@@ -518,7 +528,7 @@ export default function ContactVerificationAdminPage() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          window.location.href = `/api/admin/contact-verification/export?scope=region&id=${r.id}&format=xlsx`;
+                          askExport(`scope=region&id=${r.id}&format=xlsx`);
                         }}
                         className="flex items-center gap-1 text-xs font-medium text-gray-700 px-2 py-1 border border-gray-300 rounded-md hover:bg-gray-50"
                       >
@@ -553,7 +563,7 @@ export default function ContactVerificationAdminPage() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                window.location.href = `/api/admin/contact-verification/export?scope=county&id=${c.id}&format=xlsx`;
+                                askExport(`scope=county&id=${c.id}&format=xlsx`);
                               }}
                               className="flex items-center gap-1 text-xs font-medium text-gray-700 px-2 py-1 border border-gray-300 rounded-md hover:bg-gray-50"
                             >
@@ -579,6 +589,12 @@ export default function ContactVerificationAdminPage() {
           reloadTree();
           load();
         }}
+      />
+
+      <AmoExportModal
+        open={pendingExport !== null}
+        onCancel={() => setPendingExport(null)}
+        onChoose={(mode) => pendingExport?.(mode)}
       />
     </div>
   );

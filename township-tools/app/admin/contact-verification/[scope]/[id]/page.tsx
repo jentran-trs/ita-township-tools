@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useUser, useOrganization, useAuth } from "@clerk/nextjs";
-import { ArrowLeft, Loader2, Download, RotateCcw, CheckCircle2, ExternalLink, Filter, MoveRight, X, Pencil, Send, Search, Mail } from "lucide-react";
+import { ArrowLeft, Loader2, Download, RotateCcw, CheckCircle2, ExternalLink, Filter, MoveRight, X, Pencil, Send, Search, Mail, ChevronRight, ChevronDown } from "lucide-react";
 import AdminContactEditModal from "../../../../../components/AdminContactEditModal";
 import AmoExportModal, { AmoMode } from "../../../../../components/AmoExportModal";
 
@@ -85,6 +85,8 @@ export default function DrillDownPage() {
   const [loading, setLoading] = useState(true);
   const [statusFilters, setStatusFilters] = useState<Set<string>>(new Set());
   const [townshipFilters, setTownshipFilters] = useState<Set<string>>(new Set());
+  // Township chips are collapsed by default — the list can be long.
+  const [townshipFilterOpen, setTownshipFilterOpen] = useState(false);
   const [emailStatusFilters, setEmailStatusFilters] = useState<Set<string>>(new Set());
   const [amoFilter, setAmoFilter] = useState<"all" | "synced" | "unsynced">("all");
   const [mailchimpFilter, setMailchimpFilter] = useState<"all" | "synced" | "unsynced">("all");
@@ -606,26 +608,41 @@ export default function DrillDownPage() {
 
           {townshipOptions.length > 1 && (
             <div className="flex items-start gap-2 flex-wrap">
-              <span className="flex items-center gap-1 text-xs font-medium text-gray-600 mt-1">
-                <Filter className="w-3 h-3" /> Townships:
-              </span>
-              {townshipOptions.map((t) => {
-                const active = townshipFilters.has(t.id);
-                return (
-                  <button
-                    key={t.id}
-                    onClick={() => toggleTownship(t.id)}
-                    className={`text-xs px-2.5 py-1 rounded-full border ${
-                      active
-                        ? "bg-gray-900 text-white border-gray-900"
-                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                    }`}
-                  >
-                    {t.name} · {t.county} County{" "}
-                    <span className="opacity-70">({t.count})</span>
-                  </button>
-                );
-              })}
+              <button
+                onClick={() => setTownshipFilterOpen((o) => !o)}
+                className="flex items-center gap-1 text-xs font-medium text-gray-600 mt-1 hover:text-gray-900"
+              >
+                {townshipFilterOpen ? (
+                  <ChevronDown className="w-3 h-3" />
+                ) : (
+                  <ChevronRight className="w-3 h-3" />
+                )}
+                <Filter className="w-3 h-3" /> Townships{" "}
+                <span className="opacity-70">({townshipOptions.length})</span>
+                {townshipFilters.size > 0 && (
+                  <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-full bg-gray-900 text-white text-[10px]">
+                    {townshipFilters.size} selected
+                  </span>
+                )}
+              </button>
+              {townshipFilterOpen &&
+                townshipOptions.map((t) => {
+                  const active = townshipFilters.has(t.id);
+                  return (
+                    <button
+                      key={t.id}
+                      onClick={() => toggleTownship(t.id)}
+                      className={`text-xs px-2.5 py-1 rounded-full border ${
+                        active
+                          ? "bg-gray-900 text-white border-gray-900"
+                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                      }`}
+                    >
+                      {t.name} · {t.county} County{" "}
+                      <span className="opacity-70">({t.count})</span>
+                    </button>
+                  );
+                })}
               {townshipFilters.size > 0 && (
                 <button
                   onClick={() => setTownshipFilters(new Set())}

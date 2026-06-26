@@ -87,6 +87,8 @@ export default function DrillDownPage() {
   const [townshipFilters, setTownshipFilters] = useState<Set<string>>(new Set());
   // Township chips are collapsed by default — the list can be long.
   const [townshipFilterOpen, setTownshipFilterOpen] = useState(false);
+  // Filter contacts by their township's verification-completion status.
+  const [completionFilters, setCompletionFilters] = useState<Set<string>>(new Set());
   const [emailStatusFilters, setEmailStatusFilters] = useState<Set<string>>(new Set());
   const [amoFilter, setAmoFilter] = useState<"all" | "synced" | "unsynced">("all");
   const [mailchimpFilter, setMailchimpFilter] = useState<"all" | "synced" | "unsynced">("all");
@@ -141,11 +143,23 @@ export default function DrillDownPage() {
   const emailStatusKey = (raw: string | null) =>
     (raw || "").toLowerCase().trim() || "__none__";
 
+  // township_id -> completion status (completed / in_progress / not_started).
+  const townshipStatusById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const s of stats) m.set(s.township_id, s.township_status || "not_started");
+    return m;
+  }, [stats]);
+
   const filteredContacts = useMemo(() => {
     const q = contactQuery.trim().toLowerCase();
     return contacts.filter((c) => {
       if (statusFilters.size > 0 && !statusFilters.has(c.review_status)) return false;
       if (townshipFilters.size > 0 && !townshipFilters.has(c.township_id)) return false;
+      if (
+        completionFilters.size > 0 &&
+        !completionFilters.has(townshipStatusById.get(c.township_id) || "not_started")
+      )
+        return false;
       if (emailStatusFilters.size > 0 && !emailStatusFilters.has(emailStatusKey(c.email_status)))
         return false;
       if (amoFilter === "synced" && !c.amo_updated_at) return false;
@@ -167,7 +181,17 @@ export default function DrillDownPage() {
       }
       return true;
     });
-  }, [contacts, statusFilters, townshipFilters, emailStatusFilters, amoFilter, mailchimpFilter, contactQuery]);
+  }, [contacts, statusFilters, townshipFilters, completionFilters, townshipStatusById, emailStatusFilters, amoFilter, mailchimpFilter, contactQuery]);
+
+  // Contact counts per township completion status, for the filter chips.
+  const completionCounts = useMemo(() => {
+    const map: Record<string, number> = { completed: 0, in_progress: 0, not_started: 0 };
+    for (const c of contacts) {
+      const st = townshipStatusById.get(c.township_id) || "not_started";
+      map[st] = (map[st] || 0) + 1;
+    }
+    return map;
+  }, [contacts, townshipStatusById]);
 
   const amoCounts = useMemo(() => {
     let synced = 0;
@@ -250,6 +274,12 @@ export default function DrillDownPage() {
     if (next.has(v)) next.delete(v);
     else next.add(v);
     setStatusFilters(next);
+  };
+  const toggleCompletion = (v: string) => {
+    const next = new Set(completionFilters);
+    if (next.has(v)) next.delete(v);
+    else next.add(v);
+    setCompletionFilters(next);
   };
   const toggleTownship = (id: string) => {
     const next = new Set(townshipFilters);
@@ -519,7 +549,7 @@ export default function DrillDownPage() {
             <thead className="bg-gray-50 text-left text-gray-500">
               <tr>
                 {scope !== "township" && <th className="px-4 py-2 font-medium">Township</th>}
-                {scope !== "township" && <th className="px-4 py-2 font-medium">Org AMO ID</th>}
+                {scope !== "township" && <th className="px-4 py-2 font-medium whitespace-nowrap">Org AMO ID</th>}
                 <th className="px-4 py-2 font-medium">Status</th>
                 <th className="px-4 py-2 font-medium text-right">Reviewed</th>
                 <th className="px-4 py-2 font-medium text-right">Total</th>
@@ -536,7 +566,7 @@ export default function DrillDownPage() {
                     </td>
                   )}
                   {scope !== "township" && (
-                    <td className="px-4 py-2 font-mono text-xs text-gray-700">
+                    <td className="px-4 py-2 font-mono text-xs text-gray-700 whitespace-nowrap">
                       {s.amo_organization_id || <span className="text-gray-400">—</span>}
                     </td>
                   )}
@@ -612,13 +642,19 @@ export default function DrillDownPage() {
                 onClick={() => setTownshipFilterOpen((o) => !o)}
                 className="flex items-center gap-1 text-xs font-medium text-gray-600 mt-1 hover:text-gray-900"
               >
-                {townshipFilterOpen ? (
-                  <ChevronDown className="w-3 h-3" />
-                ) : (
-                  <ChevronRight className="w-3 h-3" />
-                )}
                 <Filter className="w-3 h-3" /> Townships{" "}
                 <span className="opacity-70">({townshipOptions.length})</span>
+                <span className="ml-1 inline-flex items-center gap-0.5 text-gray-500 underline">
+                  {townshipFilterOpen ? (
+                    <>
+                      <ChevronDown className="w-3 h-3" /> Collapse
+                    </>
+                  ) : (
+                    <>
+                      <ChevronRight className="w-3 h-3" /> Expand
+                    </>
+                  )}
+                </span>
                 {townshipFilters.size > 0 && (
                   <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-full bg-gray-900 text-white text-[10px]">
                     {townshipFilters.size} selected
@@ -653,6 +689,43 @@ export default function DrillDownPage() {
               )}
             </div>
           )}
+
+          <div className="flex items-start gap-2 flex-wrap">
+            <span className="flex items-center gap-1 text-xs font-medium text-gray-600 mt-1">
+              <Filter className="w-3 h-3" /> Township completion:
+            </span>
+            {(
+              [
+                { value: "completed", label: "Completed" },
+                { value: "in_progress", label: "In progress" },
+                { value: "not_started", label: "Not started" },
+              ] as const
+            ).map((f) => {
+              const active = completionFilters.has(f.value);
+              const count = completionCounts[f.value] || 0;
+              return (
+                <button
+                  key={f.value}
+                  onClick={() => toggleCompletion(f.value)}
+                  className={`text-xs px-2.5 py-1 rounded-full border ${
+                    active
+                      ? "bg-gray-900 text-white border-gray-900"
+                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                  }`}
+                >
+                  {f.label} <span className="opacity-70">({count})</span>
+                </button>
+              );
+            })}
+            {completionFilters.size > 0 && (
+              <button
+                onClick={() => setCompletionFilters(new Set())}
+                className="text-xs text-gray-500 underline ml-1 mt-1"
+              >
+                Clear
+              </button>
+            )}
+          </div>
 
           <div className="flex items-start gap-2 flex-wrap">
             <span className="flex items-center gap-1 text-xs font-medium text-gray-600 mt-1">
@@ -777,6 +850,7 @@ export default function DrillDownPage() {
             Showing <strong>{filteredContacts.length}</strong> of {contacts.length} contact{contacts.length === 1 ? "" : "s"}.
             {(townshipFilters.size > 0 ||
               statusFilters.size > 0 ||
+              completionFilters.size > 0 ||
               emailStatusFilters.size > 0 ||
               amoFilter !== "all" ||
               mailchimpFilter !== "all" ||
@@ -785,6 +859,7 @@ export default function DrillDownPage() {
                 onClick={() => {
                   setTownshipFilters(new Set());
                   setStatusFilters(new Set());
+                  setCompletionFilters(new Set());
                   setEmailStatusFilters(new Set());
                   setAmoFilter("all");
                   setMailchimpFilter("all");

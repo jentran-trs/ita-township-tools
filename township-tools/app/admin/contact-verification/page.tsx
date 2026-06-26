@@ -226,8 +226,8 @@ export default function ContactVerificationAdminPage() {
 
   if (!isLoaded || !isAdmin || !authChecked) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
+        <Loader2 className="w-6 h-6 animate-spin text-gray-400 dark:text-gray-500" />
       </div>
     );
   }
@@ -238,26 +238,26 @@ export default function ContactVerificationAdminPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
+        <Loader2 className="w-6 h-6 animate-spin text-gray-400 dark:text-gray-500" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <div className="max-w-5xl mx-auto px-6 py-10">
         <button
           onClick={() => router.push("/dashboard")}
-          className="inline-flex items-center gap-2 text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-md px-4 py-2.5 hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 shadow-sm mb-6"
+          className="inline-flex items-center gap-2 text-base font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-md px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-950 hover:border-gray-400 dark:hover:border-gray-600 hover:text-gray-900 dark:hover:text-gray-100 shadow-sm mb-6"
         >
           <ArrowLeft className="w-5 h-5" /> Back to dashboard
         </button>
 
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Contact verification</h1>
-            <p className="text-sm text-gray-600 mt-1">
+            <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Contact verification</h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               Real-time completion across regions, counties, and townships.
               {verificationDeadline && (
                 <>
@@ -268,7 +268,7 @@ export default function ContactVerificationAdminPage() {
               {lastRefreshedAt && (
                 <>
                   {" · "}
-                  <span className="text-gray-500">
+                  <span className="text-gray-500 dark:text-gray-400">
                     Last refreshed {new Date(lastRefreshedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
                   </span>
                 </>
@@ -278,7 +278,7 @@ export default function ContactVerificationAdminPage() {
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => setSettingsOpen((v) => !v)}
-              className="flex items-center gap-2 text-sm font-medium text-gray-700 px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+              className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-950"
             >
               <Settings className="w-4 h-4" /> Settings
             </button>
@@ -287,8 +287,8 @@ export default function ContactVerificationAdminPage() {
               disabled={refreshing}
               className={`flex items-center gap-2 text-sm font-medium px-3 py-2 border rounded-md transition-colors ${
                 justRefreshed
-                  ? "text-emerald-700 bg-emerald-50 border-emerald-300"
-                  : "text-gray-700 border-gray-300 hover:bg-gray-50"
+                  ? "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800"
+                  : "text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-950"
               } disabled:opacity-70`}
             >
               <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
@@ -296,19 +296,19 @@ export default function ContactVerificationAdminPage() {
             </button>
             <button
               onClick={() => router.push("/admin/contact-verification/recent-changes")}
-              className="flex items-center gap-2 text-sm font-medium text-gray-700 px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+              className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-950"
             >
               <ListChecks className="w-4 h-4" /> Recent changes
             </button>
             <button
               onClick={() => router.push("/admin/contact-verification/amo-ids")}
-              className="flex items-center gap-2 text-sm font-medium text-gray-700 px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+              className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-950"
             >
               <Upload className="w-4 h-4" /> Assign AMO IDs
             </button>
             <button
               onClick={() => router.push("/admin/contact-verification/org-amo-ids")}
-              className="flex items-center gap-2 text-sm font-medium text-gray-700 px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+              className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-950"
             >
               <Upload className="w-4 h-4" /> Assign Org IDs
             </button>
@@ -317,20 +317,20 @@ export default function ContactVerificationAdminPage() {
                 reloadTree();
                 setManageOpen(true);
               }}
-              className="flex items-center gap-2 text-sm font-medium text-gray-700 px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+              className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-950"
             >
               <Map className="w-4 h-4" /> Manage townships
             </button>
             <button
               onClick={() => router.push("/admin/contact-verification/import")}
-              className="flex items-center gap-2 text-sm px-3 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800"
+              className="flex items-center gap-2 text-sm px-3 py-2 bg-gray-900 dark:bg-gray-700 text-white rounded-md hover:bg-gray-800 dark:hover:bg-gray-700"
             >
               <Upload className="w-4 h-4" /> Import xlsx
             </button>
             <button
               onClick={logoutSuperadmin}
               title="Lock superadmin"
-              className="flex items-center gap-2 text-sm font-medium text-gray-600 px-2 py-2 hover:text-gray-900"
+              className="flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-400 px-2 py-2 hover:text-gray-900 dark:hover:text-gray-100"
             >
               <LogOut className="w-4 h-4" />
             </button>
@@ -347,8 +347,8 @@ export default function ContactVerificationAdminPage() {
         )}
 
         {(totalNewSinceLastView > 0 || totalNewSinceDeadline > 0) && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 mb-5 flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-2 text-blue-900">
+          <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-lg px-4 py-3 mb-5 flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-2 text-blue-900 dark:text-blue-200">
               <Bell className="w-5 h-5" />
               <div className="text-sm">
                 {totalNewSinceLastView > 0 && (
@@ -369,7 +369,7 @@ export default function ContactVerificationAdminPage() {
             {totalNewSinceLastView > 0 && (
               <button
                 onClick={markAllViewed}
-                className="text-sm font-medium text-blue-900 hover:text-blue-700 underline"
+                className="text-sm font-medium text-blue-900 dark:text-blue-200 hover:text-blue-700 dark:hover:text-blue-300 underline"
               >
                 Mark all as seen
               </button>
@@ -381,7 +381,7 @@ export default function ContactVerificationAdminPage() {
         {searchTree.length > 0 && (
           <div className="relative mb-5">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
               <input
                 type="text"
                 placeholder="Search by county, township, contact name, or email…"
@@ -391,7 +391,7 @@ export default function ContactVerificationAdminPage() {
                   setSearchOpen(true);
                 }}
                 onFocus={() => setSearchOpen(true)}
-                className="w-full border border-gray-300 rounded-md pl-10 pr-9 py-2.5 text-base text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-gray-300"
+                className="w-full border border-gray-300 dark:border-gray-700 rounded-md pl-10 pr-9 py-2.5 text-base text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-300"
               />
               {searchQuery && (
                 <button
@@ -399,7 +399,7 @@ export default function ContactVerificationAdminPage() {
                     setSearchQuery("");
                     setSearchOpen(false);
                   }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
                   aria-label="Clear"
                 >
                   <X className="w-4 h-4" />
@@ -407,13 +407,13 @@ export default function ContactVerificationAdminPage() {
               )}
             </div>
             {searchOpen && searchQuery.trim().length >= 2 && (
-              <div className="absolute z-30 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg overflow-hidden">
+              <div className="absolute z-30 left-0 right-0 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-md shadow-lg overflow-hidden">
                 {searchResults.length === 0 && contactResults.length === 0 ? (
-                  <div className="px-4 py-3 text-sm text-gray-500">
+                  <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
                     No matches for &ldquo;{searchQuery}&rdquo;.
                   </div>
                 ) : (
-                  <ul className="max-h-96 overflow-y-auto divide-y divide-gray-100">
+                  <ul className="max-h-96 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-800">
                     {searchResults.map((r) => (
                       <li key={`${r.type}-${r.id}`}>
                         <button
@@ -422,17 +422,17 @@ export default function ContactVerificationAdminPage() {
                             setSearchQuery("");
                             router.push(`/admin/contact-verification/${r.type}/${r.id}`);
                           }}
-                          className="w-full text-left px-4 py-2.5 hover:bg-gray-50 flex items-center justify-between gap-3"
+                          className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-950 flex items-center justify-between gap-3"
                         >
                           <div className="min-w-0">
-                            <div className="text-sm font-medium text-gray-900">{r.label}</div>
-                            <div className="text-xs text-gray-500">{r.sub}</div>
+                            <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{r.label}</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">{r.sub}</div>
                           </div>
                           <span
                             className={`text-xs font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded ${
                               r.type === "township"
-                                ? "bg-blue-100 text-blue-700"
-                                : "bg-gray-100 text-gray-700"
+                                ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300"
+                                : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
                             }`}
                           >
                             {r.type}
@@ -453,20 +453,20 @@ export default function ContactVerificationAdminPage() {
                                 `/verify-contacts/${c.region_slug}/${c.county_slug}/${c.township_slug}?from=admin&scope=township&id=${c.township_id}`
                               );
                             }}
-                            className="w-full text-left px-4 py-2.5 hover:bg-gray-50 flex items-center justify-between gap-3"
+                            className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-950 flex items-center justify-between gap-3"
                           >
                             <div className="min-w-0">
-                              <div className="text-sm font-medium text-gray-900">{name}</div>
-                              <div className="text-xs text-gray-500 truncate">
+                              <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{name}</div>
+                              <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
                                 {c.email || <span className="italic">no email</span>}
                                 {c.title ? ` · ${c.title}` : ""}
                               </div>
-                              <div className="text-xs text-gray-400 truncate">
+                              <div className="text-xs text-gray-400 dark:text-gray-500 truncate">
                                 {c.township_name}
                                 {c.county_name ? `, ${c.county_name} County` : ""}
                               </div>
                             </div>
-                            <span className="text-xs font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 flex-shrink-0">
+                            <span className="text-xs font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 flex-shrink-0">
                               contact
                             </span>
                           </button>
@@ -481,11 +481,11 @@ export default function ContactVerificationAdminPage() {
         )}
 
         {regions.length === 0 ? (
-          <div className="bg-white border border-gray-200 rounded-lg p-10 text-center">
-            <p className="text-gray-600 mb-4">No data yet. Import a region xlsx to get started.</p>
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-10 text-center">
+            <p className="text-gray-600 dark:text-gray-400 mb-4">No data yet. Import a region xlsx to get started.</p>
             <button
               onClick={() => router.push("/admin/contact-verification/import")}
-              className="inline-flex items-center gap-2 text-sm px-4 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800"
+              className="inline-flex items-center gap-2 text-sm px-4 py-2 bg-gray-900 dark:bg-gray-700 text-white rounded-md hover:bg-gray-800 dark:hover:bg-gray-700"
             >
               <Upload className="w-4 h-4" /> Import a region
             </button>
@@ -495,21 +495,21 @@ export default function ContactVerificationAdminPage() {
             {regions.map((r) => {
               const isOpen = expandedRegion === r.id;
               return (
-                <div key={r.id} className="bg-white border border-gray-200 rounded-lg">
+                <div key={r.id} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg">
                   <div
-                    className="px-5 py-4 flex items-center justify-between cursor-pointer hover:bg-gray-50"
+                    className="px-5 py-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-950"
                     onClick={() => setExpandedRegion(isOpen ? null : r.id)}
                   >
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-gray-900">{r.name}</span>
+                        <span className="font-semibold text-gray-900 dark:text-gray-100">{r.name}</span>
                         {r.new_since_last_view > 0 && (
-                          <span className="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                          <span className="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                             {r.new_since_last_view} new
                           </span>
                         )}
                       </div>
-                      <div className="text-sm text-gray-600 mt-0.5">
+                      <div className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">
                         {r.township_completed}/{r.township_total} townships completed ·{" "}
                         {r.contact_reviewed}/{r.contact_total} contacts reviewed
                       </div>
@@ -521,7 +521,7 @@ export default function ContactVerificationAdminPage() {
                           e.stopPropagation();
                           router.push(`/admin/contact-verification/region/${r.id}`);
                         }}
-                        className="flex items-center gap-1 text-xs font-medium text-gray-700 px-2 py-1 border border-gray-300 rounded-md hover:bg-gray-50"
+                        className="flex items-center gap-1 text-xs font-medium text-gray-700 dark:text-gray-300 px-2 py-1 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-950"
                       >
                         Open region
                       </button>
@@ -530,30 +530,30 @@ export default function ContactVerificationAdminPage() {
                           e.stopPropagation();
                           askExport(`scope=region&id=${r.id}&format=xlsx`);
                         }}
-                        className="flex items-center gap-1 text-xs font-medium text-gray-700 px-2 py-1 border border-gray-300 rounded-md hover:bg-gray-50"
+                        className="flex items-center gap-1 text-xs font-medium text-gray-700 dark:text-gray-300 px-2 py-1 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-950"
                       >
                         <Download className="w-3 h-3" /> Export
                       </button>
                     </div>
                   </div>
                   {isOpen && (
-                    <div className="border-t border-gray-200 divide-y divide-gray-100">
+                    <div className="border-t border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800">
                       {r.counties.map((c) => (
                         <div
                           key={c.id}
-                          className="px-5 py-3 flex items-center justify-between hover:bg-gray-50 cursor-pointer"
+                          className="px-5 py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-950 cursor-pointer"
                           onClick={() => router.push(`/admin/contact-verification/county/${c.id}`)}
                         >
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="font-medium text-gray-900">{c.name} County</span>
+                              <span className="font-medium text-gray-900 dark:text-gray-100">{c.name} County</span>
                               {c.new_since_last_view > 0 && (
-                                <span className="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                                <span className="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                                   {c.new_since_last_view} new
                                 </span>
                               )}
                             </div>
-                            <div className="text-sm text-gray-600">
+                            <div className="text-sm text-gray-600 dark:text-gray-400">
                               {c.township_completed}/{c.township_total} townships ·{" "}
                               {c.contact_reviewed}/{c.contact_total} contacts
                             </div>
@@ -565,7 +565,7 @@ export default function ContactVerificationAdminPage() {
                                 e.stopPropagation();
                                 askExport(`scope=county&id=${c.id}&format=xlsx`);
                               }}
-                              className="flex items-center gap-1 text-xs font-medium text-gray-700 px-2 py-1 border border-gray-300 rounded-md hover:bg-gray-50"
+                              className="flex items-center gap-1 text-xs font-medium text-gray-700 dark:text-gray-300 px-2 py-1 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-950"
                             >
                               <Download className="w-3 h-3" /> Export
                             </button>
@@ -616,33 +616,33 @@ function SettingsPanel({
   const [digestEmail, setDigestEmail] = useState(settings.digest_recipient_email || "");
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-5 mb-5">
+    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5 mb-5">
       <div className="flex items-start justify-between mb-4">
         <div>
-          <h2 className="text-base font-semibold text-gray-900">Settings</h2>
-          <p className="text-xs text-gray-500 mt-0.5">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Settings</h2>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
             Verification deadline and weekly summary email.
           </p>
         </div>
-        <button onClick={onClose} className="text-xs text-gray-500 underline">Close</button>
+        <button onClick={onClose} className="text-xs text-gray-500 dark:text-gray-400 underline">Close</button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <label className="block">
-          <span className="block text-sm font-medium text-gray-700 mb-1">Verification deadline</span>
+          <span className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Verification deadline</span>
           <input
             type="date"
             value={deadline}
             onChange={(e) => setDeadline(e.target.value)}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900"
+            className="w-full border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
           />
-          <span className="block text-xs text-gray-500 mt-1">
+          <span className="block text-xs text-gray-500 dark:text-gray-400 mt-1">
             After this date, banner messaging changes. Leave blank to disable.
           </span>
         </label>
 
         <label className="block">
-          <span className="block text-sm font-medium text-gray-700 mb-1">Weekly summary email</span>
+          <span className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Weekly summary email</span>
           <div className="flex items-center gap-2 mb-2">
             <input
               type="checkbox"
@@ -650,7 +650,7 @@ function SettingsPanel({
               onChange={(e) => setDigestEnabled(e.target.checked)}
               id="digest_enabled"
             />
-            <label htmlFor="digest_enabled" className="text-sm text-gray-700">
+            <label htmlFor="digest_enabled" className="text-sm text-gray-700 dark:text-gray-300">
               Send weekly summary every Monday morning
             </label>
           </div>
@@ -659,10 +659,10 @@ function SettingsPanel({
             value={digestEmail}
             onChange={(e) => setDigestEmail(e.target.value)}
             placeholder="you@example.com"
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-900"
+            className="w-full border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 text-sm text-gray-900 dark:text-gray-100"
           />
           {settings.digest_last_sent_at && (
-            <span className="block text-xs text-gray-500 mt-1">
+            <span className="block text-xs text-gray-500 dark:text-gray-400 mt-1">
               Last sent: {new Date(settings.digest_last_sent_at).toLocaleString()}
             </span>
           )}
@@ -682,7 +682,7 @@ function SettingsPanel({
               alert(e.message);
             }
           }}
-          className="flex items-center gap-1.5 text-sm font-medium text-gray-700 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+          className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-950"
         >
           <Mail className="w-4 h-4" /> Send test now
         </button>
@@ -695,7 +695,7 @@ function SettingsPanel({
             })
           }
           disabled={saving}
-          className="flex items-center gap-1.5 text-sm font-medium px-4 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800 disabled:opacity-50"
+          className="flex items-center gap-1.5 text-sm font-medium px-4 py-2 bg-gray-900 dark:bg-gray-700 text-white rounded-md hover:bg-gray-800 dark:hover:bg-gray-700 disabled:opacity-50"
         >
           <Save className="w-4 h-4" /> Save settings
         </button>
@@ -730,13 +730,13 @@ function PasswordGate({ onUnlocked, onCancel }: { onUnlocked: () => void; onCanc
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
-      <form onSubmit={submit} className="w-full max-w-sm bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 px-6">
+      <form onSubmit={submit} className="w-full max-w-sm bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-1">
-          <Lock className="w-5 h-5 text-gray-700" />
-          <h1 className="text-lg font-semibold text-gray-900">Restricted area</h1>
+          <Lock className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+          <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Restricted area</h1>
         </div>
-        <p className="text-sm text-gray-600 mb-4">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
           Enter the superadmin password to access contact-verification administration.
         </p>
         <input
@@ -745,21 +745,21 @@ function PasswordGate({ onUnlocked, onCancel }: { onUnlocked: () => void; onCanc
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
-          className="w-full border border-gray-300 rounded-md px-3 py-2.5 text-base text-gray-900 mb-2"
+          className="w-full border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2.5 text-base text-gray-900 dark:text-gray-100 mb-2"
         />
-        {error && <p className="text-sm text-red-700 mb-2">{error}</p>}
+        {error && <p className="text-sm text-red-700 dark:text-red-300 mb-2">{error}</p>}
         <div className="flex gap-2 justify-end">
           <button
             type="button"
             onClick={onCancel}
-            className="text-sm font-medium text-gray-700 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+            className="text-sm font-medium text-gray-700 dark:text-gray-300 px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-950"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={busy || !password}
-            className="text-sm font-medium px-4 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800 disabled:opacity-50"
+            className="text-sm font-medium px-4 py-2 bg-gray-900 dark:bg-gray-700 text-white rounded-md hover:bg-gray-800 dark:hover:bg-gray-700 disabled:opacity-50"
           >
             {busy ? "Checking…" : "Unlock"}
           </button>
@@ -772,13 +772,13 @@ function PasswordGate({ onUnlocked, onCancel }: { onUnlocked: () => void; onCanc
 function ProgressBar({ percent, small }: { percent: number; small?: boolean }) {
   return (
     <div className={`flex items-center gap-2 ${small ? "w-32" : "w-48"}`}>
-      <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+      <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
         <div
           className="h-full bg-emerald-500"
           style={{ width: `${percent}%` }}
         />
       </div>
-      <div className="text-xs text-gray-600 w-10 text-right">{percent}%</div>
+      <div className="text-xs text-gray-600 dark:text-gray-400 w-10 text-right">{percent}%</div>
     </div>
   );
 }

@@ -21,39 +21,39 @@ export default function AdminManageTownshipsModal({ open, tree, onClose, onChang
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-lg shadow-xl max-w-xl w-full max-h-[90vh] overflow-y-auto"
+        className="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-xl w-full max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-gray-200">
+        <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-gray-200 dark:border-gray-800">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">Manage townships</h2>
-            <p className="text-sm text-gray-600 mt-0.5">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Manage townships</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">
               Rename, reassign, or add townships in the directory.
             </p>
           </div>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-900">
+          <button onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="px-6 pt-4">
-          <div className="inline-flex rounded-md border border-gray-300 overflow-hidden text-sm">
+          <div className="inline-flex rounded-md border border-gray-300 dark:border-gray-700 overflow-hidden text-sm">
             <button
               onClick={() => setMode("edit")}
               className={`flex items-center gap-1.5 px-3 py-1.5 ${
                 mode === "edit"
-                  ? "bg-gray-900 text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-50"
+                  ? "bg-gray-900 dark:bg-gray-700 text-white"
+                  : "bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-950"
               }`}
             >
               <Pencil className="w-3.5 h-3.5" /> Edit existing
             </button>
             <button
               onClick={() => setMode("create")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 border-l border-gray-300 ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 border-l border-gray-300 dark:border-gray-700 ${
                 mode === "create"
-                  ? "bg-gray-900 text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-50"
+                  ? "bg-gray-900 dark:bg-gray-700 text-white"
+                  : "bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-950"
               }`}
             >
               <Plus className="w-3.5 h-3.5" /> Create new
@@ -78,14 +78,14 @@ function RegionCountyPicker({ tree, regionId, setRegionId, countyId, setCountyId
   return (
     <>
       <label className="block">
-        <span className="block text-sm font-medium text-gray-700 mb-1">Region</span>
+        <span className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Region</span>
         <select
           value={regionId}
           onChange={(e) => {
             setRegionId(e.target.value);
             setCountyId("");
           }}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white text-gray-900"
+          className="w-full border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
         >
           <option value="">Select a region</option>
           {tree.map((r) => (
@@ -96,12 +96,12 @@ function RegionCountyPicker({ tree, regionId, setRegionId, countyId, setCountyId
         </select>
       </label>
       <label className="block">
-        <span className="block text-sm font-medium text-gray-700 mb-1">County</span>
+        <span className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">County</span>
         <select
           value={countyId}
           onChange={(e) => setCountyId(e.target.value)}
           disabled={!region}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white text-gray-900 disabled:bg-gray-100 disabled:text-gray-400"
+          className="w-full border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400 dark:disabled:text-gray-500"
         >
           <option value="">{region ? "Select a county" : "Pick a region first"}</option>
           {(region?.counties || []).map((c) => (
@@ -186,8 +186,8 @@ function EditPanel({ tree, onChanged, onClose }) {
 
   return (
     <div className="space-y-4">
-      <div className="bg-gray-50 border border-gray-200 rounded-md p-3 space-y-3">
-        <p className="text-xs font-medium text-gray-700 uppercase tracking-wide">
+      <div className="bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-md p-3 space-y-3">
+        <p className="text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wide">
           Pick the township to edit
         </p>
         <RegionCountyPicker
@@ -205,12 +205,12 @@ function EditPanel({ tree, onChanged, onClose }) {
           }}
         />
         <label className="block">
-          <span className="block text-sm font-medium text-gray-700 mb-1">Township</span>
+          <span className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Township</span>
           <select
             value={srcTownshipId}
             onChange={(e) => setSrcTownshipId(e.target.value)}
             disabled={!srcCounty}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white text-gray-900 disabled:bg-gray-100 disabled:text-gray-400"
+            className="w-full border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400 dark:disabled:text-gray-500"
           >
             <option value="">{srcCounty ? "Select a township" : "Pick a county first"}</option>
             {(srcCounty?.townships || []).map((t) => (
@@ -223,17 +223,17 @@ function EditPanel({ tree, onChanged, onClose }) {
       </div>
 
       {srcTownship && (
-        <div className="border border-blue-200 bg-blue-50/40 rounded-md p-3 space-y-3">
-          <p className="text-xs font-medium text-blue-900 uppercase tracking-wide">
+        <div className="border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40/40 rounded-md p-3 space-y-3">
+          <p className="text-xs font-medium text-blue-900 dark:text-blue-200 uppercase tracking-wide">
             New values
           </p>
           <label className="block">
-            <span className="block text-sm font-medium text-gray-700 mb-1">Township name</span>
+            <span className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Township name</span>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white text-gray-900"
+              className="w-full border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
             />
           </label>
           <RegionCountyPicker
@@ -246,20 +246,20 @@ function EditPanel({ tree, onChanged, onClose }) {
             countyId={destCountyId}
             setCountyId={setDestCountyId}
           />
-          <p className="text-xs text-gray-600">
+          <p className="text-xs text-gray-600 dark:text-gray-400">
             Contacts attached to this township will follow automatically — they
             inherit county and region through the township link.
           </p>
         </div>
       )}
 
-      {error && <p className="text-sm text-red-700">{error}</p>}
-      {success && <p className="text-sm text-emerald-700">{success}</p>}
+      {error && <p className="text-sm text-red-700 dark:text-red-300">{error}</p>}
+      {success && <p className="text-sm text-emerald-700 dark:text-emerald-300">{success}</p>}
 
       <div className="flex justify-end gap-2 pt-1">
         <button
           onClick={onClose}
-          className="text-sm font-medium text-gray-700 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+          className="text-sm font-medium text-gray-700 dark:text-gray-300 px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-950"
         >
           Close
         </button>
@@ -325,28 +325,28 @@ function CreatePanel({ tree, onChanged, onClose }) {
         setCountyId={setCountyId}
       />
       <label className="block">
-        <span className="block text-sm font-medium text-gray-700 mb-1">Township name</span>
+        <span className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Township name</span>
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="e.g. Center"
           disabled={!county}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white text-gray-900 disabled:bg-gray-100"
+          className="w-full border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 disabled:bg-gray-100 dark:disabled:bg-gray-800"
         />
-        <span className="block text-xs text-gray-500 mt-1">
+        <span className="block text-xs text-gray-500 dark:text-gray-400 mt-1">
           The new township starts empty — you can add contacts from its admin
           drill-down page or via xlsx import.
         </span>
       </label>
 
-      {error && <p className="text-sm text-red-700">{error}</p>}
-      {success && <p className="text-sm text-emerald-700">{success}</p>}
+      {error && <p className="text-sm text-red-700 dark:text-red-300">{error}</p>}
+      {success && <p className="text-sm text-emerald-700 dark:text-emerald-300">{success}</p>}
 
       <div className="flex justify-end gap-2 pt-1">
         <button
           onClick={onClose}
-          className="text-sm font-medium text-gray-700 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+          className="text-sm font-medium text-gray-700 dark:text-gray-300 px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-950"
         >
           Close
         </button>

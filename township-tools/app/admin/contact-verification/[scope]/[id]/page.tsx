@@ -498,8 +498,8 @@ export default function DrillDownPage() {
 
   if (!isLoaded || !isAdmin || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
+        <Loader2 className="w-6 h-6 animate-spin text-gray-400 dark:text-gray-500" />
       </div>
     );
   }
@@ -522,25 +522,25 @@ export default function DrillDownPage() {
   const townshipCompleted = stats.filter((r) => r.township_status === "completed").length;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <div className="max-w-5xl mx-auto px-6 py-10">
         <button
           onClick={() => router.push("/admin/contact-verification")}
-          className="inline-flex items-center gap-2 text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-md px-4 py-2.5 hover:bg-gray-50 hover:border-gray-400 hover:text-gray-900 shadow-sm mb-6"
+          className="inline-flex items-center gap-2 text-base font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-md px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-950 hover:border-gray-400 dark:hover:border-gray-600 hover:text-gray-900 dark:hover:text-gray-100 shadow-sm mb-6"
         >
           <ArrowLeft className="w-5 h-5" /> Back to Contact Verification
         </button>
 
         <div className="flex items-start justify-between mb-8">
           <div>
-            <div className="text-sm text-gray-500">{subheading}</div>
-            <h1 className="text-2xl font-semibold text-gray-900 mt-1">{heading || "—"}</h1>
-            <div className="text-sm text-gray-600 mt-2">
+            <div className="text-sm text-gray-500 dark:text-gray-400">{subheading}</div>
+            <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mt-1">{heading || "—"}</h1>
+            <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">
               {townshipCompleted}/{stats.length} townships completed · {contactReviewed}/{contactTotal} contacts reviewed
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <label className="flex items-center gap-1.5 text-xs text-gray-700 cursor-pointer select-none">
+            <label className="flex items-center gap-1.5 text-xs text-gray-700 dark:text-gray-300 cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={detailed}
@@ -554,7 +554,7 @@ export default function DrillDownPage() {
                   exportUrl(`scope=${scope}&id=${id}&format=xlsx&variant=${detailed ? "detailed" : "simple"}`)
                 )
               }
-              className="flex items-center gap-2 text-sm px-3 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800"
+              className="flex items-center gap-2 text-sm px-3 py-2 bg-gray-900 dark:bg-gray-700 text-white rounded-md hover:bg-gray-800 dark:hover:bg-gray-700"
             >
               <Download className="w-4 h-4" /> xlsx
             </button>
@@ -564,7 +564,7 @@ export default function DrillDownPage() {
                   exportUrl(`scope=${scope}&id=${id}&format=csv&variant=${detailed ? "detailed" : "simple"}`)
                 )
               }
-              className="flex items-center gap-2 text-sm font-medium text-gray-700 px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+              className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-950"
             >
               <Download className="w-4 h-4" /> csv
             </button>
@@ -575,9 +575,9 @@ export default function DrillDownPage() {
           <DangerZone regionId={id} regionName={stats[0]?.region_name || ""} />
         )}
 
-        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden mb-8">
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden mb-8">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-left text-gray-500">
+            <thead className="bg-gray-50 dark:bg-gray-950 text-left text-gray-500 dark:text-gray-400">
               <tr>
                 {scope !== "township" && <th className="px-4 py-2 font-medium">Township</th>}
                 {scope !== "township" && <th className="px-4 py-2 font-medium whitespace-nowrap">Org AMO ID</th>}
@@ -587,31 +587,31 @@ export default function DrillDownPage() {
                 <th className="px-4 py-2"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
               {sortedStats.map((s) => (
                 <tr key={s.township_id}>
                   {scope !== "township" && (
-                    <td className="px-4 py-2 text-gray-900">
+                    <td className="px-4 py-2 text-gray-900 dark:text-gray-100">
                       {scope === "region" ? `${s.county_name} County, ` : ""}
                       {s.township_name}
                     </td>
                   )}
                   {scope !== "township" && (
-                    <td className="px-4 py-2 font-mono text-xs text-gray-700 whitespace-nowrap">
-                      {s.amo_organization_id || <span className="text-gray-400">—</span>}
+                    <td className="px-4 py-2 font-mono text-xs text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                      {s.amo_organization_id || <span className="text-gray-400 dark:text-gray-500">—</span>}
                     </td>
                   )}
                   <td className="px-4 py-2">
                     <StatusBadge status={s.township_status} />
                   </td>
-                  <td className="px-4 py-2 text-right text-gray-700">{s.contact_reviewed}</td>
-                  <td className="px-4 py-2 text-right text-gray-700">{s.contact_total}</td>
+                  <td className="px-4 py-2 text-right text-gray-700 dark:text-gray-300">{s.contact_reviewed}</td>
+                  <td className="px-4 py-2 text-right text-gray-700 dark:text-gray-300">{s.contact_total}</td>
                   <td className="px-4 py-2">
                     <div className="flex items-center justify-end gap-2 flex-wrap">
                       {s.region_slug && s.county_slug && s.township_slug && (
                         <a
                           href={`/verify-contacts/${s.region_slug}/${s.county_slug}/${s.township_slug}?from=admin&scope=${scope}&id=${id}`}
-                          className="flex items-center gap-1 text-xs font-medium text-gray-700 px-2 py-1 border border-gray-300 rounded-md hover:bg-gray-50"
+                          className="flex items-center gap-1 text-xs font-medium text-gray-700 dark:text-gray-300 px-2 py-1 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-950"
                         >
                           <ExternalLink className="w-3 h-3" /> View list
                         </a>
@@ -622,14 +622,14 @@ export default function DrillDownPage() {
                             exportUrl(`scope=township&id=${s.township_id}&format=xlsx&variant=${detailed ? "detailed" : "simple"}`)
                           )
                         }
-                        className="flex items-center gap-1 text-xs font-medium text-gray-700 px-2 py-1 border border-gray-300 rounded-md hover:bg-gray-50"
+                        className="flex items-center gap-1 text-xs font-medium text-gray-700 dark:text-gray-300 px-2 py-1 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-950"
                       >
                         <Download className="w-3 h-3" /> Export
                       </button>
                       {s.township_status === "completed" && (
                         <button
                           onClick={() => reopen(s.township_id)}
-                          className="flex items-center gap-1 text-xs font-medium text-gray-700 px-2 py-1 border border-gray-300 rounded-md hover:bg-gray-50"
+                          className="flex items-center gap-1 text-xs font-medium text-gray-700 dark:text-gray-300 px-2 py-1 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-950"
                         >
                           <RotateCcw className="w-3 h-3" /> Reopen
                         </button>
@@ -643,23 +643,23 @@ export default function DrillDownPage() {
         </div>
 
         <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
-          <h2 className="text-base font-semibold text-gray-900">Contacts</h2>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Contacts</h2>
         </div>
 
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4 mb-3 space-y-3">
+        <div className="bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-lg p-3 sm:p-4 mb-3 space-y-3">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
             <input
               type="text"
               placeholder="Search by name, title, email, or phone…"
               value={contactQuery}
               onChange={(e) => setContactQuery(e.target.value)}
-              className="w-full border border-gray-300 rounded-md pl-10 pr-9 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-gray-300"
+              className="w-full border border-gray-300 dark:border-gray-700 rounded-md pl-10 pr-9 py-2 text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-300"
             />
             {contactQuery && (
               <button
                 onClick={() => setContactQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
                 aria-label="Clear search"
               >
                 <X className="w-4 h-4" />
@@ -671,11 +671,11 @@ export default function DrillDownPage() {
             <div className="flex items-start gap-2 flex-wrap">
               <button
                 onClick={() => setTownshipFilterOpen((o) => !o)}
-                className="flex items-center gap-1 text-xs font-medium text-gray-600 mt-1 hover:text-gray-900"
+                className="flex items-center gap-1 text-xs font-medium text-gray-600 dark:text-gray-400 mt-1 hover:text-gray-900 dark:hover:text-gray-100"
               >
                 <Filter className="w-3 h-3" /> Townships{" "}
                 <span className="opacity-70">({townshipOptions.length})</span>
-                <span className="ml-1 inline-flex items-center gap-0.5 text-gray-500 underline">
+                <span className="ml-1 inline-flex items-center gap-0.5 text-gray-500 dark:text-gray-400 underline">
                   {townshipFilterOpen ? (
                     <>
                       <ChevronDown className="w-3 h-3" /> Collapse
@@ -687,7 +687,7 @@ export default function DrillDownPage() {
                   )}
                 </span>
                 {townshipFilters.size > 0 && (
-                  <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-full bg-gray-900 text-white text-[10px]">
+                  <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-full bg-gray-900 dark:bg-gray-700 text-white text-[10px]">
                     {townshipFilters.size} selected
                   </span>
                 )}
@@ -701,8 +701,8 @@ export default function DrillDownPage() {
                       onClick={() => toggleTownship(t.id)}
                       className={`text-xs px-2.5 py-1 rounded-full border ${
                         active
-                          ? "bg-gray-900 text-white border-gray-900"
-                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                          ? "bg-gray-900 dark:bg-gray-700 text-white border-gray-900"
+                          : "bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-950"
                       }`}
                     >
                       {t.name} · {t.county} County{" "}
@@ -713,7 +713,7 @@ export default function DrillDownPage() {
               {townshipFilters.size > 0 && (
                 <button
                   onClick={() => setTownshipFilters(new Set())}
-                  className="text-xs text-gray-500 underline ml-1 mt-1"
+                  className="text-xs text-gray-500 dark:text-gray-400 underline ml-1 mt-1"
                 >
                   Clear
                 </button>
@@ -722,7 +722,7 @@ export default function DrillDownPage() {
           )}
 
           <div className="flex items-start gap-2 flex-wrap">
-            <span className="flex items-center gap-1 text-xs font-medium text-gray-600 mt-1">
+            <span className="flex items-center gap-1 text-xs font-medium text-gray-600 dark:text-gray-400 mt-1">
               <Filter className="w-3 h-3" /> Township completion:
             </span>
             {(
@@ -740,8 +740,8 @@ export default function DrillDownPage() {
                   onClick={() => toggleCompletion(f.value)}
                   className={`text-xs px-2.5 py-1 rounded-full border ${
                     active
-                      ? "bg-gray-900 text-white border-gray-900"
-                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                      ? "bg-gray-900 dark:bg-gray-700 text-white border-gray-900"
+                      : "bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-950"
                   }`}
                 >
                   {f.label} <span className="opacity-70">({count})</span>
@@ -751,7 +751,7 @@ export default function DrillDownPage() {
             {completionFilters.size > 0 && (
               <button
                 onClick={() => setCompletionFilters(new Set())}
-                className="text-xs text-gray-500 underline ml-1 mt-1"
+                className="text-xs text-gray-500 dark:text-gray-400 underline ml-1 mt-1"
               >
                 Clear
               </button>
@@ -759,7 +759,7 @@ export default function DrillDownPage() {
           </div>
 
           <div className="flex items-start gap-2 flex-wrap">
-            <span className="flex items-center gap-1 text-xs font-medium text-gray-600 mt-1">
+            <span className="flex items-center gap-1 text-xs font-medium text-gray-600 dark:text-gray-400 mt-1">
               <Filter className="w-3 h-3" /> Statuses:
             </span>
             {STATUS_OPTIONS.map((f) => {
@@ -771,8 +771,8 @@ export default function DrillDownPage() {
                   onClick={() => toggleStatus(f.value)}
                   className={`text-xs px-2.5 py-1 rounded-full border ${
                     active
-                      ? "bg-gray-900 text-white border-gray-900"
-                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                      ? "bg-gray-900 dark:bg-gray-700 text-white border-gray-900"
+                      : "bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-950"
                   }`}
                 >
                   {f.label} <span className="opacity-70">({count})</span>
@@ -782,7 +782,7 @@ export default function DrillDownPage() {
             {statusFilters.size > 0 && (
               <button
                 onClick={() => setStatusFilters(new Set())}
-                className="text-xs text-gray-500 underline ml-1 mt-1"
+                className="text-xs text-gray-500 dark:text-gray-400 underline ml-1 mt-1"
               >
                 Clear
               </button>
@@ -790,7 +790,7 @@ export default function DrillDownPage() {
           </div>
 
           <div className="flex items-start gap-2 flex-wrap">
-            <span className="flex items-center gap-1 text-xs font-medium text-gray-600 mt-1">
+            <span className="flex items-center gap-1 text-xs font-medium text-gray-600 dark:text-gray-400 mt-1">
               <Filter className="w-3 h-3" /> AMO sync:
             </span>
             {(["all", "synced", "unsynced"] as const).map((opt) => {
@@ -807,8 +807,8 @@ export default function DrillDownPage() {
                   onClick={() => setAmoFilter(opt)}
                   className={`text-xs px-2.5 py-1 rounded-full border ${
                     active
-                      ? "bg-gray-900 text-white border-gray-900"
-                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                      ? "bg-gray-900 dark:bg-gray-700 text-white border-gray-900"
+                      : "bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-950"
                   }`}
                 >
                   {label}
@@ -818,7 +818,7 @@ export default function DrillDownPage() {
           </div>
 
           <div className="flex items-start gap-2 flex-wrap">
-            <span className="flex items-center gap-1 text-xs font-medium text-gray-600 mt-1">
+            <span className="flex items-center gap-1 text-xs font-medium text-gray-600 dark:text-gray-400 mt-1">
               <Filter className="w-3 h-3" /> MailChimp sync:
             </span>
             {(["all", "synced", "unsynced"] as const).map((opt) => {
@@ -835,8 +835,8 @@ export default function DrillDownPage() {
                   onClick={() => setMailchimpFilter(opt)}
                   className={`text-xs px-2.5 py-1 rounded-full border ${
                     active
-                      ? "bg-gray-900 text-white border-gray-900"
-                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                      ? "bg-gray-900 dark:bg-gray-700 text-white border-gray-900"
+                      : "bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-950"
                   }`}
                 >
                   {label}
@@ -847,7 +847,7 @@ export default function DrillDownPage() {
 
           {emailStatusOptions.length > 0 && (
             <div className="flex items-start gap-2 flex-wrap">
-              <span className="flex items-center gap-1 text-xs font-medium text-gray-600 mt-1">
+              <span className="flex items-center gap-1 text-xs font-medium text-gray-600 dark:text-gray-400 mt-1">
                 <Filter className="w-3 h-3" /> Email status:
               </span>
               {emailStatusOptions.map((opt) => {
@@ -858,8 +858,8 @@ export default function DrillDownPage() {
                     onClick={() => toggleEmailStatus(opt.key)}
                     className={`text-xs px-2.5 py-1 rounded-full border ${
                       active
-                        ? "bg-gray-900 text-white border-gray-900"
-                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                        ? "bg-gray-900 dark:bg-gray-700 text-white border-gray-900"
+                        : "bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-950"
                     }`}
                   >
                     {opt.display} <span className="opacity-70">({opt.count})</span>
@@ -869,7 +869,7 @@ export default function DrillDownPage() {
               {emailStatusFilters.size > 0 && (
                 <button
                   onClick={() => setEmailStatusFilters(new Set())}
-                  className="text-xs text-gray-500 underline ml-1 mt-1"
+                  className="text-xs text-gray-500 dark:text-gray-400 underline ml-1 mt-1"
                 >
                   Clear
                 </button>
@@ -877,7 +877,7 @@ export default function DrillDownPage() {
             </div>
           )}
 
-          <div className="text-xs text-gray-500">
+          <div className="text-xs text-gray-500 dark:text-gray-400">
             Showing <strong>{filteredContacts.length}</strong> of {contacts.length} contact{contacts.length === 1 ? "" : "s"}.
             {(townshipFilters.size > 0 ||
               statusFilters.size > 0 ||
@@ -896,7 +896,7 @@ export default function DrillDownPage() {
                   setMailchimpFilter("all");
                   setContactQuery("");
                 }}
-                className="ml-2 text-gray-700 underline"
+                className="ml-2 text-gray-700 dark:text-gray-300 underline"
               >
                 Clear all filters
               </button>
@@ -905,14 +905,14 @@ export default function DrillDownPage() {
         </div>
 
         {selected.size > 0 && (
-          <div className="sticky top-2 z-10 mb-3 flex items-center gap-2 flex-wrap bg-white border border-gray-300 rounded-lg shadow-sm px-3 py-2">
-            <span className="text-sm text-gray-700 font-medium">{selected.size} selected</span>
+          <div className="sticky top-2 z-10 mb-3 flex items-center gap-2 flex-wrap bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg shadow-sm px-3 py-2">
+            <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">{selected.size} selected</span>
             <button
               onClick={copySelectedEmails}
               className={`flex items-center gap-1 text-sm font-medium px-3 py-1.5 rounded-md border ${
                 copiedEmails > 0
-                  ? "text-emerald-700 border-emerald-300 bg-emerald-50"
-                  : "text-gray-700 border-gray-300 hover:bg-gray-50"
+                  ? "text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40"
+                  : "text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-950"
               }`}
             >
               {copiedEmails > 0 ? (
@@ -929,14 +929,14 @@ export default function DrillDownPage() {
             <button
               onClick={() => askExport((mode) => exportSelected("xlsx", mode))}
               disabled={exporting}
-              className="flex items-center gap-1 text-sm font-medium text-white bg-gray-900 px-3 py-1.5 rounded-md hover:bg-gray-800 disabled:opacity-50"
+              className="flex items-center gap-1 text-sm font-medium text-white bg-gray-900 dark:bg-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-800 dark:hover:bg-gray-700 disabled:opacity-50"
             >
               <Download className="w-3.5 h-3.5" /> Export selected (xlsx)
             </button>
             <button
               onClick={() => askExport((mode) => exportSelected("csv", mode))}
               disabled={exporting}
-              className="flex items-center gap-1 text-sm font-medium text-gray-700 border border-gray-300 px-3 py-1.5 rounded-md hover:bg-gray-50 disabled:opacity-50"
+              className="flex items-center gap-1 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-50 dark:hover:bg-gray-950 disabled:opacity-50"
             >
               <Download className="w-3.5 h-3.5" /> csv
             </button>
@@ -954,7 +954,7 @@ export default function DrillDownPage() {
                 setMoveTownshipId("");
                 setShowMoveModal(true);
               }}
-              className="flex items-center gap-1 text-sm font-medium text-blue-700 border border-blue-300 px-3 py-1.5 rounded-md hover:bg-blue-50"
+              className="flex items-center gap-1 text-sm font-medium text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-800 px-3 py-1.5 rounded-md hover:bg-blue-50 dark:hover:bg-blue-950/40"
             >
               <MoveRight className="w-3.5 h-3.5" /> Move to township
             </button>
@@ -963,7 +963,7 @@ export default function DrillDownPage() {
                 onClick={() => markAmoSynced(true)}
                 disabled={markingAmo}
                 title="Stamp selected contacts as pushed to AMO. Any future edit clears the stamp."
-                className="flex items-center gap-1 text-sm font-medium text-emerald-700 border border-emerald-300 bg-emerald-50 px-3 py-1.5 rounded-md hover:bg-emerald-100 disabled:opacity-50"
+                className="flex items-center gap-1 text-sm font-medium text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1.5 rounded-md hover:bg-emerald-100 dark:hover:bg-emerald-900/40 disabled:opacity-50"
               >
                 <Send className="w-3.5 h-3.5" />
                 Mark {selectedAmoState.unsyncedCount} synced to AMO
@@ -974,7 +974,7 @@ export default function DrillDownPage() {
                 onClick={() => markAmoSynced(false)}
                 disabled={markingAmo}
                 title="Clear the AMO sync stamp on selected contacts."
-                className="flex items-center gap-1 text-sm font-medium text-gray-700 border border-gray-300 px-3 py-1.5 rounded-md hover:bg-gray-50 disabled:opacity-50"
+                className="flex items-center gap-1 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-50 dark:hover:bg-gray-950 disabled:opacity-50"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 Unmark {selectedAmoState.syncedCount} from AMO
@@ -985,7 +985,7 @@ export default function DrillDownPage() {
                 onClick={() => markMailchimpSynced(true)}
                 disabled={markingMailchimp}
                 title="Stamp selected contacts as pushed to MailChimp. Any future edit clears the stamp."
-                className="flex items-center gap-1 text-sm font-medium text-amber-700 border border-amber-300 bg-amber-50 px-3 py-1.5 rounded-md hover:bg-amber-100 disabled:opacity-50"
+                className="flex items-center gap-1 text-sm font-medium text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 px-3 py-1.5 rounded-md hover:bg-amber-100 dark:hover:bg-amber-900/40 disabled:opacity-50"
               >
                 <Mail className="w-3.5 h-3.5" />
                 Mark {selectedMailchimpState.unsyncedCount} synced to MailChimp
@@ -996,7 +996,7 @@ export default function DrillDownPage() {
                 onClick={() => markMailchimpSynced(false)}
                 disabled={markingMailchimp}
                 title="Clear the MailChimp sync stamp on selected contacts."
-                className="flex items-center gap-1 text-sm font-medium text-gray-700 border border-gray-300 px-3 py-1.5 rounded-md hover:bg-gray-50 disabled:opacity-50"
+                className="flex items-center gap-1 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-50 dark:hover:bg-gray-950 disabled:opacity-50"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 Unmark {selectedMailchimpState.syncedCount} from MailChimp
@@ -1004,19 +1004,19 @@ export default function DrillDownPage() {
             )}
             <button
               onClick={() => setSelected(new Set())}
-              className="ml-auto text-xs text-gray-500 underline"
+              className="ml-auto text-xs text-gray-500 dark:text-gray-400 underline"
             >
               Clear
             </button>
           </div>
         )}
 
-        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden mb-8">
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden mb-8">
           {filteredContacts.length === 0 ? (
-            <div className="px-4 py-6 text-sm text-gray-500 text-center">No contacts in this filter.</div>
+            <div className="px-4 py-6 text-sm text-gray-500 dark:text-gray-400 text-center">No contacts in this filter.</div>
           ) : (
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-left text-gray-500">
+              <thead className="bg-gray-50 dark:bg-gray-950 text-left text-gray-500 dark:text-gray-400">
                 <tr>
                   <th className="px-3 py-2 w-8">
                     <input
@@ -1034,40 +1034,40 @@ export default function DrillDownPage() {
                   <th className="px-3 py-2 font-medium w-12"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {filteredContacts.map((c) => {
                   const checked = selected.has(c.id);
                   return (
-                    <tr key={c.id} className={checked ? "bg-blue-50" : ""}>
+                    <tr key={c.id} className={checked ? "bg-blue-50 dark:bg-blue-950/40" : ""}>
                       <td className="px-3 py-2">
                         <input type="checkbox" checked={checked} onChange={() => toggleOne(c.id)} />
                       </td>
                       <td className="px-3 py-2">
-                        <div className="text-gray-900">
+                        <div className="text-gray-900 dark:text-gray-100">
                           {[c.first_name, c.last_name].filter(Boolean).join(" ") || "(no name)"}
                         </div>
-                        {c.title && <div className="text-xs text-gray-500">{c.title}</div>}
+                        {c.title && <div className="text-xs text-gray-500 dark:text-gray-400">{c.title}</div>}
                       </td>
-                      <td className="px-3 py-2 text-gray-700">
+                      <td className="px-3 py-2 text-gray-700 dark:text-gray-300">
                         <div className="break-all flex items-center gap-2 flex-wrap">
-                          <span>{c.email || <span className="text-gray-400">no email</span>}</span>
+                          <span>{c.email || <span className="text-gray-400 dark:text-gray-500">no email</span>}</span>
                           {c.email && c.email_status && <EmailStatusPill status={c.email_status} />}
                         </div>
-                        {c.phone && <div className="text-xs text-gray-500">{c.phone}</div>}
+                        {c.phone && <div className="text-xs text-gray-500 dark:text-gray-400">{c.phone}</div>}
                         {c.previous_email && (
-                          <div className="text-xs text-amber-700 mt-0.5">
+                          <div className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
                             Was: {c.previous_email}
                             {c.previous_email_status ? ` (${c.previous_email_status})` : ""}
                           </div>
                         )}
                       </td>
-                      <td className="px-3 py-2 font-mono text-xs text-gray-700">
-                        {c.amo_individual_id || <span className="text-gray-400">—</span>}
+                      <td className="px-3 py-2 font-mono text-xs text-gray-700 dark:text-gray-300">
+                        {c.amo_individual_id || <span className="text-gray-400 dark:text-gray-500">—</span>}
                       </td>
                       {scope !== "township" && (
-                        <td className="px-3 py-2 text-gray-700 text-xs">
+                        <td className="px-3 py-2 text-gray-700 dark:text-gray-300 text-xs">
                           {c.township_name}
-                          <div className="text-gray-400">{c.county_name} County</div>
+                          <div className="text-gray-400 dark:text-gray-500">{c.county_name} County</div>
                         </td>
                       )}
                       <td className="px-3 py-2">
@@ -1085,7 +1085,7 @@ export default function DrillDownPage() {
                         <button
                           onClick={() => setEditingContact(c)}
                           title="Admin edit"
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-md text-blue-700 hover:bg-blue-50 border border-transparent hover:border-blue-200"
+                          className="inline-flex items-center justify-center w-8 h-8 rounded-md text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 border border-transparent hover:border-blue-200 dark:hover:border-blue-800"
                         >
                           <Pencil className="w-4 h-4" />
                         </button>
@@ -1107,27 +1107,27 @@ export default function DrillDownPage() {
           onClick={() => !moving && setShowMoveModal(false)}
         >
           <div
-            className="bg-white rounded-lg shadow-xl max-w-lg w-full p-6"
+            className="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-lg w-full p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-xl font-semibold text-gray-900">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                 Move {selected.size} contact{selected.size === 1 ? "" : "s"}
               </h2>
               <button
                 onClick={() => setShowMoveModal(false)}
-                className="text-gray-500 hover:text-gray-900"
+                className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
               Reassign the selected contact{selected.size === 1 ? "" : "s"} to a different
               township. This is logged in the audit history.
             </p>
             <div className="space-y-3">
               <label className="block">
-                <span className="block text-sm font-medium text-gray-700 mb-1">Region</span>
+                <span className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Region</span>
                 <select
                   value={moveRegionId}
                   onChange={(e) => {
@@ -1135,7 +1135,7 @@ export default function DrillDownPage() {
                     setMoveCountyId("");
                     setMoveTownshipId("");
                   }}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white text-gray-900"
+                  className="w-full border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                 >
                   <option value="">Select a region</option>
                   {moveTree.map((r: any) => (
@@ -1147,7 +1147,7 @@ export default function DrillDownPage() {
               </label>
 
               <label className="block">
-                <span className="block text-sm font-medium text-gray-700 mb-1">County</span>
+                <span className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">County</span>
                 <select
                   value={moveCountyId}
                   onChange={(e) => {
@@ -1155,7 +1155,7 @@ export default function DrillDownPage() {
                     setMoveTownshipId("");
                   }}
                   disabled={!moveRegion}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white text-gray-900 disabled:bg-gray-100 disabled:text-gray-400"
+                  className="w-full border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400 dark:disabled:text-gray-500"
                 >
                   <option value="">{moveRegion ? "Select a county" : "Pick a region first"}</option>
                   {(moveRegion?.counties || []).map((c: any) => (
@@ -1167,12 +1167,12 @@ export default function DrillDownPage() {
               </label>
 
               <label className="block">
-                <span className="block text-sm font-medium text-gray-700 mb-1">Township</span>
+                <span className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Township</span>
                 <select
                   value={moveTownshipId}
                   onChange={(e) => setMoveTownshipId(e.target.value)}
                   disabled={!moveCounty}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white text-gray-900 disabled:bg-gray-100 disabled:text-gray-400"
+                  className="w-full border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400 dark:disabled:text-gray-500"
                 >
                   <option value="">{moveCounty ? "Select a township" : "Pick a county first"}</option>
                   {(moveCounty?.townships || []).map((t: any) => (
@@ -1188,7 +1188,7 @@ export default function DrillDownPage() {
               <button
                 onClick={() => setShowMoveModal(false)}
                 disabled={moving}
-                className="text-sm font-medium text-gray-700 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                className="text-sm font-medium text-gray-700 dark:text-gray-300 px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-950"
               >
                 Cancel
               </button>
@@ -1249,9 +1249,9 @@ function DangerZone({ regionId, regionName }: { regionId: string; regionName: st
 
   return (
     <>
-      <div className="mb-6 border-2 border-red-200 rounded-lg p-5 bg-red-50/40">
-        <h2 className="text-base font-semibold text-red-900 mb-1">Danger zone</h2>
-        <p className="text-sm text-red-900/80 mb-4">
+      <div className="mb-6 border-2 border-red-200 dark:border-red-800 rounded-lg p-5 bg-red-50 dark:bg-red-950/40">
+        <h2 className="text-base font-semibold text-red-900 dark:text-red-200 mb-1">Danger zone</h2>
+        <p className="text-sm text-red-900 dark:text-red-200 mb-4">
           Delete this entire region — including all of its counties, townships, contacts, and
           audit history. Use this after you have exported the data and applied it to your
           downstream system. This cannot be undone.
@@ -1273,33 +1273,33 @@ function DangerZone({ regionId, regionName }: { regionId: string; regionName: st
           onClick={() => !busy && setShowModal(false)}
         >
           <div
-            className="bg-white rounded-lg shadow-xl max-w-lg w-full p-6"
+            className="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-lg w-full p-6"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
               Delete &ldquo;{regionName}&rdquo;?
             </h2>
-            <p className="text-sm text-gray-700 mb-4">
+            <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
               This permanently removes all counties, townships, contacts, and audit-log entries
               under this region. There is no undo.
             </p>
             <label className="block mb-4">
-              <span className="block text-sm font-medium text-gray-700 mb-1">
-                Type the region name to confirm: <span className="font-mono bg-gray-100 px-1.5 py-0.5 rounded">{regionName}</span>
+              <span className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Type the region name to confirm: <span className="font-mono bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">{regionName}</span>
               </span>
               <input
                 type="text"
                 autoFocus
                 value={confirmText}
                 onChange={(e) => setConfirmText(e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-base text-gray-900"
+                className="w-full border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 text-base text-gray-900 dark:text-gray-100"
               />
             </label>
             <div className="flex justify-end gap-2 flex-wrap">
               <button
                 onClick={() => setShowModal(false)}
                 disabled={busy}
-                className="text-sm font-medium text-gray-700 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                className="text-sm font-medium text-gray-700 dark:text-gray-300 px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-950"
               >
                 Cancel
               </button>
@@ -1320,11 +1320,11 @@ function DangerZone({ regionId, regionName }: { regionId: string; regionName: st
 
 function ContactStatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
-    unreviewed: "bg-red-50 text-red-700 border-red-200",
-    no_change: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    updated: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    newly_added: "bg-blue-50 text-blue-700 border-blue-200",
-    needs_removal: "bg-amber-50 text-amber-700 border-amber-300",
+    unreviewed: "bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800",
+    no_change: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+    updated: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
+    newly_added: "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800",
+    needs_removal: "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800",
   };
   const labels: Record<string, string> = {
     unreviewed: "Unreviewed",
@@ -1336,7 +1336,7 @@ function ContactStatusBadge({ status }: { status: string }) {
   return (
     <span
       className={`inline-flex items-center text-xs font-medium px-2 py-0.5 rounded-full border ${
-        styles[status] || "bg-gray-100 text-gray-600 border-gray-200"
+        styles[status] || "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-800"
       }`}
     >
       {labels[status] || status}
@@ -1347,17 +1347,17 @@ function ContactStatusBadge({ status }: { status: string }) {
 function StatusBadge({ status }: { status: string }) {
   if (status === "completed") {
     return (
-      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-full">
+      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 rounded-full">
         <CheckCircle2 className="w-3 h-3" /> Completed
       </span>
     );
   }
   if (status === "in_progress") {
     return (
-      <span className="text-xs px-2 py-0.5 bg-amber-50 text-amber-700 rounded-full">In progress</span>
+      <span className="text-xs px-2 py-0.5 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 rounded-full">In progress</span>
     );
   }
-  return <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full">Not started</span>;
+  return <span className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-full">Not started</span>;
 }
 
 function AmoSyncedPill({ at, by }: { at: string; by: string | null }) {
@@ -1366,7 +1366,7 @@ function AmoSyncedPill({ at, by }: { at: string; by: string | null }) {
   const title = by ? `Marked synced to AMO on ${d.toLocaleString()} by ${by}` : `Marked synced to AMO on ${d.toLocaleString()}`;
   return (
     <span
-      className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full border whitespace-nowrap bg-emerald-50 text-emerald-800 border-emerald-300"
+      className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full border whitespace-nowrap bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800"
       title={title}
     >
       <Send className="w-3 h-3" /> AMO · {dateLabel}
@@ -1380,7 +1380,7 @@ function MailchimpSyncedPill({ at, by }: { at: string; by: string | null }) {
   const title = by ? `Marked synced to MailChimp on ${d.toLocaleString()} by ${by}` : `Marked synced to MailChimp on ${d.toLocaleString()}`;
   return (
     <span
-      className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full border whitespace-nowrap bg-amber-50 text-amber-800 border-amber-300"
+      className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full border whitespace-nowrap bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-800"
       title={title}
     >
       <Mail className="w-3 h-3" /> MailChimp · {dateLabel}
@@ -1391,14 +1391,14 @@ function MailchimpSyncedPill({ at, by }: { at: string; by: string | null }) {
 function EmailStatusPill({ status }: { status: string | null }) {
   if (!status) return null;
   const norm = status.toLowerCase().trim();
-  let cls = "bg-red-100 text-red-800 border-red-300";
+  let cls = "bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300 border-red-300 dark:border-red-800";
   let label: string = status;
   let title = `Email status: ${status}`;
   if (norm === "valid") {
-    cls = "bg-emerald-100 text-emerald-800 border-emerald-300";
+    cls = "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800";
     label = "Valid";
   } else if (norm === "updated") {
-    cls = "bg-blue-100 text-blue-800 border-blue-300";
+    cls = "bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-800";
     label = "Updated";
     title = "Email was updated by a reviewer — needs reverification";
   }

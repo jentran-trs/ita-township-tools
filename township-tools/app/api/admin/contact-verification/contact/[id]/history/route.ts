@@ -1,17 +1,14 @@
-import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
-import { isAdmin } from '@/lib/auth/isAdmin';
 import { requireSuperadmin } from '@/lib/auth/superadmin';
 
 export const runtime = 'nodejs';
 
 // Change history for a single contact: every cv_audit_log row tied to it, newest
 // first, with the full before/after snapshots so the UI can render field diffs.
+// Superadmin-only — gated on requireSuperadmin() alone (cookie OR Clerk metadata)
+// so it also works for the cookie-authenticated superadmin on the public portal.
 export async function GET(req: Request, { params }: { params: { id: string } }) {
-  const authData = await auth();
-  if (!authData?.userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (!isAdmin(authData)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   const sErr = await requireSuperadmin();
   if (sErr) return sErr;
 

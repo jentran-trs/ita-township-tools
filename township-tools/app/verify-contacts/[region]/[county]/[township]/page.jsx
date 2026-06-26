@@ -21,8 +21,10 @@ import {
   SkipForward,
   Clock,
   MessageSquare,
+  History,
 } from "lucide-react";
 import AdminContactEditModal from "../../../../../components/AdminContactEditModal";
+import ContactHistoryModal from "../../../../../components/ContactHistoryModal";
 
 const FIELDS = ["first_name", "last_name", "title", "email", "phone", "email_status"];
 const EMPTY_DRAFT = { first_name: "", last_name: "", title: "", email: "", phone: "", email_status: "" };
@@ -116,6 +118,7 @@ export default function VerifyTownshipPage() {
   const [notesVisible, setNotesVisible] = useState(false);
   const [recentlyChangedIds, setRecentlyChangedIds] = useState(new Set());
   const [adminEditContact, setAdminEditContact] = useState(null);
+  const [historyContact, setHistoryContact] = useState(null);
 
   useEffect(() => {
     const loaded = loadReviewer();
@@ -1005,6 +1008,14 @@ export default function VerifyTownshipPage() {
                           <ShieldAlert className="w-4 h-4" /> Admin edit
                         </button>
                       )}
+                      {isSuperadmin && (
+                        <button
+                          onClick={() => setHistoryContact(c)}
+                          className="flex items-center justify-center gap-1.5 text-sm font-medium px-3 py-1.5 border border-gray-300 text-gray-700 bg-white rounded-md hover:bg-gray-50"
+                        >
+                          <History className="w-4 h-4" /> History
+                        </button>
+                      )}
                       {!portalLocked && (
                       <>
                       {isUnreviewed && (
@@ -1293,6 +1304,18 @@ export default function VerifyTownshipPage() {
           await refresh(township.id);
           markSaved();
         }}
+      />
+
+      <ContactHistoryModal
+        contactId={historyContact?.id ?? null}
+        contactName={
+          historyContact
+            ? `${historyContact.first_name ?? ""} ${historyContact.last_name ?? ""}`.trim() ||
+              historyContact.email ||
+              undefined
+            : undefined
+        }
+        onClose={() => setHistoryContact(null)}
       />
     </div>
   );

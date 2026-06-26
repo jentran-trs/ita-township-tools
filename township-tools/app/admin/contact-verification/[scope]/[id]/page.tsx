@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useUser, useOrganization, useAuth } from "@clerk/nextjs";
-import { ArrowLeft, Loader2, Download, RotateCcw, CheckCircle2, ExternalLink, Filter, MoveRight, X, Pencil, Send, Search, Mail, ChevronRight, ChevronDown, Copy, Check } from "lucide-react";
+import { ArrowLeft, Loader2, Download, RotateCcw, CheckCircle2, ExternalLink, Filter, MoveRight, X, Pencil, Send, Search, Mail, ChevronRight, ChevronDown, Copy, Check, History } from "lucide-react";
 import AdminContactEditModal from "../../../../../components/AdminContactEditModal";
 import AmoExportModal, { AmoMode } from "../../../../../components/AmoExportModal";
+import ContactHistoryModal from "../../../../../components/ContactHistoryModal";
 
 type Stat = {
   region_id: string;
@@ -109,6 +110,7 @@ export default function DrillDownPage() {
   const [moveTownshipId, setMoveTownshipId] = useState("");
   const [moving, setMoving] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
+  const [historyContact, setHistoryContact] = useState<Contact | null>(null);
 
   useEffect(() => {
     if (isLoaded && !isAdmin) router.push("/dashboard");
@@ -1082,13 +1084,22 @@ export default function DrillDownPage() {
                         </div>
                       </td>
                       <td className="px-3 py-2 text-right">
-                        <button
-                          onClick={() => setEditingContact(c)}
-                          title="Admin edit"
-                          className="inline-flex items-center justify-center w-8 h-8 rounded-md text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 border border-transparent hover:border-blue-200 dark:hover:border-blue-800"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
+                        <div className="inline-flex items-center gap-1">
+                          <button
+                            onClick={() => setHistoryContact(c)}
+                            title="Change history"
+                            className="inline-flex items-center justify-center w-8 h-8 rounded-md text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 border border-transparent hover:border-gray-200 dark:hover:border-gray-700"
+                          >
+                            <History className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => setEditingContact(c)}
+                            title="Admin edit"
+                            className="inline-flex items-center justify-center w-8 h-8 rounded-md text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 border border-transparent hover:border-blue-200 dark:hover:border-blue-800"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -1214,6 +1225,18 @@ export default function DrillDownPage() {
         open={pendingExport !== null}
         onCancel={() => setPendingExport(null)}
         onChoose={(mode) => pendingExport?.(mode)}
+      />
+
+      <ContactHistoryModal
+        contactId={historyContact?.id ?? null}
+        contactName={
+          historyContact
+            ? `${historyContact.first_name ?? ""} ${historyContact.last_name ?? ""}`.trim() ||
+              historyContact.email ||
+              undefined
+            : undefined
+        }
+        onClose={() => setHistoryContact(null)}
       />
     </div>
   );

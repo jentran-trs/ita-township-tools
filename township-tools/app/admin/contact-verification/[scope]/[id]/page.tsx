@@ -211,15 +211,37 @@ export default function DrillDownPage() {
   }, [contacts]);
 
   const townshipOptions = useMemo(() => {
-    const seen = new Map<string, { id: string; name: string; count: number }>();
+    const seen = new Map<string, { id: string; name: string; county: string; count: number }>();
     for (const c of contacts) {
       if (!c.township_id) continue;
       const existing = seen.get(c.township_id);
       if (existing) existing.count += 1;
-      else seen.set(c.township_id, { id: c.township_id, name: c.township_name, count: 1 });
+      else
+        seen.set(c.township_id, {
+          id: c.township_id,
+          name: c.township_name,
+          county: c.county_name,
+          count: 1,
+        });
     }
-    return Array.from(seen.values()).sort((a, b) => a.name.localeCompare(b.name));
+    // Alphabetical by township name, with county as the tiebreaker so same-named
+    // townships from different counties stay grouped together.
+    return Array.from(seen.values()).sort(
+      (a, b) => a.name.localeCompare(b.name) || a.county.localeCompare(b.county)
+    );
   }, [contacts]);
+
+  // Townships in the region/county table, sorted alphabetically — by county
+  // first (matching the "County · Township" display), then township name.
+  const sortedStats = useMemo(
+    () =>
+      [...stats].sort(
+        (a, b) =>
+          (a.county_name || "").localeCompare(b.county_name || "") ||
+          (a.township_name || "").localeCompare(b.township_name || "")
+      ),
+    [stats]
+  );
 
   const toggleStatus = (v: string) => {
     const next = new Set(statusFilters);
@@ -503,11 +525,11 @@ export default function DrillDownPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {stats.map((s) => (
+              {sortedStats.map((s) => (
                 <tr key={s.township_id}>
                   {scope !== "township" && (
                     <td className="px-4 py-2 text-gray-900">
-                      {scope === "region" ? `${s.county_name} · ` : ""}
+                      {scope === "region" ? `${s.county_name} County, ` : ""}
                       {s.township_name}
                     </td>
                   )}
@@ -599,7 +621,8 @@ export default function DrillDownPage() {
                         : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                     }`}
                   >
-                    {t.name} <span className="opacity-70">({t.count})</span>
+                    {t.name} · {t.county} County{" "}
+                    <span className="opacity-70">({t.count})</span>
                   </button>
                 );
               })}

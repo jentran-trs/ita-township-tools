@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useUser, useOrganization, useAuth } from "@clerk/nextjs";
-import { ArrowLeft, Loader2, Download, RotateCcw, CheckCircle2, ExternalLink, Filter, MoveRight, X, Pencil, Send, Search, Mail, ChevronRight, ChevronDown } from "lucide-react";
+import { ArrowLeft, Loader2, Download, RotateCcw, CheckCircle2, ExternalLink, Filter, MoveRight, X, Pencil, Send, Search, Mail, ChevronRight, ChevronDown, Copy, Check } from "lucide-react";
 import AdminContactEditModal from "../../../../../components/AdminContactEditModal";
 import AmoExportModal, { AmoMode } from "../../../../../components/AmoExportModal";
 
@@ -97,6 +97,8 @@ export default function DrillDownPage() {
   const [markingMailchimp, setMarkingMailchimp] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [exporting, setExporting] = useState(false);
+  // Count of emails just copied to the clipboard, for transient button feedback.
+  const [copiedEmails, setCopiedEmails] = useState(0);
   // Holds the export to run once the superadmin picks an AMO mode in the modal.
   const [pendingExport, setPendingExport] = useState<null | ((mode: AmoMode) => void)>(null);
   const [detailed, setDetailed] = useState(false);
@@ -418,6 +420,35 @@ export default function DrillDownPage() {
   // GET-style exports (whole scope / single township) navigate the browser.
   const exportUrl = (params: string) => (mode: AmoMode) => {
     window.location.href = `/api/admin/contact-verification/export?${params}&amoMode=${mode}`;
+  };
+
+  // Copy the (deduped) email addresses of the selected contacts to the clipboard,
+  // comma-separated so they paste straight into an email "To" field.
+  const copySelectedEmails = async () => {
+    const seen = new Set<string>();
+    const emails: string[] = [];
+    for (const c of contacts) {
+      if (!selected.has(c.id)) continue;
+      const e = (c.email || "").trim();
+      if (!e) continue;
+      const key = e.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      emails.push(e);
+    }
+    if (emails.length === 0) {
+      alert("None of the selected contacts have an email address.");
+      return;
+    }
+    const text = emails.join(", ");
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedEmails(emails.length);
+      setTimeout(() => setCopiedEmails(0), 2000);
+    } catch {
+      // Clipboard API unavailable (e.g. non-secure context) — show for manual copy.
+      window.prompt("Copy these email addresses:", text);
+    }
   };
 
   const exportSelected = async (format: "xlsx" | "csv", amoMode: AmoMode) => {
@@ -876,6 +907,25 @@ export default function DrillDownPage() {
         {selected.size > 0 && (
           <div className="sticky top-2 z-10 mb-3 flex items-center gap-2 flex-wrap bg-white border border-gray-300 rounded-lg shadow-sm px-3 py-2">
             <span className="text-sm text-gray-700 font-medium">{selected.size} selected</span>
+            <button
+              onClick={copySelectedEmails}
+              className={`flex items-center gap-1 text-sm font-medium px-3 py-1.5 rounded-md border ${
+                copiedEmails > 0
+                  ? "text-emerald-700 border-emerald-300 bg-emerald-50"
+                  : "text-gray-700 border-gray-300 hover:bg-gray-50"
+              }`}
+            >
+              {copiedEmails > 0 ? (
+                <>
+                  <Check className="w-3.5 h-3.5" /> Copied {copiedEmails} email
+                  {copiedEmails === 1 ? "" : "s"}
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5" /> Copy emails
+                </>
+              )}
+            </button>
             <button
               onClick={() => askExport((mode) => exportSelected("xlsx", mode))}
               disabled={exporting}

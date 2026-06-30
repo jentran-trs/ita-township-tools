@@ -128,7 +128,7 @@ export default function VerifyTownshipPage() {
     if (!loaded?.reviewerName || !loaded?.reviewerEmail) {
       setReviewerOpen(true);
     }
-    fetch("/api/verify/settings")
+    fetch("/api/verify/settings", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => {
         setVerificationDeadline(d.verification_deadline || null);

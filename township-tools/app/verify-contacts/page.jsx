@@ -79,7 +79,7 @@ export default function VerifyLanding() {
       })
       .finally(() => clearTimeout(timer));
 
-    fetch("/api/verify/settings")
+    fetch("/api/verify/settings", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => {
         setVerificationDeadline(d.verification_deadline || null);

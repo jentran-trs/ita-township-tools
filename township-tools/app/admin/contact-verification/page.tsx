@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser, useOrganization, useAuth } from "@clerk/nextjs";
-import { ArrowLeft, Loader2, Upload, Download, RefreshCw, Bell, Settings, Save, Lock, LogOut, Mail, ListChecks, Search, X, Map } from "lucide-react";
+import { ArrowLeft, Loader2, Upload, Download, RefreshCw, Bell, Settings, Save, Lock, LogOut, Mail, ListChecks, Search, X, Map, CheckCircle2 } from "lucide-react";
 import AdminManageTownshipsModal from "@/components/AdminManageTownshipsModal";
 import AmoExportModal, { AmoMode } from "@/components/AmoExportModal";
 import { isPortalLocked } from "@/lib/contact-verification/portal-lock";
@@ -207,7 +207,7 @@ export default function ContactVerificationAdminPage() {
     load();
   };
 
-  const saveSettings = async (next: Partial<Settings>) => {
+  const saveSettings = async (next: Partial<Settings>): Promise<boolean> => {
     setSavingSettings(true);
     try {
       const res = await fetch("/api/admin/contact-verification/settings", {
@@ -219,8 +219,10 @@ export default function ContactVerificationAdminPage() {
       if (!res.ok) throw new Error(json.error || "Failed");
       setSettings(json.settings);
       load();
+      return true;
     } catch (e: any) {
       alert(e.message);
+      return false;
     } finally {
       setSavingSettings(false);
     }
@@ -610,7 +612,7 @@ function SettingsPanel({
 }: {
   settings: Settings;
   saving: boolean;
-  onSave: (next: Partial<Settings>) => void;
+  onSave: (next: Partial<Settings>) => Promise<boolean>;
   onClose: () => void;
 }) {
   const [deadline, setDeadline] = useState(settings.verification_deadline || "");
@@ -619,9 +621,13 @@ function SettingsPanel({
   );
   const [digestEnabled, setDigestEnabled] = useState(!!settings.digest_enabled);
   const [digestEmail, setDigestEmail] = useState(settings.digest_recipient_email || "");
+  const [savedAt, setSavedAt] = useState<number | null>(null);
 
-  // Live effective state given the chosen override + current deadline.
-  const effectiveLocked = isPortalLocked(deadline || null, portalOverride);
+  // What the PUBLIC portal is seeing right now, from the SAVED settings.
+  const savedOverride = settings.portal_status_override || "auto";
+  const activeLocked = isPortalLocked(settings.verification_deadline || null, savedOverride);
+  // The currently-picked option differs from what's saved → not applied yet.
+  const portalPending = portalOverride !== savedOverride;
 
   return (
     <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5 mb-5">
@@ -642,13 +648,13 @@ function SettingsPanel({
           </span>
           <span
             className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-              effectiveLocked
+              activeLocked
                 ? "bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300"
                 : "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300"
             }`}
           >
-            Currently {effectiveLocked ? "CLOSED" : "OPEN"}
-            {portalOverride === "auto" ? " (auto)" : " (manual)"}
+            Public portal is {activeLocked ? "CLOSED" : "OPEN"}
+            {savedOverride === "auto" ? " · auto" : " · manual"}
           </span>
         </div>
         <div className="flex gap-2 flex-wrap">
@@ -660,7 +666,10 @@ function SettingsPanel({
             <button
               key={opt.v}
               type="button"
-              onClick={() => setPortalOverride(opt.v)}
+              onClick={() => {
+                setPortalOverride(opt.v);
+                setSavedAt(null);
+              }}
               className={`text-sm px-3 py-1.5 rounded-md border ${
                 portalOverride === opt.v
                   ? "bg-gray-900 dark:bg-gray-700 text-white border-gray-900"
@@ -671,11 +680,26 @@ function SettingsPanel({
             </button>
           ))}
         </div>
-        <span className="block text-xs text-gray-500 dark:text-gray-400 mt-2">
-          <strong>Force closed</strong> rejects all public updates and shows visitors the
-          &ldquo;use the ITA Member Center&rdquo; notice. <strong>Auto</strong> keeps the
-          deadline-window behavior. Remember to click Save.
-        </span>
+        {portalPending ? (
+          <span className="block text-xs font-medium text-amber-700 dark:text-amber-300 mt-2">
+            Not applied yet — click <strong>Save</strong> below to set the portal to{" "}
+            <strong>
+              {isPortalLocked(deadline || null, portalOverride) ? "CLOSED" : "OPEN"}
+            </strong>{" "}
+            for the public.
+          </span>
+        ) : savedAt ? (
+          <span className="flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-300 mt-2">
+            <Save className="w-3.5 h-3.5" /> Saved — the public portal is now{" "}
+            {activeLocked ? "CLOSED" : "OPEN"}.
+          </span>
+        ) : (
+          <span className="block text-xs text-gray-500 dark:text-gray-400 mt-2">
+            <strong>Force closed</strong> rejects all public updates and shows visitors the
+            &ldquo;use the ITA Member Center&rdquo; notice. <strong>Auto</strong> keeps the
+            deadline-window behavior.
+          </span>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -737,20 +761,30 @@ function SettingsPanel({
         >
           <Mail className="w-4 h-4" /> Send test now
         </button>
-        <button
-          onClick={() =>
-            onSave({
-              verification_deadline: deadline || null,
-              portal_status_override: portalOverride,
-              digest_enabled: digestEnabled,
-              digest_recipient_email: digestEmail || null,
-            })
-          }
-          disabled={saving}
-          className="flex items-center gap-1.5 text-sm font-medium px-4 py-2 bg-gray-900 dark:bg-gray-700 text-white rounded-md hover:bg-gray-800 dark:hover:bg-gray-700 disabled:opacity-50"
-        >
-          <Save className="w-4 h-4" /> Save settings
-        </button>
+        <div className="flex items-center gap-3 flex-wrap">
+          {savedAt && !saving && (
+            <span className="flex items-center gap-1 text-sm font-medium text-emerald-700 dark:text-emerald-300">
+              <CheckCircle2 className="w-4 h-4" /> Saved
+            </span>
+          )}
+          <button
+            onClick={async () => {
+              setSavedAt(null);
+              const ok = await onSave({
+                verification_deadline: deadline || null,
+                portal_status_override: portalOverride,
+                digest_enabled: digestEnabled,
+                digest_recipient_email: digestEmail || null,
+              });
+              if (ok) setSavedAt(Date.now());
+            }}
+            disabled={saving}
+            className="flex items-center gap-1.5 text-sm font-medium px-4 py-2 bg-gray-900 dark:bg-gray-700 text-white rounded-md hover:bg-gray-800 dark:hover:bg-gray-700 disabled:opacity-50"
+          >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}{" "}
+            {saving ? "Saving…" : "Save settings"}
+          </button>
+        </div>
       </div>
     </div>
   );

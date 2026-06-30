@@ -175,6 +175,25 @@ export default function VerifyLanding() {
     );
   }
 
+  // Manual close is a hard wall: no township selection, no contact lists.
+  if (portalManuallyClosed) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center px-4 py-16">
+        <img
+          src="/ita-logo.png"
+          alt="Indiana Township Association"
+          className="w-24 h-24 sm:w-28 sm:h-28 mb-4"
+        />
+        <h1 className="text-2xl font-semibold text-gray-900 mb-6 text-center">
+          Verify your township contacts
+        </h1>
+        <div className="max-w-xl w-full">
+          <PortalClosedNotice />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-2xl mx-auto px-6 py-12 sm:py-16">

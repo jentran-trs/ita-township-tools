@@ -208,6 +208,25 @@ export default function DrillDownPage() {
     [contacts, passesFilters]
   );
 
+  // Keep the selection scoped to what's currently shown. When filters change,
+  // drop any selected contact that's no longer visible — otherwise stale,
+  // hidden selections silently ride along into Export selected / Copy emails /
+  // bulk actions (e.g. a contact that HAS an AMO ID surviving into a "No
+  // individual ID" export).
+  useEffect(() => {
+    setSelected((prev) => {
+      if (prev.size === 0) return prev;
+      const visible = new Set(filteredContacts.map((c) => c.id));
+      let changed = false;
+      const next = new Set<string>();
+      prev.forEach((cid) => {
+        if (visible.has(cid)) next.add(cid);
+        else changed = true;
+      });
+      return changed ? next : prev;
+    });
+  }, [filteredContacts]);
+
   // Contact counts per township completion status, for the filter chips.
   const completionCounts = useMemo(() => {
     const map: Record<string, number> = { completed: 0, in_progress: 0, not_started: 0 };

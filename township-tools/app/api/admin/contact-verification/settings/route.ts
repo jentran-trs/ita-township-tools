@@ -32,6 +32,16 @@ export async function POST(req: Request) {
   if ('verification_deadline' in body) {
     update.verification_deadline = body.verification_deadline || null;
   }
+  if ('portal_status_override' in body) {
+    const v = body.portal_status_override;
+    if (!['auto', 'open', 'closed'].includes(v)) {
+      return NextResponse.json(
+        { error: 'portal_status_override must be auto, open, or closed' },
+        { status: 400 }
+      );
+    }
+    update.portal_status_override = v;
+  }
   if ('digest_enabled' in body) {
     update.digest_enabled = !!body.digest_enabled;
   }

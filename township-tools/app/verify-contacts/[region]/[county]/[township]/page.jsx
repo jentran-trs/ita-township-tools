@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import AdminContactEditModal from "../../../../../components/AdminContactEditModal";
 import ContactHistoryModal from "../../../../../components/ContactHistoryModal";
+import PortalClosedNotice from "../../../../../components/PortalClosedNotice";
 
 const FIELDS = ["first_name", "last_name", "title", "email", "phone", "email_status"];
 const EMPTY_DRAFT = { first_name: "", last_name: "", title: "", email: "", phone: "", email_status: "" };
@@ -112,6 +113,7 @@ export default function VerifyTownshipPage() {
   const [addressBusy, setAddressBusy] = useState(false);
   const [verificationDeadline, setVerificationDeadline] = useState(null);
   const [portalLocked, setPortalLocked] = useState(false);
+  const [portalManuallyClosed, setPortalManuallyClosed] = useState(false);
   const [portalReopen, setPortalReopen] = useState(null);
   const [townshipNotes, setTownshipNotes] = useState([]);
   const [isSuperadmin, setIsSuperadmin] = useState(false);
@@ -131,6 +133,7 @@ export default function VerifyTownshipPage() {
       .then((d) => {
         setVerificationDeadline(d.verification_deadline || null);
         setPortalLocked(!!d.portal_locked);
+        setPortalManuallyClosed(!!d.portal_manually_closed);
         setPortalReopen(d.portal_reopen || null);
       })
       .catch(() => {});
@@ -584,7 +587,9 @@ export default function VerifyTownshipPage() {
           </div>
         )}
 
-        {verificationDeadline && (() => {
+        {portalManuallyClosed && <PortalClosedNotice className="mt-5" />}
+
+        {verificationDeadline && !portalManuallyClosed && (() => {
           const formatted = new Date(verificationDeadline + "T00:00:00").toLocaleDateString(undefined, {
             year: "numeric",
             month: "long",

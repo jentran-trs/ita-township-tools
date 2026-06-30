@@ -7,12 +7,12 @@ export const runtime = 'nodejs';
 async function rejectIfLocked(supabase: ReturnType<typeof createServerSupabaseClient>) {
   const { data } = await supabase
     .from('cv_settings')
-    .select('verification_deadline')
+    .select('verification_deadline, portal_status_override')
     .eq('id', 1)
     .maybeSingle();
-  if (isPortalLocked(data?.verification_deadline || null)) {
+  if (isPortalLocked(data?.verification_deadline || null, data?.portal_status_override || 'auto')) {
     return NextResponse.json(
-      { error: 'The portal is currently closed for finalization. Please come back after the reopen date.' },
+      { error: 'The contact verification portal is currently closed. To update your contacts, please log in to the ITA Member Center.' },
       { status: 423 }
     );
   }

@@ -47,6 +47,7 @@ const ACTION_LABELS: Record<string, string> = {
   mailchimp_unmark_synced: "Unmarked from MailChimp",
   admin_edit: "Admin edit",
   admin_move: "Moved township",
+  delete: "Archived",
 };
 
 function fmt(key: string, v: any): string {

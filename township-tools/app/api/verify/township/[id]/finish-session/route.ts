@@ -14,10 +14,10 @@ export async function POST(
   const supabase = createServerSupabaseClient();
   const { data: cfg } = await supabase
     .from('cv_settings')
-    .select('verification_deadline')
+    .select('verification_deadline, portal_status_override')
     .eq('id', 1)
     .maybeSingle();
-  if (isPortalLocked(cfg?.verification_deadline || null)) {
+  if (isPortalLocked(cfg?.verification_deadline || null, cfg?.portal_status_override || 'auto')) {
     return NextResponse.json(
       { error: 'The portal is currently closed for finalization.' },
       { status: 423 }

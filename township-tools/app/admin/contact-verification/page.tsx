@@ -6,6 +6,7 @@ import { useUser, useOrganization, useAuth } from "@clerk/nextjs";
 import { ArrowLeft, Loader2, Upload, Download, RefreshCw, Bell, Settings, Save, Lock, LogOut, Mail, ListChecks, Search, X, Map } from "lucide-react";
 import AdminManageTownshipsModal from "@/components/AdminManageTownshipsModal";
 import AmoExportModal, { AmoMode } from "@/components/AmoExportModal";
+import { isPortalLocked } from "@/lib/contact-verification/portal-lock";
 
 type CountyStat = {
   id: string;
@@ -34,6 +35,7 @@ type RegionStat = {
 
 type Settings = {
   verification_deadline: string | null;
+  portal_status_override: string | null;
   digest_enabled: boolean;
   digest_recipient_email: string | null;
   digest_last_sent_at: string | null;
@@ -612,8 +614,14 @@ function SettingsPanel({
   onClose: () => void;
 }) {
   const [deadline, setDeadline] = useState(settings.verification_deadline || "");
+  const [portalOverride, setPortalOverride] = useState<string>(
+    settings.portal_status_override || "auto"
+  );
   const [digestEnabled, setDigestEnabled] = useState(!!settings.digest_enabled);
   const [digestEmail, setDigestEmail] = useState(settings.digest_recipient_email || "");
+
+  // Live effective state given the chosen override + current deadline.
+  const effectiveLocked = isPortalLocked(deadline || null, portalOverride);
 
   return (
     <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5 mb-5">
@@ -625,6 +633,49 @@ function SettingsPanel({
           </p>
         </div>
         <button onClick={onClose} className="text-xs text-gray-500 dark:text-gray-400 underline">Close</button>
+      </div>
+
+      <div className="mb-5 border border-gray-200 dark:border-gray-800 rounded-md p-4">
+        <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
+          <span className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Portal status
+          </span>
+          <span
+            className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+              effectiveLocked
+                ? "bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300"
+                : "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300"
+            }`}
+          >
+            Currently {effectiveLocked ? "CLOSED" : "OPEN"}
+            {portalOverride === "auto" ? " (auto)" : " (manual)"}
+          </span>
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          {([
+            { v: "auto", label: "Auto (follow deadline)" },
+            { v: "open", label: "Force open" },
+            { v: "closed", label: "Force closed" },
+          ] as const).map((opt) => (
+            <button
+              key={opt.v}
+              type="button"
+              onClick={() => setPortalOverride(opt.v)}
+              className={`text-sm px-3 py-1.5 rounded-md border ${
+                portalOverride === opt.v
+                  ? "bg-gray-900 dark:bg-gray-700 text-white border-gray-900"
+                  : "bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-950"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        <span className="block text-xs text-gray-500 dark:text-gray-400 mt-2">
+          <strong>Force closed</strong> rejects all public updates and shows visitors the
+          &ldquo;use the ITA Member Center&rdquo; notice. <strong>Auto</strong> keeps the
+          deadline-window behavior. Remember to click Save.
+        </span>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -690,6 +741,7 @@ function SettingsPanel({
           onClick={() =>
             onSave({
               verification_deadline: deadline || null,
+              portal_status_override: portalOverride,
               digest_enabled: digestEnabled,
               digest_recipient_email: digestEmail || null,
             })

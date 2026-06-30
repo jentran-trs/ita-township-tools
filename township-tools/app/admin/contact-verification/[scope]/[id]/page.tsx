@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useUser, useOrganization, useAuth } from "@clerk/nextjs";
-import { ArrowLeft, Loader2, Download, RotateCcw, CheckCircle2, ExternalLink, Filter, MoveRight, X, Pencil, Send, Search, Mail, ChevronRight, ChevronDown, Copy, Check, History } from "lucide-react";
+import { ArrowLeft, Loader2, Download, RotateCcw, CheckCircle2, ExternalLink, Filter, MoveRight, X, Pencil, Send, Search, Mail, ChevronRight, ChevronDown, Copy, Check, History, Archive } from "lucide-react";
 import AdminContactEditModal from "../../../../../components/AdminContactEditModal";
 import AmoExportModal, { AmoMode } from "../../../../../components/AmoExportModal";
 import ContactHistoryModal from "../../../../../components/ContactHistoryModal";
@@ -111,6 +111,7 @@ export default function DrillDownPage() {
   const [moving, setMoving] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [historyContact, setHistoryContact] = useState<Contact | null>(null);
+  const [archivingId, setArchivingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (isLoaded && !isAdmin) router.push("/dashboard");
@@ -563,6 +564,38 @@ export default function DrillDownPage() {
     if (!confirm("Reopen this township for editing?")) return;
     await fetch(`/api/admin/contact-verification/township/${townshipId}/reopen`, { method: "POST" });
     load();
+  };
+
+  // Soft-delete a single contact (removes it from the list; reversible via the
+  // audit-log before-snapshot). Superadmin-only on the server.
+  const archiveContact = async (c: Contact) => {
+    const name = [c.first_name, c.last_name].filter(Boolean).join(" ") || "this contact";
+    if (
+      !confirm(
+        `Archive ${name}?\n\nThis removes them from the contact list. It's recorded in the change history and can be restored if needed.`
+      )
+    )
+      return;
+    setArchivingId(c.id);
+    try {
+      const res = await fetch(`/api/admin/contact-verification/contact/${c.id}/archive`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Archive failed");
+      }
+      setContacts((prev) => prev.filter((x) => x.id !== c.id));
+      setSelected((prev) => {
+        const next = new Set(prev);
+        next.delete(c.id);
+        return next;
+      });
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setArchivingId(null);
+    }
   };
 
   if (!isLoaded || !isAdmin || loading) {
@@ -1184,6 +1217,18 @@ export default function DrillDownPage() {
                             className="inline-flex items-center justify-center w-8 h-8 rounded-md text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/40 border border-transparent hover:border-blue-200 dark:hover:border-blue-800"
                           >
                             <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => archiveContact(c)}
+                            disabled={archivingId === c.id}
+                            title="Archive contact"
+                            className="inline-flex items-center justify-center w-8 h-8 rounded-md text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/40 border border-transparent hover:border-red-200 dark:hover:border-red-800 disabled:opacity-50"
+                          >
+                            {archivingId === c.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Archive className="w-4 h-4" />
+                            )}
                           </button>
                         </div>
                       </td>

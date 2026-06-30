@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import { Loader2, ArrowRight, ArrowLeft, User, MapPin, UserCheck, CheckCircle2, X, Clock, HelpCircle, Search, RotateCw } from "lucide-react";
+import PortalClosedNotice from "../../components/PortalClosedNotice";
 
 const REVIEWER_KEY = "cv_reviewer_v1";
 
@@ -31,6 +32,7 @@ export default function VerifyLanding() {
   const [finishedCounty, setFinishedCounty] = useState("");
   const [verificationDeadline, setVerificationDeadline] = useState(null);
   const [portalLocked, setPortalLocked] = useState(false);
+  const [portalManuallyClosed, setPortalManuallyClosed] = useState(false);
   const [portalReopen, setPortalReopen] = useState(null);
   const [showLookup, setShowLookup] = useState(false);
   const [lookupQuery, setLookupQuery] = useState("");
@@ -82,6 +84,7 @@ export default function VerifyLanding() {
       .then((d) => {
         setVerificationDeadline(d.verification_deadline || null);
         setPortalLocked(!!d.portal_locked);
+        setPortalManuallyClosed(!!d.portal_manually_closed);
         setPortalReopen(d.portal_reopen || null);
       })
       .catch(() => {});
@@ -211,7 +214,8 @@ export default function VerifyLanding() {
             </button>
           </div>
         )}
-        {verificationDeadline && (() => {
+        {portalManuallyClosed && <PortalClosedNotice className="mb-6" />}
+        {verificationDeadline && !portalManuallyClosed && (() => {
           const formatted = new Date(verificationDeadline + "T00:00:00").toLocaleDateString(undefined, {
             year: "numeric",
             month: "long",

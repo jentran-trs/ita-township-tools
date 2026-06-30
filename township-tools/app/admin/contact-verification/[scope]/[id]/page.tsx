@@ -92,6 +92,7 @@ export default function DrillDownPage() {
   const [completionFilters, setCompletionFilters] = useState<Set<string>>(new Set());
   const [emailStatusFilters, setEmailStatusFilters] = useState<Set<string>>(new Set());
   const [amoFilter, setAmoFilter] = useState<"all" | "synced" | "unsynced">("all");
+  const [amoIdFilter, setAmoIdFilter] = useState<"all" | "has" | "missing">("all");
   const [mailchimpFilter, setMailchimpFilter] = useState<"all" | "synced" | "unsynced">("all");
   const [contactQuery, setContactQuery] = useState("");
   const [markingAmo, setMarkingAmo] = useState(false);
@@ -167,6 +168,8 @@ export default function DrillDownPage() {
         return false;
       if (amoFilter === "synced" && !c.amo_updated_at) return false;
       if (amoFilter === "unsynced" && c.amo_updated_at) return false;
+      if (amoIdFilter === "has" && !(c.amo_individual_id || "").trim()) return false;
+      if (amoIdFilter === "missing" && (c.amo_individual_id || "").trim()) return false;
       if (mailchimpFilter === "synced" && !c.mailchimp_updated_at) return false;
       if (mailchimpFilter === "unsynced" && c.mailchimp_updated_at) return false;
       if (q) {
@@ -184,7 +187,7 @@ export default function DrillDownPage() {
       }
       return true;
     });
-  }, [contacts, statusFilters, townshipFilters, completionFilters, townshipStatusById, emailStatusFilters, amoFilter, mailchimpFilter, contactQuery]);
+  }, [contacts, statusFilters, townshipFilters, completionFilters, townshipStatusById, emailStatusFilters, amoFilter, amoIdFilter, mailchimpFilter, contactQuery]);
 
   // Contact counts per township completion status, for the filter chips.
   const completionCounts = useMemo(() => {
@@ -204,6 +207,16 @@ export default function DrillDownPage() {
       else unsynced += 1;
     }
     return { synced, unsynced };
+  }, [contacts]);
+
+  const amoIdCounts = useMemo(() => {
+    let has = 0;
+    let missing = 0;
+    for (const c of contacts) {
+      if ((c.amo_individual_id || "").trim()) has += 1;
+      else missing += 1;
+    }
+    return { has, missing };
   }, [contacts]);
 
   const mailchimpCounts = useMemo(() => {
@@ -783,6 +796,34 @@ export default function DrillDownPage() {
 
           <div className="flex items-start gap-2 flex-wrap">
             <span className="flex items-center gap-1 text-xs font-medium text-gray-600 dark:text-gray-400 mt-1">
+              <Filter className="w-3 h-3" /> AMO ID:
+            </span>
+            {(["all", "has", "missing"] as const).map((opt) => {
+              const active = amoIdFilter === opt;
+              const label =
+                opt === "all"
+                  ? `All (${contacts.length})`
+                  : opt === "has"
+                  ? `Has AMO ID (${amoIdCounts.has})`
+                  : `No AMO ID (${amoIdCounts.missing})`;
+              return (
+                <button
+                  key={opt}
+                  onClick={() => setAmoIdFilter(opt)}
+                  className={`text-xs px-2.5 py-1 rounded-full border ${
+                    active
+                      ? "bg-gray-900 dark:bg-gray-700 text-white border-gray-900"
+                      : "bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-950"
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex items-start gap-2 flex-wrap">
+            <span className="flex items-center gap-1 text-xs font-medium text-gray-600 dark:text-gray-400 mt-1">
               <Filter className="w-3 h-3" /> AMO sync:
             </span>
             {(["all", "synced", "unsynced"] as const).map((opt) => {
@@ -876,6 +917,7 @@ export default function DrillDownPage() {
               completionFilters.size > 0 ||
               emailStatusFilters.size > 0 ||
               amoFilter !== "all" ||
+              amoIdFilter !== "all" ||
               mailchimpFilter !== "all" ||
               contactQuery.trim().length > 0) && (
               <button
@@ -885,6 +927,7 @@ export default function DrillDownPage() {
                   setCompletionFilters(new Set());
                   setEmailStatusFilters(new Set());
                   setAmoFilter("all");
+                  setAmoIdFilter("all");
                   setMailchimpFilter("all");
                   setContactQuery("");
                 }}

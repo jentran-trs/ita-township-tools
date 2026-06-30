@@ -75,7 +75,7 @@ export default function ContactVerificationAdminPage() {
   const askExport = (params: string) => {
     setPendingExport(() => (mode: AmoMode) => {
       setPendingExport(null);
-      window.location.href = `/api/admin/contact-verification/export?${params}&amoMode=${mode}`;
+      window.location.href = `/api/admin/contact-verification/export?${params}&exportType=${mode}`;
     });
   };
 

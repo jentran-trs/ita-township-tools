@@ -8,75 +8,54 @@ import { requireSuperadmin } from '../../../../../lib/auth/superadmin';
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
-// Organization (township) address, parsed from the portal's free-text fields.
-// Street address uses AMO's individual-address headers; mailing address has its
-// own structured set (county comes from the township's county).
-const ORG_ADDRESS_COLUMNS = [
+// Three AMO-import layouts, each with the exact columns AMO expects for that
+// import. The chosen export type fully determines the column set.
+
+// Individual AMO Update — one row per contact, keyed by Individual AMO ID.
+const INDIVIDUAL_COLUMNS = [
+  { header: 'Individual AMO ID', key: 'amo_individual_id' },
+  { header: 'Organization Name', key: 'organization_name' },
+  { header: 'County', key: 'county' },
+  { header: 'First Name', key: 'first_name' },
+  { header: 'Last Name', key: 'last_name' },
+  { header: 'Title', key: 'title' },
+  { header: 'Email Address', key: 'email' },
+  { header: 'Phone Number', key: 'phone' },
+  { header: 'Login Enabled Y/N', key: 'login_enabled' },
+  { header: 'Member Type', key: 'member_type' },
+];
+
+// Organization AMO Update — one row per township (deduped), keyed by
+// Organization AMO ID, carrying the org's street + mailing address block.
+const ORGANIZATION_COLUMNS = [
+  { header: 'Organization AMO ID', key: 'amo_organization_id' },
+  { header: 'Organization Name', key: 'organization_name' },
+  { header: 'Region', key: 'region' },
+  { header: 'County', key: 'county' },
   { header: 'Address', key: 'org_addr_line1' },
   { header: 'Address2', key: 'org_addr_line2' },
   { header: 'City', key: 'org_addr_city' },
   { header: 'State', key: 'org_addr_state' },
   { header: 'Zip Code', key: 'org_addr_zip' },
-  { header: 'Country', key: 'org_addr_country' },
   { header: 'Organization Mailing Address', key: 'org_mail_line1' },
   { header: 'Organization Mailing Address2', key: 'org_mail_line2' },
   { header: 'Organization Mailing Address City', key: 'org_mail_city' },
   { header: 'Organization Mailing Address State', key: 'org_mail_state' },
   { header: 'Organization Mailing Address Zip Code', key: 'org_mail_zip' },
-  { header: 'Organization Mailing Address County', key: 'org_mail_county' },
-  { header: 'Organization Mailing Address Country', key: 'org_mail_country' },
 ];
 
-// Flags AMO expects. Login/Member Type are constant; Username mirrors the email.
-const AMO_FLAG_COLUMNS = [
-  { header: 'Username', key: 'username' },
-  { header: 'Login Enabled Y/N', key: 'login_enabled' },
-  { header: 'Member Type', key: 'member_type' },
-];
+const EXPORT_TYPES = ['individual_update', 'organization_update', 'individual_new'] as const;
+type ExportType = (typeof EXPORT_TYPES)[number];
 
-// Simple format: location context + the core contact fields.
-// Organization AMO ID leads, then Individual AMO ID — so an AMO import attaches
-// each individual to the existing organization instead of creating a new one.
-const SIMPLE_COLUMNS = [
-  { header: 'Organization AMO ID', key: 'amo_organization_id' },
-  { header: 'Individual AMO ID', key: 'amo_individual_id' },
-  { header: 'Region', key: 'region' },
-  { header: 'County', key: 'county' },
-  { header: 'Organization Name', key: 'organization_name' },
-  ...ORG_ADDRESS_COLUMNS,
-  { header: 'First Name', key: 'first_name' },
-  { header: 'Last Name', key: 'last_name' },
-  { header: 'Email Address', key: 'email' },
-  { header: 'Title', key: 'title' },
-  { header: 'Phone Number', key: 'phone' },
-  ...AMO_FLAG_COLUMNS,
-];
-
-// Detailed columns for full audit-style export.
-const DETAILED_COLUMNS = [
-  { header: 'Organization AMO ID', key: 'amo_organization_id' },
-  { header: 'Individual AMO ID', key: 'amo_individual_id' },
-  { header: 'Region', key: 'region' },
-  { header: 'County', key: 'county' },
-  { header: 'Organization Name', key: 'organization_name' },
-  ...ORG_ADDRESS_COLUMNS,
-  { header: 'First Name', key: 'first_name' },
-  { header: 'Last Name', key: 'last_name' },
-  { header: 'Title', key: 'title' },
-  { header: 'Email Address', key: 'email' },
-  { header: 'Mobile Phone', key: 'phone' },
-  { header: 'Email Status', key: 'email_status' },
-  { header: 'Previous Email', key: 'previous_email' },
-  { header: 'Previous Email Status', key: 'previous_email_status' },
-  { header: 'Record Status', key: 'review_status' },
-  { header: 'Reviewed By', key: 'reviewed_by_name' },
-  { header: 'Reviewed At', key: 'reviewed_at' },
-  { header: 'AMO Synced At', key: 'amo_updated_at' },
-  { header: 'AMO Synced By', key: 'amo_updated_by' },
-  { header: 'MailChimp Synced At', key: 'mailchimp_updated_at' },
-  { header: 'MailChimp Synced By', key: 'mailchimp_updated_by' },
-  ...AMO_FLAG_COLUMNS,
-];
+// Individual New is the Individual Update layout minus the Individual AMO ID
+// column (those people don't have an AMO ID yet — AMO assigns one on import).
+function columnsFor(exportType: ExportType) {
+  if (exportType === 'organization_update') return ORGANIZATION_COLUMNS;
+  if (exportType === 'individual_new') {
+    return INDIVIDUAL_COLUMNS.filter((c) => c.key !== 'amo_individual_id');
+  }
+  return INDIVIDUAL_COLUMNS;
+}
 
 // Best-effort split of the portal's single free-text township address into
 // AMO's structured fields. The data is inconsistent ("St, City, State, Zip" vs
@@ -157,7 +136,6 @@ async function loadContacts(req: Request) {
   const scope = url.searchParams.get('scope');
   const id = url.searchParams.get('id');
   const format = (url.searchParams.get('format') || 'xlsx') as 'xlsx' | 'csv';
-  const variant = (url.searchParams.get('variant') || 'simple') as 'simple' | 'detailed';
   const idsParam = url.searchParams.get('ids');
 
   let body: any = null;
@@ -172,14 +150,16 @@ async function loadContacts(req: Request) {
     body?.contactIds ??
     (idsParam ? idsParam.split(',').map((s) => s.trim()).filter(Boolean) : null);
 
-  // AMO export intent — required so the Username column is only ever included
-  // when creating NEW individuals. An "update" export must omit Username to avoid
-  // clobbering existing AMO logins.
-  const amoMode = (url.searchParams.get('amoMode') || body?.amoMode || '') as string;
-  if (amoMode !== 'update' && amoMode !== 'new') {
+  // Export type — required, and fully determines the column layout. Forces the
+  // superadmin to declare which AMO import this file is for.
+  const exportType = (url.searchParams.get('exportType') || body?.exportType || '') as string;
+  if (!EXPORT_TYPES.includes(exportType as ExportType)) {
     return {
       error: NextResponse.json(
-        { error: 'Provide amoMode=update or amoMode=new' },
+        {
+          error:
+            'Provide exportType=individual_update, organization_update, or individual_new',
+        },
         { status: 400 }
       ),
     };
@@ -224,7 +204,7 @@ async function loadContacts(req: Request) {
 
   const { data: contacts, error } = await query;
   if (error) return { error: NextResponse.json({ error: error.message }, { status: 500 }) };
-  return { contacts, format, variant, scope, id, contactIds, amoMode };
+  return { contacts, format, scope, id, contactIds, exportType: exportType as ExportType };
 }
 
 export async function GET(req: Request) {
@@ -250,7 +230,7 @@ export async function POST(req: Request) {
 }
 
 async function buildResponse(loaded: any) {
-  const { contacts, format, variant, scope, id, contactIds, amoMode } = loaded;
+  const { contacts, format, scope, id, contactIds, exportType } = loaded;
 
   const rows = (contacts || []).map((c: any) => {
     const street = c.cv_townships?.street_address || '';
@@ -263,6 +243,7 @@ async function buildResponse(loaded: any) {
     const hasMailing = mailingSource.trim().length > 0;
     const townshipCounty = c.cv_townships?.cv_counties?.name || '';
     return {
+    _township_id: c.cv_townships?.id || '',
     amo_organization_id: c.cv_townships?.amo_organization_id || '',
     amo_individual_id: c.amo_individual_id || '',
     region: c.cv_townships?.cv_counties?.cv_regions?.name || '',
@@ -311,9 +292,20 @@ async function buildResponse(loaded: any) {
     return k(a).localeCompare(k(b));
   });
 
-  // "AMO update" exports omit Username so existing AMO logins aren't overwritten.
-  let columns = variant === 'detailed' ? DETAILED_COLUMNS : SIMPLE_COLUMNS;
-  if (amoMode === 'update') columns = columns.filter((c) => c.key !== 'username');
+  const columns = columnsFor(exportType);
+
+  // Organization export is about the township, not the person — collapse to one
+  // row per township so AMO doesn't see the same org repeated per contact.
+  let outRows = rows;
+  if (exportType === 'organization_update') {
+    const seen = new Set<string>();
+    outRows = rows.filter((r: any) => {
+      const key = r._township_id || `${r.region}|${r.county}|${r.township}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
 
   const baseLabel = contactIds && contactIds.length
     ? `selected-${contactIds.length}`
@@ -322,7 +314,7 @@ async function buildResponse(loaded: any) {
 
   if (format === 'csv') {
     const header = columns.map((c) => c.header).join(',');
-    const body = rows.map((r: any) => columns.map((c) => csvEscape(r[c.key])).join(',')).join('\n');
+    const body = outRows.map((r: any) => columns.map((c) => csvEscape(r[c.key])).join(',')).join('\n');
     const csv = `${header}\n${body}\n`;
     return new NextResponse(csv, {
       headers: {
@@ -335,7 +327,7 @@ async function buildResponse(loaded: any) {
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('Contacts');
   ws.columns = columns.map((c) => ({ header: c.header, key: c.key, width: 22 }));
-  for (const row of rows) ws.addRow(row);
+  for (const row of outRows) ws.addRow(row);
   ws.getRow(1).font = { bold: true };
   ws.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEFEFEF' } };
 

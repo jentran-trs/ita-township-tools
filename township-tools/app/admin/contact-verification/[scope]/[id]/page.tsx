@@ -102,7 +102,6 @@ export default function DrillDownPage() {
   const [copiedEmails, setCopiedEmails] = useState(0);
   // Holds the export to run once the superadmin picks an AMO mode in the modal.
   const [pendingExport, setPendingExport] = useState<null | ((mode: AmoMode) => void)>(null);
-  const [detailed, setDetailed] = useState(false);
   const [showMoveModal, setShowMoveModal] = useState(false);
   const [moveTree, setMoveTree] = useState<any[]>([]);
   const [moveRegionId, setMoveRegionId] = useState("");
@@ -421,7 +420,7 @@ export default function DrillDownPage() {
 
   // GET-style exports (whole scope / single township) navigate the browser.
   const exportUrl = (params: string) => (mode: AmoMode) => {
-    window.location.href = `/api/admin/contact-verification/export?${params}&amoMode=${mode}`;
+    window.location.href = `/api/admin/contact-verification/export?${params}&exportType=${mode}`;
   };
 
   // Copy the (deduped) email addresses of the selected contacts to the clipboard,
@@ -453,13 +452,12 @@ export default function DrillDownPage() {
     }
   };
 
-  const exportSelected = async (format: "xlsx" | "csv", amoMode: AmoMode) => {
+  const exportSelected = async (format: "xlsx" | "csv", mode: AmoMode) => {
     if (selected.size === 0) return;
-    const variant = detailed ? "detailed" : "simple";
     setExporting(true);
     try {
       const res = await fetch(
-        `/api/admin/contact-verification/export?format=${format}&variant=${variant}&amoMode=${amoMode}`,
+        `/api/admin/contact-verification/export?format=${format}&exportType=${mode}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -542,18 +540,10 @@ export default function DrillDownPage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <label className="flex items-center gap-1.5 text-xs text-gray-700 dark:text-gray-300 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={detailed}
-                onChange={(e) => setDetailed(e.target.checked)}
-              />
-              Detailed columns
-            </label>
             <button
               onClick={() =>
                 askExport(
-                  exportUrl(`scope=${scope}&id=${id}&format=xlsx&variant=${detailed ? "detailed" : "simple"}`)
+                  exportUrl(`scope=${scope}&id=${id}&format=xlsx`)
                 )
               }
               className="flex items-center gap-2 text-sm px-3 py-2 bg-gray-900 dark:bg-gray-700 text-white rounded-md hover:bg-gray-800 dark:hover:bg-gray-700"
@@ -563,7 +553,7 @@ export default function DrillDownPage() {
             <button
               onClick={() =>
                 askExport(
-                  exportUrl(`scope=${scope}&id=${id}&format=csv&variant=${detailed ? "detailed" : "simple"}`)
+                  exportUrl(`scope=${scope}&id=${id}&format=csv`)
                 )
               }
               className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-950"
@@ -621,7 +611,7 @@ export default function DrillDownPage() {
                       <button
                         onClick={() =>
                           askExport(
-                            exportUrl(`scope=township&id=${s.township_id}&format=xlsx&variant=${detailed ? "detailed" : "simple"}`)
+                            exportUrl(`scope=township&id=${s.township_id}&format=xlsx`)
                           )
                         }
                         className="flex items-center gap-1 text-xs font-medium text-gray-700 dark:text-gray-300 px-2 py-1 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-950"

@@ -1,12 +1,14 @@
 "use client";
 
-import { UserPlus, RefreshCw, X } from "lucide-react";
+import { Users, Building2, UserPlus, X } from "lucide-react";
 
-export type AmoMode = "update" | "new";
+export type AmoMode = "individual_update" | "organization_update" | "individual_new";
 
 // Forces the superadmin to declare the intent of an AMO export before it runs.
-// "update" omits the Username column (so existing AMO logins aren't overwritten);
-// "new" keeps it (so new individuals get a login).
+// The chosen type fully determines which columns the export contains:
+//   individual_update   — update existing people (keyed by Individual AMO ID)
+//   organization_update — update township orgs/addresses (one row per township)
+//   individual_new      — import new people (no Individual AMO ID column)
 export default function AmoExportModal({
   open,
   onCancel,
@@ -27,34 +29,48 @@ export default function AmoExportModal({
           </button>
         </div>
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-5">
-          How will this file be used in AMO? This controls whether the{" "}
-          <span className="font-medium">Username</span> column is included.
+          Which AMO import is this file for? This controls exactly which columns
+          are included.
         </p>
 
         <div className="space-y-3">
           <button
-            onClick={() => onChoose("update")}
+            onClick={() => onChoose("individual_update")}
             className="w-full text-left border border-gray-300 dark:border-gray-700 rounded-md p-4 hover:border-gray-900 hover:bg-gray-50 dark:hover:bg-gray-950 transition-colors"
           >
             <div className="flex items-center gap-2 font-medium text-gray-900 dark:text-gray-100">
-              <RefreshCw className="w-4 h-4" /> Export for AMO update
+              <Users className="w-4 h-4" /> Export for Individual AMO Update
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              For updating existing records. <span className="font-medium">Excludes</span> the
-              Username column so current AMO logins aren&apos;t overwritten.
+              Updates existing people. Includes Individual AMO ID, organization,
+              county, name, title, email, phone, login enabled, and member type.
             </div>
           </button>
 
           <button
-            onClick={() => onChoose("new")}
+            onClick={() => onChoose("organization_update")}
             className="w-full text-left border border-gray-300 dark:border-gray-700 rounded-md p-4 hover:border-gray-900 hover:bg-gray-50 dark:hover:bg-gray-950 transition-colors"
           >
             <div className="flex items-center gap-2 font-medium text-gray-900 dark:text-gray-100">
-              <UserPlus className="w-4 h-4" /> Export for AMO new
+              <Building2 className="w-4 h-4" /> Export for Organization AMO Update
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              For importing new individuals. <span className="font-medium">Includes</span> the
-              Username column.
+              Updates township orgs — one row per township. Organization AMO ID,
+              name, region, county, and the street + mailing address block.
+            </div>
+          </button>
+
+          <button
+            onClick={() => onChoose("individual_new")}
+            className="w-full text-left border border-gray-300 dark:border-gray-700 rounded-md p-4 hover:border-gray-900 hover:bg-gray-50 dark:hover:bg-gray-950 transition-colors"
+          >
+            <div className="flex items-center gap-2 font-medium text-gray-900 dark:text-gray-100">
+              <UserPlus className="w-4 h-4" /> Export for Individual AMO New
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              Imports new people. Same columns as the individual update,{" "}
+              <span className="font-medium">without</span> the Individual AMO ID
+              column (AMO assigns one on import).
             </div>
           </button>
         </div>

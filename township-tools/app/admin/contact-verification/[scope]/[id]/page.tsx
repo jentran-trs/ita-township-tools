@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useUser, useOrganization, useAuth } from "@clerk/nextjs";
 import { ArrowLeft, Loader2, Download, RotateCcw, CheckCircle2, ExternalLink, Filter, MoveRight, X, Pencil, Send, Search, Mail, ChevronRight, ChevronDown, Copy, Check, History } from "lucide-react";
@@ -154,84 +154,108 @@ export default function DrillDownPage() {
     return m;
   }, [stats]);
 
-  const filteredContacts = useMemo(() => {
-    const q = contactQuery.trim().toLowerCase();
-    return contacts.filter((c) => {
-      if (statusFilters.size > 0 && !statusFilters.has(c.review_status)) return false;
-      if (townshipFilters.size > 0 && !townshipFilters.has(c.township_id)) return false;
+  // One predicate for every filter dimension. Pass `skip` to ignore one
+  // dimension — used for facet counts so each chip group counts against the
+  // *other* active filters (so the chip number matches what select-all/export
+  // will actually grab, instead of an unconditional total).
+  const passesFilters = useCallback(
+    (c: Contact, skip?: string) => {
+      if (skip !== "status" && statusFilters.size > 0 && !statusFilters.has(c.review_status))
+        return false;
+      if (skip !== "township" && townshipFilters.size > 0 && !townshipFilters.has(c.township_id))
+        return false;
       if (
+        skip !== "completion" &&
         completionFilters.size > 0 &&
         !completionFilters.has(townshipStatusById.get(c.township_id) || "not_started")
       )
         return false;
-      if (emailStatusFilters.size > 0 && !emailStatusFilters.has(emailStatusKey(c.email_status)))
+      if (
+        skip !== "emailStatus" &&
+        emailStatusFilters.size > 0 &&
+        !emailStatusFilters.has(emailStatusKey(c.email_status))
+      )
         return false;
-      if (amoFilter === "synced" && !c.amo_updated_at) return false;
-      if (amoFilter === "unsynced" && c.amo_updated_at) return false;
-      if (amoIdFilter === "has" && !(c.amo_individual_id || "").trim()) return false;
-      if (amoIdFilter === "missing" && (c.amo_individual_id || "").trim()) return false;
-      if (mailchimpFilter === "synced" && !c.mailchimp_updated_at) return false;
-      if (mailchimpFilter === "unsynced" && c.mailchimp_updated_at) return false;
-      if (q) {
-        const hay = [
-          c.first_name,
-          c.last_name,
-          c.title,
-          c.email,
-          c.phone,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-        if (!hay.includes(q)) return false;
+      if (skip !== "amoSync") {
+        if (amoFilter === "synced" && !c.amo_updated_at) return false;
+        if (amoFilter === "unsynced" && c.amo_updated_at) return false;
+      }
+      if (skip !== "amoId") {
+        if (amoIdFilter === "has" && !(c.amo_individual_id || "").trim()) return false;
+        if (amoIdFilter === "missing" && (c.amo_individual_id || "").trim()) return false;
+      }
+      if (skip !== "mailchimp") {
+        if (mailchimpFilter === "synced" && !c.mailchimp_updated_at) return false;
+        if (mailchimpFilter === "unsynced" && c.mailchimp_updated_at) return false;
+      }
+      if (skip !== "query") {
+        const q = contactQuery.trim().toLowerCase();
+        if (q) {
+          const hay = [c.first_name, c.last_name, c.title, c.email, c.phone]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
       }
       return true;
-    });
-  }, [contacts, statusFilters, townshipFilters, completionFilters, townshipStatusById, emailStatusFilters, amoFilter, amoIdFilter, mailchimpFilter, contactQuery]);
+    },
+    [statusFilters, townshipFilters, completionFilters, townshipStatusById, emailStatusFilters, amoFilter, amoIdFilter, mailchimpFilter, contactQuery]
+  );
+
+  const filteredContacts = useMemo(
+    () => contacts.filter((c) => passesFilters(c)),
+    [contacts, passesFilters]
+  );
 
   // Contact counts per township completion status, for the filter chips.
   const completionCounts = useMemo(() => {
     const map: Record<string, number> = { completed: 0, in_progress: 0, not_started: 0 };
     for (const c of contacts) {
+      if (!passesFilters(c, "completion")) continue;
       const st = townshipStatusById.get(c.township_id) || "not_started";
       map[st] = (map[st] || 0) + 1;
     }
     return map;
-  }, [contacts, townshipStatusById]);
+  }, [contacts, townshipStatusById, passesFilters]);
 
   const amoCounts = useMemo(() => {
     let synced = 0;
     let unsynced = 0;
     for (const c of contacts) {
+      if (!passesFilters(c, "amoSync")) continue;
       if (c.amo_updated_at) synced += 1;
       else unsynced += 1;
     }
     return { synced, unsynced };
-  }, [contacts]);
+  }, [contacts, passesFilters]);
 
   const amoIdCounts = useMemo(() => {
     let has = 0;
     let missing = 0;
     for (const c of contacts) {
+      if (!passesFilters(c, "amoId")) continue;
       if ((c.amo_individual_id || "").trim()) has += 1;
       else missing += 1;
     }
     return { has, missing };
-  }, [contacts]);
+  }, [contacts, passesFilters]);
 
   const mailchimpCounts = useMemo(() => {
     let synced = 0;
     let unsynced = 0;
     for (const c of contacts) {
+      if (!passesFilters(c, "mailchimp")) continue;
       if (c.mailchimp_updated_at) synced += 1;
       else unsynced += 1;
     }
     return { synced, unsynced };
-  }, [contacts]);
+  }, [contacts, passesFilters]);
 
   const emailStatusOptions = useMemo(() => {
     const seen = new Map<string, { key: string; display: string; count: number }>();
     for (const c of contacts) {
+      if (!passesFilters(c, "emailStatus")) continue;
       const key = emailStatusKey(c.email_status);
       const display = (c.email_status || "").trim() || "(no status)";
       const existing = seen.get(key);
@@ -244,18 +268,22 @@ export default function DrillDownPage() {
       if (b.key === "__none__") return -1;
       return a.display.localeCompare(b.display);
     });
-  }, [contacts]);
+  }, [contacts, passesFilters]);
 
   const statusCounts = useMemo(() => {
     const map: Record<string, number> = {};
-    for (const c of contacts) map[c.review_status] = (map[c.review_status] || 0) + 1;
+    for (const c of contacts) {
+      if (!passesFilters(c, "status")) continue;
+      map[c.review_status] = (map[c.review_status] || 0) + 1;
+    }
     return map;
-  }, [contacts]);
+  }, [contacts, passesFilters]);
 
   const townshipOptions = useMemo(() => {
     const seen = new Map<string, { id: string; name: string; county: string; count: number }>();
     for (const c of contacts) {
       if (!c.township_id) continue;
+      if (!passesFilters(c, "township")) continue;
       const existing = seen.get(c.township_id);
       if (existing) existing.count += 1;
       else
@@ -271,7 +299,7 @@ export default function DrillDownPage() {
     return Array.from(seen.values()).sort(
       (a, b) => a.name.localeCompare(b.name) || a.county.localeCompare(b.county)
     );
-  }, [contacts]);
+  }, [contacts, passesFilters]);
 
   // Townships in the region/county table, sorted alphabetically — by county
   // first (matching the "County · Township" display), then township name.
@@ -465,8 +493,8 @@ export default function DrillDownPage() {
     }
   };
 
-  const exportSelected = async (format: "xlsx" | "csv", mode: AmoMode) => {
-    if (selected.size === 0) return;
+  const exportContactIds = async (ids: string[], format: "xlsx" | "csv", mode: AmoMode) => {
+    if (ids.length === 0) return;
     setExporting(true);
     try {
       const res = await fetch(
@@ -474,7 +502,7 @@ export default function DrillDownPage() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ contactIds: Array.from(selected) }),
+          body: JSON.stringify({ contactIds: ids }),
         }
       );
       if (!res.ok) {
@@ -497,6 +525,15 @@ export default function DrillDownPage() {
       setExporting(false);
     }
   };
+
+  // Export only the checked contacts.
+  const exportSelected = (format: "xlsx" | "csv", mode: AmoMode) =>
+    exportContactIds(Array.from(selected), format, mode);
+
+  // Export exactly what the filters are showing (the "Showing X of Y" list), so
+  // the export always matches the on-screen list rather than the whole scope.
+  const exportFiltered = (format: "xlsx" | "csv", mode: AmoMode) =>
+    exportContactIds(filteredContacts.map((c) => c.id), format, mode);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -553,23 +590,20 @@ export default function DrillDownPage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              Export shown ({filteredContacts.length}):
+            </span>
             <button
-              onClick={() =>
-                askExport(
-                  exportUrl(`scope=${scope}&id=${id}&format=xlsx`)
-                )
-              }
-              className="flex items-center gap-2 text-sm px-3 py-2 bg-gray-900 dark:bg-gray-700 text-white rounded-md hover:bg-gray-800 dark:hover:bg-gray-700"
+              onClick={() => askExport((mode) => exportFiltered("xlsx", mode))}
+              disabled={exporting || filteredContacts.length === 0}
+              className="flex items-center gap-2 text-sm px-3 py-2 bg-gray-900 dark:bg-gray-700 text-white rounded-md hover:bg-gray-800 dark:hover:bg-gray-700 disabled:opacity-50"
             >
               <Download className="w-4 h-4" /> xlsx
             </button>
             <button
-              onClick={() =>
-                askExport(
-                  exportUrl(`scope=${scope}&id=${id}&format=csv`)
-                )
-              }
-              className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-950"
+              onClick={() => askExport((mode) => exportFiltered("csv", mode))}
+              disabled={exporting || filteredContacts.length === 0}
+              className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-950 disabled:opacity-50"
             >
               <Download className="w-4 h-4" /> csv
             </button>
@@ -802,7 +836,7 @@ export default function DrillDownPage() {
               const active = amoIdFilter === opt;
               const label =
                 opt === "all"
-                  ? `All (${contacts.length})`
+                  ? `All (${amoIdCounts.has + amoIdCounts.missing})`
                   : opt === "has"
                   ? `Has Individual ID (${amoIdCounts.has})`
                   : `No Individual ID (${amoIdCounts.missing})`;
@@ -830,7 +864,7 @@ export default function DrillDownPage() {
               const active = amoFilter === opt;
               const label =
                 opt === "all"
-                  ? `All (${contacts.length})`
+                  ? `All (${amoCounts.synced + amoCounts.unsynced})`
                   : opt === "synced"
                   ? `Synced to AMO (${amoCounts.synced})`
                   : `Not synced (${amoCounts.unsynced})`;
@@ -858,7 +892,7 @@ export default function DrillDownPage() {
               const active = mailchimpFilter === opt;
               const label =
                 opt === "all"
-                  ? `All (${contacts.length})`
+                  ? `All (${mailchimpCounts.synced + mailchimpCounts.unsynced})`
                   : opt === "synced"
                   ? `Synced to MailChimp (${mailchimpCounts.synced})`
                   : `Not synced (${mailchimpCounts.unsynced})`;

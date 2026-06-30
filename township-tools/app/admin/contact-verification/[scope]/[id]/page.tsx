@@ -796,7 +796,7 @@ export default function DrillDownPage() {
 
           <div className="flex items-start gap-2 flex-wrap">
             <span className="flex items-center gap-1 text-xs font-medium text-gray-600 dark:text-gray-400 mt-1">
-              <Filter className="w-3 h-3" /> AMO ID:
+              <Filter className="w-3 h-3" /> Individual AMO ID:
             </span>
             {(["all", "has", "missing"] as const).map((opt) => {
               const active = amoIdFilter === opt;
@@ -804,8 +804,8 @@ export default function DrillDownPage() {
                 opt === "all"
                   ? `All (${contacts.length})`
                   : opt === "has"
-                  ? `Has AMO ID (${amoIdCounts.has})`
-                  : `No AMO ID (${amoIdCounts.missing})`;
+                  ? `Has Individual ID (${amoIdCounts.has})`
+                  : `No Individual ID (${amoIdCounts.missing})`;
               return (
                 <button
                   key={opt}

@@ -38,6 +38,10 @@ export function AttendeesTable({ certificates, courseId }: { certificates: Cert[
   const [adding, setAdding] = useState(false);
   const [addSubmitting, setAddSubmitting] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkRevoking, setBulkRevoking] = useState(false);
+  const [bulkRevokeReason, setBulkRevokeReason] = useState('');
 
   const filtered = certificates.filter((c) => {
     if (filter !== 'all' && c.status !== filter) return false;
@@ -50,6 +54,90 @@ export function AttendeesTable({ certificates, courseId }: { certificates: Cert[
       c.credential_id.toLowerCase().includes(q)
     );
   });
+
+  // Bulk selection acts on whatever is selected (regardless of current filter),
+  // but revoke/re-issue only apply where the status allows it.
+  const selectedCerts = certificates.filter((c) => selected.has(c.id));
+  const revokeTargets = selectedCerts.filter((c) => c.status === 'active');
+  const reissueTargets = selectedCerts.filter((c) => c.status !== 'reissued');
+
+  const allFilteredSelected = filtered.length > 0 && filtered.every((c) => selected.has(c.id));
+
+  const toggleOne = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAllFiltered = () => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (allFilteredSelected) filtered.forEach((c) => next.delete(c.id));
+      else filtered.forEach((c) => next.add(c.id));
+      return next;
+    });
+  };
+
+  const clearSelection = () => setSelected(new Set());
+
+  // Run an async op over a list of ids sequentially; collect failures.
+  const runBulk = async (ids: string[], fn: (id: string) => Promise<Response>) => {
+    let ok = 0;
+    const failed: string[] = [];
+    for (const id of ids) {
+      try {
+        const res = await fn(id);
+        if (res.ok) ok++;
+        else failed.push(id);
+      } catch {
+        failed.push(id);
+      }
+    }
+    return { ok, failed };
+  };
+
+  const confirmBulkRevoke = async () => {
+    const ids = revokeTargets.map((c) => c.id);
+    if (!ids.length) return;
+    setBulkBusy(true);
+    setError(null);
+    const { ok, failed } = await runBulk(ids, (id) =>
+      fetch(`/api/admin/certificates/certificates/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'revoked', revoke_reason: bulkRevokeReason.trim() || null }),
+      })
+    );
+    setBulkBusy(false);
+    setBulkRevoking(false);
+    setBulkRevokeReason('');
+    if (failed.length) setError(`Revoked ${ok}, but ${failed.length} failed. Try those again.`);
+    clearSelection();
+    router.refresh();
+  };
+
+  const onBulkReissue = async () => {
+    const ids = reissueTargets.map((c) => c.id);
+    if (!ids.length) return;
+    if (
+      !confirm(
+        `Re-issue ${ids.length} certificate${ids.length === 1 ? '' : 's'}? Each gets a new credential ID. Revoked ones will be reactivated.`
+      )
+    )
+      return;
+    setBulkBusy(true);
+    setError(null);
+    const { ok, failed } = await runBulk(ids, (id) =>
+      fetch(`/api/admin/certificates/certificates/${id}/reissue`, { method: 'POST' })
+    );
+    setBulkBusy(false);
+    if (failed.length) setError(`Re-issued ${ok}, but ${failed.length} failed. Try those again.`);
+    clearSelection();
+    router.refresh();
+  };
 
   const onRevoke = (cert: Cert) => {
     setRevokingCert(cert);
@@ -189,6 +277,47 @@ export function AttendeesTable({ certificates, courseId }: { certificates: Cert[
         </div>
       )}
 
+      {selected.size > 0 && (
+        <div className="sticky top-0 z-20 flex flex-wrap items-center gap-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded-lg px-3 py-2">
+          <span className="text-sm font-medium text-amber-900 dark:text-amber-200">
+            {selected.size} selected
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              setBulkRevokeReason('');
+              setBulkRevoking(true);
+              setError(null);
+            }}
+            disabled={bulkBusy || revokeTargets.length === 0}
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-red-700 dark:text-red-300 bg-white dark:bg-gray-900 border border-red-200 dark:border-red-900 rounded-md hover:bg-red-50 dark:hover:bg-red-950/40 disabled:opacity-40"
+            title={revokeTargets.length === 0 ? 'No active certificates selected' : undefined}
+          >
+            {bulkBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShieldOff className="w-3.5 h-3.5" />}
+            Revoke ({revokeTargets.length})
+          </button>
+          <button
+            type="button"
+            onClick={onBulkReissue}
+            disabled={bulkBusy || reissueTargets.length === 0}
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300 bg-white dark:bg-gray-900 border border-amber-300 dark:border-amber-800 rounded-md hover:bg-amber-50 dark:hover:bg-amber-950/40 disabled:opacity-40"
+            title={reissueTargets.length === 0 ? 'No re-issuable certificates selected' : undefined}
+          >
+            {bulkBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />}
+            Re-issue ({reissueTargets.length})
+          </button>
+          <button
+            type="button"
+            onClick={clearSelection}
+            disabled={bulkBusy}
+            className="ml-auto inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:bg-white/60 dark:hover:bg-gray-800 rounded-md disabled:opacity-40"
+          >
+            <X className="w-3.5 h-3.5" />
+            Clear
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative w-72">
           <input
@@ -242,6 +371,15 @@ export function AttendeesTable({ certificates, courseId }: { certificates: Cert[
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-800/95 text-left text-xs uppercase tracking-wider text-gray-500 sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-gray-50/95">
               <tr>
+                <th className="px-3 py-2 w-9">
+                  <input
+                    type="checkbox"
+                    checked={allFilteredSelected}
+                    onChange={toggleAllFiltered}
+                    aria-label="Select all shown"
+                    className="align-middle cursor-pointer accent-amber-500"
+                  />
+                </th>
                 <th className="px-3 py-2 font-semibold">Name</th>
                 <th className="px-3 py-2 font-semibold">Email</th>
                 <th className="px-3 py-2 font-semibold">Township / County</th>
@@ -253,7 +391,21 @@ export function AttendeesTable({ certificates, courseId }: { certificates: Cert[
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800 text-sm">
               {filtered.map((c) => (
-                <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/40">
+                <tr
+                  key={c.id}
+                  className={`hover:bg-gray-50 dark:hover:bg-gray-800/40 ${
+                    selected.has(c.id) ? 'bg-amber-50/60 dark:bg-amber-950/20' : ''
+                  }`}
+                >
+                  <td className="px-3 py-2">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(c.id)}
+                      onChange={() => toggleOne(c.id)}
+                      aria-label={`Select ${c.attendee_first} ${c.attendee_last}`}
+                      className="align-middle cursor-pointer accent-amber-500"
+                    />
+                  </td>
                   <td className="px-3 py-2">
                     {c.attendee_first} {c.attendee_last}
                   </td>
@@ -358,6 +510,22 @@ export function AttendeesTable({ certificates, courseId }: { certificates: Cert[
           }}
           onConfirm={confirmRemove}
           submitting={!!busyId}
+        />
+      )}
+
+      {bulkRevoking && (
+        <BulkRevokeModal
+          count={revokeTargets.length}
+          skipped={selectedCerts.length - revokeTargets.length}
+          reason={bulkRevokeReason}
+          onChangeReason={setBulkRevokeReason}
+          onCancel={() => {
+            if (bulkBusy) return;
+            setBulkRevoking(false);
+            setBulkRevokeReason('');
+          }}
+          onConfirm={confirmBulkRevoke}
+          submitting={bulkBusy}
         />
       )}
 
@@ -706,6 +874,105 @@ function RemoveAttendeeModal({
           >
             {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
             Remove attendee
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BulkRevokeModal({
+  count,
+  skipped,
+  reason,
+  onChangeReason,
+  onCancel,
+  onConfirm,
+  submitting,
+}: {
+  count: number;
+  skipped: number;
+  reason: string;
+  onChangeReason: (r: string) => void;
+  onCancel: () => void;
+  onConfirm: () => void;
+  submitting: boolean;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+      role="dialog"
+      aria-modal="true"
+      onClick={onCancel}
+    >
+      <div
+        className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl w-full max-w-md shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="px-5 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <ShieldOff className="w-5 h-5 text-red-600" />
+            <h3 className="font-semibold">Revoke {count} certificate{count === 1 ? '' : 's'}</h3>
+          </div>
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={submitting}
+            className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 disabled:opacity-50"
+            aria-label="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="px-5 py-4 space-y-4">
+          <p className="text-sm text-gray-700 dark:text-gray-300">
+            Revoke <strong>{count}</strong> active certificate{count === 1 ? '' : 's'}. They&apos;ll
+            no longer appear in the attendees&apos; email lookup, and the verify page will show them
+            as revoked. You can Re-issue any of them later.
+          </p>
+          {skipped > 0 && (
+            <p className="text-xs text-gray-500">
+              {skipped} of your selected row{skipped === 1 ? ' is' : 's are'} already revoked or
+              reissued and will be skipped.
+            </p>
+          )}
+
+          <div>
+            <label htmlFor="bulk-revoke-reason" className="block text-sm font-medium mb-1.5">
+              Reason for revocation
+            </label>
+            <textarea
+              id="bulk-revoke-reason"
+              value={reason}
+              onChange={(e) => onChangeReason(e.target.value)}
+              disabled={submitting}
+              placeholder="Applied to all selected — e.g. issued to the wrong roster, duplicate import…"
+              className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 min-h-[88px]"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Admin-only — the same reason is saved on every selected certificate.
+            </p>
+          </div>
+        </div>
+
+        <div className="px-5 py-3 bg-gray-50 dark:bg-gray-800/40 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={submitting}
+            className="px-3 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={submitting || count === 0}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+          >
+            {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldOff className="w-4 h-4" />}
+            Revoke {count} certificate{count === 1 ? '' : 's'}
           </button>
         </div>
       </div>

@@ -45,3 +45,16 @@ export async function PATCH(req: Request, { params }: RouteParams) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }
+
+// DELETE — permanently remove an attendee's certificate row. Unlike Revoke
+// (which keeps the record for the audit trail), this hard-deletes: the
+// credential ID stops resolving and the attendee disappears from the roster.
+export async function DELETE(_req: Request, { params }: RouteParams) {
+  const sErr = await requireSuperadmin();
+  if (sErr) return sErr;
+
+  const supabase = createServerSupabaseClient();
+  const { error } = await supabase.from('certificates').delete().eq('id', params.id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true });
+}

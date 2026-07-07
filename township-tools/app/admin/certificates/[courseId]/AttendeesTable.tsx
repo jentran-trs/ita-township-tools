@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Info, Loader2, RotateCcw, ShieldOff, UserPlus, X } from 'lucide-react';
+import { Info, Loader2, RotateCcw, ShieldOff, Trash2, UserPlus, X } from 'lucide-react';
 import { townshipLabel } from '@/lib/certificates/township';
 
 type Cert = {
@@ -34,6 +34,7 @@ export function AttendeesTable({ certificates, courseId }: { certificates: Cert[
   const [query, setQuery] = useState('');
   const [revokingCert, setRevokingCert] = useState<Cert | null>(null);
   const [revokeReason, setRevokeReason] = useState('');
+  const [removingCert, setRemovingCert] = useState<Cert | null>(null);
   const [adding, setAdding] = useState(false);
   const [addSubmitting, setAddSubmitting] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
@@ -91,6 +92,25 @@ export function AttendeesTable({ certificates, courseId }: { certificates: Cert[
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Reissue failed');
+      router.refresh();
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const confirmRemove = async () => {
+    if (!removingCert) return;
+    setBusyId(removingCert.id);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/certificates/certificates/${removingCert.id}`, {
+        method: 'DELETE',
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Remove failed');
+      setRemovingCert(null);
       router.refresh();
     } catch (e: any) {
       setError(e.message);
@@ -293,6 +313,18 @@ export function AttendeesTable({ certificates, courseId }: { certificates: Cert[
                           Re-issue
                         </button>
                       )}
+                      <button
+                        onClick={() => {
+                          setRemovingCert(c);
+                          setError(null);
+                        }}
+                        disabled={busyId === c.id}
+                        className="inline-flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md disabled:opacity-50"
+                        title="Remove attendee (permanent)"
+                      >
+                        {busyId === c.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                        Remove
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -313,6 +345,18 @@ export function AttendeesTable({ certificates, courseId }: { certificates: Cert[
             setRevokeReason('');
           }}
           onConfirm={confirmRevoke}
+          submitting={!!busyId}
+        />
+      )}
+
+      {removingCert && (
+        <RemoveAttendeeModal
+          cert={removingCert}
+          onCancel={() => {
+            if (busyId) return;
+            setRemovingCert(null);
+          }}
+          onConfirm={confirmRemove}
           submitting={!!busyId}
         />
       )}
@@ -587,6 +631,81 @@ function RevokeReasonModal({
           >
             {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldOff className="w-4 h-4" />}
             Revoke certificate
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RemoveAttendeeModal({
+  cert,
+  onCancel,
+  onConfirm,
+  submitting,
+}: {
+  cert: Cert;
+  onCancel: () => void;
+  onConfirm: () => void;
+  submitting: boolean;
+}) {
+  const fullName = `${cert.attendee_first} ${cert.attendee_last}`.trim();
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+      role="dialog"
+      aria-modal="true"
+      onClick={onCancel}
+    >
+      <div
+        className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl w-full max-w-md shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="px-5 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Trash2 className="w-5 h-5 text-red-600" />
+            <h3 className="font-semibold">Remove attendee</h3>
+          </div>
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={submitting}
+            className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 disabled:opacity-50"
+            aria-label="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="px-5 py-4 space-y-3">
+          <p className="text-sm text-gray-700 dark:text-gray-300">
+            Permanently remove <strong>{fullName}</strong> (
+            <span className="font-mono">{cert.credential_id}</span>) from this course?
+          </p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            This deletes the record entirely — the credential ID will stop resolving and the
+            attendee won&apos;t be able to download the certificate. This can&apos;t be undone. To
+            keep the record but invalidate it instead, use <strong>Revoke</strong>.
+          </p>
+        </div>
+
+        <div className="px-5 py-3 bg-gray-50 dark:bg-gray-800/40 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={submitting}
+            className="px-3 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={submitting}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+          >
+            {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+            Remove attendee
           </button>
         </div>
       </div>

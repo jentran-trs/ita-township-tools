@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Calculator, RotateCcw, AlertTriangle, Building2, User } from 'lucide-react';
+import { Calculator, RotateCcw, AlertTriangle, Building2, User, CalendarClock } from 'lucide-react';
 
 const FIELDS = [
   { name: 'assist_none_2324', label: 'Township Assistance (2023–2024)' },
@@ -153,6 +153,22 @@ const QUESTIONS = [
       { value: 0, label: <>No — we did <span className="underline font-bold">NOT</span> have an open candidate slot <span className="underline font-bold">OR</span> 30+ day vacancy</>, hint: '0 points.' },
     ],
   },
+];
+
+const TIMELINE = [
+  { date: 'Dec 31, 2026', text: 'DLGF publishes the statewide township evaluation and designated-township list.' },
+  { date: 'Jan 1, 2027', text: 'Voluntary mergers may begin.' },
+  { date: 'Mar 31, 2027', text: 'Deadline to appeal the DLGF designation score.' },
+  { date: 'Jun 30, 2027', text: 'Critical cutoff — to avoid a mandatory merger, a township must have started a genuine voluntary merger process by this date.', critical: true },
+  { date: 'Jun 30, 2027', text: 'DLGF final report.' },
+  { date: 'Aug 1, 2027', text: 'County executives hold countywide meetings for trustees on required mergers.' },
+  { date: 'Oct 1, 2027', text: 'Designated townships adopt reorganization resolutions; county executives adopt merger resolutions.' },
+  { date: 'Jan 1, 2028', text: 'County merger reports due; voluntary mergers completed in 2027 become effective.' },
+  { date: 'Feb 28, 2028', text: 'Merger documents, budgets, and tax levies submitted.' },
+  { date: 'Mar 1, 2028', text: 'Joint reorganization boards and complete plans due.' },
+  { date: 'Dec 31, 2028', text: 'Last day for existing township governments and elected officials in eliminated positions.' },
+  { date: 'Jan 1, 2029', text: 'Mandatory mergers and reorganizations become effective.' },
+  { date: '2030', text: 'First general election for the newly formed units.' },
 ];
 
 const ScoringTool = () => {
@@ -600,6 +616,40 @@ const ScoringTool = () => {
       )}
       </>
       )}
+
+      {/* Merger Timeline */}
+      <div className="mt-5 bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+        <h2 className="text-base font-bold text-slate-900 mb-1.5 flex items-center gap-2">
+          <CalendarClock className="w-4 h-4 text-amber-600" />
+          SB 270 Merger Timeline
+        </h2>
+        <p className="text-sm text-slate-600 leading-relaxed mb-4">
+          Key statutory dates in the township evaluation and merger process. Dates reflect the current bill and may shift with future legislative or administrative action.
+        </p>
+        <ol className="relative border-l border-slate-200 ml-2">
+          {TIMELINE.map((item, i) => (
+            <li key={i} className="ml-5 pb-5 last:pb-0">
+              <span
+                className={`absolute -left-[6px] mt-1.5 w-3 h-3 rounded-full border-2 border-white ${
+                  item.critical ? 'bg-red-500' : 'bg-amber-500'
+                }`}
+              />
+              <div
+                className={`inline-block text-xs font-bold px-2.5 py-1 rounded-full mb-1.5 ${
+                  item.critical
+                    ? 'bg-red-100 text-red-700 border border-red-300'
+                    : 'bg-amber-100 text-amber-700 border border-amber-300'
+                }`}
+              >
+                {item.date}
+              </div>
+              <p className={`text-sm leading-snug ${item.critical ? 'text-red-700 font-semibold' : 'text-slate-600'}`}>
+                {item.text}
+              </p>
+            </li>
+          ))}
+        </ol>
+      </div>
 
     </div>
   );

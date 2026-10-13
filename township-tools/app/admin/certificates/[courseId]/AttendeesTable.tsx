@@ -42,6 +42,7 @@ export function AttendeesTable({ certificates, courseId }: { certificates: Cert[
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkRevoking, setBulkRevoking] = useState(false);
   const [bulkRevokeReason, setBulkRevokeReason] = useState('');
+  const [bulkRemoving, setBulkRemoving] = useState(false);
 
   const filtered = certificates.filter((c) => {
     if (filter !== 'all' && c.status !== filter) return false;
@@ -135,6 +136,21 @@ export function AttendeesTable({ certificates, courseId }: { certificates: Cert[
     );
     setBulkBusy(false);
     if (failed.length) setError(`Re-issued ${ok}, but ${failed.length} failed. Try those again.`);
+    clearSelection();
+    router.refresh();
+  };
+
+  const confirmBulkRemove = async () => {
+    const ids = selectedCerts.map((c) => c.id);
+    if (!ids.length) return;
+    setBulkBusy(true);
+    setError(null);
+    const { ok, failed } = await runBulk(ids, (id) =>
+      fetch(`/api/admin/certificates/certificates/${id}`, { method: 'DELETE' })
+    );
+    setBulkBusy(false);
+    setBulkRemoving(false);
+    if (failed.length) setError(`Removed ${ok}, but ${failed.length} failed. Try those again.`);
     clearSelection();
     router.refresh();
   };
@@ -305,6 +321,19 @@ export function AttendeesTable({ certificates, courseId }: { certificates: Cert[
           >
             {bulkBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />}
             Re-issue ({reissueTargets.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setBulkRemoving(true);
+              setError(null);
+            }}
+            disabled={bulkBusy}
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-white bg-red-600 border border-red-600 rounded-md hover:bg-red-700 disabled:opacity-40"
+            title="Permanently delete the selected attendees"
+          >
+            {bulkBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+            Remove ({selectedCerts.length})
           </button>
           <button
             type="button"
@@ -525,6 +554,18 @@ export function AttendeesTable({ certificates, courseId }: { certificates: Cert[
             setBulkRevokeReason('');
           }}
           onConfirm={confirmBulkRevoke}
+          submitting={bulkBusy}
+        />
+      )}
+
+      {bulkRemoving && (
+        <BulkRemoveModal
+          count={selectedCerts.length}
+          onCancel={() => {
+            if (bulkBusy) return;
+            setBulkRemoving(false);
+          }}
+          onConfirm={confirmBulkRemove}
           submitting={bulkBusy}
         />
       )}
@@ -874,6 +915,80 @@ function RemoveAttendeeModal({
           >
             {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
             Remove attendee
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BulkRemoveModal({
+  count,
+  onCancel,
+  onConfirm,
+  submitting,
+}: {
+  count: number;
+  onCancel: () => void;
+  onConfirm: () => void;
+  submitting: boolean;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+      role="dialog"
+      aria-modal="true"
+      onClick={onCancel}
+    >
+      <div
+        className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl w-full max-w-md shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="px-5 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Trash2 className="w-5 h-5 text-red-600" />
+            <h3 className="font-semibold">Remove {count} attendee{count === 1 ? '' : 's'}</h3>
+          </div>
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={submitting}
+            className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 disabled:opacity-50"
+            aria-label="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="px-5 py-4 space-y-3">
+          <p className="text-sm text-gray-700 dark:text-gray-300">
+            Permanently remove <strong>{count}</strong> selected attendee{count === 1 ? '' : 's'} from
+            this course?
+          </p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            This deletes the records entirely — their credential IDs will stop resolving and they
+            won&apos;t be able to download certificates. This can&apos;t be undone. You can re-import
+            a corrected list afterward.
+          </p>
+        </div>
+
+        <div className="px-5 py-3 bg-gray-50 dark:bg-gray-800/40 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={submitting}
+            className="px-3 py-2 text-sm bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={submitting || count === 0}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+          >
+            {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+            Remove {count} attendee{count === 1 ? '' : 's'}
           </button>
         </div>
       </div>

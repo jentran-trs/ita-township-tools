@@ -21,6 +21,7 @@ export type CourseFormInitial = {
   hours: string;
   method: 'in_person' | 'online' | 'hybrid';
   course_date: string;
+  course_end_date: string;
   syllabus: string;
   syllabus_file_url: string | null;
   syllabus_file_name: string | null;
@@ -107,6 +108,9 @@ export function CourseForm({ mode, initial, existingCourseIds, defaultSignature,
     const hours = parseFloat(form.hours);
     if (!Number.isFinite(hours) || hours < 0) return 'Hours must be a non-negative number';
     if (!form.course_date) return 'Course date is required';
+    if (form.course_end_date && form.course_end_date < form.course_date) {
+      return 'End date can’t be before the start date';
+    }
     if (form.signatures.length !== 1) return 'A course must have exactly one signer';
     const s = form.signatures[0];
     if (!s.signer_name.trim()) return 'Signer name is required';
@@ -130,6 +134,9 @@ export function CourseForm({ mode, initial, existingCourseIds, defaultSignature,
         hours: parseFloat(form.hours),
         method: form.method,
         course_date: form.course_date,
+        // A same-day end date is just a single-day course.
+        course_end_date:
+          form.course_end_date && form.course_end_date !== form.course_date ? form.course_end_date : null,
         // Free-text syllabus is retired in favor of file uploads only.
         syllabus: null,
         syllabus_file_url: form.syllabus_file_url || null,
@@ -239,13 +246,36 @@ export function CourseForm({ mode, initial, existingCourseIds, defaultSignature,
 
       <div className="space-y-5">
         <SubSection index={1} title="Course details">
-          <Field label="Course date" required>
+          <Field label="Start date" required>
             <input
               type="date"
               value={form.course_date}
               onChange={(e) => setForm((f) => ({ ...f, course_date: e.target.value }))}
               className={inputCls}
             />
+          </Field>
+
+          <Field label="End date" hint="Optional. Leave blank for a single-day course.">
+            <div className="flex gap-2">
+              <input
+                type="date"
+                value={form.course_end_date}
+                min={form.course_date || undefined}
+                onChange={(e) => setForm((f) => ({ ...f, course_end_date: e.target.value }))}
+                className={inputCls}
+              />
+              {form.course_end_date && (
+                <button
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, course_end_date: '' }))}
+                  className="px-2.5 py-2 text-sm bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
+                  title="Clear end date"
+                  aria-label="Clear end date"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </Field>
 
           <Field

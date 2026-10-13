@@ -77,6 +77,16 @@ export async function PATCH(req: Request, { params }: RouteParams) {
     }
     patch.course_date = body.course_date;
   }
+  if ('course_end_date' in body) {
+    const end = body.course_end_date || null;
+    if (end !== null && (typeof end !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(end))) {
+      return NextResponse.json({ error: 'course_end_date must be YYYY-MM-DD' }, { status: 400 });
+    }
+    if (end && typeof body.course_date === 'string' && end < body.course_date) {
+      return NextResponse.json({ error: 'End date can’t be before the start date' }, { status: 400 });
+    }
+    patch.course_end_date = end;
+  }
   if ('syllabus' in body) patch.syllabus = body.syllabus?.trim() || null;
   if ('syllabus_file_url' in body) {
     patch.syllabus_file_url = body.syllabus_file_url?.trim() || null;

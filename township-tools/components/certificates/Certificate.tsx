@@ -10,6 +10,7 @@ import {
   NAVY,
   PAPER,
 } from '@/lib/certificates/theme';
+import { formatCourseDates } from '@/lib/certificates/date-range';
 import { cormorant, cutive, playfair } from '@/lib/certificates/fonts';
 import { townshipLabel } from '@/lib/certificates/township';
 import { GuillocheBorder } from './ornaments/GuillocheBorder';
@@ -45,6 +46,7 @@ export type CertificateData = {
     hours: number | string;
     method: 'in_person' | 'online' | 'hybrid';
     course_date: string;
+    course_end_date?: string | null;
     course_id: string;
   };
   credential_id: string;
@@ -101,22 +103,6 @@ function getCourseNameFontSize(courseName: string, recipientName: string): numbe
 // wrapping, so leave them alone.
 function getUpperBlockMarginTop(recipientName: string): number {
   return recipientName.length <= 20 ? 52 : 26;
-}
-
-function formatDate(iso: string) {
-  // Accept YYYY-MM-DD or full ISO; render as e.g. "April 22, 2026". Build the
-  // Date in local time when given YYYY-MM-DD so we don't get a one-day shift
-  // from UTC parsing.
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
-  const d = m
-    ? new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10))
-    : new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
 }
 
 type Props = {
@@ -325,7 +311,7 @@ export function Certificate({ data, innerRef }: Props) {
               justifyContent: 'center',
             }}
           >
-            <Pill>Completed&nbsp;·&nbsp;{formatDate(course.course_date)}</Pill>
+            <Pill>Completed&nbsp;·&nbsp;{formatCourseDates(course.course_date, course.course_end_date)}</Pill>
             <Pill>
               {formatHours(course.hours)} Hours&nbsp;·&nbsp;{METHOD_LABEL[course.method]}
             </Pill>

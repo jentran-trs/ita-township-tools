@@ -45,6 +45,7 @@ export default async function CourseDetailPage({ params }: Params) {
     hours: String(course.hours),
     method: course.method,
     course_date: course.course_date,
+    course_end_date: course.course_end_date || '',
     syllabus: course.syllabus || '',
     syllabus_file_url: course.syllabus_file_url || null,
     syllabus_file_name: course.syllabus_file_name || null,

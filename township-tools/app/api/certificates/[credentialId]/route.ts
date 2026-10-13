@@ -30,7 +30,7 @@ export async function GET(_req: Request, { params }: RouteParams) {
   const { data: course, error: courseErr } = await supabase
     .from('cert_courses')
     .select(
-      'course_id, name, hours, method, course_date, org_name, syllabus, syllabus_file_url, syllabus_file_name'
+      'course_id, name, hours, method, course_date, course_end_date, org_name, syllabus, syllabus_file_url, syllabus_file_name'
     )
     .eq('id', cert.course_id)
     .maybeSingle();
@@ -51,6 +51,7 @@ export async function GET(_req: Request, { params }: RouteParams) {
       hours: Number(course.hours),
       method: course.method,
       course_date: course.course_date,
+      course_end_date: course.course_end_date,
       org_name: course.org_name,
       syllabus: course.syllabus,
       syllabus_file_url: course.syllabus_file_url,

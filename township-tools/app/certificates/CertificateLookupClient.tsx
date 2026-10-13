@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Award, Calendar, Filter, GraduationCap, Loader2, Mail, MapPin, Search, User, Users, X } from 'lucide-react';
 import { CertificateDownloadButton } from '@/components/certificates/CertificateDownloadButton';
 import { townshipLabel } from '@/lib/certificates/township';
+import { formatCourseDates } from '@/lib/certificates/date-range';
 
 type Sig = {
   signer_name: string;
@@ -26,6 +27,7 @@ type CertCard = {
     hours: number;
     method: 'in_person' | 'online' | 'hybrid';
     course_date: string;
+    course_end_date?: string | null;
     org_name: string;
     logo_url: string;
   };
@@ -37,15 +39,6 @@ const METHOD_LABEL: Record<CertCard['course']['method'], string> = {
   online: 'Online',
   hybrid: 'Hybrid',
 };
-
-function formatDate(iso: string) {
-  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
-  const d = m
-    ? new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10))
-    : new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-}
 
 type AvailableCourse = {
   id: string;
@@ -473,7 +466,7 @@ export function CertificateLookupClient({
                             <h3 className="text-base sm:text-lg font-bold truncate">{g.course.name}</h3>
                           </div>
                           <span className="text-xs text-gray-500 flex-shrink-0 whitespace-nowrap">
-                            {g.certs.length} cert{g.certs.length === 1 ? '' : 's'} · {formatDate(g.course.course_date)}
+                            {g.certs.length} cert{g.certs.length === 1 ? '' : 's'} · {formatCourseDates(g.course.course_date, g.course.course_end_date)}
                           </span>
                         </div>
                       )}
@@ -542,7 +535,7 @@ function CertificateCard({ cert }: { cert: CertCard }) {
           </div>
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-sm">
             <Pair icon={<Calendar className="w-4 h-4" />} label="Date">
-              {formatDate(cert.course.course_date)}
+              {formatCourseDates(cert.course.course_date, cert.course.course_end_date)}
             </Pair>
             <Pair icon={<GraduationCap className="w-4 h-4" />} label="Hours">
               {cert.course.hours.toFixed(1)} · {METHOD_LABEL[cert.course.method]}

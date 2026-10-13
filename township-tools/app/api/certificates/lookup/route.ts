@@ -85,6 +85,7 @@ export async function POST(req: Request) {
           hours: Number(course.hours),
           method: course.method,
           course_date: course.course_date,
+          course_end_date: course.course_end_date,
           org_name: course.org_name,
           logo_url: course.logo_url,
         },

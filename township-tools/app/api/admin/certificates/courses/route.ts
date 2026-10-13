@@ -11,6 +11,7 @@ type CourseInput = {
   hours: number;
   method: 'in_person' | 'online' | 'hybrid';
   course_date: string;
+  course_end_date?: string | null;
   syllabus?: string | null;
   syllabus_file_url?: string | null;
   syllabus_file_name?: string | null;
@@ -66,6 +67,7 @@ export async function POST(req: Request) {
       hours: body.hours,
       method: body.method,
       course_date: body.course_date,
+      course_end_date: body.course_end_date || null,
       syllabus: body.syllabus?.trim() || null,
       syllabus_file_url: body.syllabus_file_url?.trim() || null,
       syllabus_file_name: body.syllabus_file_name?.trim() || null,
@@ -121,6 +123,12 @@ function validateCourseInput(b: any): string | null {
   if (!b.course_date || typeof b.course_date !== 'string') return 'course_date is required';
   if (!/^\d{4}-\d{2}-\d{2}$/.test(b.course_date)) {
     return 'course_date must be YYYY-MM-DD';
+  }
+  if (b.course_end_date) {
+    if (typeof b.course_end_date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(b.course_end_date)) {
+      return 'course_end_date must be YYYY-MM-DD';
+    }
+    if (b.course_end_date < b.course_date) return 'course_end_date can’t be before course_date';
   }
   if (!Array.isArray(b.signatures) || b.signatures.length !== 1) {
     return 'Exactly one signer is required';

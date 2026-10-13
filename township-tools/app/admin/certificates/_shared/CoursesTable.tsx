@@ -3,12 +3,14 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Award, FileSignature, Loader2, Plus, Trash2 } from 'lucide-react';
+import { formatCourseDates } from '@/lib/certificates/date-range';
 
 type Course = {
   id: string;
   course_id: string;
   name: string;
   course_date: string | null;
+  course_end_date?: string | null;
   method: string;
   hours: number | string;
   active_count: number | null;
@@ -95,7 +97,7 @@ export function CoursesTable({ initialCourses }: { initialCourses: Course[] }) {
                   </Link>
                   <div className="text-xs text-gray-500 font-mono mt-0.5">{c.course_id}</div>
                 </td>
-                <td className="px-4 py-3 text-sm">{formatDate(c.course_date)}</td>
+                <td className="px-4 py-3 text-sm">{formatCourseDates(c.course_date, c.course_end_date, 'short')}</td>
                 <td className="px-4 py-3 text-sm">{METHOD_LABEL[c.method] || c.method}</td>
                 <td className="px-4 py-3 text-sm">{Number(c.hours).toFixed(1)}</td>
                 <td className="px-4 py-3 text-sm text-right">{c.active_count ?? 0}</td>

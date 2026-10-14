@@ -29,6 +29,7 @@ export default async function NewCoursePage() {
     method: 'in_person',
     course_date: today,
     course_end_date: '',
+    cert_type: 'training',
     syllabus: '',
     syllabus_file_url: null,
     syllabus_file_name: null,

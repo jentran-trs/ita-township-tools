@@ -43,6 +43,7 @@ export function CertificatePreviewClient() {
   const [showLocation, setShowLocation] = useState(true);
   const [longName, setLongName] = useState(false);
   const [longCourseName, setLongCourseName] = useState(false);
+  const [participation, setParticipation] = useState(false);
   const [zoom, setZoom] = useState<number>(0.7);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [sboaQrDataUrl, setSboaQrDataUrl] = useState<string | null>(null);
@@ -65,6 +66,7 @@ export function CertificatePreviewClient() {
       name: longCourseName
         ? 'Indiana Statutory Township Officials Continuing Education and Certification Workshop'
         : SAMPLE_BASE.course.name,
+      cert_type: participation ? ('participation' as const) : ('training' as const),
     };
     return {
       ...SAMPLE_BASE,
@@ -75,7 +77,7 @@ export function CertificatePreviewClient() {
       sboaQrDataUrl,
       verifyUrl,
     };
-  }, [showLocation, longName, longCourseName, qrDataUrl, sboaQrDataUrl, verifyUrl]);
+  }, [showLocation, longName, longCourseName, participation, qrDataUrl, sboaQrDataUrl, verifyUrl]);
 
   useEffect(() => {
     let cancelled = false;
@@ -165,6 +167,11 @@ export function CertificatePreviewClient() {
                 label="Test long course name"
                 checked={longCourseName}
                 onChange={setLongCourseName}
+              />
+              <ToggleRow
+                label="Participation certificate"
+                checked={participation}
+                onChange={setParticipation}
               />
 
               <div>

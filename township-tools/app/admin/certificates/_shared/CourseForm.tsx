@@ -22,6 +22,7 @@ export type CourseFormInitial = {
   method: 'in_person' | 'online' | 'hybrid';
   course_date: string;
   course_end_date: string;
+  cert_type: 'training' | 'participation';
   syllabus: string;
   syllabus_file_url: string | null;
   syllabus_file_name: string | null;
@@ -105,8 +106,10 @@ export function CourseForm({ mode, initial, existingCourseIds, defaultSignature,
   const validate = (): string | null => {
     if (!form.course_id.trim()) return 'Course ID is required';
     if (!form.name.trim()) return 'Course name is required';
-    const hours = parseFloat(form.hours);
-    if (!Number.isFinite(hours) || hours < 0) return 'Hours must be a non-negative number';
+    if (form.cert_type === 'training') {
+      const hours = parseFloat(form.hours);
+      if (!Number.isFinite(hours) || hours < 0) return 'Hours must be a non-negative number';
+    }
     if (!form.course_date) return 'Course date is required';
     if (form.course_end_date && form.course_end_date < form.course_date) {
       return 'End date can’t be before the start date';
@@ -131,7 +134,9 @@ export function CourseForm({ mode, initial, existingCourseIds, defaultSignature,
       const payload = {
         course_id: form.course_id.trim(),
         name: form.name.trim(),
-        hours: parseFloat(form.hours),
+        // Participation certificates don't show hours; store 0 if left blank.
+        hours: parseFloat(form.hours) || 0,
+        cert_type: form.cert_type,
         method: form.method,
         course_date: form.course_date,
         // A same-day end date is just a single-day course.
@@ -331,17 +336,41 @@ export function CourseForm({ mode, initial, existingCourseIds, defaultSignature,
         </SubSection>
 
         <SubSection index={2} title="Course format">
-          <Field label="Training hours" required hint="Decimal, rendered as e.g. 5.0">
-            <input
-              type="number"
-              step="0.1"
-              min="0"
-              value={form.hours}
-              onChange={(e) => setForm((f) => ({ ...f, hours: e.target.value }))}
+          <Field
+            label="Certificate type"
+            required
+            className="sm:col-span-2"
+            hint={
+              form.cert_type === 'training'
+                ? 'Certificate of Completion — shows training hours, the IC 36-6-4-20 statement and the SBOA upload QR.'
+                : 'Certificate of Participation — no training wording, hours, IC 36-6-4-20 statement or SBOA upload QR.'
+            }
+          >
+            <select
+              value={form.cert_type}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, cert_type: e.target.value as CourseFormInitial['cert_type'] }))
+              }
               className={inputCls}
-              placeholder="5.0"
-            />
+            >
+              <option value="training">Training (Certificate of Completion)</option>
+              <option value="participation">Participation (Certificate of Participation)</option>
+            </select>
           </Field>
+
+          {form.cert_type === 'training' && (
+            <Field label="Training hours" required hint="Decimal, rendered as e.g. 5.0">
+              <input
+                type="number"
+                step="0.1"
+                min="0"
+                value={form.hours}
+                onChange={(e) => setForm((f) => ({ ...f, hours: e.target.value }))}
+                className={inputCls}
+                placeholder="5.0"
+              />
+            </Field>
+          )}
 
           <Field label="Format" required>
             <select

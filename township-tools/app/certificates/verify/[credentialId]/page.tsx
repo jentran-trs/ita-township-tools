@@ -59,7 +59,7 @@ export default async function VerifyResultPage({ params }: Params) {
     const { data } = await supabase
       .from('cert_courses')
       .select(
-        'course_id, name, hours, method, course_date, course_end_date, org_name, syllabus, syllabus_file_url, syllabus_file_name'
+        'course_id, name, hours, method, course_date, course_end_date, cert_type, org_name, syllabus, syllabus_file_url, syllabus_file_name'
       )
       .eq('id', cert.course_id)
       .maybeSingle();
@@ -190,9 +190,15 @@ function CertSummary({ cert, course }: { cert: any; course: any }) {
         <Pair icon={<Calendar className="w-4 h-4" />} label="Course date">
           {formatCourseDates(course.course_date, course.course_end_date)}
         </Pair>
-        <Pair icon={<GraduationCap className="w-4 h-4" />} label="Hours">
-          {Number(course.hours).toFixed(1)} · {METHOD_LABEL[course.method] || course.method}
-        </Pair>
+        {course.cert_type === 'participation' ? (
+          <Pair icon={<GraduationCap className="w-4 h-4" />} label="Format">
+            {METHOD_LABEL[course.method] || course.method}
+          </Pair>
+        ) : (
+          <Pair icon={<GraduationCap className="w-4 h-4" />} label="Hours">
+            {Number(course.hours).toFixed(1)} · {METHOD_LABEL[course.method] || course.method}
+          </Pair>
+        )}
         <Pair icon={<ShieldCheck className="w-4 h-4" />} label="Issued by">
           {course.org_name}
         </Pair>

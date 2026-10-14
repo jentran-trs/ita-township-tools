@@ -12,6 +12,7 @@ type CourseInput = {
   method: 'in_person' | 'online' | 'hybrid';
   course_date: string;
   course_end_date?: string | null;
+  cert_type?: 'training' | 'participation';
   syllabus?: string | null;
   syllabus_file_url?: string | null;
   syllabus_file_name?: string | null;
@@ -68,6 +69,7 @@ export async function POST(req: Request) {
       method: body.method,
       course_date: body.course_date,
       course_end_date: body.course_end_date || null,
+      cert_type: body.cert_type || 'training',
       syllabus: body.syllabus?.trim() || null,
       syllabus_file_url: body.syllabus_file_url?.trim() || null,
       syllabus_file_name: body.syllabus_file_name?.trim() || null,
@@ -123,6 +125,9 @@ function validateCourseInput(b: any): string | null {
   if (!b.course_date || typeof b.course_date !== 'string') return 'course_date is required';
   if (!/^\d{4}-\d{2}-\d{2}$/.test(b.course_date)) {
     return 'course_date must be YYYY-MM-DD';
+  }
+  if (b.cert_type !== undefined && !['training', 'participation'].includes(b.cert_type)) {
+    return 'cert_type must be training | participation';
   }
   if (b.course_end_date) {
     if (typeof b.course_end_date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(b.course_end_date)) {

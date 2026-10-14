@@ -28,6 +28,7 @@ type CertCard = {
     method: 'in_person' | 'online' | 'hybrid';
     course_date: string;
     course_end_date?: string | null;
+    cert_type?: 'training' | 'participation';
     org_name: string;
     logo_url: string;
   };
@@ -537,9 +538,15 @@ function CertificateCard({ cert }: { cert: CertCard }) {
             <Pair icon={<Calendar className="w-4 h-4" />} label="Date">
               {formatCourseDates(cert.course.course_date, cert.course.course_end_date)}
             </Pair>
-            <Pair icon={<GraduationCap className="w-4 h-4" />} label="Hours">
-              {cert.course.hours.toFixed(1)} · {METHOD_LABEL[cert.course.method]}
-            </Pair>
+            {cert.course.cert_type === 'participation' ? (
+              <Pair icon={<GraduationCap className="w-4 h-4" />} label="Format">
+                {METHOD_LABEL[cert.course.method]}
+              </Pair>
+            ) : (
+              <Pair icon={<GraduationCap className="w-4 h-4" />} label="Hours">
+                {cert.course.hours.toFixed(1)} · {METHOD_LABEL[cert.course.method]}
+              </Pair>
+            )}
             {(cert.attendee_township || cert.attendee_county) && (
               <Pair icon={<MapPin className="w-4 h-4" />} label="Organization" wide>
                 {[townshipLabel(cert.attendee_township), cert.attendee_county && `${cert.attendee_county} County`]

@@ -77,6 +77,12 @@ export async function PATCH(req: Request, { params }: RouteParams) {
     }
     patch.course_date = body.course_date;
   }
+  if (body.cert_type !== undefined) {
+    if (!['training', 'participation'].includes(body.cert_type)) {
+      return NextResponse.json({ error: 'cert_type invalid' }, { status: 400 });
+    }
+    patch.cert_type = body.cert_type;
+  }
   if ('course_end_date' in body) {
     const end = body.course_end_date || null;
     if (end !== null && (typeof end !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(end))) {

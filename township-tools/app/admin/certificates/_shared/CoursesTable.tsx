@@ -11,6 +11,7 @@ type Course = {
   name: string;
   course_date: string | null;
   course_end_date?: string | null;
+  cert_type?: 'training' | 'participation';
   method: string;
   hours: number | string;
   active_count: number | null;
@@ -95,11 +96,20 @@ export function CoursesTable({ initialCourses }: { initialCourses: Course[] }) {
                   <Link href={`/admin/certificates/${c.id}`} className="font-medium hover:underline">
                     {c.name}
                   </Link>
-                  <div className="text-xs text-gray-500 font-mono mt-0.5">{c.course_id}</div>
+                  <div className="text-xs text-gray-500 font-mono mt-0.5">
+                    {c.course_id}
+                    {c.cert_type === 'participation' && (
+                      <span className="ml-2 font-sans inline-block px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300">
+                        Participation
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-4 py-3 text-sm">{formatCourseDates(c.course_date, c.course_end_date, 'short')}</td>
                 <td className="px-4 py-3 text-sm">{METHOD_LABEL[c.method] || c.method}</td>
-                <td className="px-4 py-3 text-sm">{Number(c.hours).toFixed(1)}</td>
+                <td className="px-4 py-3 text-sm">
+                  {c.cert_type === 'participation' ? '—' : Number(c.hours).toFixed(1)}
+                </td>
                 <td className="px-4 py-3 text-sm text-right">{c.active_count ?? 0}</td>
                 <td className="px-4 py-3 text-sm text-right text-gray-500">
                   {formatDate(c.last_issued_at)}

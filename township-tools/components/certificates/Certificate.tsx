@@ -48,6 +48,9 @@ export type CertificateData = {
     course_date: string;
     course_end_date?: string | null;
     course_id: string;
+    // 'participation' drops all training wording (hours, IC 36-6-4-20
+    // statement, SBOA upload block). Missing means 'training'.
+    cert_type?: 'training' | 'participation';
   };
   credential_id: string;
   signatures: CertificateSignature[];
@@ -138,6 +141,8 @@ export function Certificate({ data, innerRef }: Props) {
     }
   })();
 
+  const isParticipation = course.cert_type === 'participation';
+
   const fullName = [recipient.first, recipient.last].filter(Boolean).join(' ').trim();
 
   const locationLine = (() => {
@@ -191,7 +196,7 @@ export function Certificate({ data, innerRef }: Props) {
       <RibbonBanner
         totalWidth={CERT_WIDTH}
         subtitle={`Authorized by the ${org_name}`}
-        title="Certificate of Completion"
+        title={isParticipation ? 'Certificate of Participation' : 'Certificate of Completion'}
         top={68}
         height={104}
       />
@@ -279,9 +284,8 @@ export function Certificate({ data, innerRef }: Props) {
               maxWidth: 820,
             }}
           >
-            {locationLine
-              ? <>of {locationLine}, for the successful completion of</>
-              : <>for the successful completion of</>}
+            {locationLine && <>of {locationLine}, </>}
+            {isParticipation ? 'in recognition of participation in' : 'for the successful completion of'}
           </div>
 
           {/* Course name — rendered in deep gold to stand out from the
@@ -311,9 +315,14 @@ export function Certificate({ data, innerRef }: Props) {
               justifyContent: 'center',
             }}
           >
-            <Pill>Completed&nbsp;·&nbsp;{formatCourseDates(course.course_date, course.course_end_date)}</Pill>
             <Pill>
-              {formatHours(course.hours)} Hours&nbsp;·&nbsp;{METHOD_LABEL[course.method]}
+              {isParticipation ? 'Attended' : 'Completed'}&nbsp;·&nbsp;
+              {formatCourseDates(course.course_date, course.course_end_date)}
+            </Pill>
+            <Pill>
+              {isParticipation
+                ? METHOD_LABEL[course.method]
+                : <>{formatHours(course.hours)} Hours&nbsp;·&nbsp;{METHOD_LABEL[course.method]}</>}
             </Pill>
           </div>
 
@@ -323,23 +332,25 @@ export function Certificate({ data, innerRef }: Props) {
               name/course/pills group. Width caps at ~580px so the text
               wraps to roughly the combined width of the two pills above
               rather than stretching across the full content area. */}
-          <div
-            style={{
-              fontFamily: FF_BODY,
-              fontStyle: 'italic',
-              fontSize: 13,
-              color: NAVY,
-              opacity: 0.85,
-              marginTop: 8,
-              maxWidth: 580,
-              lineHeight: 1.4,
-              textAlign: 'center',
-            }}
-          >
-            The Indiana Township Association certifies that this training course
-            is designed to meet applicable educational standards outlined in
-            Indiana Code IC&nbsp;36-6-4-20.
-          </div>
+          {!isParticipation && (
+            <div
+              style={{
+                fontFamily: FF_BODY,
+                fontStyle: 'italic',
+                fontSize: 13,
+                color: NAVY,
+                opacity: 0.85,
+                marginTop: 8,
+                maxWidth: 580,
+                lineHeight: 1.4,
+                textAlign: 'center',
+              }}
+            >
+              The Indiana Township Association certifies that this training course
+              is designed to meet applicable educational standards outlined in
+              Indiana Code IC&nbsp;36-6-4-20.
+            </div>
+          )}
         </div>
 
       </div>
@@ -428,7 +439,7 @@ export function Certificate({ data, innerRef }: Props) {
             letterSpacing: '0.02em',
           }}
         >
-          More trainings at ita-in.org
+          {isParticipation ? 'Learn more at ita-in.org' : 'More trainings at ita-in.org'}
         </div>
       </div>
 
@@ -484,55 +495,57 @@ export function Certificate({ data, innerRef }: Props) {
           upload URL beneath. Sits at the same bottom: 60 baseline as the
           signature on the right side, with a clear horizontal gap so
           nothing overlaps. */}
-      <div
-        data-cert-sboa-block
-        style={{
-          position: 'absolute',
-          left: 210,
-          bottom: 60,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 4,
-          width: 300,
-          textAlign: 'center',
-        }}
-      >
+      {!isParticipation && (
         <div
-          data-cert-sboa-text
+          data-cert-sboa-block
           style={{
-            fontFamily: FF_BODY,
-            fontSize: 8,
-            color: NAVY,
-            lineHeight: 1.3,
-            opacity: 0.9,
+            position: 'absolute',
+            left: 210,
+            bottom: 60,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 4,
+            width: 300,
+            textAlign: 'center',
           }}
         >
-          Per IC&nbsp;36-6-4-20, attendees are responsible for submitting proof of
-          training completion via the Indiana SBOA Election Official Certification
-          of Training Courses Upload Tool.
+          <div
+            data-cert-sboa-text
+            style={{
+              fontFamily: FF_BODY,
+              fontSize: 8,
+              color: NAVY,
+              lineHeight: 1.3,
+              opacity: 0.9,
+            }}
+          >
+            Per IC&nbsp;36-6-4-20, attendees are responsible for submitting proof of
+            training completion via the Indiana SBOA Election Official Certification
+            of Training Courses Upload Tool.
+          </div>
+          {sboaQrDataUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={sboaQrDataUrl}
+              alt="SBOA upload tool QR"
+              crossOrigin="anonymous"
+              style={{ width: 64, height: 64, display: 'block' }}
+            />
+          )}
+          <div
+            style={{
+              fontFamily: FF_BODY,
+              fontSize: 8,
+              color: NAVY,
+              opacity: 0.85,
+              letterSpacing: '0.02em',
+            }}
+          >
+            gateway.ifionline.org/sboa_EOTC
+          </div>
         </div>
-        {sboaQrDataUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={sboaQrDataUrl}
-            alt="SBOA upload tool QR"
-            crossOrigin="anonymous"
-            style={{ width: 64, height: 64, display: 'block' }}
-          />
-        )}
-        <div
-          style={{
-            fontFamily: FF_BODY,
-            fontSize: 8,
-            color: NAVY,
-            opacity: 0.85,
-            letterSpacing: '0.02em',
-          }}
-        >
-          gateway.ifionline.org/sboa_EOTC
-        </div>
-      </div>
+      )}
 
     </div>
   );

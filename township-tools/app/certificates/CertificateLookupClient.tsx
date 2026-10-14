@@ -29,6 +29,9 @@ type CertCard = {
     course_date: string;
     course_end_date?: string | null;
     cert_type?: 'training' | 'participation';
+    participation_statement?: string | null;
+    show_sboa?: boolean;
+    sboa_text?: string | null;
     org_name: string;
     logo_url: string;
   };

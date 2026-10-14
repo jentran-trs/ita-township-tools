@@ -44,6 +44,7 @@ export function CertificatePreviewClient() {
   const [longName, setLongName] = useState(false);
   const [longCourseName, setLongCourseName] = useState(false);
   const [participation, setParticipation] = useState(false);
+  const [participationSboa, setParticipationSboa] = useState(true);
   const [zoom, setZoom] = useState<number>(0.7);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [sboaQrDataUrl, setSboaQrDataUrl] = useState<string | null>(null);
@@ -67,6 +68,7 @@ export function CertificatePreviewClient() {
         ? 'Indiana Statutory Township Officials Continuing Education and Certification Workshop'
         : SAMPLE_BASE.course.name,
       cert_type: participation ? ('participation' as const) : ('training' as const),
+      show_sboa: participationSboa,
     };
     return {
       ...SAMPLE_BASE,
@@ -77,7 +79,7 @@ export function CertificatePreviewClient() {
       sboaQrDataUrl,
       verifyUrl,
     };
-  }, [showLocation, longName, longCourseName, participation, qrDataUrl, sboaQrDataUrl, verifyUrl]);
+  }, [showLocation, longName, longCourseName, participation, participationSboa, qrDataUrl, sboaQrDataUrl, verifyUrl]);
 
   useEffect(() => {
     let cancelled = false;
@@ -173,6 +175,13 @@ export function CertificatePreviewClient() {
                 checked={participation}
                 onChange={setParticipation}
               />
+              {participation && (
+                <ToggleRow
+                  label="Show SBOA QR on participation certificate"
+                  checked={participationSboa}
+                  onChange={setParticipationSboa}
+                />
+              )}
 
               <div>
                 <label className="block text-sm font-medium mb-1.5">

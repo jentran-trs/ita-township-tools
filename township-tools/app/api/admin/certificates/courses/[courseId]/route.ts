@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '../../../../../../lib/supabase';
 import { requireSuperadmin } from '../../../../../../lib/auth/superadmin';
+import {
+  PARTICIPATION_SBOA_TEXT_MAX,
+  PARTICIPATION_STATEMENT_MAX,
+} from '../../../../../../lib/certificates/participation';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -82,6 +86,27 @@ export async function PATCH(req: Request, { params }: RouteParams) {
       return NextResponse.json({ error: 'cert_type invalid' }, { status: 400 });
     }
     patch.cert_type = body.cert_type;
+  }
+  if ('participation_statement' in body) {
+    const text = typeof body.participation_statement === 'string' ? body.participation_statement.trim() : '';
+    if (text.length > PARTICIPATION_STATEMENT_MAX) {
+      return NextResponse.json(
+        { error: `Certificate statement must be ${PARTICIPATION_STATEMENT_MAX} characters or fewer` },
+        { status: 400 }
+      );
+    }
+    patch.participation_statement = text || null;
+  }
+  if (body.show_sboa !== undefined) patch.show_sboa = !!body.show_sboa;
+  if ('sboa_text' in body) {
+    const text = typeof body.sboa_text === 'string' ? body.sboa_text.trim() : '';
+    if (text.length > PARTICIPATION_SBOA_TEXT_MAX) {
+      return NextResponse.json(
+        { error: `SBOA wording must be ${PARTICIPATION_SBOA_TEXT_MAX} characters or fewer` },
+        { status: 400 }
+      );
+    }
+    patch.sboa_text = text || null;
   }
   if ('course_end_date' in body) {
     const end = body.course_end_date || null;

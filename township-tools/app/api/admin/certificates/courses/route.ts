@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '../../../../../lib/supabase';
 import { requireSuperadmin } from '../../../../../lib/auth/superadmin';
+import {
+  PARTICIPATION_SBOA_TEXT_MAX,
+  PARTICIPATION_STATEMENT_MAX,
+} from '../../../../../lib/certificates/participation';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -13,6 +17,9 @@ type CourseInput = {
   course_date: string;
   course_end_date?: string | null;
   cert_type?: 'training' | 'participation';
+  participation_statement?: string | null;
+  show_sboa?: boolean;
+  sboa_text?: string | null;
   syllabus?: string | null;
   syllabus_file_url?: string | null;
   syllabus_file_name?: string | null;
@@ -70,6 +77,9 @@ export async function POST(req: Request) {
       course_date: body.course_date,
       course_end_date: body.course_end_date || null,
       cert_type: body.cert_type || 'training',
+      participation_statement: body.participation_statement?.trim() || null,
+      show_sboa: !!body.show_sboa,
+      sboa_text: body.sboa_text?.trim() || null,
       syllabus: body.syllabus?.trim() || null,
       syllabus_file_url: body.syllabus_file_url?.trim() || null,
       syllabus_file_name: body.syllabus_file_name?.trim() || null,
@@ -128,6 +138,12 @@ function validateCourseInput(b: any): string | null {
   }
   if (b.cert_type !== undefined && !['training', 'participation'].includes(b.cert_type)) {
     return 'cert_type must be training | participation';
+  }
+  if (typeof b.participation_statement === 'string' && b.participation_statement.trim().length > PARTICIPATION_STATEMENT_MAX) {
+    return `Certificate statement must be ${PARTICIPATION_STATEMENT_MAX} characters or fewer`;
+  }
+  if (typeof b.sboa_text === 'string' && b.sboa_text.trim().length > PARTICIPATION_SBOA_TEXT_MAX) {
+    return `SBOA wording must be ${PARTICIPATION_SBOA_TEXT_MAX} characters or fewer`;
   }
   if (b.course_end_date) {
     if (typeof b.course_end_date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(b.course_end_date)) {

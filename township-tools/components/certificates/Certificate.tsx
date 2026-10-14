@@ -13,6 +13,10 @@ import {
 import { formatCourseDates } from '@/lib/certificates/date-range';
 import { cormorant, cutive, playfair } from '@/lib/certificates/fonts';
 import { townshipLabel } from '@/lib/certificates/township';
+import {
+  DEFAULT_PARTICIPATION_SBOA_TEXT,
+  DEFAULT_PARTICIPATION_STATEMENT,
+} from '@/lib/certificates/participation';
 import { GuillocheBorder } from './ornaments/GuillocheBorder';
 import { CornerFleuron } from './ornaments/CornerFleuron';
 import { RibbonBanner } from './ornaments/RibbonBanner';
@@ -51,6 +55,10 @@ export type CertificateData = {
     // 'participation' drops all training wording (hours, IC 36-6-4-20
     // statement, SBOA upload block). Missing means 'training'.
     cert_type?: 'training' | 'participation';
+    // Participation-only options; NULL text falls back to the defaults.
+    participation_statement?: string | null;
+    show_sboa?: boolean;
+    sboa_text?: string | null;
   };
   credential_id: string;
   signatures: CertificateSignature[];
@@ -142,6 +150,10 @@ export function Certificate({ data, innerRef }: Props) {
   })();
 
   const isParticipation = course.cert_type === 'participation';
+  const showSboa = !isParticipation || !!course.show_sboa;
+  const participationStatement =
+    course.participation_statement?.trim() || DEFAULT_PARTICIPATION_STATEMENT;
+  const participationSboaText = course.sboa_text?.trim() || DEFAULT_PARTICIPATION_SBOA_TEXT;
 
   const fullName = [recipient.first, recipient.last].filter(Boolean).join(' ').trim();
 
@@ -326,31 +338,36 @@ export function Certificate({ data, innerRef }: Props) {
             </Pill>
           </div>
 
-          {/* IC 36-6-4-20 certification statement. Small italic line sits
+          {/* Statement line: the IC 36-6-4-20 certification on training
+              certs, or the course's participation wording. Small italic line sits
               directly under the pills as part of the upper block, so the
               upper-block DOM-prep translateY shifts it together with the
               name/course/pills group. Width caps at ~580px so the text
               wraps to roughly the combined width of the two pills above
               rather than stretching across the full content area. */}
-          {!isParticipation && (
-            <div
-              style={{
-                fontFamily: FF_BODY,
-                fontStyle: 'italic',
-                fontSize: 13,
-                color: NAVY,
-                opacity: 0.85,
-                marginTop: 8,
-                maxWidth: 580,
-                lineHeight: 1.4,
-                textAlign: 'center',
-              }}
-            >
-              The Indiana Township Association certifies that this training course
-              is designed to meet applicable educational standards outlined in
-              Indiana Code IC&nbsp;36-6-4-20.
-            </div>
-          )}
+          <div
+            style={{
+              fontFamily: FF_BODY,
+              fontStyle: 'italic',
+              fontSize: 13,
+              color: NAVY,
+              opacity: 0.85,
+              marginTop: 8,
+              maxWidth: 580,
+              lineHeight: 1.4,
+              textAlign: 'center',
+            }}
+          >
+            {isParticipation ? (
+              participationStatement
+            ) : (
+              <>
+                The Indiana Township Association certifies that this training course
+                is designed to meet applicable educational standards outlined in
+                Indiana Code IC&nbsp;36-6-4-20.
+              </>
+            )}
+          </div>
         </div>
 
       </div>
@@ -495,7 +512,7 @@ export function Certificate({ data, innerRef }: Props) {
           upload URL beneath. Sits at the same bottom: 60 baseline as the
           signature on the right side, with a clear horizontal gap so
           nothing overlaps. */}
-      {!isParticipation && (
+      {showSboa && (
         <div
           data-cert-sboa-block
           style={{
@@ -520,9 +537,15 @@ export function Certificate({ data, innerRef }: Props) {
               opacity: 0.9,
             }}
           >
-            Per IC&nbsp;36-6-4-20, attendees are responsible for submitting proof of
-            training completion via the Indiana SBOA Election Official Certification
-            of Training Courses Upload Tool.
+            {isParticipation ? (
+              participationSboaText
+            ) : (
+              <>
+                Per IC&nbsp;36-6-4-20, attendees are responsible for submitting proof of
+                training completion via the Indiana SBOA Election Official Certification
+                of Training Courses Upload Tool.
+              </>
+            )}
           </div>
           {sboaQrDataUrl && (
             // eslint-disable-next-line @next/next/no-img-element

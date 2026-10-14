@@ -5,6 +5,12 @@ import { useRouter } from 'next/navigation';
 import { Check, FileText, Loader2, RefreshCw, Trash2, Upload, X } from 'lucide-react';
 import { SignatureUpload } from '@/components/certificates/SignatureUpload';
 import { suggestCourseId } from '@/lib/certificates/course-id';
+import {
+  DEFAULT_PARTICIPATION_SBOA_TEXT,
+  DEFAULT_PARTICIPATION_STATEMENT,
+  PARTICIPATION_SBOA_TEXT_MAX,
+  PARTICIPATION_STATEMENT_MAX,
+} from '@/lib/certificates/participation';
 
 type Signature = {
   signer_name: string;
@@ -23,6 +29,9 @@ export type CourseFormInitial = {
   course_date: string;
   course_end_date: string;
   cert_type: 'training' | 'participation';
+  participation_statement: string;
+  show_sboa: boolean;
+  sboa_text: string;
   syllabus: string;
   syllabus_file_url: string | null;
   syllabus_file_name: string | null;
@@ -45,6 +54,9 @@ export function CourseForm({ mode, initial, existingCourseIds, defaultSignature,
   const router = useRouter();
   const [form, setForm] = useState<CourseFormInitial>(() => ({
     ...initial,
+    // Pre-fill the default wording so admins can see and tweak it.
+    participation_statement: initial.participation_statement || DEFAULT_PARTICIPATION_STATEMENT,
+    sboa_text: initial.sboa_text || DEFAULT_PARTICIPATION_SBOA_TEXT,
     // Cap at exactly one signer. Legacy courses with two are trimmed.
     signatures: initial.signatures.slice(0, 1),
   }));
@@ -137,6 +149,10 @@ export function CourseForm({ mode, initial, existingCourseIds, defaultSignature,
         // Participation certificates don't show hours; store 0 if left blank.
         hours: parseFloat(form.hours) || 0,
         cert_type: form.cert_type,
+        // Blank text falls back to the default wording on the certificate.
+        participation_statement: form.participation_statement.trim() || null,
+        show_sboa: form.show_sboa,
+        sboa_text: form.sboa_text.trim() || null,
         method: form.method,
         course_date: form.course_date,
         // A same-day end date is just a single-day course.
@@ -343,7 +359,7 @@ export function CourseForm({ mode, initial, existingCourseIds, defaultSignature,
             hint={
               form.cert_type === 'training'
                 ? 'Certificate of Completion — shows training hours, the IC 36-6-4-20 statement and the SBOA upload QR.'
-                : 'Certificate of Participation — no training wording, hours, IC 36-6-4-20 statement or SBOA upload QR.'
+                : 'Certificate of Participation — no training wording or hours. Set its statement and the optional SBOA QR below.'
             }
           >
             <select
@@ -357,6 +373,50 @@ export function CourseForm({ mode, initial, existingCourseIds, defaultSignature,
               <option value="participation">Participation (Certificate of Participation)</option>
             </select>
           </Field>
+
+          {form.cert_type === 'participation' && (
+            <>
+              <Field
+                label="Certificate statement"
+                className="sm:col-span-2"
+                hint={`Small italic line under the date, in place of the IC 36-6-4-20 statement. Leave blank to use the default wording. ${form.participation_statement.length}/${PARTICIPATION_STATEMENT_MAX}`}
+              >
+                <textarea
+                  value={form.participation_statement}
+                  maxLength={PARTICIPATION_STATEMENT_MAX}
+                  onChange={(e) => setForm((f) => ({ ...f, participation_statement: e.target.value }))}
+                  className={`${inputCls} min-h-[72px]`}
+                />
+              </Field>
+
+              <div className="sm:col-span-2">
+                <label className="inline-flex items-center gap-2 text-sm font-medium cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.show_sboa}
+                    onChange={(e) => setForm((f) => ({ ...f, show_sboa: e.target.checked }))}
+                    className="accent-amber-500"
+                  />
+                  Show the SBOA upload QR code on the certificate
+                </label>
+              </div>
+
+              {form.show_sboa && (
+                <Field
+                  label="Wording above the SBOA QR code"
+                  className="sm:col-span-2"
+                  hint={`Leave blank to use the default wording. ${form.sboa_text.length}/${PARTICIPATION_SBOA_TEXT_MAX}`}
+                >
+                  <textarea
+                    value={form.sboa_text}
+                    maxLength={PARTICIPATION_SBOA_TEXT_MAX}
+                    onChange={(e) => setForm((f) => ({ ...f, sboa_text: e.target.value }))}
+                    className={`${inputCls} min-h-[72px]`}
+                  />
+                </Field>
+              )}
+            </>
+          )}
 
           {form.cert_type === 'training' && (
             <Field label="Training hours" required hint="Decimal, rendered as e.g. 5.0">

@@ -5,6 +5,7 @@ export type AttendeeRow = {
   first: string;
   last: string;
   email: string;
+  title: string | null;
   township: string | null;
   county: string | null;
   // Diagnostic
@@ -16,6 +17,7 @@ type ColumnIndex = {
   first: number;
   last: number;
   email: number;
+  title: number;
   township: number;
   county: number;
   organization: number;
@@ -25,6 +27,8 @@ const HEADER_ALIASES: Record<keyof ColumnIndex, string[]> = {
   first: ['firstname', 'first', 'givenname', 'fname'],
   last: ['lastname', 'last', 'surname', 'familyname', 'lname'],
   email: ['email', 'emailaddress', 'mail', 'e-mail'],
+  // AMO exports use "Title". Shown on event badges.
+  title: ['title', 'jobtitle', 'position'],
   township: ['township', 'twp'],
   county: ['county'],
   // AMO exports combine township + county into one "Organization" column,
@@ -53,7 +57,7 @@ function valueToString(v: any): string {
 }
 
 function findColumns(headerCells: any[]): { index: ColumnIndex; missing: string[] } {
-  const idx: ColumnIndex = { first: -1, last: -1, email: -1, township: -1, county: -1, organization: -1 };
+  const idx: ColumnIndex = { first: -1, last: -1, email: -1, title: -1, township: -1, county: -1, organization: -1 };
   for (let c = 0; c < headerCells.length; c++) {
     const norm = normalizeHeader(valueToString(headerCells[c]));
     if (!norm) continue;
@@ -129,6 +133,7 @@ export async function parseAttendeeWorkbook(buffer: Buffer, filename: string): P
     const first = valueToString(r[index.first]);
     const last = valueToString(r[index.last]);
     const email = valueToString(r[index.email]);
+    const title = index.title >= 0 ? valueToString(r[index.title]) : '';
     let township = index.township >= 0 ? valueToString(r[index.township]) : '';
     let county = index.county >= 0 ? valueToString(r[index.county]) : '';
 
@@ -156,6 +161,7 @@ export async function parseAttendeeWorkbook(buffer: Buffer, filename: string): P
       first,
       last,
       email: email.toLowerCase().trim(),
+      title: title || null,
       // Store the bare township name ("Oregon"); the certificate appends the
       // word "Township" when displaying.
       township: stripTownshipSuffix(township) || null,

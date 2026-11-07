@@ -316,7 +316,6 @@ export default function MergerMap({
                       setPinned((cur) => (cur === c.name ? null : c.name));
                     }}
                   >
-                    <title>{c.name}</title>
                   </path>
                 );
               })}
@@ -758,14 +757,12 @@ function MeetingDetails({
         <p className="flex items-start gap-1.5 text-gray-700 mt-1">
           <User className="w-4 h-4 mt-0.5 flex-none" />
           <span>
-            Local contact: {meeting.contact_name}
+            Local contact:
+            {meeting.contact_name && <span className="block">{meeting.contact_name}</span>}
             {meeting.contact_email && (
-              <>
-                {meeting.contact_name && <br />}
-                <a href={`mailto:${meeting.contact_email}`} className="underline break-all" style={{ color: NAVY }}>
-                  {meeting.contact_email}
-                </a>
-              </>
+              <a href={`mailto:${meeting.contact_email}`} className="block underline break-all" style={{ color: NAVY }}>
+                {meeting.contact_email}
+              </a>
             )}
           </span>
         </p>

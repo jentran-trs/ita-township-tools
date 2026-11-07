@@ -179,8 +179,10 @@
     }
     if (m.location) h += '<p class="mm-d-row"><span class="glyphicon glyphicon-map-marker"></span>' + esc(m.location) + '</p>';
     if (m.contact_name || m.contact_email){
-      h += '<p class="mm-d-row"><span class="glyphicon glyphicon-user"></span>Local contact: ' + esc(m.contact_name || "");
-      if (m.contact_email) h += (m.contact_name ? '<br><span style="padding-left:21px;">' : '') + (linkEmail ? '<a href="mailto:' + esc(m.contact_email) + '" style="color:#2e5f7f;text-decoration:underline;word-break:break-all;">' + esc(m.contact_email) + '</a>' : esc(m.contact_email)) + (m.contact_name ? '</span>' : '');
+      /* "Local contact:" on its own line; name and email each on their own line below, indented to line up with the text. */
+      h += '<p class="mm-d-row"><span class="glyphicon glyphicon-user"></span>Local contact:';
+      if (m.contact_name) h += '<span style="display:block;padding-left:21px;">' + esc(m.contact_name) + '</span>';
+      if (m.contact_email) h += '<span style="display:block;padding-left:21px;word-break:break-all;">' + (linkEmail ? '<a href="mailto:' + esc(m.contact_email) + '" style="color:#2e5f7f;text-decoration:underline;">' + esc(m.contact_email) + '</a>' : esc(m.contact_email)) + '</span>';
       h += '</p>';
     }
     if (m.notes) h += '<p class="mm-d-row" style="white-space:pre-line;color:#555;">' + esc(m.notes) + '</p>';
@@ -195,7 +197,7 @@
       (function(c){
         var p = document.createElementNS(SVGNS, "path");
         p.setAttribute("d", c[1]); p.setAttribute("class", "mm-c"); p.setAttribute("fill", C_NONE);
-        var t = document.createElementNS(SVGNS, "title"); t.textContent = c[0]; p.appendChild(t);
+        p.setAttribute("aria-label", c[0] + " County"); p.setAttribute("data-county", c[0]);
         p.addEventListener("mousemove", function(e){ showTip(c[0], e); });
         p.addEventListener("mouseleave", hideTip);
         p.addEventListener("click", function(e){ onCounty(c[0]); });

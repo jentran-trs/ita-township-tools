@@ -1,3 +1,5 @@
+import { redirect } from 'next/navigation';
+import { isSuperadmin } from '@/lib/auth/superadmin';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import MergerMap from '@/components/merger-map/MergerMap';
 import { DEFAULT_SETTINGS, type CountyMeeting, type MapSettings } from '@/lib/merger-map/types';
@@ -8,9 +10,15 @@ export const metadata = {
   title: 'Township Merger Meetings · Indiana Township Association',
 };
 
-// Public, iframe-embeddable map of county merger meetings. Read-only for
-// visitors; Lydia unlocks editing with the MERGER_MAP_PASSCODE passcode.
+// Superadmin-only copy of the merger meeting map. The public version is the
+// AMO paste block on the ITA website (lib/merger-map/amo), which reads and
+// saves through /api/merger-map/*. Editing here still unlocks with the
+// MERGER_MAP_PASSCODE passcode, same as on the ITA site.
 export default async function MergerMapPage() {
+  if (!(await isSuperadmin())) {
+    redirect('/admin/contact-verification');
+  }
+
   let meetings: CountyMeeting[] = [];
   let settings: MapSettings = DEFAULT_SETTINGS;
   let loadError = false;

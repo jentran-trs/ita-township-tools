@@ -217,23 +217,6 @@ export default function MergerMap({
     }
   }
 
-  // ---- iframe auto-height --------------------------------------------------
-  // The ITA website embed snippet listens for this and resizes the iframe so
-  // the page never shows a nested scrollbar.
-  const rootRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (typeof window === 'undefined' || window.parent === window || !rootRef.current) return;
-    const post = () =>
-      window.parent.postMessage(
-        { type: 'ita-merger-map-height', height: Math.ceil(rootRef.current!.getBoundingClientRect().height) },
-        '*',
-      );
-    const ro = new ResizeObserver(post);
-    ro.observe(rootRef.current);
-    post();
-    return () => ro.disconnect();
-  }, []);
-
   function fillFor(county: string) {
     const m = byCounty.get(county);
     if (!m) return NONE;
@@ -245,7 +228,7 @@ export default function MergerMap({
   const pinnedMeeting = pinned ? byCounty.get(pinned) : undefined;
 
   return (
-    <div ref={rootRef} style={{ background: CREAM, color: '#333' }} className="font-sans">
+    <div style={{ background: CREAM, color: '#333' }} className="font-sans">
       <div className="max-w-5xl mx-auto px-4 py-6">
         {/* Header */}
         <div className="text-center mb-5">

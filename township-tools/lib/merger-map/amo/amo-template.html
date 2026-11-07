@@ -333,7 +333,8 @@
 
   function openLogin(){
     openModal('<h3>Edit the map</h3><form id="mm-login-form"><p style="font-size:16px;color:#555;margin:0 0 12px 0;">Enter the editor passcode to update meetings.</p>' +
-      field("Passcode", "mm-pass", "", "password") + '<p class="mm-msg" id="mm-login-msg"></p><div class="mm-actions"><button type="submit" class="mm-btn" id="mm-login-go">Unlock</button></div></form>');
+      field("Passcode", "mm-pass", "", "text") + '<p class="mm-msg" id="mm-login-msg"></p><div class="mm-actions"><button type="submit" class="mm-btn" id="mm-login-go">Unlock</button></div></form>');
+    $("mm-pass").setAttribute("autocomplete", "off");
     $("mm-pass").focus();
     $("mm-login-form").onsubmit = function(e){
       e.preventDefault();

@@ -495,7 +495,8 @@ export default function MergerMap({
           <form onSubmit={unlock} className="space-y-3">
             <p className="text-sm text-gray-600">Enter the editor passcode to update meetings.</p>
             <input
-              type="password"
+              type="text"
+              autoComplete="off"
               autoFocus
               value={loginInput}
               onChange={(e) => setLoginInput(e.target.value)}

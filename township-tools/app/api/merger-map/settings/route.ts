@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { requireMapEditor } from '@/lib/merger-map/auth';
+import { corsPreflight, withCors } from '@/lib/merger-map/cors';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+export function OPTIONS() {
+  return corsPreflight();
+}
 
 function text(v: unknown, max: number): string | null {
   if (typeof v !== 'string') return null;
@@ -14,13 +19,13 @@ function text(v: unknown, max: number): string | null {
 // PUT — passcode. Updates the title, intro and "contact for details" info.
 export async function PUT(req: Request) {
   const authErr = await requireMapEditor(req);
-  if (authErr) return authErr;
+  if (authErr) return withCors(authErr);
 
   let body: any;
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    return withCors(NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }));
   }
 
   const row = {
@@ -39,6 +44,6 @@ export async function PUT(req: Request) {
     .upsert(row, { onConflict: 'id' })
     .select('title, intro, contact_name, contact_email, contact_phone')
     .single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true, settings: data });
+  if (error) return withCors(NextResponse.json({ error: error.message }, { status: 500 }));
+  return withCors(NextResponse.json({ ok: true, settings: data }));
 }

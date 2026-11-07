@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Sun, Moon } from "lucide-react";
 
 // Floating light/dark theme toggle. Adds/removes the `dark` class on <html>;
@@ -8,7 +9,11 @@ import { Sun, Moon } from "lucide-react";
 // The preference is read by an inline script in app/layout.tsx before React
 // hydrates so users with a saved preference don't see a flash of the wrong
 // theme on first paint.
+// Pages embedded in iframes on the ITA website have their own fixed look.
+const HIDDEN_ON = ["/merger-map"];
+
 export default function ThemeToggle() {
+  const pathname = usePathname();
   const [dark, setDark] = useState(false);
 
   useEffect(() => {
@@ -29,6 +34,8 @@ export default function ThemeToggle() {
       }
     } catch {}
   };
+
+  if (HIDDEN_ON.some((p) => pathname?.startsWith(p))) return null;
 
   return (
     <button

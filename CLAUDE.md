@@ -38,6 +38,7 @@ Place in `township-tools/.env.local`:
 | `RESEND_API_KEY`, optional `DIGEST_FROM_EMAIL` | Weekly Contact Verification digest email |
 | `CRON_SECRET` | Authorizes `/api/cron/*` (Vercel sends as `Authorization: Bearer …`) |
 | `CV_SUPERADMIN_PASSWORD` | Optional override of the hardcoded fallback (`TownshipVerify@2026`) for the password-cookie path to ITA superadmin |
+| `MERGER_MAP_PASSCODE` | Passcode that unlocks editing on `/merger-map` (editing is disabled if unset) |
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | Optional GA4 tag in `app/layout.tsx` |
 
 ## High-level architecture
@@ -49,6 +50,7 @@ This is a multi-tool SaaS for Indiana townships. The tools share auth, database,
 | Tool | Path | Access |
 | --- | --- | --- |
 | SB 270 Scoring Tool | `/tools/scoring-tool` | Public, **completely bypasses Clerk middleware** |
+| Merger Meeting Map | `/merger-map` | Public, iframe-embedded on the ITA site; skips Clerk middleware. Editing unlocks with `MERGER_MAP_PASSCODE` (sent per request in the `x-merger-map-passcode` header, not a cookie, because third-party cookies are blocked in iframes) or ITA superadmin. Data in `merger_map_counties` / `merger_map_settings` (v31) |
 | Verify Contacts Portal | `/verify-contacts/...` | Public; reviewer enters name+email, no auth |
 | Asset Collection Form | `/contribute/[shareId]`, `/asset-collection` | Public via project share link |
 | Report Builder | `/tools/report-builder` | Clerk org admin only |

@@ -18,6 +18,7 @@ const isPublicRoute = createRouteMatcher([
   '/tools/scoring-tool(.*)',
   '/certificates(.*)',
   '/qa(.*)',
+  '/api/merger-map(.*)',
   '/',
 ]);
 

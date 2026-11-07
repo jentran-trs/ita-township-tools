@@ -158,7 +158,8 @@
     return out.sort();
   }
 
-  function detailsHTML(name){
+  /* linkEmail: true in the tapped/clicked card (clickable); the hover box can't be clicked. */
+  function detailsHTML(name, linkEmail){
     var m = state.meetings[name], h = '<p class="mm-d-name">' + esc(name) + ' County</p>';
     if (!m) return h + '<p class="mm-d-row">No merger meeting planned yet.</p>';
     if (m.status === "pending") h += '<p class="mm-d-row">Meeting not yet scheduled.</p>';
@@ -167,7 +168,11 @@
       h += '<p class="mm-d-row"><span class="glyphicon glyphicon-calendar"></span>' + (isPast(m) ? "Held " : "") + '<strong>' + esc(fmtDate(m.meeting_date) || "Date to be announced") + '</strong>' + (t ? '<br><span style="padding-left:21px;">' + esc(t) + '</span>' : '') + '</p>';
     }
     if (m.location) h += '<p class="mm-d-row"><span class="glyphicon glyphicon-map-marker"></span>' + esc(m.location) + '</p>';
-    if (m.contact_name) h += '<p class="mm-d-row"><span class="glyphicon glyphicon-user"></span>Local contact: ' + esc(m.contact_name) + '</p>';
+    if (m.contact_name || m.contact_email){
+      h += '<p class="mm-d-row"><span class="glyphicon glyphicon-user"></span>Local contact: ' + esc(m.contact_name || "");
+      if (m.contact_email) h += (m.contact_name ? '<br><span style="padding-left:21px;">' : '') + (linkEmail ? '<a href="mailto:' + esc(m.contact_email) + '" style="color:#2e5f7f;text-decoration:underline;word-break:break-all;">' + esc(m.contact_email) + '</a>' : esc(m.contact_email)) + (m.contact_name ? '</span>' : '');
+      h += '</p>';
+    }
     if (m.notes) h += '<p class="mm-d-row" style="white-space:pre-line;color:#555;">' + esc(m.notes) + '</p>';
     return h;
   }
@@ -236,7 +241,7 @@
     if (state.passcode) { openCountyEditor(name); return; }
     if (state.pinned === name) { unpin(); return; }
     state.pinned = name;
-    $("mm-pin-body").innerHTML = detailsHTML(name);
+    $("mm-pin-body").innerHTML = detailsHTML(name, true);
     $("mm-pin").style.display = "block";
     highlight(name);
     if (window.innerWidth <= 860) {
@@ -353,6 +358,7 @@
       '<div id="mm-c-details">' +
         '<div class="mm-row2" id="mm-c-when">' + field("Date", "mm-c-date", m.meeting_date, "date") + field("Time (ET)", "mm-c-time", m.meeting_time ? m.meeting_time.slice(0,5) : "", "time") + '</div>' +
         field("Local contact (optional)", "mm-c-contact", m.contact_name, "text", "e.g. Donna Schwartz") +
+        field("Local contact email (optional)", "mm-c-cemail", m.contact_email, "email", "e.g. name@example.org") +
         field("Location (optional)", "mm-c-loc", m.location, "text", "e.g. Noble County Public Library, Albion") +
         area("Note shown to visitors (optional)", "mm-c-notes", m.notes) +
       '</div><p class="mm-msg" id="mm-c-msg"></p><div class="mm-actions"><button type="submit" class="mm-btn" id="mm-c-save">Save</button></div></form>');
@@ -369,7 +375,7 @@
       var status = (document.querySelector('#ita-mm input[name="mm-status"]:checked') || {}).value || "none";
       $("mm-c-save").disabled = true; $("mm-c-msg").textContent = "";
       api("/county", "PUT", { county: name, status: status, meeting_date: val("mm-c-date"), meeting_time: val("mm-c-time"),
-        contact_name: val("mm-c-contact"), location: val("mm-c-loc"), notes: val("mm-c-notes") })
+        contact_name: val("mm-c-contact"), contact_email: val("mm-c-cemail"), location: val("mm-c-loc"), notes: val("mm-c-notes") })
       .then(function(j){
         if (j.__status === 403){ setEditing(null); closeModal(); alert("Your editor session ended. Please unlock again."); return; }
         if (!j.ok) throw new Error(j.error || "Save failed");

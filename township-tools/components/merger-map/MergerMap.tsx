@@ -31,6 +31,7 @@ type Draft = {
   county: string;
   status: EditStatus;
   contact_name: string;
+  contact_email: string;
   meeting_date: string;
   meeting_time: string;
   location: string;
@@ -154,6 +155,7 @@ export default function MergerMap({
       county,
       status: m?.status ?? 'none',
       contact_name: m?.contact_name ?? '',
+      contact_email: m?.contact_email ?? '',
       meeting_date: m?.meeting_date ?? '',
       meeting_time: m?.meeting_time ? m.meeting_time.slice(0, 5) : '',
       location: m?.location ?? '',
@@ -579,6 +581,15 @@ export default function MergerMap({
                     placeholder="e.g. Donna Schwartz"
                   />
                 </Field>
+                <Field label="Local contact email (optional)">
+                  <input
+                    type="email"
+                    value={draft.contact_email}
+                    onChange={(e) => setDraft({ ...draft, contact_email: e.target.value })}
+                    className="input"
+                    placeholder="e.g. name@example.org"
+                  />
+                </Field>
                 <Field label="Location (optional)">
                   <input
                     value={draft.location}
@@ -743,10 +754,20 @@ function MeetingDetails({
           <span>{meeting.location}</span>
         </p>
       )}
-      {meeting?.contact_name && (
+      {(meeting?.contact_name || meeting?.contact_email) && (
         <p className="flex items-start gap-1.5 text-gray-700 mt-1">
           <User className="w-4 h-4 mt-0.5 flex-none" />
-          <span>Local contact: {meeting.contact_name}</span>
+          <span>
+            Local contact: {meeting.contact_name}
+            {meeting.contact_email && (
+              <>
+                {meeting.contact_name && <br />}
+                <a href={`mailto:${meeting.contact_email}`} className="underline break-all" style={{ color: NAVY }}>
+                  {meeting.contact_email}
+                </a>
+              </>
+            )}
+          </span>
         </p>
       )}
       {meeting?.notes && <p className="text-gray-600 mt-1 whitespace-pre-line">{meeting.notes}</p>}

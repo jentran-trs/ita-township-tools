@@ -63,6 +63,7 @@ export async function PUT(req: Request) {
     county,
     status,
     contact_name: text(body?.contact_name, 200),
+    contact_email: text(body?.contact_email, 200),
     meeting_date: status === 'scheduled' ? date : null,
     meeting_time: status === 'scheduled' ? time : null,
     location: text(body?.location, 300),
@@ -73,7 +74,7 @@ export async function PUT(req: Request) {
   const { data, error } = await supabase
     .from('merger_map_counties')
     .upsert(row, { onConflict: 'county' })
-    .select('county, status, contact_name, meeting_date, meeting_time, location, notes')
+    .select('*')
     .single();
   if (error) return withCors(NextResponse.json({ error: error.message }, { status: 500 }));
   return withCors(NextResponse.json({ ok: true, meeting: data }));

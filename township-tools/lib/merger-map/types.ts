@@ -4,6 +4,7 @@ export type CountyMeeting = {
   county: string;
   status: MeetingStatus;
   contact_name: string | null;
+  contact_email?: string | null;
   meeting_date: string | null; // YYYY-MM-DD
   meeting_time: string | null; // HH:MM[:SS], Eastern
   location: string | null;

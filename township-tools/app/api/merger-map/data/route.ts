@@ -16,7 +16,7 @@ export async function GET() {
   const [m, s] = await Promise.all([
     supabase
       .from('merger_map_counties')
-      .select('county, status, contact_name, meeting_date, meeting_time, location, notes'),
+      .select('*'),
     supabase
       .from('merger_map_settings')
       .select('title, intro, contact_name, contact_email, contact_phone')

@@ -38,7 +38,7 @@ Place in `township-tools/.env.local`:
 | `RESEND_API_KEY`, optional `DIGEST_FROM_EMAIL` | Weekly Contact Verification digest email |
 | `CRON_SECRET` | Authorizes `/api/cron/*` (Vercel sends as `Authorization: Bearer …`) |
 | `CV_SUPERADMIN_PASSWORD` | Optional override of the hardcoded fallback (`TownshipVerify@2026`) for the password-cookie path to ITA superadmin |
-| `MERGER_MAP_PASSCODE` | Passcode that unlocks editing on `/merger-map` (editing is disabled if unset) |
+| `MERGER_MAP_PASSCODE` | Passcode that unlocks editing on the merger meeting map (ITA site and `/admin/merger-map`); editing is disabled if unset |
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | Optional GA4 tag in `app/layout.tsx` |
 
 ## High-level architecture

@@ -9,16 +9,16 @@
 <style type="text/css">
 #ita-mm{background:#FBF8EF;padding:30px 15px;font-family:'Instrument Sans',Arial,Helvetica,sans-serif;color:#333;}
 #ita-mm *{box-sizing:border-box;}
-#ita-mm .mm-wrap{max-width:1100px;margin:0 auto;}
+#ita-mm .mm-wrap{max-width:1240px;margin:0 auto;}
 #ita-mm .mm-head{text-align:center;margin-bottom:22px;}
 #ita-mm .mm-title{margin:0 0 10px 0;font-size:36px;font-weight:700;letter-spacing:-0.5px;line-height:1.15;color:#2e5f7f;}
 #ita-mm .mm-intro{margin:0 auto;max-width:720px;font-size:17px;line-height:1.6;color:#555;white-space:pre-line;}
 #ita-mm .mm-grid{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;}
-#ita-mm .mm-mapcol{flex:1 1 520px;min-width:0;}
-#ita-mm .mm-side{flex:0 1 320px;width:320px;}
+#ita-mm .mm-mapcol{flex:1 1 600px;min-width:0;}
+#ita-mm .mm-side{flex:0 1 290px;width:290px;}
 #ita-mm .mm-card{background:#fff;border-radius:8px;box-shadow:0 4px 8px rgba(0,0,0,0.05);border:1px solid rgba(46,95,127,0.1);padding:18px;margin-bottom:18px;}
 #ita-mm .mm-map{position:relative;padding:12px;}
-#ita-mm svg{display:block;width:100%;height:auto;max-height:82vh;margin:0 auto;}
+#ita-mm svg{display:block;width:100%;max-width:820px;height:auto;margin:0 auto;}
 #ita-mm svg path.mm-c{cursor:pointer;stroke:#555;stroke-width:0.7;stroke-linejoin:round;transition:fill 0.15s ease;}
 #ita-mm svg path.mm-c:hover{filter:brightness(0.94);}
 #ita-mm .mm-h2{margin:0 0 12px 0;font-size:20px;font-weight:700;color:#2e5f7f;padding-bottom:6px;border-bottom:2px solid #f0ad4e;}
@@ -226,13 +226,13 @@
     for (var j=0;j<COUNTIES.length;j++){
       var c = COUNTIES[j], name = c[0];
       pathEls[name].setAttribute("fill", fillFor(name));
-      labelLayer.appendChild(svgText(c[2], c[3], name, name.length > 9 ? 8.5 : 10, state.meetings[name] ? 700 : 500, "#222"));
+      labelLayer.appendChild(svgText(c[2], c[3], name, name.length > 10 ? 9.5 : name.length > 8 ? 10.5 : 12, state.meetings[name] ? 700 : 500, "#222"));
       if (order[name]){
         var circ = document.createElementNS(SVGNS, "circle");
-        circ.setAttribute("cx", c[2]); circ.setAttribute("cy", c[3]-15); circ.setAttribute("r", 8);
+        circ.setAttribute("cx", c[2]); circ.setAttribute("cy", c[3]-17); circ.setAttribute("r", 9);
         circ.setAttribute("fill","#fff"); circ.setAttribute("stroke",NAVY); circ.setAttribute("stroke-width","1.4");
         badgeLayer.appendChild(circ);
-        badgeLayer.appendChild(svgText(c[2], c[3]-15, String(order[name]), 9.5, 700, NAVY));
+        badgeLayer.appendChild(svgText(c[2], c[3]-17, String(order[name]), 11, 700, NAVY));
       }
     }
     highlight(state.pinned);

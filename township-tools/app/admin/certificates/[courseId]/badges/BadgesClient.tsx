@@ -395,21 +395,14 @@ function RegistrantsCard({
     }
   };
 
-  const saveHours = (r: Registrant, date: string, value: string) => {
-    const current = r.day_hours || {};
-    const prev = current[date];
-    const next: Record<string, number | null> = { ...current, [date]: value === '' ? null : parseFloat(value) };
-    if ((prev ?? '') === (value === '' ? '' : parseFloat(value))) return;
-    call(r.id, { method: 'PATCH', body: JSON.stringify({ day_hours: next }) });
-  };
-
   return (
     <section className={card}>
       <h2 className="text-base font-bold mb-1">Registrants ({registrants.length})</h2>
       {multiDay && (
         <p className="text-sm text-gray-500 mb-3">
-          Partial credit: for someone who missed a day, enter the hours for each day they attended. Their certificate
-          will show the total instead of the full {Number(course.hours)} hours. Leave blank for full credit.
+          Everyone gets full credit ({Number(course.hours)} hours) unless you click <strong>Partial credit</strong>{' '}
+          for someone who missed a day and enter the hours for each day they attended. Their certificate then shows
+          the total of those hours.
         </p>
       )}
       {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
@@ -423,12 +416,7 @@ function RegistrantsCard({
                 <th className="py-2 pr-3">Name</th>
                 <th className="py-2 pr-3">Title</th>
                 <th className="py-2 pr-3">Township / County</th>
-                {multiDay &&
-                  days.map((d) => (
-                    <th key={d} className="py-2 pr-3 whitespace-nowrap">
-                      {formatCourseDates(d, null, 'short').replace(/, \d{4}$/, '')} hrs
-                    </th>
-                  ))}
+                {multiDay && <th className="py-2 pr-3">Credit</th>}
                 <th className="py-2" />
               </tr>
             </thead>
@@ -446,23 +434,19 @@ function RegistrantsCard({
                   <td className="py-2 pr-3">
                     {[townshipLabel(r.township), r.county ? `${r.county} County` : null].filter(Boolean).join(', ') || '—'}
                   </td>
-                  {multiDay &&
-                    days.map((d) => (
-                      <td key={d} className="py-2 pr-3">
-                        <input
-                          type="number"
-                          min={0}
-                          max={24}
-                          step={0.5}
-                          defaultValue={r.day_hours?.[d] ?? ''}
-                          placeholder="full"
-                          disabled={busy === r.id}
-                          onBlur={(e) => saveHours(r, d, e.target.value)}
-                          className={inputCls + ' w-20'}
-                          aria-label={`Hours on ${d} for ${r.first_name} ${r.last_name}`}
-                        />
-                      </td>
-                    ))}
+                  {multiDay && (
+                    <td className="py-2 pr-3">
+                      <PartialCreditCell
+                        registrant={r}
+                        days={days}
+                        courseHours={Number(course.hours)}
+                        busy={busy === r.id}
+                        onSave={(dayHours) =>
+                          call(r.id, { method: 'PATCH', body: JSON.stringify({ day_hours: dayHours }) })
+                        }
+                      />
+                    </td>
+                  )}
                   <td className="py-2 text-right whitespace-nowrap">
                     <button
                       type="button"
@@ -497,5 +481,112 @@ function RegistrantsCard({
         </div>
       )}
     </section>
+  );
+}
+
+const dayLabel = (d: string) => formatCourseDates(d, null, 'short').replace(/, \d{4}$/, '');
+
+function PartialCreditCell({
+  registrant,
+  days,
+  courseHours,
+  busy,
+  onSave,
+}: {
+  registrant: Registrant;
+  days: string[];
+  courseHours: number;
+  busy: boolean;
+  onSave: (dayHours: Record<string, number> | null) => void;
+}) {
+  const saved = registrant.day_hours;
+  const [editing, setEditing] = useState(false);
+  const [values, setValues] = useState<Record<string, string>>({});
+
+  const startEditing = () => {
+    setValues(Object.fromEntries(days.map((d) => [d, saved?.[d] != null ? String(saved[d]) : ''])));
+    setEditing(true);
+  };
+
+  if (!editing) {
+    if (!saved) {
+      return (
+        <div className="whitespace-nowrap">
+          <span className="text-gray-700 dark:text-gray-300">Full credit ({courseHours} hrs)</span>
+          <button type="button" disabled={busy} onClick={startEditing} className="ml-3 text-xs text-amber-700 dark:text-amber-400 hover:underline">
+            Partial credit
+          </button>
+        </div>
+      );
+    }
+    const total = days.reduce((sum, d) => sum + (saved[d] || 0), 0);
+    return (
+      <div>
+        <div className="font-medium text-amber-700 dark:text-amber-400 whitespace-nowrap">
+          Partial: {Math.round(total * 10) / 10} of {courseHours} hrs
+        </div>
+        <div className="text-xs text-gray-500">
+          {days.map((d) => `${dayLabel(d)}: ${saved[d] ?? 0}`).join(' · ')}
+        </div>
+        <button type="button" disabled={busy} onClick={startEditing} className="text-xs text-amber-700 dark:text-amber-400 hover:underline">
+          Edit
+        </button>
+      </div>
+    );
+  }
+
+  const total = days.reduce((sum, d) => sum + (parseFloat(values[d]) || 0), 0);
+  const save = () => {
+    const out: Record<string, number> = {};
+    for (const d of days) {
+      const n = parseFloat(values[d]);
+      out[d] = Number.isFinite(n) && n > 0 ? n : 0;
+    }
+    onSave(out);
+    setEditing(false);
+  };
+
+  return (
+    <div className="space-y-2 min-w-[14rem]">
+      <div className="flex flex-wrap gap-2">
+        {days.map((d) => (
+          <label key={d} className="text-xs">
+            <span className="block text-gray-500 mb-0.5">{dayLabel(d)}</span>
+            <input
+              type="number"
+              min={0}
+              max={24}
+              step={0.5}
+              value={values[d] ?? ''}
+              placeholder="0"
+              onChange={(e) => setValues((v) => ({ ...v, [d]: e.target.value }))}
+              className={inputCls + ' w-20'}
+              aria-label={`Hours attended on ${d}`}
+            />
+          </label>
+        ))}
+      </div>
+      <div className="text-xs text-gray-500">Blank or 0 = did not attend that day. Total: {Math.round(total * 10) / 10} hrs</div>
+      <div className="flex gap-3 text-xs">
+        <button type="button" onClick={save} className="font-semibold text-amber-700 dark:text-amber-400 hover:underline">
+          Save
+        </button>
+        <button type="button" onClick={() => setEditing(false)} className="text-gray-500 hover:underline">
+          Cancel
+        </button>
+        {saved && (
+          <button
+            type="button"
+            onClick={() => {
+              onSave(null);
+              setEditing(false);
+            }}
+            className="text-gray-500 hover:underline"
+          >
+            Back to full credit
+          </button>
+        )}
+      </div>
+    </div>
   );
 }

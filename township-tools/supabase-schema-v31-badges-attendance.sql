@@ -14,9 +14,16 @@
 -- RLS is enabled with NO public policies, matching v16: every read and write
 -- goes through API routes using the service-role client.
 
+-- SAFETY: everything here is additive (new tables, new nullable / defaulted
+-- columns). Existing courses get badge_checkin_enabled = FALSE and existing
+-- certificates get hours_override = NULL, so they behave exactly as before.
+-- Re-running this file is safe.
+
 -- ───────────────────────────────────────────────────────────────────────
 -- 1. Event times + scanner PIN on the course
 -- ───────────────────────────────────────────────────────────────────────
+-- Badge check-in is opt-in per course; off for every existing course.
+ALTER TABLE cert_courses ADD COLUMN IF NOT EXISTS badge_checkin_enabled BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE cert_courses ADD COLUMN IF NOT EXISTS event_start_time TIME;
 ALTER TABLE cert_courses ADD COLUMN IF NOT EXISTS event_end_time TIME;
 -- SHA-256 of the per-event scanner PIN. NULL = scanning disabled.
@@ -41,6 +48,9 @@ CREATE TABLE IF NOT EXISTS cert_registrants (
   -- badge rotates this token so the old printout stops working.
   badge_token      TEXT NOT NULL UNIQUE,
   is_walk_in       BOOLEAN NOT NULL DEFAULT FALSE,
+  -- Partial credit: hours Jen enters per attended day, e.g.
+  -- {"2026-11-12": 6, "2026-11-13": 3.5}. NULL = full course hours.
+  day_hours        JSONB,
   -- Set once a certificate is issued from attendance.
   certificate_id   UUID REFERENCES certificates(id) ON DELETE SET NULL,
   created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -67,6 +77,9 @@ CREATE TRIGGER cert_registrants_touch_updated_at
   EXECUTE FUNCTION cert_registrants_touch_updated_at();
 
 ALTER TABLE cert_registrants ENABLE ROW LEVEL SECURITY;
+-- Covers databases where an earlier draft of this file created the table
+-- before day_hours existed.
+ALTER TABLE cert_registrants ADD COLUMN IF NOT EXISTS day_hours JSONB;
 
 -- ───────────────────────────────────────────────────────────────────────
 -- 3. cert_attendance_scans — append-only log of check-ins and check-outs
@@ -97,7 +110,16 @@ CREATE INDEX IF NOT EXISTS cert_attendance_scans_registrant_idx
 ALTER TABLE cert_attendance_scans ENABLE ROW LEVEL SECURITY;
 
 -- ───────────────────────────────────────────────────────────────────────
--- 4. Re-create cert_course_summary so c.* picks up the new columns
+-- 4. Partial credit on certificates
+-- ───────────────────────────────────────────────────────────────────────
+-- NULL (every existing certificate) = show the course hours, as today.
+-- Set only when a partial attendee's certificate is issued from badge
+-- attendance with hours entered per day.
+ALTER TABLE certificates ADD COLUMN IF NOT EXISTS hours_override NUMERIC(5,1)
+  CHECK (hours_override IS NULL OR hours_override >= 0);
+
+-- ───────────────────────────────────────────────────────────────────────
+-- 5. Re-create cert_course_summary so c.* picks up the new columns
 -- ───────────────────────────────────────────────────────────────────────
 DROP VIEW IF EXISTS cert_course_summary;
 CREATE VIEW cert_course_summary

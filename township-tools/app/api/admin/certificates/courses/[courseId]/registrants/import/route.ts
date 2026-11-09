@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '../../../../../../../../lib/supabase';
-import { requireSuperadmin } from '../../../../../../../../lib/auth/superadmin';
+import { createServerSupabaseClient } from '@/lib/supabase';
+import { requireSuperadmin } from '@/lib/auth/superadmin';
 import {
   AttendeeRow,
   findInFileDuplicates,
   parseAttendeeWorkbook,
   recipientKey,
-} from '../../../../../../../../lib/certificates/xlsx-import';
-import { generateBadgeToken } from '../../../../../../../../lib/badges/token';
+} from '@/lib/certificates/xlsx-import';
+import { generateBadgeToken } from '@/lib/badges/token';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;

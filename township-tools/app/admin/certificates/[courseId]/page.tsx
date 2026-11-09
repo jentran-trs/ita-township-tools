@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
-import { ExternalLink, Upload } from 'lucide-react';
+import { ExternalLink, QrCode, Upload } from 'lucide-react';
 import { isSuperadmin } from '@/lib/auth/superadmin';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { BackLink } from '../_shared/BackLink';
@@ -96,6 +96,13 @@ export default async function CourseDetailPage({ params }: Params) {
                 Preview Course Summary Page
               </span>
             )}
+            <Link
+              href={`/admin/certificates/${course.id}/badges`}
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
+            >
+              <QrCode className="w-4 h-4" />
+              Badges &amp; check-in
+            </Link>
             <Link
               href={`/admin/certificates/${course.id}/import`}
               className="inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold bg-amber-500 text-white rounded-lg hover:bg-amber-600"

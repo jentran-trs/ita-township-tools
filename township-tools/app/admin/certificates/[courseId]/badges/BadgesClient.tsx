@@ -1,7 +1,9 @@
 "use client";
 
+import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AlertTriangle, Check, FileUp, Loader2, RotateCcw, Trash2, Upload } from 'lucide-react';
+import { AlertTriangle, Check, FileUp, Loader2, Printer, RotateCcw, Tag, Trash2, Upload } from 'lucide-react';
+import { deliverLabel, renderNiimbotLabel } from '@/lib/badges/niimbot-label';
 import { townshipLabel } from '@/lib/certificates/township';
 import { formatCourseDates } from '@/lib/certificates/date-range';
 import { eventDays, formatEventTimes } from '@/lib/badges/attendance';
@@ -28,6 +30,7 @@ type Registrant = {
   title: string | null;
   township: string | null;
   county: string | null;
+  badge_token: string;
   is_walk_in: boolean;
   day_hours: Record<string, number> | null;
   certificate_id: string | null;
@@ -397,7 +400,17 @@ function RegistrantsCard({
 
   return (
     <section className={card}>
-      <h2 className="text-base font-bold mb-1">Registrants ({registrants.length})</h2>
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+        <h2 className="text-base font-bold">Registrants ({registrants.length})</h2>
+        {registrants.length > 0 && (
+          <Link
+            href={`/admin/certificates/${course.id}/badges/print`}
+            className={btn + ' bg-amber-500 text-white hover:bg-amber-600'}
+          >
+            <Printer className="w-4 h-4" /> Print all badges
+          </Link>
+        )}
+      </div>
       {multiDay && (
         <p className="text-sm text-gray-500 mb-3">
           Everyone gets full credit ({Number(course.hours)} hours) unless you click <strong>Partial credit</strong>{' '}
@@ -448,6 +461,37 @@ function RegistrantsCard({
                     </td>
                   )}
                   <td className="py-2 text-right whitespace-nowrap">
+                    <Link
+                      href={`/admin/certificates/${course.id}/badges/print?ids=${r.id}`}
+                      className="text-xs text-gray-600 dark:text-gray-300 hover:underline mr-3"
+                      title="Print or reprint this person's badge"
+                    >
+                      Print badge
+                    </Link>
+                    <button
+                      type="button"
+                      disabled={busy === r.id}
+                      onClick={async () => {
+                        try {
+                          const blob = await renderNiimbotLabel({
+                            firstName: r.first_name,
+                            lastName: r.last_name,
+                            title: r.title,
+                            township: r.township,
+                            county: r.county,
+                            badgeToken: r.badge_token,
+                            eventName: course.name,
+                          });
+                          await deliverLabel(blob, `label-${r.last_name}-${r.first_name}.png`.replace(/\s+/g, '-'));
+                        } catch (e: any) {
+                          setError(e.message || 'Could not make the label');
+                        }
+                      }}
+                      className="inline-flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300 hover:underline mr-3"
+                      title="NIIMBOT 75 x 50 mm label"
+                    >
+                      <Tag className="w-3 h-3" /> Label
+                    </button>
                     <button
                       type="button"
                       disabled={busy === r.id}

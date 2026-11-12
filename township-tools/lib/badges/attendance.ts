@@ -93,3 +93,31 @@ export function formatEventTimes(start?: string | null, end?: string | null): st
   if (!start) return null;
   return end ? `${fmt(start)} – ${fmt(end)}` : fmt(start);
 }
+
+/**
+ * Convert an Eastern-time wall clock (date "YYYY-MM-DD", time "HH:MM") to a
+ * UTC Date, handling daylight saving. Used for manual check-in/out entries.
+ */
+export function easternToUtc(date: string, time: string): Date {
+  const [y, m, d] = date.split('-').map(Number);
+  const [hh, mm] = time.split(':').map(Number);
+  const asUtc = Date.UTC(y, m - 1, d, hh, mm);
+  // Offset of New York from UTC at (approximately) that moment.
+  const offsetAt = (ms: number) => {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: EVENT_TIME_ZONE,
+      hourCycle: 'h23',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).formatToParts(new Date(ms));
+    const get = (t: string) => Number(parts.find((p) => p.type === t)!.value);
+    const wall = Date.UTC(get('year'), get('month') - 1, get('day'), get('hour'), get('minute'));
+    return wall - ms;
+  };
+  let ms = asUtc - offsetAt(asUtc);
+  ms = asUtc - offsetAt(ms); // second pass settles DST edges
+  return new Date(ms);
+}

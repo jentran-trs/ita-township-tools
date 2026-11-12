@@ -1,12 +1,12 @@
 "use client";
 
 import Link from 'next/link';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { AlertTriangle, Check, FileUp, Loader2, Printer, RotateCcw, Tag, Trash2, Upload } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AlertTriangle, Check, Download, FileUp, Loader2, Printer, RotateCcw, Tag, Trash2, Upload, X } from 'lucide-react';
 import { deliverLabel, renderNiimbotLabel } from '@/lib/badges/niimbot-label';
 import { townshipLabel } from '@/lib/certificates/township';
 import { formatCourseDates } from '@/lib/certificates/date-range';
-import { eventDays, formatEventTimes } from '@/lib/badges/attendance';
+import { easternTime, eventDays, formatEventTimes } from '@/lib/badges/attendance';
 
 type Course = {
   id: string;
@@ -105,6 +105,7 @@ export function BadgesClient({ courseId }: { courseId: string }) {
         <>
           <ImportCard courseId={courseId} onImported={load} />
           <RegistrantsCard course={course} registrants={registrants} onChanged={load} />
+          {registrants.length > 0 && <AttendanceCard course={course} reloadKey={registrants.length} />}
         </>
       )}
     </>
@@ -666,6 +667,244 @@ function ScannerLink({ courseId }: { courseId: string }) {
         Send this link and the PIN to the people scanning. They open it on their phone and unlock it once while online,
         before the event; after that it works without signal. No Township Tools login is needed.
       </p>
+    </div>
+  );
+}
+
+type DayAtt = { date: string; checkIn: string | null; checkOut: string | null; complete: boolean };
+type AttRow = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  title: string | null;
+  township: string | null;
+  is_walk_in: boolean;
+  day_hours: Record<string, number> | null;
+  status: 'attended' | 'review' | 'no_show';
+  credit_hours: number;
+  attendance: { days: DayAtt[] };
+};
+type Filter = 'review' | 'attended' | 'no_show' | 'all';
+
+const STATUS_LABEL: Record<AttRow['status'], string> = { attended: 'Attended', review: 'Needs review', no_show: 'No scans' };
+const STATUS_CLS: Record<AttRow['status'], string> = {
+  attended: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+  review: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+  no_show: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
+};
+
+function AttendanceCard({ course, reloadKey }: { course: Course; reloadKey: number }) {
+  const [rows, setRows] = useState<AttRow[] | null>(null);
+  const [days, setDays] = useState<string[]>([]);
+  const [filter, setFilter] = useState<Filter>('review');
+  const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState<{ id: string; date: string; direction: 'in' | 'out' } | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/admin/certificates/courses/${course.id}/attendance`, { cache: 'no-store' });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Failed to load attendance');
+      setRows(json.rows);
+      setDays(json.days);
+      setError(null);
+    } catch (e: any) {
+      setError(e.message);
+    }
+  }, [course.id]);
+
+  useEffect(() => {
+    load();
+  }, [load, reloadKey]);
+
+  const counts = useMemo(() => {
+    const c = { review: 0, attended: 0, no_show: 0, all: rows?.length || 0 };
+    rows?.forEach((r) => (c[r.status] += 1));
+    return c;
+  }, [rows]);
+  const shown = (rows || []).filter((r) => filter === 'all' || r.status === filter);
+
+  const voidTime = async (r: AttRow, date: string, direction: 'in' | 'out') => {
+    if (!window.confirm(`Remove ${r.first_name} ${r.last_name}'s check-${direction} on ${date}?`)) return;
+    const qs = new URLSearchParams({ registrant_id: r.id, scan_date: date, direction });
+    const res = await fetch(`/api/admin/certificates/courses/${course.id}/attendance?${qs}`, { method: 'DELETE' });
+    if (!res.ok) setError((await res.json().catch(() => ({}))).error || 'Could not remove');
+    load();
+  };
+
+  return (
+    <section className={card}>
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <div>
+          <h2 className="text-base font-bold">Attendance</h2>
+          <p className="text-sm text-gray-500">
+            Attended = checked in and checked out on every day. Times are Eastern. Refreshes when you reopen this page.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <button type="button" onClick={load} className={btn + ' bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}>
+            <RotateCcw className="w-4 h-4" /> Refresh
+          </button>
+          <a href={`/api/admin/certificates/courses/${course.id}/attendance/export`} className={btn + ' bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}>
+            <Download className="w-4 h-4" /> Excel
+          </a>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-1 mb-3">
+        {(['review', 'attended', 'no_show', 'all'] as Filter[]).map((f) => (
+          <button
+            key={f}
+            type="button"
+            onClick={() => setFilter(f)}
+            className={`px-3 py-1.5 text-sm rounded-full border ${
+              filter === f ? 'bg-amber-500 border-amber-500 text-white' : 'border-gray-300 dark:border-gray-700'
+            }`}
+          >
+            {f === 'all' ? 'Everyone' : STATUS_LABEL[f]} ({counts[f]})
+          </button>
+        ))}
+      </div>
+
+      {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
+      {!rows ? (
+        <p className="text-sm text-gray-500">Loading…</p>
+      ) : shown.length === 0 ? (
+        <p className="text-sm text-gray-500">{filter === 'review' ? 'Nothing to review.' : 'No one here.'}</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-gray-500 border-b border-gray-200 dark:border-gray-800">
+                <th className="py-2 pr-3">Name</th>
+                {days.map((d) => (
+                  <th key={d} className="py-2 pr-3 whitespace-nowrap">{formatCourseDates(d, null, 'short').replace(/, \d{4}$/, '')}</th>
+                ))}
+                <th className="py-2 pr-3">Status</th>
+                <th className="py-2">Credit</th>
+              </tr>
+            </thead>
+            <tbody>
+              {shown.map((r) => (
+                <tr key={r.id} className="border-b border-gray-100 dark:border-gray-800 align-top">
+                  <td className="py-2 pr-3">
+                    <div className="font-medium">
+                      {r.first_name} {r.last_name}
+                      {r.is_walk_in && <span className="ml-2 text-xs text-amber-600">walk-in</span>}
+                    </div>
+                    <div className="text-xs text-gray-500">{[r.title, townshipLabel(r.township)].filter(Boolean).join(' · ')}</div>
+                  </td>
+                  {r.attendance.days.map((d) => (
+                    <td key={d.date} className="py-2 pr-3 whitespace-nowrap">
+                      {(['in', 'out'] as const).map((dir) => {
+                        const t = dir === 'in' ? d.checkIn : d.checkOut;
+                        const isEditing = editing?.id === r.id && editing.date === d.date && editing.direction === dir;
+                        if (isEditing) {
+                          return (
+                            <ManualTimeForm
+                              key={dir}
+                              courseId={course.id}
+                              registrantId={r.id}
+                              date={d.date}
+                              direction={dir}
+                              defaultTime={(dir === 'in' ? course.event_start_time : course.event_end_time)?.slice(0, 5) || (dir === 'in' ? '09:00' : '16:00')}
+                              onDone={() => {
+                                setEditing(null);
+                                load();
+                              }}
+                            />
+                          );
+                        }
+                        return (
+                          <div key={dir} className="flex items-center gap-1">
+                            <span className="text-gray-500 w-7">{dir === 'in' ? 'In' : 'Out'}</span>
+                            {t ? (
+                              <>
+                                <span>{easternTime(t)}</span>
+                                <button type="button" onClick={() => voidTime(r, d.date, dir)} className="text-gray-400 hover:text-red-600" title="Remove this time">
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setEditing({ id: r.id, date: d.date, direction: dir })}
+                                className={`text-xs hover:underline ${d.checkIn || d.checkOut ? 'text-amber-700 dark:text-amber-400 font-semibold' : 'text-gray-400'}`}
+                              >
+                                {d.checkIn || d.checkOut ? 'Missing · add' : 'add'}
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </td>
+                  ))}
+                  <td className="py-2 pr-3">
+                    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_CLS[r.status]}`}>{STATUS_LABEL[r.status]}</span>
+                  </td>
+                  <td className="py-2 whitespace-nowrap">
+                    {r.credit_hours} hrs{r.day_hours ? <span className="text-xs text-amber-600"> partial</span> : null}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function ManualTimeForm({
+  courseId,
+  registrantId,
+  date,
+  direction,
+  defaultTime,
+  onDone,
+}: {
+  courseId: string;
+  registrantId: string;
+  date: string;
+  direction: 'in' | 'out';
+  defaultTime: string;
+  onDone: () => void;
+}) {
+  const [time, setTime] = useState(defaultTime);
+  const [note, setNote] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const save = async () => {
+    setBusy(true);
+    setErr(null);
+    try {
+      const res = await fetch(`/api/admin/certificates/courses/${courseId}/attendance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ registrant_id: registrantId, date, direction, time, note }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Save failed');
+      onDone();
+    } catch (e: any) {
+      setErr(e.message);
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="my-1 p-2 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 space-y-1 w-56 whitespace-normal overflow-hidden">
+      <div className="text-xs font-semibold">Manual check-{direction}</div>
+      <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className={inputCls + ' block w-full min-w-0 box-border'} />
+      <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="How you verified (optional)" className={inputCls + ' block w-full min-w-0 box-border text-xs'} />
+      {err && <div className="text-xs text-red-600">{err}</div>}
+      <div className="flex gap-3 text-xs">
+        <button type="button" onClick={save} disabled={busy || !time} className="font-semibold text-amber-700 hover:underline">
+          Save
+        </button>
+        <button type="button" onClick={onDone} className="text-gray-500 hover:underline">
+          Cancel
+        </button>
+      </div>
     </div>
   );
 }

@@ -100,6 +100,8 @@ export async function POST(req: Request, { params }: RouteParams) {
       last_name: r.last,
       email: r.email,
       title: r.title,
+      registrant_type: r.registrant_type,
+      organization: r.organization,
       township: r.township,
       county: r.county,
     };

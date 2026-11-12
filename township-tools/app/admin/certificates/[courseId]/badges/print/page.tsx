@@ -6,6 +6,7 @@ import { formatCourseDates } from '@/lib/certificates/date-range';
 import { formatEventTimes } from '@/lib/badges/attendance';
 import type { BadgeData, BadgeEvent } from '@/components/badges/Badge';
 import { BadgePrintClient } from './BadgePrintClient';
+import { badgeFont } from '@/lib/badges/fonts';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,14 +18,14 @@ export default async function BadgePrintPage({ params, searchParams }: Props) {
   const supabase = createServerSupabaseClient();
   const { data: course } = await supabase
     .from('cert_courses')
-    .select('id, name, course_date, course_end_date, event_start_time, event_end_time, logo_url')
+    .select('id, name, course_date, course_end_date, event_start_time, event_end_time, badge_tagline, logo_url')
     .eq('id', params.courseId)
     .maybeSingle();
   if (!course) notFound();
 
   let query = supabase
     .from('cert_registrants')
-    .select('id, first_name, last_name, title, township, county, badge_token')
+    .select('id, first_name, last_name, title, registrant_type, organization, township, county, badge_token')
     .eq('course_id', course.id)
     .order('last_name', { ascending: true })
     .order('first_name', { ascending: true });
@@ -40,6 +41,8 @@ export default async function BadgePrintPage({ params, searchParams }: Props) {
       title: r.title,
       township: r.township,
       county: r.county,
+      registrantType: r.registrant_type,
+      organization: r.organization,
       qrSvg: (await QRCode.toString(r.badge_token, { type: 'svg', margin: 0, errorCorrectionLevel: 'M' })).replace(
         '<svg ',
         '<svg width="100%" height="100%" '
@@ -49,6 +52,7 @@ export default async function BadgePrintPage({ params, searchParams }: Props) {
 
   const event: BadgeEvent = {
     name: course.name,
+    tagline: course.badge_tagline || null,
     dates: formatCourseDates(course.course_date, course.course_end_date),
     times: formatEventTimes(course.event_start_time, course.event_end_time),
     // Use the small badge-sized copy for the default ITA logo.
@@ -56,5 +60,9 @@ export default async function BadgePrintPage({ params, searchParams }: Props) {
       !course.logo_url || course.logo_url === '/certificates/ita-logo.png' ? '/badges/ita-logo.png' : course.logo_url,
   };
 
-  return <BadgePrintClient courseId={course.id} badges={badges} event={event} />;
+  return (
+    <div className={badgeFont.variable}>
+      <BadgePrintClient courseId={course.id} badges={badges} event={event} />
+    </div>
+  );
 }

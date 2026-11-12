@@ -16,6 +16,7 @@ type WalkIn = {
   last_name: string;
   email?: string;
   title?: string;
+  registrant_type?: string;
   township?: string;
   county?: string;
 };
@@ -64,6 +65,7 @@ export async function POST(req: Request, { params }: { params: { courseId: strin
       last_name: last.slice(0, 100),
       email: String(w.email || '').trim().toLowerCase().slice(0, 200),
       title: String(w.title || '').trim().slice(0, 150) || null,
+      registrant_type: String(w.registrant_type || '').trim().slice(0, 50) || null,
       township: String(w.township || '').trim().replace(/\s+township\s*$/i, '').slice(0, 100) || null,
       county: String(w.county || '').trim().replace(/\s+county\s*$/i, '').slice(0, 100) || null,
       badge_token: w.badge_token,

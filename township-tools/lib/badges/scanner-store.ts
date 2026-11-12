@@ -30,6 +30,7 @@ export type WalkInRecord = {
   last_name: string;
   email?: string;
   title?: string;
+  registrant_type?: string;
   township?: string;
   county?: string;
 };

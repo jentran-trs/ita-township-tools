@@ -19,6 +19,7 @@ type Course = {
   badge_checkin_enabled: boolean;
   event_start_time: string | null;
   event_end_time: string | null;
+  badge_tagline: string | null;
   has_pin: boolean;
 };
 
@@ -28,6 +29,8 @@ type Registrant = {
   last_name: string;
   email: string;
   title: string | null;
+  registrant_type: string | null;
+  organization: string | null;
   township: string | null;
   county: string | null;
   badge_token: string;
@@ -41,6 +44,8 @@ type PreviewRow = {
   last: string;
   email: string;
   title: string | null;
+  registrant_type: string | null;
+  organization: string | null;
   township: string | null;
   county: string | null;
   row_number: number;
@@ -117,6 +122,7 @@ function SettingsCard({ course, onSaved }: { course: Course; onSaved: () => void
   const [enabled, setEnabled] = useState(course.badge_checkin_enabled);
   const [start, setStart] = useState(hhmm(course.event_start_time));
   const [end, setEnd] = useState(hhmm(course.event_end_time));
+  const [tagline, setTagline] = useState(course.badge_tagline || '');
   const [pin, setPin] = useState('');
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -129,6 +135,7 @@ function SettingsCard({ course, onSaved }: { course: Course; onSaved: () => void
         badge_checkin_enabled: enabled,
         event_start_time: start || null,
         event_end_time: end || null,
+        badge_tagline: tagline,
       };
       if (pin.trim()) body.scanner_pin = pin.trim();
       const res = await fetch(`/api/admin/certificates/courses/${course.id}/badges`, {
@@ -171,6 +178,19 @@ function SettingsCard({ course, onSaved }: { course: Course; onSaved: () => void
             Off by default. Turning this on does not change existing attendees or certificates.
           </span>
         </span>
+      </label>
+
+      <label className="text-sm block mb-4">
+        <span className="block font-medium mb-1">Badge tagline</span>
+        <input
+          type="text"
+          maxLength={80}
+          value={tagline}
+          onChange={(e) => setTagline(e.target.value)}
+          placeholder="Optional, e.g. Ready Today, Resilient Tomorrow"
+          className={inputCls + ' w-full'}
+        />
+        <span className="block text-xs text-gray-500 mt-1">Printed in gold under the event name on every badge.</span>
       </label>
 
       <div className="grid sm:grid-cols-3 gap-4">
@@ -267,7 +287,7 @@ function ImportCard({ courseId, onImported }: { courseId: string; onImported: ()
       <h2 className="text-base font-bold mb-1">Import registrants</h2>
       <p className="text-sm text-gray-500 mb-4">
         Upload the AMO Excel export (same file as the certificate import). Columns used: First Name, Last Name, Email,
-        Title, Township/County or Organization. Re-uploading updates people already on the list and keeps their badge
+        Title, Registrant Type, Township/County or Organization. Re-uploading updates people already on the list and keeps their badge
         QR codes the same.
       </p>
 
@@ -316,7 +336,8 @@ function ImportCard({ courseId, onImported }: { courseId: string; onImported: ()
                   <th className="px-3 py-2">Row</th>
                   <th className="px-3 py-2">Name</th>
                   <th className="px-3 py-2">Title</th>
-                  <th className="px-3 py-2">Township / County</th>
+                  <th className="px-3 py-2">Type</th>
+                  <th className="px-3 py-2">Township / County / Org</th>
                   <th className="px-3 py-2">Status</th>
                 </tr>
               </thead>
@@ -329,8 +350,9 @@ function ImportCard({ courseId, onImported }: { courseId: string; onImported: ()
                       <div className="text-xs text-gray-500">{r.email}</div>
                     </td>
                     <td className="px-3 py-1.5">{r.title || <span className="text-amber-600">—</span>}</td>
+                    <td className="px-3 py-1.5">{r.registrant_type || <span className="text-gray-400">Attendee</span>}</td>
                     <td className="px-3 py-1.5">
-                      {[townshipLabel(r.township), r.county ? `${r.county} County` : null].filter(Boolean).join(', ') || '—'}
+                      {[townshipLabel(r.township), r.county ? `${r.county} County` : null].filter(Boolean).join(', ') || r.organization || '—'}
                     </td>
                     <td className="px-3 py-1.5">
                       {r.issues.length ? (
@@ -432,7 +454,8 @@ function RegistrantsCard({
               <tr className="text-left text-gray-500 border-b border-gray-200 dark:border-gray-800">
                 <th className="py-2 pr-3">Name</th>
                 <th className="py-2 pr-3">Title</th>
-                <th className="py-2 pr-3">Township / County</th>
+                <th className="py-2 pr-3">Type</th>
+                <th className="py-2 pr-3">Township / County / Org</th>
                 {multiDay && <th className="py-2 pr-3">Credit</th>}
                 <th className="py-2" />
               </tr>
@@ -461,8 +484,9 @@ function RegistrantsCard({
                     )}
                   </td>
                   <td className="py-2 pr-3">{r.title || '—'}</td>
+                  <td className="py-2 pr-3">{r.registrant_type || 'Attendee'}</td>
                   <td className="py-2 pr-3">
-                    {[townshipLabel(r.township), r.county ? `${r.county} County` : null].filter(Boolean).join(', ') || '—'}
+                    {[townshipLabel(r.township), r.county ? `${r.county} County` : null].filter(Boolean).join(', ') || r.organization || '—'}
                   </td>
                   {multiDay && (
                     <td className="py-2 pr-3">

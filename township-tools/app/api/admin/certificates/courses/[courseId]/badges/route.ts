@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 type RouteParams = { params: { courseId: string } };
 
 const COURSE_FIELDS =
-  'id, course_id, name, hours, cert_type, course_date, course_end_date, badge_checkin_enabled, event_start_time, event_end_time, scanner_pin_hash';
+  'id, course_id, name, hours, cert_type, course_date, course_end_date, badge_checkin_enabled, event_start_time, event_end_time, badge_tagline, scanner_pin_hash';
 
 // GET — badge settings + registrant list for one course.
 export async function GET(_req: Request, { params }: RouteParams) {
@@ -27,7 +27,7 @@ export async function GET(_req: Request, { params }: RouteParams) {
 
   const { data: registrants, error: rErr } = await supabase
     .from('cert_registrants')
-    .select('id, first_name, last_name, email, title, township, county, badge_token, is_walk_in, day_hours, certificate_id, created_at')
+    .select('id, first_name, last_name, email, title, registrant_type, organization, township, county, badge_token, is_walk_in, day_hours, certificate_id, created_at')
     .eq('course_id', course.id)
     .order('last_name', { ascending: true })
     .order('first_name', { ascending: true });
@@ -65,6 +65,11 @@ export async function PATCH(req: Request, { params }: RouteParams) {
 
   const patch: Record<string, any> = {};
   if (body.badge_checkin_enabled !== undefined) patch.badge_checkin_enabled = !!body.badge_checkin_enabled;
+  if ('badge_tagline' in body) {
+    const t = typeof body.badge_tagline === 'string' ? body.badge_tagline.trim() : '';
+    if (t.length > 80) return NextResponse.json({ error: 'Tagline must be 80 characters or fewer' }, { status: 400 });
+    patch.badge_tagline = t || null;
+  }
 
   for (const key of ['event_start_time', 'event_end_time'] as const) {
     if (key in body) {

@@ -767,7 +767,7 @@ function SearchSheet({
 }
 
 function WalkInSheet({ mode, onSave, onClose }: { mode: Mode; onSave: (w: WalkInRecord, checkIn: boolean) => void; onClose: () => void }) {
-  const [f, setF] = useState({ first_name: '', last_name: '', title: '', township: '', county: '', email: '' });
+  const [f, setF] = useState({ first_name: '', last_name: '', title: '', township: '', county: '', email: '', registrant_type: 'Attendee' });
   const [checkIn, setCheckIn] = useState(mode === 'in');
   const field = (k: keyof typeof f, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
     <label className="block">
@@ -790,6 +790,7 @@ function WalkInSheet({ mode, onSave, onClose }: { mode: Mode; onSave: (w: WalkIn
               first_name: f.first_name.trim(),
               last_name: f.last_name.trim(),
               title: f.title.trim() || undefined,
+              registrant_type: f.registrant_type,
               township: f.township.trim() || undefined,
               county: f.county.trim() || undefined,
               email: f.email.trim() || undefined,
@@ -802,7 +803,21 @@ function WalkInSheet({ mode, onSave, onClose }: { mode: Mode; onSave: (w: WalkIn
           {field('first_name', 'First name *', { autoFocus: true, autoCapitalize: 'words' })}
           {field('last_name', 'Last name *', { autoCapitalize: 'words' })}
         </div>
-        {field('title', 'Title', { autoCapitalize: 'words' })}
+        <div className="grid grid-cols-2 gap-3">
+          {field('title', 'Title', { autoCapitalize: 'words' })}
+          <label className="block">
+            <span className="block text-sm font-semibold mb-1">Type</span>
+            <select
+              value={f.registrant_type}
+              onChange={(e) => setF((x) => ({ ...x, registrant_type: e.target.value }))}
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-xl bg-white"
+            >
+              {['Attendee', 'Sponsor', 'Speaker', 'Staff'].map((t) => (
+                <option key={t}>{t}</option>
+              ))}
+            </select>
+          </label>
+        </div>
         <div className="grid grid-cols-2 gap-3">
           {field('township', 'Township', { autoCapitalize: 'words' })}
           {field('county', 'County', { autoCapitalize: 'words' })}

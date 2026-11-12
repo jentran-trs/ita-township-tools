@@ -6,6 +6,9 @@ export type AttendeeRow = {
   last: string;
   email: string;
   title: string | null;
+  registrant_type: string | null;
+  // AMO Organization when it isn't a township/county (e.g. a sponsor company).
+  organization: string | null;
   township: string | null;
   county: string | null;
   // Diagnostic
@@ -18,6 +21,7 @@ type ColumnIndex = {
   last: number;
   email: number;
   title: number;
+  registrant_type: number;
   township: number;
   county: number;
   organization: number;
@@ -29,6 +33,8 @@ const HEADER_ALIASES: Record<keyof ColumnIndex, string[]> = {
   email: ['email', 'emailaddress', 'mail', 'e-mail'],
   // AMO exports use "Title". Shown on event badges.
   title: ['title', 'jobtitle', 'position'],
+  // AMO "Registrant Type" (Attendee, Sponsor, ...). Badge colour bar.
+  registrant_type: ['registranttype', 'attendeetype', 'registrationtype', 'badgetype'],
   township: ['township', 'twp'],
   county: ['county'],
   // AMO exports combine township + county into one "Organization" column,
@@ -57,7 +63,7 @@ function valueToString(v: any): string {
 }
 
 function findColumns(headerCells: any[]): { index: ColumnIndex; missing: string[] } {
-  const idx: ColumnIndex = { first: -1, last: -1, email: -1, title: -1, township: -1, county: -1, organization: -1 };
+  const idx: ColumnIndex = { first: -1, last: -1, email: -1, title: -1, registrant_type: -1, township: -1, county: -1, organization: -1 };
   for (let c = 0; c < headerCells.length; c++) {
     const norm = normalizeHeader(valueToString(headerCells[c]));
     if (!norm) continue;
@@ -134,13 +140,16 @@ export async function parseAttendeeWorkbook(buffer: Buffer, filename: string): P
     const last = valueToString(r[index.last]);
     const email = valueToString(r[index.email]);
     const title = index.title >= 0 ? valueToString(r[index.title]) : '';
+    const registrantType = index.registrant_type >= 0 ? valueToString(r[index.registrant_type]) : '';
     let township = index.township >= 0 ? valueToString(r[index.township]) : '';
     let county = index.county >= 0 ? valueToString(r[index.county]) : '';
 
     // No dedicated township/county columns? Derive them from a combined
     // "Organization" column like "Pleasant Township, Steuben County".
+    let organization = '';
     if (!township && !county && index.organization >= 0) {
       const org = valueToString(r[index.organization]);
+      if (!/township|county/i.test(org)) organization = org;
       if (/township|county/i.test(org)) {
         const split = splitOrganization(org);
         township = split.township;
@@ -162,6 +171,8 @@ export async function parseAttendeeWorkbook(buffer: Buffer, filename: string): P
       last,
       email: email.toLowerCase().trim(),
       title: title || null,
+      registrant_type: registrantType || null,
+      organization: organization || null,
       // Store the bare township name ("Oregon"); the certificate appends the
       // word "Township" when displaying.
       township: stripTownshipSuffix(township) || null,

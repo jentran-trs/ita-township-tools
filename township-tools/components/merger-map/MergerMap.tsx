@@ -398,8 +398,8 @@ export default function MergerMap({
                 {ordered.some((m) => isPast(m, today)) && (
                   <LegendRow color={HELD} label="Meeting held" count={ordered.filter((m) => isPast(m, today)).length} />
                 )}
-                <LegendRow color={PENDING} label="Not yet scheduled" count={pending.length} />
-                <LegendRow color={NONE} label="No meeting planned" />
+                <LegendRow color={PENDING} label="Scheduling in progress" count={pending.length} />
+                <LegendRow color={NONE} label="No meeting yet" />
               </ul>
               <p className="mt-3 text-xs text-gray-500">
                 Numbers show meeting order. Hover over or tap a county for details.
@@ -451,7 +451,7 @@ export default function MergerMap({
           </div>
           <div className="rounded-xl bg-white shadow-sm border border-black/5 p-4">
             <h2 className="text-lg font-bold mb-3" style={{ color: NAVY }}>
-              Not yet scheduled
+              Scheduling in progress
             </h2>
             {pending.length === 0 ? (
               <p className="text-gray-500 text-[15px]">Nothing to show.</p>
@@ -532,8 +532,8 @@ export default function MergerMap({
                 {(
                   [
                     ['scheduled', 'Meeting scheduled', SCHEDULED],
-                    ['pending', 'Not yet scheduled', PENDING],
-                    ['none', 'No meeting planned (clear)', NONE],
+                    ['pending', 'Scheduling in progress', PENDING],
+                    ['none', 'No meeting yet (clear)', NONE],
                   ] as const
                 ).map(([value, label, color]) => (
                   <label key={value} className="flex items-center gap-2 cursor-pointer">
@@ -730,8 +730,8 @@ function MeetingDetails({
       <p className="font-bold text-[16px] mb-1" style={{ color: NAVY }}>
         {county} County
       </p>
-      {!meeting && <p className="text-gray-600">No merger meeting planned yet.</p>}
-      {meeting?.status === 'pending' && <p className="text-gray-700">Meeting not yet scheduled.</p>}
+      {!meeting && <p className="text-gray-600">No meeting yet.</p>}
+      {meeting?.status === 'pending' && <p className="text-gray-700">Scheduling in progress.</p>}
       {meeting?.status === 'scheduled' && (
         <p className="flex items-start gap-1.5 text-gray-800">
           <CalendarDays className="w-4 h-4 mt-0.5 flex-none" />

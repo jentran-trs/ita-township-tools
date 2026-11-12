@@ -11,7 +11,7 @@
   host.innerHTML = "";
   var root = document.createElement("div");
   root.id = "ita-mm";
-  root.innerHTML = "<div class=\"mm-wrap\">\n  <div class=\"mm-head\">\n    <h2 class=\"mm-title\" id=\"mm-title\">Township Merger Meetings</h2>\n    <p class=\"mm-intro\" id=\"mm-intro\"></p>\n  </div>\n  <p class=\"mm-err\" id=\"mm-err\">The meeting list could not be loaded right now. Please refresh the page or try again later.</p>\n  <div class=\"mm-edbar\" id=\"mm-edbar\">\n    <strong>Editing is on.</strong> Click any county (or a name in the lists) to update it. Changes appear for everyone as soon as you save.<br>\n    <button type=\"button\" class=\"mm-btn2\" id=\"mm-settings-btn\">Page text &amp; contact</button>\n    <button type=\"button\" class=\"mm-btn2\" id=\"mm-done-btn\">Done editing</button>\n  </div>\n  <div class=\"mm-grid\">\n    <div class=\"mm-mapcol\">\n      <div class=\"mm-card mm-map\" id=\"mm-mapbox\">\n        <svg id=\"mm-svg\" viewBox=\"0 0 600 920\" role=\"img\" aria-label=\"Map of Indiana counties showing township merger meeting status\"></svg>\n        <div class=\"mm-tip\" id=\"mm-tip\"></div>\n      </div>\n    </div>\n    <div class=\"mm-side\">\n      <div class=\"mm-card mm-pin\" id=\"mm-pin\"><button type=\"button\" class=\"mm-x\" id=\"mm-pin-x\" aria-label=\"Close\">&times;</button><div id=\"mm-pin-body\"></div></div>\n      <div class=\"mm-card\">\n        <h3 class=\"mm-h2\">Legend</h3>\n        <ul class=\"mm-legend\" id=\"mm-legend\"></ul>\n        <p class=\"mm-small\">Numbers show the order of meetings. Hover over or tap a county for the date and time.</p>\n      </div>\n      <div class=\"mm-card mm-contact\" id=\"mm-contact\" style=\"display:none;\"></div>\n    </div>\n  </div>\n  <div class=\"mm-lists\">\n    <div class=\"mm-card\"><h3 class=\"mm-h2\"><span class=\"glyphicon glyphicon-calendar\" style=\"color:#f0ad4e;margin-right:8px;\"></span>Scheduled Meetings</h3><ol class=\"mm-sched\" id=\"mm-sched\"></ol></div>\n    <div class=\"mm-card\"><h3 class=\"mm-h2\">Not Yet Scheduled</h3><ul class=\"mm-pend\" id=\"mm-pend\"></ul></div>\n  </div>\n  <div class=\"mm-foot\"><button type=\"button\" class=\"mm-link\" id=\"mm-login-btn\"><span class=\"glyphicon glyphicon-lock\" style=\"margin-right:6px;\"></span>Edit map (ITA staff)</button></div>\n</div>\n\n<div class=\"mm-overlay\" id=\"mm-overlay\"><div class=\"mm-modal\" id=\"mm-modal\"></div></div>";
+  root.innerHTML = "<div class=\"mm-wrap\">\n  <div class=\"mm-head\">\n    <h2 class=\"mm-title\" id=\"mm-title\">Township Merger Meetings</h2>\n    <p class=\"mm-intro\" id=\"mm-intro\"></p>\n  </div>\n  <p class=\"mm-err\" id=\"mm-err\">The meeting list could not be loaded right now. Please refresh the page or try again later.</p>\n  <div class=\"mm-edbar\" id=\"mm-edbar\">\n    <strong>Editing is on.</strong> Click any county (or a name in the lists) to update it. Changes appear for everyone as soon as you save.<br>\n    <button type=\"button\" class=\"mm-btn2\" id=\"mm-settings-btn\">Page text &amp; contact</button>\n    <button type=\"button\" class=\"mm-btn2\" id=\"mm-done-btn\">Done editing</button>\n  </div>\n  <div class=\"mm-grid\">\n    <div class=\"mm-mapcol\">\n      <div class=\"mm-card mm-map\" id=\"mm-mapbox\">\n        <svg id=\"mm-svg\" viewBox=\"0 0 600 920\" role=\"img\" aria-label=\"Map of Indiana counties showing township merger meeting status\"></svg>\n        <div class=\"mm-tip\" id=\"mm-tip\"></div>\n      </div>\n    </div>\n    <div class=\"mm-side\">\n      <div class=\"mm-card mm-pin\" id=\"mm-pin\"><button type=\"button\" class=\"mm-x\" id=\"mm-pin-x\" aria-label=\"Close\">&times;</button><div id=\"mm-pin-body\"></div></div>\n      <div class=\"mm-card\">\n        <h3 class=\"mm-h2\">Legend</h3>\n        <ul class=\"mm-legend\" id=\"mm-legend\"></ul>\n        <p class=\"mm-small\">Numbers show the order of meetings. Hover over or tap a county for the date and time.</p>\n      </div>\n      <div class=\"mm-card mm-contact\" id=\"mm-contact\" style=\"display:none;\"></div>\n    </div>\n  </div>\n  <div class=\"mm-lists\">\n    <div class=\"mm-card\"><h3 class=\"mm-h2\"><span class=\"glyphicon glyphicon-calendar\" style=\"color:#f0ad4e;margin-right:8px;\"></span>Scheduled Meetings</h3><ol class=\"mm-sched\" id=\"mm-sched\"></ol></div>\n    <div class=\"mm-card\"><h3 class=\"mm-h2\">Scheduling in Progress</h3><ul class=\"mm-pend\" id=\"mm-pend\"></ul></div>\n  </div>\n  <div class=\"mm-foot\"><button type=\"button\" class=\"mm-link\" id=\"mm-login-btn\"><span class=\"glyphicon glyphicon-lock\" style=\"margin-right:6px;\"></span>Edit map (ITA staff)</button></div>\n</div>\n\n<div class=\"mm-overlay\" id=\"mm-overlay\"><div class=\"mm-modal\" id=\"mm-modal\"></div></div>";
   host.appendChild(root);
 
 (function(){
@@ -161,8 +161,8 @@
   /* linkEmail: true in the tapped/clicked card (clickable); the hover box can't be clicked. */
   function detailsHTML(name, linkEmail){
     var m = state.meetings[name], h = '<p class="mm-d-name">' + esc(name) + ' County</p>';
-    if (!m) return h + '<p class="mm-d-row">No merger meeting planned yet.</p>';
-    if (m.status === "pending") h += '<p class="mm-d-row">Meeting not yet scheduled.</p>';
+    if (!m) return h + '<p class="mm-d-row">No meeting yet.</p>';
+    if (m.status === "pending") h += '<p class="mm-d-row">Scheduling in progress.</p>';
     else {
       var t = fmtTime(m.meeting_time);
       h += '<p class="mm-d-row"><span class="glyphicon glyphicon-calendar"></span>' + (isPast(m) ? "Held " : "") + '<strong>' + esc(fmtDate(m.meeting_date) || "Date to be announced") + '</strong>' + (t ? '<br><span style="padding-left:21px;">' + esc(t) + '</span>' : '') + '</p>';
@@ -264,8 +264,8 @@
     for (var i=0;i<s.length;i++) if (isPast(s[i])) held++;
     var lg = '<li><span class="mm-sw" style="background:'+C_SCHED+'"></span>Meeting scheduled<span class="mm-n">'+(s.length-held)+'</span></li>';
     if (held) lg += '<li><span class="mm-sw" style="background:'+C_HELD+'"></span>Meeting held<span class="mm-n">'+held+'</span></li>';
-    lg += '<li><span class="mm-sw" style="background:'+C_PEND+'"></span>Not yet scheduled<span class="mm-n">'+pending().length+'</span></li>';
-    lg += '<li><span class="mm-sw" style="background:'+C_NONE+'"></span>No meeting planned</li>';
+    lg += '<li><span class="mm-sw" style="background:'+C_PEND+'"></span>Scheduling in progress<span class="mm-n">'+pending().length+'</span></li>';
+    lg += '<li><span class="mm-sw" style="background:'+C_NONE+'"></span>No meeting yet</li>';
     $("mm-legend").innerHTML = lg;
 
     var ct = $("mm-contact");
@@ -356,7 +356,7 @@
     function radio(v, label, color){ return '<label class="mm-radio"><input type="radio" name="mm-status" value="' + v + '"' + (st===v?' checked':'') + '><span class="mm-sw" style="background:' + color + ';width:18px;height:18px;"></span>' + label + '</label>'; }
     openModal('<h3>' + esc(name) + ' County</h3><form id="mm-c-form">' +
       '<div style="margin-bottom:12px;"><span style="display:block;font-size:14px;font-weight:700;color:#444;margin-bottom:6px;">Status</span>' +
-      radio("scheduled","Meeting scheduled",C_SCHED) + radio("pending","Not yet scheduled",C_PEND) + radio("none","No meeting planned (clear)",C_NONE) + '</div>' +
+      radio("scheduled","Meeting scheduled",C_SCHED) + radio("pending","Scheduling in progress",C_PEND) + radio("none","No meeting yet (clear)",C_NONE) + '</div>' +
       '<div id="mm-c-details">' +
         '<div class="mm-row2" id="mm-c-when">' + field("Date", "mm-c-date", m.meeting_date, "date") + field("Time (ET)", "mm-c-time", m.meeting_time ? m.meeting_time.slice(0,5) : "", "time") + '</div>' +
         field("Local contact (optional)", "mm-c-contact", m.contact_name, "text", "e.g. Donna Schwartz") +

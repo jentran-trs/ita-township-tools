@@ -105,6 +105,13 @@ export function ScannerClient({ courseId }: { courseId: string }) {
     }
   }, [courseId, fetchRoster, setState]);
 
+  // Let the scanner page itself open with no signal after the first visit.
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/scan-sw.js', { scope: '/scan/' }).catch(() => {});
+    }
+  }, []);
+
   // Boot: event info, then the saved roster (works offline), then refresh.
   useEffect(() => {
     const saved = loadState(courseId);

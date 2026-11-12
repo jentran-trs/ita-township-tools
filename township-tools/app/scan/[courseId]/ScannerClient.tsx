@@ -812,7 +812,7 @@ function WalkInSheet({ mode, onSave, onClose }: { mode: Mode; onSave: (w: WalkIn
               onChange={(e) => setF((x) => ({ ...x, registrant_type: e.target.value }))}
               className="w-full px-3 py-2.5 border border-gray-300 rounded-xl bg-white"
             >
-              {['Attendee', 'Sponsor', 'Speaker', 'Staff'].map((t) => (
+              {['Attendee', 'Sponsor', 'Speaker', 'Resource Vendor', 'Staff'].map((t) => (
                 <option key={t}>{t}</option>
               ))}
             </select>

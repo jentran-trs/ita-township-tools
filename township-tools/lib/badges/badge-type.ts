@@ -5,7 +5,9 @@ import { GOLD, NAVY } from '@/lib/certificates/theme';
 export function badgeTypeStyle(type: string | null | undefined): { label: string; bg: string; fg: string } {
   const label = (type || '').trim() || 'Attendee';
   const t = label.toLowerCase();
-  if (/sponsor|vendor|exhibitor/.test(t)) return { label, bg: GOLD, fg: '#1f2937' };
+  // Most common ITA types: Attendee, Sponsor, Speaker, Resource Vendor.
+  if (/vendor|exhibitor/.test(t)) return { label, bg: '#2F6F5E', fg: '#ffffff' };
+  if (/sponsor/.test(t)) return { label, bg: GOLD, fg: '#1f2937' };
   if (/speaker|presenter|panel/.test(t)) return { label, bg: '#7A1F2B', fg: '#ffffff' };
   if (/staff|volunteer|board|organizer/.test(t)) return { label, bg: '#4B5563', fg: '#ffffff' };
   return { label, bg: NAVY, fg: '#ffffff' };

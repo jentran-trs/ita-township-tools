@@ -48,9 +48,8 @@ export default async function VerifyResultPage({ params }: Params) {
 
   const { data: cert } = await supabase
     .from('certificates')
-    .select(
-      'credential_id, attendee_first, attendee_last, attendee_township, attendee_county, status, issued_at, course_id'
-    )
+    // '*' so partial-credit hours_override is read when present.
+    .select('*')
     .eq('credential_id', credentialId)
     .maybeSingle();
 
@@ -196,7 +195,7 @@ function CertSummary({ cert, course }: { cert: any; course: any }) {
           </Pair>
         ) : (
           <Pair icon={<GraduationCap className="w-4 h-4" />} label="Hours">
-            {Number(course.hours).toFixed(1)} · {METHOD_LABEL[course.method] || course.method}
+            {Number(cert?.hours_override ?? course.hours).toFixed(1)} · {METHOD_LABEL[course.method] || course.method}
           </Pair>
         )}
         <Pair icon={<ShieldCheck className="w-4 h-4" />} label="Issued by">

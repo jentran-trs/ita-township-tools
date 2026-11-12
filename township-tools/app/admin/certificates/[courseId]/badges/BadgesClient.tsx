@@ -106,6 +106,7 @@ export function BadgesClient({ courseId }: { courseId: string }) {
           <ImportCard courseId={courseId} onImported={load} />
           <RegistrantsCard course={course} registrants={registrants} onChanged={load} />
           {registrants.length > 0 && <AttendanceCard course={course} reloadKey={registrants.length} />}
+          {registrants.length > 0 && <IssueCard course={course} onIssued={load} />}
         </>
       )}
     </>
@@ -444,7 +445,20 @@ function RegistrantsCard({
                       {r.first_name} {r.last_name}
                       {r.is_walk_in && <span className="ml-2 text-xs text-amber-600">walk-in</span>}
                     </div>
-                    <div className="text-xs text-gray-500">{r.email}</div>
+                    {r.email ? (
+                      <div className="text-xs text-gray-500">{r.email}</div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const email = window.prompt(`Email for ${r.first_name} ${r.last_name} (needed to look up their certificate):`);
+                          if (email) call(r.id, { method: 'PATCH', body: JSON.stringify({ email }) });
+                        }}
+                        className="text-xs font-semibold text-amber-700 dark:text-amber-400 hover:underline"
+                      >
+                        Add email
+                      </button>
+                    )}
                   </td>
                   <td className="py-2 pr-3">{r.title || '—'}</td>
                   <td className="py-2 pr-3">
@@ -906,5 +920,113 @@ function ManualTimeForm({
         </button>
       </div>
     </div>
+  );
+}
+
+type IssuePreview = {
+  course_hours: number;
+  rows: { id: string; name: string; credit_hours: number; partial: boolean; issued: boolean; eligible: boolean; reason?: string }[];
+};
+
+function IssueCard({ course, onIssued }: { course: Course; onIssued: () => void }) {
+  const [preview, setPreview] = useState<IssuePreview | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const check = async () => {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const res = await fetch(`/api/admin/certificates/courses/${course.id}/attendance/issue`, { cache: 'no-store' });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Failed');
+      setPreview(json);
+    } catch (e: any) {
+      setMsg({ ok: false, text: e.message });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const issue = async () => {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const res = await fetch(`/api/admin/certificates/courses/${course.id}/attendance/issue`, { method: 'POST' });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Failed');
+      const parts = [`Issued ${json.issued} certificate${json.issued === 1 ? '' : 's'}`];
+      if (json.linked) parts.push(`linked ${json.linked} existing`);
+      if (json.failed?.length) parts.push(`${json.failed.length} failed: ${json.failed.map((f: any) => f.name).join(', ')}`);
+      setMsg({ ok: !json.failed?.length, text: parts.join(' · ') + '.' });
+      setPreview(null);
+      onIssued();
+    } catch (e: any) {
+      setMsg({ ok: false, text: e.message });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const ready = preview?.rows.filter((r) => r.eligible) || [];
+  const held = preview?.rows.filter((r) => !r.eligible && !r.issued) || [];
+  const done = preview?.rows.filter((r) => r.issued) || [];
+
+  return (
+    <section className={card}>
+      <h2 className="text-base font-bold mb-1">Issue certificates</h2>
+      <p className="text-sm text-gray-500 mb-4">
+        Certificates go to everyone who attended (full {Number(course.hours)} hours) and anyone you gave partial credit.
+        People who need review are held until you fix their times or enter partial credit. You can run this again after
+        fixing reviews; nobody gets two certificates. Issued certificates appear on the Attendees tab and the public
+        certificate lookup.
+      </p>
+      {!preview ? (
+        <button type="button" onClick={check} disabled={busy} className={btn + ' bg-amber-500 text-white hover:bg-amber-600'}>
+          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} Check who is ready
+        </button>
+      ) : (
+        <div className="space-y-3 text-sm">
+          <div className="flex flex-wrap gap-4">
+            <span className="text-green-700 dark:text-green-400"><strong>{ready.length}</strong> ready</span>
+            <span className="text-amber-700 dark:text-amber-400"><strong>{held.length}</strong> held</span>
+            <span className="text-gray-500"><strong>{done.length}</strong> already issued</span>
+          </div>
+          {ready.length > 0 && (
+            <div>
+              <div className="font-semibold mb-1">Ready</div>
+              <ul className="text-gray-700 dark:text-gray-300">
+                {ready.map((r) => (
+                  <li key={r.id}>
+                    {r.name} · {r.credit_hours} hrs{r.partial ? ' (partial)' : ''}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {held.length > 0 && (
+            <div>
+              <div className="font-semibold mb-1">Held</div>
+              <ul className="text-gray-700 dark:text-gray-300">
+                {held.map((r) => (
+                  <li key={r.id}>
+                    {r.name} · <span className="text-amber-700 dark:text-amber-400">{r.reason}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <div className="flex gap-2">
+            <button type="button" onClick={issue} disabled={busy || !ready.length} className={btn + ' bg-amber-500 text-white hover:bg-amber-600'}>
+              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} Issue {ready.length} certificate{ready.length === 1 ? '' : 's'}
+            </button>
+            <button type="button" onClick={() => setPreview(null)} className={btn + ' bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+      {msg && <p className={`text-sm mt-3 ${msg.ok ? 'text-green-600' : 'text-red-600'}`}>{msg.text}</p>}
+    </section>
   );
 }

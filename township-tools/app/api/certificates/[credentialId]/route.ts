@@ -19,9 +19,8 @@ export async function GET(_req: Request, { params }: RouteParams) {
   const supabase = createServerSupabaseClient();
   const { data: cert, error } = await supabase
     .from('certificates')
-    .select(
-      'credential_id, attendee_first, attendee_last, attendee_township, attendee_county, status, issued_at, course_id'
-    )
+    // '*' so partial-credit hours_override is read when present.
+    .select('*')
     .eq('credential_id', credentialId)
     .maybeSingle();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -48,7 +47,7 @@ export async function GET(_req: Request, { params }: RouteParams) {
     course: {
       course_id: course.course_id,
       name: course.name,
-      hours: Number(course.hours),
+      hours: cert.hours_override != null ? Number(cert.hours_override) : Number(course.hours),
       method: course.method,
       course_date: course.course_date,
       course_end_date: course.course_end_date,

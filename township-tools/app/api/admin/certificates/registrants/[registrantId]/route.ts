@@ -24,6 +24,14 @@ export async function PATCH(req: Request, { params }: RouteParams) {
   const patch: Record<string, any> = {};
   if (body.action === 'cancel_badge') patch.badge_token = generateBadgeToken();
 
+  if ('email' in body) {
+    const email = String(body.email || '').trim().toLowerCase();
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json({ error: 'That email address does not look right' }, { status: 400 });
+    }
+    patch.email = email;
+  }
+
   if ('day_hours' in body) {
     const dh = body.day_hours;
     if (dh === null) {

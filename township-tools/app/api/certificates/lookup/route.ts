@@ -24,9 +24,9 @@ export async function POST(req: Request) {
 
   let query = supabase
     .from('certificates')
-    .select(
-      'credential_id, attendee_first, attendee_last, attendee_email, attendee_township, attendee_county, course_id, issued_at'
-    )
+    // '*' so partial-credit hours_override is read when present (badge check-in
+    // courses) without breaking if the column hasn't been migrated yet.
+    .select('*')
     .eq('status', 'active')
     .order('issued_at', { ascending: false });
 
@@ -82,7 +82,8 @@ export async function POST(req: Request) {
         course: {
           course_id: course.course_id,
           name: course.name,
-          hours: Number(course.hours),
+          // Partial credit from badge attendance overrides the course hours.
+          hours: c.hours_override != null ? Number(c.hours_override) : Number(course.hours),
           method: course.method,
           course_date: course.course_date,
           course_end_date: course.course_end_date,

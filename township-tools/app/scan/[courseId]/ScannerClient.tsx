@@ -1,0 +1,839 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import jsQR from 'jsqr';
+import { Camera, CheckCircle2, CloudOff, LogIn, LogOut, RefreshCw, Search, UserPlus, X, XCircle, AlertTriangle, Tag } from 'lucide-react';
+import { easternDate, easternTime } from '@/lib/badges/attendance';
+import { isBadgeToken } from '@/lib/badges/token';
+import { townshipLabel } from '@/lib/certificates/township';
+import { formatCourseDates } from '@/lib/certificates/date-range';
+import { deliverLabel, renderNiimbotLabel } from '@/lib/badges/niimbot-label';
+import {
+  ScannerState,
+  RosterPerson,
+  ScanRecord,
+  WalkInRecord,
+  emptyState,
+  loadState,
+  mergeServer,
+  randomBadgeToken,
+  randomId,
+  saveState,
+} from '@/lib/badges/scanner-store';
+
+type Info = { id: string; name: string; dates: string; times: string | null; scanning_open: boolean };
+type Phase = 'loading' | 'notfound' | 'closed' | 'pin' | 'scan';
+type Mode = 'in' | 'out';
+type Result = { kind: 'ok' | 'warn' | 'error'; title: string; detail?: string; at: number };
+
+const SYNC_EVERY_MS = 15_000;
+
+export function ScannerClient({ courseId }: { courseId: string }) {
+  const [phase, setPhase] = useState<Phase>('loading');
+  const [info, setInfo] = useState<Info | null>(null);
+  const [state, setStateRaw] = useState<ScannerState>(emptyState);
+  const stateRef = useRef(state);
+  const [online, setOnline] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
+
+  const setState = useCallback(
+    (fn: (s: ScannerState) => ScannerState) => {
+      const next = fn(stateRef.current);
+      stateRef.current = next;
+      saveState(courseId, next);
+      setStateRaw(next);
+    },
+    [courseId]
+  );
+
+  const fetchRoster = useCallback(async (): Promise<'ok' | 'pin' | 'offline' | 'closed'> => {
+    try {
+      const res = await fetch(`/api/scan/${courseId}/roster`, { cache: 'no-store', credentials: 'same-origin' });
+      if (res.status === 401) return 'pin';
+      if (res.status === 409) return 'closed';
+      if (!res.ok) return 'offline';
+      const json = await res.json();
+      setState((s) => mergeServer(s, json));
+      setOnline(true);
+      return 'ok';
+    } catch {
+      setOnline(false);
+      return 'offline';
+    }
+  }, [courseId, setState]);
+
+  const sync = useCallback(async () => {
+    const s = stateRef.current;
+    if (!s.pendingScans.length && !s.pendingWalkIns.length) {
+      // Nothing to send; refresh the roster so walk-ins added on other phones show up.
+      const r = await fetchRoster();
+      if (r === 'pin') setPhase('pin');
+      return;
+    }
+    setSyncing(true);
+    try {
+      const res = await fetch(`/api/scan/${courseId}/sync`, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ walk_ins: s.pendingWalkIns, scans: s.pendingScans }),
+      });
+      if (res.status === 401) {
+        setPhase('pin');
+        return;
+      }
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Upload failed');
+      const json = await res.json();
+      // Accepted and rejected items both leave the queue; rejected ones would
+      // fail forever (e.g. a person removed by the admin).
+      const sentScans = new Set(s.pendingScans.map((x) => x.client_scan_id));
+      const sentWalkIns = new Set(s.pendingWalkIns.map((x) => x.id));
+      setState((cur) => ({
+        ...cur,
+        pendingScans: cur.pendingScans.filter((x) => !sentScans.has(x.client_scan_id)),
+        pendingWalkIns: cur.pendingWalkIns.filter((x) => !sentWalkIns.has(x.id)),
+      }));
+      setSyncError(json.rejected?.length ? `${json.rejected.length} item(s) could not be saved` : null);
+      setOnline(true);
+      await fetchRoster();
+    } catch {
+      // Network down: keep everything queued and try again shortly.
+      setOnline(false);
+    } finally {
+      setSyncing(false);
+    }
+  }, [courseId, fetchRoster, setState]);
+
+  // Boot: event info, then the saved roster (works offline), then refresh.
+  useEffect(() => {
+    const saved = loadState(courseId);
+    stateRef.current = saved;
+    setStateRaw(saved);
+    (async () => {
+      let i: Info | null = null;
+      try {
+        const res = await fetch(`/api/scan/${courseId}`, { cache: 'no-store' });
+        if (res.status === 404) return setPhase('notfound');
+        if (res.ok) i = await res.json();
+      } catch {}
+      if (i) {
+        setInfo(i);
+        if (!i.scanning_open) return setPhase('closed');
+      }
+      if (!saved.event) {
+        if (!i) setOnline(false);
+        return setPhase('pin');
+      }
+      const r = await fetchRoster();
+      if (r === 'pin') setPhase('pin');
+      else if (r === 'closed') setPhase('closed');
+      else setPhase('scan');
+    })();
+  }, [courseId, fetchRoster]);
+
+  // Background upload while scanning.
+  useEffect(() => {
+    if (phase !== 'scan') return;
+    sync();
+    const t = setInterval(sync, SYNC_EVERY_MS);
+    const onOnline = () => sync();
+    window.addEventListener('online', onOnline);
+    return () => {
+      clearInterval(t);
+      window.removeEventListener('online', onOnline);
+    };
+  }, [phase, sync]);
+
+  // Upload new scans right away (debounced) instead of waiting for the timer.
+  const pendingCount = state.pendingScans.length + state.pendingWalkIns.length;
+  useEffect(() => {
+    if (phase !== 'scan' || !pendingCount) return;
+    const t = setTimeout(sync, 800);
+    return () => clearTimeout(t);
+  }, [phase, pendingCount, sync]);
+
+  if (phase === 'loading') return <Shell><p className="text-center text-gray-500 py-20">Loading…</p></Shell>;
+  if (phase === 'notfound') return <Shell><Notice title="Event not found" body="Check the scanner link with the event organizer." /></Shell>;
+  if (phase === 'closed')
+    return (
+      <Shell title={info?.name}>
+        <Notice title="Scanning is off for this event" body="The organizer hasn't turned on check-in or set a PIN yet." />
+      </Shell>
+    );
+  if (phase === 'pin')
+    return (
+      <Shell title={info?.name} subtitle={info ? [info.dates, info.times].filter(Boolean).join(' · ') : undefined}>
+        <PinScreen
+          courseId={courseId}
+          offline={!online}
+          initialLabel={state.deviceLabel}
+          onUnlocked={async (label) => {
+            setState((s) => ({ ...s, deviceLabel: label }));
+            const r = await fetchRoster();
+            if (r === 'ok') setPhase('scan');
+            return r;
+          }}
+        />
+      </Shell>
+    );
+
+  return (
+    <ScanScreen
+      state={state}
+      setState={setState}
+      online={online}
+      syncing={syncing}
+      syncError={syncError}
+      onSync={sync}
+    />
+  );
+}
+
+/* ───────────────────────────── PIN screen ───────────────────────────── */
+
+function PinScreen({
+  courseId,
+  offline,
+  initialLabel,
+  onUnlocked,
+}: {
+  courseId: string;
+  offline: boolean;
+  initialLabel: string;
+  onUnlocked: (label: string) => Promise<'ok' | 'pin' | 'offline' | 'closed'>;
+}) {
+  const [pin, setPin] = useState('');
+  const [label, setLabel] = useState(initialLabel);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/scan/${courseId}/unlock`, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || 'Could not unlock');
+      const r = await onUnlocked(label.trim());
+      if (r !== 'ok') throw new Error('Unlocked, but the attendee list did not load. Check the connection and try again.');
+    } catch (e: any) {
+      setError(e.message === 'Failed to fetch' ? 'No internet connection' : e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <form onSubmit={submit} className="space-y-4 pt-4">
+      {offline && (
+        <div className="flex gap-2 items-start bg-amber-50 border border-amber-200 text-amber-900 text-sm rounded-xl p-3">
+          <CloudOff className="w-5 h-5 shrink-0" />
+          <span>No connection. Unlock the scanner once while online, before the event. After that it works without signal.</span>
+        </div>
+      )}
+      <label className="block">
+        <span className="block text-sm font-semibold mb-1">Event PIN</span>
+        <input
+          value={pin}
+          onChange={(e) => setPin(e.target.value)}
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          autoFocus
+          className="w-full text-2xl tracking-widest text-center px-4 py-3 border border-gray-300 rounded-xl"
+          placeholder="••••"
+        />
+      </label>
+      <label className="block">
+        <span className="block text-sm font-semibold mb-1">Your name or station</span>
+        <input
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          className="w-full px-4 py-3 border border-gray-300 rounded-xl"
+          placeholder="e.g. Lydia – front door"
+        />
+        <span className="block text-xs text-gray-500 mt-1">Saved with each scan so Jen knows who scanned.</span>
+      </label>
+      {error && <p className="text-red-600 text-sm">{error}</p>}
+      <button
+        type="submit"
+        disabled={busy || !pin.trim()}
+        className="w-full py-3.5 text-lg font-semibold bg-[#1B2E5B] text-white rounded-xl disabled:opacity-50"
+      >
+        {busy ? 'Unlocking…' : 'Unlock scanner'}
+      </button>
+    </form>
+  );
+}
+
+/* ───────────────────────────── Scan screen ───────────────────────────── */
+
+function ScanScreen({
+  state,
+  setState,
+  online,
+  syncing,
+  syncError,
+  onSync,
+}: {
+  state: ScannerState;
+  setState: (fn: (s: ScannerState) => ScannerState) => void;
+  online: boolean;
+  syncing: boolean;
+  syncError: string | null;
+  onSync: () => void;
+}) {
+  const event = state.event!;
+  const [mode, setMode] = useState<Mode>(() => {
+    try {
+      return (localStorage.getItem('tt_scan_mode') as Mode) || 'in';
+    } catch {
+      return 'in';
+    }
+  });
+  const [result, setResult] = useState<Result | null>(null);
+  const [sheet, setSheet] = useState<null | 'search' | 'walkin'>(null);
+  const [lastWalkIn, setLastWalkIn] = useState<RosterPerson | null>(null);
+  const audio = useRef<AudioContext | null>(null);
+  const today = easternDate(new Date());
+  const isEventDay = event.days.includes(today);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('tt_scan_mode', mode);
+    } catch {}
+  }, [mode]);
+
+  const byToken = useMemo(() => new Map(state.roster.map((p) => [p.badge_token, p])), [state.roster]);
+  const todays = useMemo(() => state.scans.filter((x) => x.scan_date === today), [state.scans, today]);
+  const counts = useMemo(() => {
+    const ins = new Set(todays.filter((x) => x.direction === 'in').map((x) => x.registrant_id));
+    const outs = new Set(todays.filter((x) => x.direction === 'out').map((x) => x.registrant_id));
+    return { ins: ins.size, outs: outs.size, total: state.roster.length };
+  }, [todays, state.roster.length]);
+
+  const beep = useCallback((kind: Result['kind']) => {
+    try {
+      const ctx = audio.current;
+      if (ctx) {
+        const tones = kind === 'ok' ? [880] : kind === 'warn' ? [660, 660] : [220];
+        tones.forEach((f, i) => {
+          const o = ctx.createOscillator();
+          const g = ctx.createGain();
+          o.frequency.value = f;
+          o.connect(g);
+          g.connect(ctx.destination);
+          const t = ctx.currentTime + i * 0.18;
+          g.gain.setValueAtTime(0.25, t);
+          g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+          o.start(t);
+          o.stop(t + 0.16);
+        });
+      }
+      navigator.vibrate?.(kind === 'ok' ? 80 : [80, 60, 80]);
+    } catch {}
+  }, []);
+
+  const show = useCallback(
+    (r: Omit<Result, 'at'>) => {
+      setResult({ ...r, at: Date.now() });
+      beep(r.kind);
+    },
+    [beep]
+  );
+
+  const record = useCallback(
+    (person: RosterPerson, source: 'scan' | 'name_search') => {
+      const name = `${person.first_name} ${person.last_name}`;
+      const mine = state.scans.filter((x) => x.registrant_id === person.id && x.scan_date === today);
+      const same = mine.filter((x) => x.direction === mode).sort((a, b) => a.scanned_at.localeCompare(b.scanned_at));
+      if (same.length) {
+        const first = same[0];
+        if (mode === 'in') {
+          return show({ kind: 'warn', title: `${name} is already checked in`, detail: `Checked in at ${easternTime(first.scanned_at)}. Nothing recorded.` });
+        }
+        // A later check-out replaces the time (the latest one counts), but a
+        // badge held in front of the camera shouldn't record again and again.
+        const latest = same[same.length - 1];
+        if (Date.now() - new Date(latest.scanned_at).getTime() < 2 * 60_000) {
+          return show({ kind: 'warn', title: `${name} is already checked out`, detail: `Checked out at ${easternTime(latest.scanned_at)}. Nothing recorded.` });
+        }
+      }
+      const now = new Date();
+      const rec: ScanRecord = {
+        client_scan_id: randomId(),
+        registrant_id: person.id,
+        direction: mode,
+        scanned_at: now.toISOString(),
+        scan_date: easternDate(now),
+        source,
+        device_label: state.deviceLabel || undefined,
+      };
+      setState((s) => ({ ...s, scans: [...s.scans, rec], pendingScans: [...s.pendingScans, rec] }));
+      const hadIn = mine.some((x) => x.direction === 'in');
+      if (mode === 'out' && !hadIn) {
+        show({ kind: 'warn', title: `${name} checked out`, detail: 'No check-in today, so this will be flagged for review.' });
+      } else if (mode === 'out' && same.length) {
+        show({ kind: 'ok', title: `${name} checked out again`, detail: `Check-out time updated to ${easternTime(now)}.` });
+      } else {
+        show({
+          kind: 'ok',
+          title: `${name} ${mode === 'in' ? 'checked in' : 'checked out'}`,
+          detail: [person.title, townshipLabel(person.township)].filter(Boolean).join(' · ') || undefined,
+        });
+      }
+    },
+    [mode, setState, show, state.deviceLabel, state.scans, today]
+  );
+
+  const lastCode = useRef<{ code: string; at: number } | null>(null);
+  const onCode = useCallback(
+    (code: string) => {
+      const now = Date.now();
+      // The camera sees the same badge many times a second; act once.
+      if (lastCode.current && lastCode.current.code === code && now - lastCode.current.at < 4000) return;
+      lastCode.current = { code, at: now };
+      const token = code.trim();
+      if (!isBadgeToken(token)) return show({ kind: 'error', title: 'Not an ITA badge', detail: 'This QR code is not a Township Tools badge.' });
+      const person = byToken.get(token);
+      if (!person)
+        return show({ kind: 'error', title: 'Badge not recognized', detail: 'It may be cancelled or from another event. Use “Find by name”.' });
+      record(person, 'scan');
+    },
+    [byToken, record, show]
+  );
+
+  const pending = state.pendingScans.length + state.pendingWalkIns.length;
+
+  return (
+    <div className="min-h-[100dvh] bg-gray-100 text-gray-900 flex flex-col">
+      <header className="bg-[#1B2E5B] text-white px-4 pt-3 pb-3">
+        <div className="text-xs opacity-80">{formatCourseDates(today, null)}{isEventDay ? '' : ' · not an event day'}</div>
+        <div className="font-semibold leading-tight truncate">{event.name}</div>
+        <button type="button" onClick={onSync} className="mt-1 inline-flex items-center gap-1.5 text-xs opacity-90">
+          {syncing ? (
+            <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Uploading…</>
+          ) : !online ? (
+            <><CloudOff className="w-3.5 h-3.5" /> Offline · {pending} waiting to upload</>
+          ) : pending ? (
+            <><RefreshCw className="w-3.5 h-3.5" /> {pending} waiting to upload · tap to retry</>
+          ) : (
+            <><CheckCircle2 className="w-3.5 h-3.5" /> All scans uploaded</>
+          )}
+        </button>
+        {syncError && <div className="text-xs text-amber-200 mt-1">{syncError}</div>}
+      </header>
+
+      {!isEventDay && (
+        <div className="bg-amber-100 text-amber-900 text-sm px-4 py-2">
+          Today isn&apos;t one of this event&apos;s days ({event.days.map((d) => formatCourseDates(d, null, 'short')).join(', ')}). Scans
+          still save, but won&apos;t count toward attendance.
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-2 p-3">
+        <ModeButton active={mode === 'in'} onClick={() => setMode('in')} icon={<LogIn className="w-5 h-5" />} label="Check IN" color="green" />
+        <ModeButton active={mode === 'out'} onClick={() => setMode('out')} icon={<LogOut className="w-5 h-5" />} label="Check OUT" color="blue" />
+      </div>
+
+      <div className="px-3">
+        <CameraView paused={sheet !== null} onCode={onCode} onStart={() => {
+          if (!audio.current) {
+            try {
+              const Ctx = window.AudioContext || (window as any).webkitAudioContext;
+              audio.current = new Ctx();
+            } catch {}
+          }
+          audio.current?.resume?.();
+        }} mode={mode} />
+      </div>
+
+      <div className="px-3 pt-3 min-h-[6.5rem]">
+        {result && <ResultCard result={result} />}
+      </div>
+
+      <div className="px-3 grid grid-cols-2 gap-2">
+        <button type="button" onClick={() => setSheet('search')} className="flex items-center justify-center gap-2 py-3 bg-white rounded-xl font-semibold shadow-sm">
+          <Search className="w-5 h-5" /> Find by name
+        </button>
+        <button type="button" onClick={() => setSheet('walkin')} className="flex items-center justify-center gap-2 py-3 bg-white rounded-xl font-semibold shadow-sm">
+          <UserPlus className="w-5 h-5" /> Add walk-in
+        </button>
+      </div>
+
+      {lastWalkIn && (
+        <div className="px-3 pt-2">
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                const blob = await renderNiimbotLabel({
+                  firstName: lastWalkIn.first_name,
+                  lastName: lastWalkIn.last_name,
+                  title: lastWalkIn.title,
+                  township: lastWalkIn.township,
+                  county: lastWalkIn.county,
+                  badgeToken: lastWalkIn.badge_token,
+                  eventName: event.name,
+                });
+                await deliverLabel(blob, `label-${lastWalkIn.last_name}-${lastWalkIn.first_name}.png`.replace(/\s+/g, '-'));
+              } catch (e: any) {
+                show({ kind: 'error', title: 'Could not make the label', detail: e.message });
+              }
+            }}
+            className="w-full flex items-center justify-center gap-2 py-3 bg-amber-500 text-white rounded-xl font-semibold"
+          >
+            <Tag className="w-5 h-5" /> NIIMBOT label for {lastWalkIn.first_name} {lastWalkIn.last_name}
+          </button>
+        </div>
+      )}
+
+      {/* pb leaves room for the floating dark-mode button */}
+      <div className="px-4 pt-4 pb-20 text-center text-sm text-gray-600">
+        Today: <strong>{counts.ins}</strong> checked in · <strong>{counts.outs}</strong> checked out · {counts.total} registered
+      </div>
+
+      {sheet === 'search' && (
+        <SearchSheet
+          roster={state.roster}
+          todays={todays}
+          mode={mode}
+          onPick={(p) => {
+            setSheet(null);
+            record(p, 'name_search');
+          }}
+          onClose={() => setSheet(null)}
+        />
+      )}
+      {sheet === 'walkin' && (
+        <WalkInSheet
+          mode={mode}
+          onClose={() => setSheet(null)}
+          onSave={(w, checkIn) => {
+            const person: RosterPerson = {
+              id: w.id,
+              first_name: w.first_name,
+              last_name: w.last_name,
+              title: w.title || null,
+              township: w.township || null,
+              county: w.county || null,
+              badge_token: w.badge_token,
+              is_walk_in: true,
+            };
+            setState((s) => ({ ...s, roster: [...s.roster, person], pendingWalkIns: [...s.pendingWalkIns, w] }));
+            setSheet(null);
+            setLastWalkIn(person);
+            if (checkIn) {
+              // record() reads state from props; queue the check-in directly.
+              const now = new Date();
+              const rec: ScanRecord = {
+                client_scan_id: randomId(),
+                registrant_id: person.id,
+                direction: 'in',
+                scanned_at: now.toISOString(),
+                scan_date: easternDate(now),
+                source: 'name_search',
+                device_label: state.deviceLabel || undefined,
+              };
+              setState((s) => ({ ...s, scans: [...s.scans, rec], pendingScans: [...s.pendingScans, rec] }));
+              show({ kind: 'ok', title: `${person.first_name} ${person.last_name} added and checked in`, detail: 'Print their NIIMBOT label below.' });
+            } else {
+              show({ kind: 'ok', title: `${person.first_name} ${person.last_name} added`, detail: 'Print their NIIMBOT label below.' });
+            }
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function ModeButton({ active, onClick, icon, label, color }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string; color: 'green' | 'blue' }) {
+  const on = color === 'green' ? 'bg-green-600 text-white border-green-600' : 'bg-blue-600 text-white border-blue-600';
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`flex items-center justify-center gap-2 py-3.5 rounded-xl text-lg font-bold border-2 ${active ? on : 'bg-white text-gray-500 border-gray-200'}`}
+    >
+      {icon} {label}
+    </button>
+  );
+}
+
+function ResultCard({ result }: { result: Result }) {
+  const styles = {
+    ok: 'bg-green-600 text-white',
+    warn: 'bg-amber-400 text-amber-950',
+    error: 'bg-red-600 text-white',
+  }[result.kind];
+  const Icon = result.kind === 'ok' ? CheckCircle2 : result.kind === 'warn' ? AlertTriangle : XCircle;
+  return (
+    <div key={result.at} className={`rounded-xl p-4 flex gap-3 items-start ${styles}`} role="status" aria-live="assertive">
+      <Icon className="w-7 h-7 shrink-0" />
+      <div>
+        <div className="text-lg font-bold leading-tight">{result.title}</div>
+        {result.detail && <div className="text-sm opacity-90 mt-0.5">{result.detail}</div>}
+      </div>
+    </div>
+  );
+}
+
+/* ───────────────────────────── Camera ───────────────────────────── */
+
+function CameraView({ paused, onCode, onStart, mode }: { paused: boolean; onCode: (code: string) => void; onStart: () => void; mode: Mode }) {
+  const video = useRef<HTMLVideoElement>(null);
+  const canvas = useRef<HTMLCanvasElement | null>(null);
+  const stream = useRef<MediaStream | null>(null);
+  const [status, setStatus] = useState<'idle' | 'starting' | 'running' | 'denied' | 'error'>('idle');
+  const onCodeRef = useRef(onCode);
+  onCodeRef.current = onCode;
+
+  const stop = useCallback(() => {
+    stream.current?.getTracks().forEach((t) => t.stop());
+    stream.current = null;
+  }, []);
+
+  const start = useCallback(async () => {
+    onStart();
+    setStatus('starting');
+    try {
+      const s = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false,
+      });
+      stream.current = s;
+      if (video.current) {
+        video.current.srcObject = s;
+        await video.current.play();
+      }
+      setStatus('running');
+    } catch (e: any) {
+      setStatus(e?.name === 'NotAllowedError' ? 'denied' : 'error');
+    }
+  }, [onStart]);
+
+  useEffect(() => stop, [stop]);
+
+  // Decode a frame every ~150 ms while running and not paused.
+  useEffect(() => {
+    if (status !== 'running' || paused) return;
+    let alive = true;
+    const tick = () => {
+      if (!alive) return;
+      const v = video.current;
+      if (v && v.readyState >= 2 && v.videoWidth) {
+        const scale = Math.min(1, 640 / v.videoWidth);
+        const w = Math.round(v.videoWidth * scale);
+        const h = Math.round(v.videoHeight * scale);
+        if (!canvas.current) canvas.current = document.createElement('canvas');
+        const c = canvas.current;
+        c.width = w;
+        c.height = h;
+        const ctx = c.getContext('2d', { willReadFrequently: true });
+        if (ctx) {
+          ctx.drawImage(v, 0, 0, w, h);
+          const img = ctx.getImageData(0, 0, w, h);
+          const found = jsQR(img.data, w, h, { inversionAttempts: 'dontInvert' });
+          if (found?.data) onCodeRef.current(found.data);
+        }
+      }
+      setTimeout(() => requestAnimationFrame(tick), 150);
+    };
+    tick();
+    return () => {
+      alive = false;
+    };
+  }, [status, paused]);
+
+  const ring = mode === 'in' ? 'ring-green-500' : 'ring-blue-500';
+
+  return (
+    <div className={`relative aspect-[4/3] bg-black rounded-2xl overflow-hidden ring-4 ${ring}`}>
+      <video ref={video} playsInline muted className="absolute inset-0 w-full h-full object-cover" />
+      {status === 'running' && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="w-1/2 aspect-square border-4 border-white/80 rounded-2xl" />
+        </div>
+      )}
+      {status !== 'running' && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-white text-center p-6 gap-3">
+          {status === 'denied' ? (
+            <>
+              <p className="font-semibold">Camera access was blocked.</p>
+              <p className="text-sm opacity-80">Allow the camera for this site in your browser settings, then tap below. You can still use “Find by name”.</p>
+            </>
+          ) : status === 'error' ? (
+            <p className="text-sm opacity-80">Couldn&apos;t start the camera. Use “Find by name”, or try again.</p>
+          ) : null}
+          <button type="button" onClick={start} disabled={status === 'starting'} className="inline-flex items-center gap-2 px-5 py-3 bg-white text-gray-900 rounded-xl font-semibold">
+            <Camera className="w-5 h-5" /> {status === 'starting' ? 'Starting…' : 'Start camera'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ───────────────────────────── Sheets ───────────────────────────── */
+
+function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  return (
+    <div className="fixed inset-0 z-40 bg-black/40 flex items-end sm:items-center justify-center" onClick={onClose}>
+      <div className="bg-white w-full sm:max-w-md max-h-[90dvh] rounded-t-2xl sm:rounded-2xl flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-4 py-3 border-b">
+          <h2 className="font-bold text-lg">{title}</h2>
+          <button type="button" onClick={onClose} aria-label="Close" className="p-1">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+        <div className="overflow-y-auto p-4">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function SearchSheet({
+  roster,
+  todays,
+  mode,
+  onPick,
+  onClose,
+}: {
+  roster: RosterPerson[];
+  todays: ScanRecord[];
+  mode: Mode;
+  onPick: (p: RosterPerson) => void;
+  onClose: () => void;
+}) {
+  const [q, setQ] = useState('');
+  const matches = useMemo(() => {
+    const t = q.trim().toLowerCase();
+    if (!t) return [];
+    return roster
+      .filter((p) => `${p.first_name} ${p.last_name}`.toLowerCase().includes(t) || `${p.last_name} ${p.first_name}`.toLowerCase().includes(t))
+      .slice(0, 30);
+  }, [q, roster]);
+  const statusFor = (id: string) => {
+    const mine = todays.filter((x) => x.registrant_id === id).sort((a, b) => a.scanned_at.localeCompare(b.scanned_at));
+    const ins = mine.filter((x) => x.direction === 'in');
+    const outs = mine.filter((x) => x.direction === 'out');
+    return [ins.length ? `In ${easternTime(ins[0].scanned_at)}` : null, outs.length ? `Out ${easternTime(outs[outs.length - 1].scanned_at)}` : null]
+      .filter(Boolean)
+      .join(' · ');
+  };
+
+  return (
+    <Sheet title={`Find by name · ${mode === 'in' ? 'Check IN' : 'Check OUT'}`} onClose={onClose}>
+      <input
+        autoFocus
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder="Type a first or last name"
+        className="w-full px-4 py-3 border border-gray-300 rounded-xl mb-3"
+      />
+      {q.trim() && !matches.length && <p className="text-sm text-gray-500">No one by that name. Use “Add walk-in”.</p>}
+      <ul className="divide-y">
+        {matches.map((p) => (
+          <li key={p.id}>
+            <button type="button" onClick={() => onPick(p)} className="w-full text-left py-3">
+              <div className="font-semibold">
+                {p.first_name} {p.last_name}
+                {p.is_walk_in && <span className="ml-2 text-xs text-amber-600">walk-in</span>}
+              </div>
+              <div className="text-sm text-gray-500">
+                {[p.title, townshipLabel(p.township)].filter(Boolean).join(' · ')}
+                {statusFor(p.id) && <span className="ml-1 text-gray-700">· {statusFor(p.id)}</span>}
+              </div>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </Sheet>
+  );
+}
+
+function WalkInSheet({ mode, onSave, onClose }: { mode: Mode; onSave: (w: WalkInRecord, checkIn: boolean) => void; onClose: () => void }) {
+  const [f, setF] = useState({ first_name: '', last_name: '', title: '', township: '', county: '', email: '' });
+  const [checkIn, setCheckIn] = useState(mode === 'in');
+  const field = (k: keyof typeof f, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
+    <label className="block">
+      <span className="block text-sm font-semibold mb-1">{label}</span>
+      <input value={f[k]} onChange={(e) => setF((x) => ({ ...x, [k]: e.target.value }))} className="w-full px-3 py-2.5 border border-gray-300 rounded-xl" {...props} />
+    </label>
+  );
+  const ok = f.first_name.trim() && f.last_name.trim();
+  return (
+    <Sheet title="Add walk-in" onClose={onClose}>
+      <form
+        className="space-y-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!ok) return;
+          onSave(
+            {
+              id: randomId(),
+              badge_token: randomBadgeToken(),
+              first_name: f.first_name.trim(),
+              last_name: f.last_name.trim(),
+              title: f.title.trim() || undefined,
+              township: f.township.trim() || undefined,
+              county: f.county.trim() || undefined,
+              email: f.email.trim() || undefined,
+            },
+            checkIn
+          );
+        }}
+      >
+        <div className="grid grid-cols-2 gap-3">
+          {field('first_name', 'First name *', { autoFocus: true, autoCapitalize: 'words' })}
+          {field('last_name', 'Last name *', { autoCapitalize: 'words' })}
+        </div>
+        {field('title', 'Title', { autoCapitalize: 'words' })}
+        <div className="grid grid-cols-2 gap-3">
+          {field('township', 'Township', { autoCapitalize: 'words' })}
+          {field('county', 'County', { autoCapitalize: 'words' })}
+        </div>
+        {field('email', 'Email (for their certificate)', { type: 'email', inputMode: 'email', autoCapitalize: 'none' })}
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={checkIn} onChange={(e) => setCheckIn(e.target.checked)} className="h-5 w-5" />
+          Check them in now
+        </label>
+        <button type="submit" disabled={!ok} className="w-full py-3.5 text-lg font-semibold bg-[#1B2E5B] text-white rounded-xl disabled:opacity-50">
+          Add walk-in
+        </button>
+        <p className="text-xs text-gray-500">Works offline. It uploads with the scans when the phone is back online.</p>
+      </form>
+    </Sheet>
+  );
+}
+
+/* ───────────────────────────── Layout bits ───────────────────────────── */
+
+function Shell({ title, subtitle, children }: { title?: string; subtitle?: string; children: React.ReactNode }) {
+  return (
+    <div className="min-h-[100dvh] bg-gray-50 text-gray-900">
+      <header className="bg-[#1B2E5B] text-white px-5 py-5">
+        <div className="text-xs uppercase tracking-wide opacity-80">ITA badge scanner</div>
+        {title && <h1 className="text-xl font-bold leading-tight mt-1">{title}</h1>}
+        {subtitle && <div className="text-sm opacity-90 mt-0.5">{subtitle}</div>}
+      </header>
+      <main className="max-w-md mx-auto px-5 py-4">{children}</main>
+    </div>
+  );
+}
+
+function Notice({ title, body }: { title: string; body: string }) {
+  return (
+    <div className="text-center py-16">
+      <h2 className="text-lg font-bold">{title}</h2>
+      <p className="text-gray-600 mt-2">{body}</p>
+    </div>
+  );
+}

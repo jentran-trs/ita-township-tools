@@ -414,6 +414,59 @@ function RegistrantsCard({
   const multiDay = days.length > 1;
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [notice, setNotice] = useState<string | null>(null);
+
+  // Drop selections for people who no longer exist (after a delete/reload).
+  useEffect(() => {
+    setSelected((cur) => {
+      const ids = new Set(registrants.map((r) => r.id));
+      const next = new Set(Array.from(cur).filter((id) => ids.has(id)));
+      return next.size === cur.size ? cur : next;
+    });
+  }, [registrants]);
+
+  const allSelected = registrants.length > 0 && selected.size === registrants.length;
+  const toggle = (id: string) =>
+    setSelected((cur) => {
+      const next = new Set(cur);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  const bulkDelete = async () => {
+    const n = selected.size;
+    if (!n) return;
+    if (
+      !window.confirm(
+        `Remove ${n} registrant${n === 1 ? '' : 's'} from this event?\n\nTheir badges stop working and their check-in/out records are deleted. Anyone who already has a certificate is skipped.`
+      )
+    )
+      return;
+    setBusy('bulk');
+    setError(null);
+    setNotice(null);
+    try {
+      const res = await fetch(`/api/admin/certificates/courses/${course.id}/registrants/bulk-delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selected) }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Delete failed');
+      setSelected(new Set());
+      setNotice(
+        `Removed ${json.deleted}.` +
+          (json.skipped?.length ? ` Skipped ${json.skipped.length} with certificates: ${json.skipped.join(', ')}.` : '')
+      );
+      onChanged();
+    } catch (e: any) {
+      setError(e.message || 'Delete failed');
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const call = async (id: string, init: RequestInit, confirmText?: string) => {
     if (confirmText && !window.confirm(confirmText)) return;
@@ -454,6 +507,23 @@ function RegistrantsCard({
           the total of those hours.
         </p>
       )}
+      {selected.size > 0 && (
+        <div className="flex flex-wrap items-center gap-3 mb-3 px-3 py-2 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-sm">
+          <span className="font-semibold">{selected.size} selected</span>
+          <button
+            type="button"
+            onClick={bulkDelete}
+            disabled={busy === 'bulk'}
+            className={btn + ' bg-red-600 text-white hover:bg-red-700'}
+          >
+            {busy === 'bulk' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />} Delete selected
+          </button>
+          <button type="button" onClick={() => setSelected(new Set())} className="text-gray-600 dark:text-gray-300 hover:underline">
+            Clear selection
+          </button>
+        </div>
+      )}
+      {notice && <p className="text-sm text-green-600 mb-3">{notice}</p>}
       {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
       {registrants.length === 0 ? (
         <p className="text-sm text-gray-500">No registrants yet. Import the AMO list above.</p>
@@ -462,6 +532,18 @@ function RegistrantsCard({
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-gray-500 border-b border-gray-200 dark:border-gray-800">
+                <th className="py-2 pr-2 w-6">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    ref={(el) => {
+                      if (el) el.indeterminate = selected.size > 0 && !allSelected;
+                    }}
+                    onChange={() => setSelected(allSelected ? new Set() : new Set(registrants.map((r) => r.id)))}
+                    aria-label="Select all registrants"
+                    className="h-4 w-4 accent-amber-500"
+                  />
+                </th>
                 <th className="py-2 pr-3">Name</th>
                 <th className="py-2 pr-3">Title</th>
                 <th className="py-2 pr-3">Type</th>
@@ -472,7 +554,16 @@ function RegistrantsCard({
             </thead>
             <tbody>
               {registrants.map((r) => (
-                <tr key={r.id} className="border-b border-gray-100 dark:border-gray-800 align-top">
+                <tr key={r.id} className={`border-b border-gray-100 dark:border-gray-800 align-top ${selected.has(r.id) ? 'bg-red-50/60 dark:bg-red-950/20' : ''}`}>
+                  <td className="py-2 pr-2">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(r.id)}
+                      onChange={() => toggle(r.id)}
+                      aria-label={`Select ${r.first_name} ${r.last_name}`}
+                      className="h-4 w-4 accent-amber-500 mt-0.5"
+                    />
+                  </td>
                   <td className="py-2 pr-3">
                     <div className="font-medium">
                       {r.first_name} {r.last_name}
@@ -542,6 +633,21 @@ function RegistrantsCard({
                       title="NIIMBOT 75 x 50 mm label"
                     >
                       <Tag className="w-3 h-3" /> Label
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(r.badge_token);
+                          setNotice(`Copied ${r.first_name} ${r.last_name}'s QR code. Paste it into a QR code on the NIIMBOT label.`);
+                        } catch {
+                          window.prompt('Copy this QR code text:', r.badge_token);
+                        }
+                      }}
+                      className="text-xs text-gray-600 dark:text-gray-300 hover:underline mr-3"
+                      title="Copy the text inside this person's QR code, to paste into a QR code in the NIIMBOT app"
+                    >
+                      Copy QR
                     </button>
                     <button
                       type="button"

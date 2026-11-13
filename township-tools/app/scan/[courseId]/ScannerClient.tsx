@@ -498,7 +498,25 @@ function ScanScreen({
             }}
             className="w-full flex items-center justify-center gap-2 py-3 bg-amber-500 text-white rounded-xl font-semibold"
           >
-            <Tag className="w-5 h-5" /> NIIMBOT label for {lastWalkIn.first_name} {lastWalkIn.last_name}
+            <Tag className="w-5 h-5" /> NIIMBOT label image for {lastWalkIn.first_name} {lastWalkIn.last_name}
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(lastWalkIn.badge_token);
+                show({
+                  kind: 'ok',
+                  title: 'QR code copied',
+                  detail: 'In the NIIMBOT app, add a QR code to the label and paste this as its content. Add the name as text.',
+                });
+              } catch {
+                window.prompt('Copy this QR code text into the NIIMBOT app:', lastWalkIn.badge_token);
+              }
+            }}
+            className="mt-2 w-full flex items-center justify-center gap-2 py-3 bg-white rounded-xl font-semibold shadow-sm"
+          >
+            Copy QR code for NIIMBOT
           </button>
         </div>
       )}

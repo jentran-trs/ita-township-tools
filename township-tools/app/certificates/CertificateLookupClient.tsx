@@ -15,6 +15,7 @@ type Sig = {
 
 type CertCard = {
   credential_id: string;
+  payment_hold?: boolean;
   attendee_first: string;
   attendee_last: string;
   attendee_email: string;
@@ -564,6 +565,13 @@ function CertificateCard({ cert }: { cert: CertCard }) {
         </div>
 
         <div className="flex-shrink-0">
+          {cert.payment_hold ? (
+            <div className="max-w-[16rem] text-sm bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-amber-900 dark:text-amber-200 rounded-lg px-4 py-3">
+              <div className="font-semibold mb-1">Certificate issued</div>
+              Your certificate will be available to download once your payment for this training has been recorded.
+              Questions? Contact the Indiana Township Association.
+            </div>
+          ) : (
           <CertificateDownloadButton
             data={{
               recipient: {
@@ -581,6 +589,7 @@ function CertificateCard({ cert }: { cert: CertCard }) {
             verifyUrl={verifyUrl}
             onDownloaded={onDownloaded}
           />
+          )}
         </div>
       </div>
     </article>

@@ -17,7 +17,7 @@ export async function GET(_req: Request, { params }: { params: { courseId: strin
   const [{ data: registrants, error: rErr }, { data: scans, error: sErr }] = await Promise.all([
     supabase
       .from('cert_registrants')
-      .select('id, first_name, last_name, title, township, county, badge_token, is_walk_in')
+      .select('*')
       .eq('course_id', course.id)
       .order('last_name', { ascending: true }),
     supabase
@@ -36,7 +36,19 @@ export async function GET(_req: Request, { params }: { params: { courseId: strin
       start_time: course.event_start_time,
       end_time: course.event_end_time,
     },
-    registrants: registrants || [],
+    // Only what the door needs (no emails etc. on volunteers' phones).
+    registrants: (registrants || []).map((r: any) => ({
+      id: r.id,
+      first_name: r.first_name,
+      last_name: r.last_name,
+      title: r.title,
+      township: r.township,
+      county: r.county,
+      badge_token: r.badge_token,
+      is_walk_in: r.is_walk_in,
+      payment_status: r.payment_status ?? null,
+      balance_due: r.balance_due != null ? Number(r.balance_due) : null,
+    })),
     scans: scans || [],
   });
 }

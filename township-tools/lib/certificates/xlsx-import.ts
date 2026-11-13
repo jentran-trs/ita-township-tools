@@ -9,6 +9,8 @@ export type AttendeeRow = {
   registrant_type: string | null;
   // AMO Organization when it isn't a township/county (e.g. a sponsor company).
   organization: string | null;
+  // AMO "Balance Due" in dollars; null when the file has no such column or the cell is blank.
+  balance_due: number | null;
   township: string | null;
   county: string | null;
   // Diagnostic
@@ -22,6 +24,7 @@ type ColumnIndex = {
   email: number;
   title: number;
   registrant_type: number;
+  balance_due: number;
   township: number;
   county: number;
   organization: number;
@@ -35,6 +38,8 @@ const HEADER_ALIASES: Record<keyof ColumnIndex, string[]> = {
   title: ['title', 'jobtitle', 'position'],
   // AMO "Registrant Type" (Attendee, Sponsor, ...). Badge colour bar.
   registrant_type: ['registranttype', 'attendeetype', 'registrationtype', 'badgetype'],
+  // AMO "Balance Due": $0 means paid.
+  balance_due: ['balancedue', 'balance', 'amountdue', 'balanceowed'],
   township: ['township', 'twp'],
   county: ['county'],
   // AMO exports combine township + county into one "Organization" column,
@@ -63,7 +68,7 @@ function valueToString(v: any): string {
 }
 
 function findColumns(headerCells: any[]): { index: ColumnIndex; missing: string[] } {
-  const idx: ColumnIndex = { first: -1, last: -1, email: -1, title: -1, registrant_type: -1, township: -1, county: -1, organization: -1 };
+  const idx: ColumnIndex = { first: -1, last: -1, email: -1, title: -1, registrant_type: -1, balance_due: -1, township: -1, county: -1, organization: -1 };
   for (let c = 0; c < headerCells.length; c++) {
     const norm = normalizeHeader(valueToString(headerCells[c]));
     if (!norm) continue;
@@ -141,6 +146,7 @@ export async function parseAttendeeWorkbook(buffer: Buffer, filename: string): P
     const email = valueToString(r[index.email]);
     const title = index.title >= 0 ? valueToString(r[index.title]) : '';
     const registrantType = index.registrant_type >= 0 ? valueToString(r[index.registrant_type]) : '';
+    const balanceDue = index.balance_due >= 0 ? parseMoney(r[index.balance_due]) : null;
     let township = index.township >= 0 ? valueToString(r[index.township]) : '';
     let county = index.county >= 0 ? valueToString(r[index.county]) : '';
 
@@ -173,6 +179,7 @@ export async function parseAttendeeWorkbook(buffer: Buffer, filename: string): P
       title: title || null,
       registrant_type: registrantType || null,
       organization: organization || null,
+      balance_due: balanceDue,
       // Store the bare township name ("Oregon"); the certificate appends the
       // word "Township" when displaying.
       township: stripTownshipSuffix(township) || null,
@@ -238,4 +245,15 @@ export function findInFileDuplicates(rows: AttendeeRow[]): Set<number> {
  */
 export function recipientKey(email: string, first: string, last: string): string {
   return `${(email || '').toLowerCase().trim()}|${(first || '').toLowerCase().trim()}|${(last || '').toLowerCase().trim()}`;
+}
+
+/** "$1,234.50", "1234.5", "(25.00)", 0 → number; blank or unreadable → null. */
+function parseMoney(v: any): number | null {
+  if (typeof v === 'number' && Number.isFinite(v)) return Math.round(v * 100) / 100;
+  const raw = valueToString(v);
+  if (!raw) return null;
+  const negative = /^\(.*\)$/.test(raw) || raw.startsWith('-');
+  const n = parseFloat(raw.replace(/[^0-9.]/g, ''));
+  if (!Number.isFinite(n)) return null;
+  return Math.round((negative ? -n : n) * 100) / 100;
 }

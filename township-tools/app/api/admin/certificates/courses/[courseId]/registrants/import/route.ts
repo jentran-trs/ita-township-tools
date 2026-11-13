@@ -55,12 +55,13 @@ export async function POST(req: Request, { params }: RouteParams) {
 
   const { data: existing, error: exErr } = await supabase
     .from('cert_registrants')
-    .select('id, email, first_name, last_name')
+    .select('id, email, first_name, last_name, payment_status, payment_method')
     .eq('course_id', course.id);
   if (exErr) return NextResponse.json({ error: exErr.message }, { status: 500 });
   const existingByKey = new Map<string, string>(
     (existing || []).map((r: any) => [recipientKey(r.email, r.first_name, r.last_name), r.id])
   );
+  const existingById = new Map<string, any>((existing || []).map((r: any) => [r.id, r]));
 
   const inFile = findInFileDuplicates(parsed);
   const rows: ParsedRow[] = parsed.map((r, i) => ({
@@ -76,6 +77,7 @@ export async function POST(req: Request, { params }: RouteParams) {
     inFileDupes: rows.filter((r) => r.inFileDuplicate).length,
     missingFields: rows.filter((r) => r.issues.length > 0).length,
     missingTitle: rows.filter((r) => !r.title).length,
+    balanceDue: rows.filter((r) => (r.balance_due ?? 0) > 0).length,
   };
 
   if (mode === 'preview') {
@@ -95,7 +97,22 @@ export async function POST(req: Request, { params }: RouteParams) {
       skipped.push({ row_number: r.row_number, reason: 'Same person appears earlier in this file' });
       continue;
     }
+    // Balance Due from AMO: $0 (or less) = paid, more = payment due. A
+    // payment already taken at the door (check/card) or marked by an admin is
+    // never undone by a later re-import that still shows a balance.
+    const existingId0 = existingByKey.get(recipientKey(r.email, r.first, r.last));
+    const prev = existingId0 ? existingById.get(existingId0) : null;
+    const paidElsewhere = prev?.payment_status === 'paid' && prev?.payment_method && prev.payment_method !== 'amo';
+    const payment =
+      r.balance_due === null
+        ? {}
+        : r.balance_due <= 0
+          ? { balance_due: r.balance_due, payment_status: 'paid', payment_method: paidElsewhere ? prev.payment_method : 'amo' }
+          : paidElsewhere
+            ? { balance_due: r.balance_due }
+            : { balance_due: r.balance_due, payment_status: 'due', payment_method: null };
     const fields = {
+      ...payment,
       first_name: r.first,
       last_name: r.last,
       email: r.email,
@@ -120,6 +137,18 @@ export async function POST(req: Request, { params }: RouteParams) {
     const { data, error } = await supabase.from('cert_registrants').insert(toInsert).select('id');
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     inserted = data?.length ?? 0;
+  }
+
+  // Anyone AMO now shows as paid gets their held certificate released.
+  const { data: paidWithCert } = await supabase
+    .from('cert_registrants')
+    .select('certificate_id')
+    .eq('course_id', course.id)
+    .eq('payment_status', 'paid')
+    .not('certificate_id', 'is', null);
+  const certIds = (paidWithCert || []).map((r: any) => r.certificate_id).filter(Boolean);
+  if (certIds.length) {
+    await supabase.from('certificates').update({ payment_hold: false }).in('id', certIds).eq('payment_hold', true);
   }
 
   return NextResponse.json({

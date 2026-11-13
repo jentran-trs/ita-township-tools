@@ -114,6 +114,14 @@ export default async function VerifyResultPage({ params }: Params) {
           >
             <CertSummary cert={cert} course={course} />
           </ResultCard>
+        ) : cert.payment_hold ? (
+          <ResultCard
+            status="reissued"
+            title="Issued, pending payment"
+            body="This certificate has been issued but isn't final yet: payment for the training has not been recorded. Contact the Indiana Township Association if you need confirmation."
+          >
+            <CertSummary cert={cert} course={course} />
+          </ResultCard>
         ) : (
           <ResultCard
             status="active"

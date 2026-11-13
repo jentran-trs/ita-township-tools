@@ -50,7 +50,7 @@ export async function POST(req: Request, { params }: { params: { courseId: strin
   const rejected: { id: string; reason: string }[] = [];
 
   // 1. Walk-ins first, so their scans have someone to point at.
-  const walkInRows = [];
+  const walkInRows: any[] = [];
   for (const w of walkIns) {
     const first = String(w.first_name || '').trim();
     const last = String(w.last_name || '').trim();
@@ -73,6 +73,14 @@ export async function POST(req: Request, { params }: { params: { courseId: strin
     });
   }
   if (walkInRows.length) {
+    // If this event tracks payment (the AMO file had Balance Due), a walk-in
+    // owes until the door team records a payment.
+    const { count } = await supabase
+      .from('cert_registrants')
+      .select('id', { count: 'exact', head: true })
+      .eq('course_id', course.id)
+      .not('payment_status', 'is', null);
+    if (count) walkInRows.forEach((w: any) => (w.payment_status = 'due'));
     const { error } = await supabase.from('cert_registrants').upsert(walkInRows, { onConflict: 'id', ignoreDuplicates: true });
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   }

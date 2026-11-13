@@ -8,11 +8,14 @@ import { isBadgeToken } from '@/lib/badges/token';
 import { townshipLabel } from '@/lib/certificates/township';
 import { formatCourseDates } from '@/lib/certificates/date-range';
 import { deliverLabel, renderNiimbotLabel } from '@/lib/badges/niimbot-label';
+import { DoorPayment, PaymentFields, PaymentSheet } from './PaymentFields';
+import { deletePhoto, getPhoto, putPhoto } from '@/lib/badges/photo-store';
 import {
   ScannerState,
   RosterPerson,
   ScanRecord,
   WalkInRecord,
+  PaymentRecord,
   emptyState,
   loadState,
   mergeServer,
@@ -63,10 +66,47 @@ export function ScannerClient({ courseId }: { courseId: string }) {
     }
   }, [courseId, setState]);
 
+  // Payments go one at a time (each may carry a check photo). Returns false
+  // when the phone is offline or signed out, so the rest wait.
+  const syncPayments = useCallback(async (): Promise<boolean> => {
+    for (const pay of stateRef.current.pendingPayments || []) {
+      try {
+        const fd = new FormData();
+        const { has_photo, ...meta } = pay;
+        fd.set('meta', JSON.stringify(meta));
+        if (has_photo) {
+          const blob = await getPhoto(pay.client_payment_id).catch(() => undefined);
+          if (blob) fd.set('photo', blob, 'check.jpg');
+        }
+        const res = await fetch(`/api/scan/${courseId}/payments`, { method: 'POST', credentials: 'same-origin', body: fd });
+        if (res.status === 401) {
+          setPhase('pin');
+          return false;
+        }
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok && !json.rejected) throw new Error(json.error || 'Upload failed');
+        if (json.rejected) setSyncError('A payment could not be saved (person removed from the event).');
+        setState((cur) => ({ ...cur, pendingPayments: cur.pendingPayments.filter((x) => x.client_payment_id !== pay.client_payment_id) }));
+        if (has_photo) deletePhoto(pay.client_payment_id).catch(() => {});
+      } catch {
+        setOnline(false);
+        return false;
+      }
+    }
+    return true;
+  }, [courseId, setState]);
+
   const sync = useCallback(async () => {
     const s = stateRef.current;
     if (!s.pendingScans.length && !s.pendingWalkIns.length) {
-      // Nothing to send; refresh the roster so walk-ins added on other phones show up.
+      // Nothing else to send; upload any payments, then refresh the roster so
+      // walk-ins and payments from other phones show up.
+      if ((s.pendingPayments || []).length) {
+        setSyncing(true);
+        const ok = await syncPayments();
+        setSyncing(false);
+        if (!ok) return;
+      }
       const r = await fetchRoster();
       if (r === 'pin') setPhase('pin');
       return;
@@ -96,6 +136,8 @@ export function ScannerClient({ courseId }: { courseId: string }) {
       }));
       setSyncError(json.rejected?.length ? `${json.rejected.length} item(s) could not be saved` : null);
       setOnline(true);
+      // Walk-ins exist on the server now, so their payments can follow.
+      await syncPayments();
       await fetchRoster();
     } catch {
       // Network down: keep everything queued and try again shortly.
@@ -103,7 +145,7 @@ export function ScannerClient({ courseId }: { courseId: string }) {
     } finally {
       setSyncing(false);
     }
-  }, [courseId, fetchRoster, setState]);
+  }, [courseId, fetchRoster, setState, syncPayments]);
 
   // Let the scanner page itself open with no signal after the first visit.
   useEffect(() => {
@@ -153,7 +195,7 @@ export function ScannerClient({ courseId }: { courseId: string }) {
   }, [phase, sync]);
 
   // Upload new scans right away (debounced) instead of waiting for the timer.
-  const pendingCount = state.pendingScans.length + state.pendingWalkIns.length;
+  const pendingCount = state.pendingScans.length + state.pendingWalkIns.length + (state.pendingPayments || []).length;
   useEffect(() => {
     if (phase !== 'scan' || !pendingCount) return;
     const t = setTimeout(sync, 800);
@@ -309,6 +351,10 @@ function ScanScreen({
   const [result, setResult] = useState<Result | null>(null);
   const [sheet, setSheet] = useState<null | 'search' | 'walkin'>(null);
   const [lastWalkIn, setLastWalkIn] = useState<RosterPerson | null>(null);
+  // Someone who owes, waiting for the team to choose check / card / no payment.
+  const [paymentFor, setPaymentFor] = useState<{ person: RosterPerson; source: 'scan' | 'name_search' } | null>(null);
+  // This event tracks payment if anyone imported with a Balance Due.
+  const tracksPayment = useMemo(() => state.roster.some((p) => p.payment_status), [state.roster]);
   const audio = useRef<AudioContext | null>(null);
   const today = easternDate(new Date());
   const isEventDay = event.days.includes(today);
@@ -357,8 +403,39 @@ function ScanScreen({
     [beep]
   );
 
+  const queuePayment = useCallback(
+    async (personId: string, pay: DoorPayment) => {
+      const id = randomId();
+      let hasPhoto = false;
+      if (pay.photo) {
+        try {
+          await putPhoto(id, pay.photo);
+          hasPhoto = true;
+        } catch {
+          show({ kind: 'warn', title: 'Photo not saved', detail: 'The payment is recorded, but this phone could not store the photo.' });
+        }
+      }
+      const rec: PaymentRecord = {
+        client_payment_id: id,
+        registrant_id: personId,
+        method: pay.method,
+        check_number: pay.check_number,
+        amount: pay.amount,
+        recorded_at: new Date().toISOString(),
+        device_label: state.deviceLabel || undefined,
+        has_photo: hasPhoto,
+      };
+      setState((s) => ({
+        ...s,
+        pendingPayments: [...(s.pendingPayments || []), rec],
+        roster: s.roster.map((p) => (p.id === personId ? { ...p, payment_status: 'paid' } : p)),
+      }));
+    },
+    [setState, show, state.deviceLabel]
+  );
+
   const record = useCallback(
-    (person: RosterPerson, source: 'scan' | 'name_search') => {
+    (person: RosterPerson, source: 'scan' | 'name_search', opts?: { skipPayment?: boolean; paidBy?: 'check' | 'card' | 'none' }) => {
       const name = `${person.first_name} ${person.last_name}`;
       const mine = state.scans.filter((x) => x.registrant_id === person.id && x.scan_date === today);
       const same = mine.filter((x) => x.direction === mode).sort((a, b) => a.scanned_at.localeCompare(b.scanned_at));
@@ -373,6 +450,12 @@ function ScanScreen({
         if (Date.now() - new Date(latest.scanned_at).getTime() < 2 * 60_000) {
           return show({ kind: 'warn', title: `${name} is already checked out`, detail: `Checked out at ${easternTime(latest.scanned_at)}. Nothing recorded.` });
         }
+      }
+      // Owes and checking in: ask about payment first.
+      if (mode === 'in' && person.payment_status === 'due' && !opts?.skipPayment) {
+        setPaymentFor({ person, source });
+        beep('warn');
+        return;
       }
       const now = new Date();
       const rec: ScanRecord = {
@@ -390,15 +473,19 @@ function ScanScreen({
         show({ kind: 'warn', title: `${name} checked out`, detail: 'No check-in today, so this will be flagged for review.' });
       } else if (mode === 'out' && same.length) {
         show({ kind: 'ok', title: `${name} checked out again`, detail: `Check-out time updated to ${easternTime(now)}.` });
+      } else if (mode === 'in' && opts?.paidBy === 'none') {
+        show({ kind: 'warn', title: `${name} checked in`, detail: 'No payment collected. They will be listed for follow-up.' });
       } else {
+        const paid = opts?.paidBy === 'check' ? 'Paid by check' : opts?.paidBy === 'card' ? 'Paid by card' : null;
+        const owes = mode === 'out' && person.payment_status === 'due' ? 'Payment still due' : null;
         show({
-          kind: 'ok',
+          kind: owes ? 'warn' : 'ok',
           title: `${name} ${mode === 'in' ? 'checked in' : 'checked out'}`,
-          detail: [person.title, townshipLabel(person.township)].filter(Boolean).join(' · ') || undefined,
+          detail: [paid, owes, person.title, townshipLabel(person.township)].filter(Boolean).join(' · ') || undefined,
         });
       }
     },
-    [mode, setState, show, state.deviceLabel, state.scans, today]
+    [beep, mode, setState, show, state.deviceLabel, state.scans, today]
   );
 
   const lastCode = useRef<{ code: string; at: number } | null>(null);
@@ -538,11 +625,25 @@ function ScanScreen({
           onClose={() => setSheet(null)}
         />
       )}
+      {paymentFor && (
+        <PaymentSheet
+          name={`${paymentFor.person.first_name} ${paymentFor.person.last_name}`}
+          balance={paymentFor.person.balance_due}
+          onCancel={() => setPaymentFor(null)}
+          onDone={async (pay) => {
+            const { person, source } = paymentFor;
+            setPaymentFor(null);
+            if (pay) await queuePayment(person.id, pay);
+            record({ ...person, payment_status: pay ? 'paid' : 'due' }, source, { skipPayment: true, paidBy: pay ? pay.method : 'none' });
+          }}
+        />
+      )}
       {sheet === 'walkin' && (
         <WalkInSheet
           mode={mode}
+          tracksPayment={tracksPayment}
           onClose={() => setSheet(null)}
-          onSave={(w, checkIn) => {
+          onSave={async (w, checkIn, pay) => {
             const person: RosterPerson = {
               id: w.id,
               first_name: w.first_name,
@@ -552,8 +653,11 @@ function ScanScreen({
               county: w.county || null,
               badge_token: w.badge_token,
               is_walk_in: true,
+              payment_status: tracksPayment ? (pay ? 'paid' : 'due') : null,
             };
-            setState((s) => ({ ...s, roster: [...s.roster, person], pendingWalkIns: [...s.pendingWalkIns, w] }));
+            const walkIn = { ...w, payment_status: person.payment_status };
+            setState((s) => ({ ...s, roster: [...s.roster, person], pendingWalkIns: [...s.pendingWalkIns, walkIn] }));
+            if (pay) await queuePayment(person.id, pay);
             setSheet(null);
             setLastWalkIn(person);
             if (checkIn) {
@@ -569,7 +673,11 @@ function ScanScreen({
                 device_label: state.deviceLabel || undefined,
               };
               setState((s) => ({ ...s, scans: [...s.scans, rec], pendingScans: [...s.pendingScans, rec] }));
-              show({ kind: 'ok', title: `${person.first_name} ${person.last_name} added and checked in`, detail: 'Print their NIIMBOT label below.' });
+              show({
+                kind: tracksPayment && !pay ? 'warn' : 'ok',
+                title: `${person.first_name} ${person.last_name} added and checked in`,
+                detail: (tracksPayment && !pay ? 'No payment collected; listed for follow-up. ' : '') + 'Print their NIIMBOT label below.',
+              });
             } else {
               show({ kind: 'ok', title: `${person.first_name} ${person.last_name} added`, detail: 'Print their NIIMBOT label below.' });
             }
@@ -773,6 +881,7 @@ function SearchSheet({
               <div className="font-semibold">
                 {p.first_name} {p.last_name}
                 {p.is_walk_in && <span className="ml-2 text-xs text-amber-600">walk-in</span>}
+                {p.payment_status === 'due' && <span className="ml-2 text-xs font-semibold text-red-600">payment due</span>}
               </div>
               <div className="text-sm text-gray-500">
                 {[p.title, townshipLabel(p.township)].filter(Boolean).join(' · ')}
@@ -786,7 +895,18 @@ function SearchSheet({
   );
 }
 
-function WalkInSheet({ mode, onSave, onClose }: { mode: Mode; onSave: (w: WalkInRecord, checkIn: boolean) => void; onClose: () => void }) {
+function WalkInSheet({
+  mode,
+  tracksPayment,
+  onSave,
+  onClose,
+}: {
+  mode: Mode;
+  tracksPayment: boolean;
+  onSave: (w: WalkInRecord, checkIn: boolean, payment: DoorPayment | null) => void;
+  onClose: () => void;
+}) {
+  const [payMethod, setPayMethod] = useState<'none' | 'check' | 'card'>('none');
   const [f, setF] = useState({ first_name: '', last_name: '', title: '', township: '', county: '', email: '', registrant_type: 'Attendee' });
   const [checkIn, setCheckIn] = useState(mode === 'in');
   const field = (k: keyof typeof f, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
@@ -802,7 +922,7 @@ function WalkInSheet({ mode, onSave, onClose }: { mode: Mode; onSave: (w: WalkIn
         className="space-y-3"
         onSubmit={(e) => {
           e.preventDefault();
-          if (!ok) return;
+          if (!ok || payMethod !== 'none') return;
           onSave(
             {
               id: randomId(),
@@ -815,7 +935,8 @@ function WalkInSheet({ mode, onSave, onClose }: { mode: Mode; onSave: (w: WalkIn
               county: f.county.trim() || undefined,
               email: f.email.trim() || undefined,
             },
-            checkIn
+            checkIn,
+            null
           );
         }}
       >
@@ -847,9 +968,53 @@ function WalkInSheet({ mode, onSave, onClose }: { mode: Mode; onSave: (w: WalkIn
           <input type="checkbox" checked={checkIn} onChange={(e) => setCheckIn(e.target.checked)} className="h-5 w-5" />
           Check them in now
         </label>
-        <button type="submit" disabled={!ok} className="w-full py-3.5 text-lg font-semibold bg-[#1B2E5B] text-white rounded-xl disabled:opacity-50">
-          Add walk-in
-        </button>
+        {tracksPayment && (
+          <fieldset className="space-y-1">
+            <legend className="text-sm font-semibold mb-1">Payment</legend>
+            {([
+              ['check', 'Paid by check'],
+              ['card', 'Paid by credit card'],
+              ['none', 'Not paid yet (listed for follow-up)'],
+            ] as const).map(([v, label]) => (
+              <label key={v} className="flex items-center gap-2 text-sm">
+                <input type="radio" name="walkin-pay" checked={payMethod === v} onChange={() => setPayMethod(v)} className="h-5 w-5" />
+                {label}
+              </label>
+            ))}
+          </fieldset>
+        )}
+        {tracksPayment && payMethod !== 'none' ? (
+          ok ? (
+            <PaymentFields
+              key={payMethod}
+              method={payMethod}
+              saveLabel="Add walk-in"
+              onSave={(pay) =>
+                onSave(
+                  {
+                    id: randomId(),
+                    badge_token: randomBadgeToken(),
+                    first_name: f.first_name.trim(),
+                    last_name: f.last_name.trim(),
+                    title: f.title.trim() || undefined,
+                    registrant_type: f.registrant_type,
+                    township: f.township.trim() || undefined,
+                    county: f.county.trim() || undefined,
+                    email: f.email.trim() || undefined,
+                  },
+                  checkIn,
+                  pay
+                )
+              }
+            />
+          ) : (
+            <p className="text-sm text-gray-500">Enter a first and last name first.</p>
+          )
+        ) : (
+          <button type="submit" disabled={!ok} className="w-full py-3.5 text-lg font-semibold bg-[#1B2E5B] text-white rounded-xl disabled:opacity-50">
+            Add walk-in
+          </button>
+        )}
         <p className="text-xs text-gray-500">Works offline. It uploads with the scans when the phone is back online.</p>
       </form>
     </Sheet>

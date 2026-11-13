@@ -27,8 +27,15 @@ export async function GET(_req: Request, { params }: { params: { courseId: strin
   const header = [
     'Last Name', 'First Name', 'Email', 'Title', 'Township', 'County', 'Walk-in',
     ...days.flatMap((d) => [`${dayLabel(d)} In`, `${dayLabel(d)} Out`]),
-    'Status', 'Credit Hours',
+    'Status', 'Needs review because', 'Payment', 'Credit Hours',
   ];
+  const METHOD: Record<string, string> = { check: 'check', card: 'credit card', admin: 'marked paid', amo: 'AMO' };
+  const paymentText = (r: any) =>
+    r.payment_status === 'due'
+      ? `Due${r.balance_due ? ` $${Number(r.balance_due).toFixed(2)}` : ''}`
+      : r.payment_status === 'paid'
+        ? `Paid (${METHOD[r.payment_method] || 'paid'})`
+        : '';
   const h = ws.addRow(header);
   h.font = { bold: true };
   h.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE5E7EB' } };
@@ -38,11 +45,11 @@ export async function GET(_req: Request, { params }: { params: { courseId: strin
       r.last_name, r.first_name, r.email, r.title || '', townshipLabel(r.township) || '',
       r.county ? `${r.county} County` : '', r.is_walk_in ? 'Yes' : '',
       ...r.attendance.days.flatMap((d) => [d.checkIn ? easternTime(d.checkIn) : '', d.checkOut ? easternTime(d.checkOut) : '']),
-      STATUS[r.status], r.credit_hours,
+      STATUS[r.status], r.status === 'review' ? r.reasons.join('; ') : '', paymentText(r), r.credit_hours,
     ]);
-    if (r.status === 'review') row.getCell(header.length - 1).font = { color: { argb: 'FFB45309' }, bold: true };
+    if (r.status === 'review') row.getCell(header.length - 3).font = { color: { argb: 'FFB45309' }, bold: true };
   }
-  ws.columns.forEach((c, i) => (c.width = i < 3 ? 22 : i < 7 ? 18 : 12));
+  ws.columns.forEach((c, i) => (c.width = i < 3 ? 22 : i < 7 ? 18 : i === header.length - 3 ? 36 : 14));
   ws.views = [{ state: 'frozen', ySplit: 4, xSplit: 2 }];
 
   const buf = await wb.xlsx.writeBuffer();

@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { auth, currentUser } from '@clerk/nextjs/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { requireSuperadmin } from '@/lib/auth/superadmin';
 import { loadCourseAttendance } from '@/lib/badges/admin-attendance';
 import { easternDate, easternToUtc } from '@/lib/badges/attendance';
+import { adminName } from '@/lib/badges/admin-name';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -16,22 +16,27 @@ export async function GET(_req: Request, { params }: RouteParams) {
   if (sErr) return sErr;
   const data = await loadCourseAttendance(params.courseId);
   if (!data) return NextResponse.json({ error: 'Course not found' }, { status: 404 });
+  // Latest payment recorded for each person (door check/card, or admin).
+  const supabase = createServerSupabaseClient();
+  const { data: pays } = await supabase
+    .from('cert_payments')
+    .select('id, registrant_id, method, check_number, amount, detected_check_number, detected_amount, detected_payer, photo_path, photo_deleted_at, note, recorded_by, recorded_at')
+    .eq('course_id', params.courseId)
+    .is('voided_at', null)
+    .order('recorded_at', { ascending: false });
+  const latest = new Map<string, any>();
+  (pays || []).forEach((p: any) => {
+    if (!latest.has(p.registrant_id)) {
+      const { photo_path, ...rest } = p;
+      latest.set(p.registrant_id, { ...rest, has_photo: !!photo_path && !p.photo_deleted_at });
+    }
+  });
+
   return NextResponse.json({
     days: data.days,
     course: { hours: Number(data.course.hours), event_start_time: data.course.event_start_time, event_end_time: data.course.event_end_time },
-    rows: data.rows,
+    rows: data.rows.map((r) => ({ ...r, payment: latest.get(r.id) || null })),
   });
-}
-
-async function adminName(): Promise<string> {
-  try {
-    const a = await auth();
-    if (a?.userId) {
-      const u = await currentUser();
-      return u?.primaryEmailAddress?.emailAddress || u?.fullName || 'ITA admin';
-    }
-  } catch {}
-  return 'ITA admin';
 }
 
 // POST — manual check-in/out after Jen verifies someone was there.

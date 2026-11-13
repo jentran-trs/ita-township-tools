@@ -1,5 +1,6 @@
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { computeAttendance, eventDays, AttendanceResult } from '@/lib/badges/attendance';
+import { formatCourseDates } from '@/lib/certificates/date-range';
 
 export type AttendanceRow = {
   id: string;
@@ -12,8 +13,15 @@ export type AttendanceRow = {
   is_walk_in: boolean;
   day_hours: Record<string, number> | null;
   certificate_id: string | null;
+  balance_due: number | null;
+  payment_status: 'paid' | 'due' | null;
+  payment_method: string | null;
   attendance: AttendanceResult;
+  // Checked in and out on every day.
+  attendance_complete: boolean;
   status: 'attended' | 'review' | 'no_show';
+  // Plain-English reasons someone needs review, e.g. "No check-out on Dec 10".
+  reasons: string[];
   // Hours that would go on the certificate.
   credit_hours: number;
 };
@@ -37,7 +45,7 @@ export async function loadCourseAttendance(courseId: string): Promise<CourseAtte
   const [{ data: regs }, { data: scans }] = await Promise.all([
     supabase
       .from('cert_registrants')
-      .select('id, first_name, last_name, email, title, township, county, is_walk_in, day_hours, certificate_id')
+      .select('*')
       .eq('course_id', course.id)
       .order('last_name', { ascending: true })
       .order('first_name', { ascending: true }),
@@ -57,13 +65,36 @@ export async function loadCourseAttendance(courseId: string): Promise<CourseAtte
 
   const rows: AttendanceRow[] = (regs || []).map((r: any) => {
     const attendance = computeAttendance(days, byPerson.get(r.id) || []);
-    const status: AttendanceRow['status'] = attendance.attended ? 'attended' : attendance.anyScan ? 'review' : 'no_show';
+    const reasons: string[] = [];
+    if (attendance.anyScan) {
+      for (const d of attendance.days) {
+        const label = formatCourseDates(d.date, null, 'short').replace(/, \d{4}$/, '');
+        if (d.checkIn && !d.checkOut) reasons.push(`No check-out on ${label}`);
+        else if (!d.checkIn && d.checkOut) reasons.push(`No check-in on ${label}`);
+        else if (!d.checkIn && !d.checkOut) reasons.push(`Not scanned on ${label}`);
+      }
+    }
+    if (r.payment_status === 'due') {
+      const owed = r.balance_due != null && Number(r.balance_due) > 0 ? ` ($${Number(r.balance_due).toFixed(2)} due)` : '';
+      reasons.push(`Payment not completed${owed}`);
+    }
+    const status: AttendanceRow['status'] = !attendance.anyScan ? 'no_show' : reasons.length ? 'review' : 'attended';
     const credit = r.day_hours
       ? Math.round(days.reduce((sum, d) => sum + (Number(r.day_hours[d]) || 0), 0) * 10) / 10
-      : status === 'attended'
+      : attendance.attended
         ? Number(course.hours)
         : 0;
-    return { ...r, attendance, status, credit_hours: credit };
+    return {
+      ...r,
+      balance_due: r.balance_due != null ? Number(r.balance_due) : null,
+      payment_status: r.payment_status ?? null,
+      payment_method: r.payment_method ?? null,
+      attendance,
+      attendance_complete: attendance.attended,
+      status,
+      reasons,
+      credit_hours: credit,
+    };
   });
 
   return { course, days, rows };

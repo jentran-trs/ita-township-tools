@@ -80,6 +80,8 @@ export async function POST(req: Request) {
         attendee_township: c.attendee_township,
         attendee_county: c.attendee_county,
         issued_at: c.issued_at,
+        // Issued from badge attendance but payment not yet recorded.
+        payment_hold: !!c.payment_hold,
         course: {
           course_id: course.course_id,
           name: course.name,

@@ -57,7 +57,8 @@ export async function GET(_req: Request, { params }: RouteParams) {
       syllabus_file_url: course.syllabus_file_url,
       syllabus_file_name: course.syllabus_file_name,
     },
-    status: cert.status,
+    // 'pending_payment': issued from badge attendance, payment not yet recorded.
+    status: cert.status === 'active' && cert.payment_hold ? 'pending_payment' : cert.status,
     issued_at: cert.issued_at,
   });
 }

@@ -15,5 +15,11 @@ export const viewport: Viewport = {
 
 // Public, PIN-gated badge scanner for door volunteers. No Township Tools login.
 export default function ScanPage({ params }: { params: { courseId: string } }) {
-  return <ScannerClient courseId={params.courseId} />;
+  return (
+    <>
+      {/* The site-wide dark-mode button would cover the scanner's bottom sheets on phones. */}
+      <style>{`button.fixed.bottom-4.right-4.z-50 { display: none !important; }`}</style>
+      <ScannerClient courseId={params.courseId} />
+    </>
+  );
 }

@@ -11,6 +11,21 @@ export type RosterPerson = {
   county: string | null;
   badge_token: string;
   is_walk_in: boolean;
+  // 'due' = owes (AMO Balance Due > $0, or a walk-in at a paid event).
+  payment_status?: 'paid' | 'due' | null;
+  balance_due?: number | null;
+};
+
+/** A payment taken at the door, waiting to upload. The photo (checks) is in IndexedDB under client_payment_id. */
+export type PaymentRecord = {
+  client_payment_id: string;
+  registrant_id: string;
+  method: 'check' | 'card';
+  check_number?: string;
+  amount?: string;
+  recorded_at: string;
+  device_label?: string;
+  has_photo: boolean;
 };
 
 export type ScanRecord = {
@@ -31,6 +46,8 @@ export type WalkInRecord = {
   email?: string;
   title?: string;
   registrant_type?: string;
+  // Local only: whether this walk-in still owes (shown on this phone).
+  payment_status?: 'paid' | 'due' | null;
   township?: string;
   county?: string;
 };
@@ -41,6 +58,7 @@ export type ScannerState = {
   scans: ScanRecord[]; // server scans + everything recorded on this phone
   pendingScans: ScanRecord[];
   pendingWalkIns: WalkInRecord[];
+  pendingPayments: PaymentRecord[];
   deviceLabel: string;
   lastSyncAt: string | null;
 };
@@ -48,7 +66,7 @@ export type ScannerState = {
 const key = (courseId: string) => `tt_scanner_${courseId}`;
 
 export function emptyState(): ScannerState {
-  return { event: null, roster: [], scans: [], pendingScans: [], pendingWalkIns: [], deviceLabel: '', lastSyncAt: null };
+  return { event: null, roster: [], scans: [], pendingScans: [], pendingWalkIns: [], pendingPayments: [], deviceLabel: '', lastSyncAt: null };
 }
 
 export function loadState(courseId: string): ScannerState {
@@ -74,7 +92,9 @@ export function mergeServer(
 ): ScannerState {
   const pendingIds = new Set(s.pendingScans.map((x) => x.client_scan_id));
   const serverIds = new Set(server.scans.map((x) => x.client_scan_id));
-  const roster = [...server.registrants];
+  // A payment taken on this phone but not uploaded yet still counts as paid here.
+  const paidHere = new Set((s.pendingPayments || []).map((x) => x.registrant_id));
+  const roster = server.registrants.map((r) => (paidHere.has(r.id) ? { ...r, payment_status: 'paid' as const } : r));
   const rosterIds = new Set(roster.map((r) => r.id));
   for (const w of s.pendingWalkIns) {
     if (!rosterIds.has(w.id)) {
@@ -87,6 +107,7 @@ export function mergeServer(
         county: w.county || null,
         badge_token: w.badge_token,
         is_walk_in: true,
+        payment_status: paidHere.has(w.id) ? 'paid' : w.payment_status ?? null,
       });
     }
   }

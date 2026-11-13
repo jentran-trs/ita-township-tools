@@ -48,6 +48,7 @@ type PreviewRow = {
   organization: string | null;
   township: string | null;
   county: string | null;
+  balance_due: number | null;
   row_number: number;
   issues: string[];
   inFileDuplicate: boolean;
@@ -56,7 +57,7 @@ type PreviewRow = {
 
 type Preview = {
   rows: PreviewRow[];
-  summary: { total: number; new: number; alreadyRegistered: number; inFileDupes: number; missingFields: number; missingTitle: number };
+  summary: { total: number; new: number; alreadyRegistered: number; inFileDupes: number; missingFields: number; missingTitle: number; balanceDue?: number };
 };
 
 const card = 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-5';
@@ -297,7 +298,7 @@ function ImportCard({ courseId, onImported }: { courseId: string; onImported: ()
       <h2 className="text-base font-bold mb-1">Import registrants</h2>
       <p className="text-sm text-gray-500 mb-4">
         Upload the AMO Excel export (same file as the certificate import). Columns used: First Name, Last Name, Email,
-        Title, Registrant Type, Township/County or Organization. Re-uploading updates people already on the list and keeps their badge
+        Title, Registrant Type, Balance Due ($0 = paid), Township/County or Organization. Re-uploading updates people already on the list and keeps their badge
         QR codes the same.
       </p>
 
@@ -335,6 +336,9 @@ function ImportCard({ courseId, onImported }: { courseId: string; onImported: ()
             {preview.summary.inFileDupes > 0 && (
               <span className="text-amber-600"><strong>{preview.summary.inFileDupes}</strong> duplicates in file (skipped)</span>
             )}
+            {!!preview.summary.balanceDue && (
+              <span className="text-red-600"><strong>{preview.summary.balanceDue}</strong> with a balance due</span>
+            )}
             {preview.summary.missingTitle > 0 && (
               <span className="text-amber-600"><strong>{preview.summary.missingTitle}</strong> without a title</span>
             )}
@@ -347,6 +351,7 @@ function ImportCard({ courseId, onImported }: { courseId: string; onImported: ()
                   <th className="px-3 py-2">Name</th>
                   <th className="px-3 py-2">Title</th>
                   <th className="px-3 py-2">Type</th>
+                  <th className="px-3 py-2">Balance due</th>
                   <th className="px-3 py-2">Township / County / Org</th>
                   <th className="px-3 py-2">Status</th>
                 </tr>
@@ -361,6 +366,15 @@ function ImportCard({ courseId, onImported }: { courseId: string; onImported: ()
                     </td>
                     <td className="px-3 py-1.5">{r.title || <span className="text-amber-600">—</span>}</td>
                     <td className="px-3 py-1.5">{r.registrant_type || <span className="text-gray-400">Attendee</span>}</td>
+                    <td className="px-3 py-1.5">
+                      {r.balance_due == null ? (
+                        <span className="text-gray-400">—</span>
+                      ) : r.balance_due > 0 ? (
+                        <span className="text-red-600 font-semibold">${r.balance_due.toFixed(2)}</span>
+                      ) : (
+                        <span className="text-green-600">Paid</span>
+                      )}
+                    </td>
                     <td className="px-3 py-1.5">
                       {[townshipLabel(r.township), r.county ? `${r.county} County` : null].filter(Boolean).join(', ') || r.organization || '—'}
                     </td>
@@ -826,6 +840,19 @@ function ScannerLink({ courseId }: { courseId: string }) {
 }
 
 type DayAtt = { date: string; checkIn: string | null; checkOut: string | null; complete: boolean };
+type Payment = {
+  id: string;
+  method: 'check' | 'card' | 'admin' | 'amo';
+  check_number: string | null;
+  amount: number | null;
+  detected_check_number: string | null;
+  detected_amount: number | null;
+  detected_payer: string | null;
+  has_photo: boolean;
+  note: string | null;
+  recorded_by: string | null;
+  recorded_at: string;
+};
 type AttRow = {
   id: string;
   first_name: string;
@@ -835,24 +862,35 @@ type AttRow = {
   is_walk_in: boolean;
   day_hours: Record<string, number> | null;
   status: 'attended' | 'review' | 'no_show';
+  reasons: string[];
   credit_hours: number;
+  balance_due: number | null;
+  payment_status: 'paid' | 'due' | null;
+  payment_method: string | null;
+  payment: Payment | null;
   attendance: { days: DayAtt[] };
 };
-type Filter = 'review' | 'attended' | 'no_show' | 'all';
+type Filter = 'review' | 'payment' | 'attended' | 'no_show' | 'all';
 
 const STATUS_LABEL: Record<AttRow['status'], string> = { attended: 'Attended', review: 'Needs review', no_show: 'No scans' };
+const FILTER_LABEL: Record<Filter, string> = { review: 'Needs review', payment: 'Payment due', attended: 'Attended', no_show: 'No scans', all: 'Everyone' };
 const STATUS_CLS: Record<AttRow['status'], string> = {
   attended: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
   review: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
   no_show: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
 };
+const METHOD_LABEL: Record<string, string> = { check: 'Check', card: 'Credit card', admin: 'Marked by ITA', amo: 'AMO' };
+const money = (n: number | null | undefined) => (n == null ? '' : `$${Number(n).toFixed(2)}`);
 
 function AttendanceCard({ course, reloadKey }: { course: Course; reloadKey: number }) {
   const [rows, setRows] = useState<AttRow[] | null>(null);
   const [days, setDays] = useState<string[]>([]);
   const [filter, setFilter] = useState<Filter>('review');
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [editing, setEditing] = useState<{ id: string; date: string; direction: 'in' | 'out' } | null>(null);
+  const [payingId, setPayingId] = useState<string | null>(null);
+  const [photoSel, setPhotoSel] = useState<Set<string>>(new Set());
 
   const load = useCallback(async () => {
     try {
@@ -872,11 +910,17 @@ function AttendanceCard({ course, reloadKey }: { course: Course; reloadKey: numb
   }, [load, reloadKey]);
 
   const counts = useMemo(() => {
-    const c = { review: 0, attended: 0, no_show: 0, all: rows?.length || 0 };
-    rows?.forEach((r) => (c[r.status] += 1));
+    const c = { review: 0, payment: 0, attended: 0, no_show: 0, all: rows?.length || 0 };
+    rows?.forEach((r) => {
+      c[r.status] += 1;
+      if (r.payment_status === 'due') c.payment += 1;
+    });
     return c;
   }, [rows]);
-  const shown = (rows || []).filter((r) => filter === 'all' || r.status === filter);
+  const tracksPayment = (rows || []).some((r) => r.payment_status);
+  const shown = (rows || []).filter((r) =>
+    filter === 'all' ? true : filter === 'payment' ? r.payment_status === 'due' : r.status === filter
+  );
 
   const voidTime = async (r: AttRow, date: string, direction: 'in' | 'out') => {
     if (!window.confirm(`Remove ${r.first_name} ${r.last_name}'s check-${direction} on ${date}?`)) return;
@@ -886,13 +930,39 @@ function AttendanceCard({ course, reloadKey }: { course: Course; reloadKey: numb
     load();
   };
 
+  const undoPayment = async (r: AttRow) => {
+    if (!window.confirm(`Undo ${r.first_name} ${r.last_name}'s payment? They'll show as owing again, and an issued certificate goes back on hold.`)) return;
+    const res = await fetch(`/api/admin/certificates/registrants/${r.id}/payment`, { method: 'DELETE' });
+    if (!res.ok) setError((await res.json().catch(() => ({}))).error || 'Could not undo');
+    load();
+  };
+
+  const deletePhotos = async () => {
+    const n = photoSel.size;
+    if (!n || !window.confirm(`Permanently delete ${n} check photo${n === 1 ? '' : 's'}? The payment records stay.`)) return;
+    const res = await fetch(`/api/admin/certificates/courses/${course.id}/payments/photos`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ payment_ids: Array.from(photoSel) }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) setError(json.error || 'Could not delete photos');
+    else setNotice(`Deleted ${json.deleted} check photo${json.deleted === 1 ? '' : 's'}.`);
+    setPhotoSel(new Set());
+    load();
+  };
+
+  const withPhotos = shown.filter((r) => r.payment?.has_photo);
+  const allPhotosSel = withPhotos.length > 0 && withPhotos.every((r) => photoSel.has(r.payment!.id));
+
   return (
     <section className={card}>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
         <div>
           <h2 className="text-base font-bold">Attendance</h2>
           <p className="text-sm text-gray-500">
-            Attended = checked in and checked out on every day. Times are Eastern. Refreshes when you reopen this page.
+            Attended = checked in and checked out on every day{tracksPayment ? ', with payment recorded' : ''}. Times are
+            Eastern. Check photos are deleted automatically 90 days after they were taken.
           </p>
         </div>
         <div className="flex gap-2">
@@ -906,7 +976,7 @@ function AttendanceCard({ course, reloadKey }: { course: Course; reloadKey: numb
       </div>
 
       <div className="flex flex-wrap gap-1 mb-3">
-        {(['review', 'attended', 'no_show', 'all'] as Filter[]).map((f) => (
+        {(['review', ...(tracksPayment ? ['payment'] : []), 'attended', 'no_show', 'all'] as Filter[]).map((f) => (
           <button
             key={f}
             type="button"
@@ -915,11 +985,23 @@ function AttendanceCard({ course, reloadKey }: { course: Course; reloadKey: numb
               filter === f ? 'bg-amber-500 border-amber-500 text-white' : 'border-gray-300 dark:border-gray-700'
             }`}
           >
-            {f === 'all' ? 'Everyone' : STATUS_LABEL[f]} ({counts[f]})
+            {FILTER_LABEL[f]} ({counts[f]})
           </button>
         ))}
       </div>
 
+      {photoSel.size > 0 && (
+        <div className="flex flex-wrap items-center gap-3 mb-3 px-3 py-2 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-sm">
+          <span className="font-semibold">{photoSel.size} check photo{photoSel.size === 1 ? '' : 's'} selected</span>
+          <button type="button" onClick={deletePhotos} className={btn + ' bg-red-600 text-white hover:bg-red-700'}>
+            <Trash2 className="w-4 h-4" /> Delete selected photos
+          </button>
+          <button type="button" onClick={() => setPhotoSel(new Set())} className="text-gray-600 dark:text-gray-300 hover:underline">
+            Clear selection
+          </button>
+        </div>
+      )}
+      {notice && <p className="text-sm text-green-600 mb-3">{notice}</p>}
       {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
       {!rows ? (
         <p className="text-sm text-gray-500">Loading…</p>
@@ -935,6 +1017,24 @@ function AttendanceCard({ course, reloadKey }: { course: Course; reloadKey: numb
                   <th key={d} className="py-2 pr-3 whitespace-nowrap">{formatCourseDates(d, null, 'short').replace(/, \d{4}$/, '')}</th>
                 ))}
                 <th className="py-2 pr-3">Status</th>
+                {tracksPayment && (
+                  <th className="py-2 pr-3">
+                    <label className="inline-flex items-center gap-1.5">
+                      {withPhotos.length > 0 && (
+                        <input
+                          type="checkbox"
+                          checked={allPhotosSel}
+                          onChange={() =>
+                            setPhotoSel(allPhotosSel ? new Set() : new Set(withPhotos.map((r) => r.payment!.id)))
+                          }
+                          aria-label="Select all check photos shown"
+                          className="h-4 w-4 accent-amber-500"
+                        />
+                      )}
+                      Payment
+                    </label>
+                  </th>
+                )}
                 <th className="py-2">Credit</th>
               </tr>
             </thead>
@@ -993,9 +1093,46 @@ function AttendanceCard({ course, reloadKey }: { course: Course; reloadKey: numb
                       })}
                     </td>
                   ))}
-                  <td className="py-2 pr-3">
+                  <td className="py-2 pr-3 max-w-[14rem]">
                     <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_CLS[r.status]}`}>{STATUS_LABEL[r.status]}</span>
+                    {r.status === 'review' && r.reasons.length > 0 && (
+                      <ul className="mt-1 text-xs text-amber-800 dark:text-amber-300 space-y-0.5">
+                        {r.reasons.map((x) => (
+                          <li key={x}>• {x}</li>
+                        ))}
+                      </ul>
+                    )}
                   </td>
+                  {tracksPayment && (
+                    <td className="py-2 pr-3 min-w-[13rem]">
+                      {payingId === r.id ? (
+                        <MarkPaidForm
+                          registrantId={r.id}
+                          balance={r.balance_due}
+                          onDone={(changed) => {
+                            setPayingId(null);
+                            if (changed) load();
+                          }}
+                        />
+                      ) : (
+                        <PaymentCell
+                          r={r}
+                          selected={!!r.payment && photoSel.has(r.payment.id)}
+                          onToggle={() =>
+                            setPhotoSel((cur) => {
+                              const next = new Set(cur);
+                              const id = r.payment!.id;
+                              if (next.has(id)) next.delete(id);
+                              else next.add(id);
+                              return next;
+                            })
+                          }
+                          onMarkPaid={() => setPayingId(r.id)}
+                          onUndo={() => undoPayment(r)}
+                        />
+                      )}
+                    </td>
+                  )}
                   <td className="py-2 whitespace-nowrap">
                     {r.credit_hours} hrs{r.day_hours ? <span className="text-xs text-amber-600"> partial</span> : null}
                   </td>
@@ -1006,6 +1143,124 @@ function AttendanceCard({ course, reloadKey }: { course: Course; reloadKey: numb
         </div>
       )}
     </section>
+  );
+}
+
+function PaymentCell({
+  r,
+  selected,
+  onToggle,
+  onMarkPaid,
+  onUndo,
+}: {
+  r: AttRow;
+  selected: boolean;
+  onToggle: () => void;
+  onMarkPaid: () => void;
+  onUndo: () => void;
+}) {
+  if (!r.payment_status) return <span className="text-xs text-gray-400">Not tracked</span>;
+  if (r.payment_status === 'due') {
+    return (
+      <div>
+        <span className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
+          Due{r.balance_due ? ` ${money(r.balance_due)}` : ''}
+        </span>
+        <button type="button" onClick={onMarkPaid} className="ml-2 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:underline">
+          Mark paid
+        </button>
+      </div>
+    );
+  }
+  const p = r.payment;
+  const method = METHOD_LABEL[p?.method || r.payment_method || 'amo'] || 'Paid';
+  const detected =
+    p && (p.detected_check_number || p.detected_amount != null || p.detected_payer)
+      ? [p.detected_check_number && `#${p.detected_check_number}`, money(p.detected_amount), p.detected_payer].filter(Boolean).join(' · ')
+      : null;
+  return (
+    <div className="text-xs space-y-0.5">
+      <div>
+        <span className="inline-block px-2 py-0.5 rounded-full font-semibold bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+          Paid · {method}
+        </span>
+      </div>
+      {p && (p.check_number || p.amount != null) && (
+        <div className="text-gray-700 dark:text-gray-300">
+          {[p.check_number && `Check #${p.check_number}`, money(p.amount)].filter(Boolean).join(' · ')}
+        </div>
+      )}
+      {detected && <div className="text-gray-500" title="Read automatically from the check photo — please confirm">Read from photo: {detected}</div>}
+      {p && (
+        <div className="text-gray-500">
+          {p.recorded_by || 'Recorded'} · {new Date(p.recorded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' })}
+        </div>
+      )}
+      <div className="flex flex-wrap items-center gap-3 pt-0.5">
+        {p?.has_photo && (
+          <label className="inline-flex items-center gap-1">
+            <input type="checkbox" checked={selected} onChange={onToggle} className="h-3.5 w-3.5 accent-amber-500" aria-label="Select this check photo" />
+            <a href={`/api/admin/certificates/payments/${p.id}/photo`} target="_blank" rel="noopener noreferrer" className="font-semibold text-amber-700 dark:text-amber-400 hover:underline">
+              View check
+            </a>
+          </label>
+        )}
+        {r.payment_method !== 'amo' && (
+          <button type="button" onClick={onUndo} className="text-gray-500 hover:underline">
+            Undo
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function MarkPaidForm({ registrantId, balance, onDone }: { registrantId: string; balance: number | null; onDone: (changed: boolean) => void }) {
+  const [method, setMethod] = useState<'admin' | 'check' | 'card'>('admin');
+  const [checkNo, setCheckNo] = useState('');
+  const [amount, setAmount] = useState(balance ? String(balance) : '');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const save = async () => {
+    setBusy(true);
+    setErr(null);
+    try {
+      const res = await fetch(`/api/admin/certificates/registrants/${registrantId}/payment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ method, check_number: method === 'check' ? checkNo : '', amount }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Save failed');
+      onDone(true);
+    } catch (e: any) {
+      setErr(e.message);
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="p-2 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 space-y-1 w-56 whitespace-normal">
+      <div className="text-xs font-semibold">Mark paid</div>
+      <select value={method} onChange={(e) => setMethod(e.target.value as any)} className={inputCls + ' block w-full min-w-0 text-xs'}>
+        <option value="admin">Paid (matched in AMO)</option>
+        <option value="check">Check</option>
+        <option value="card">Credit card</option>
+      </select>
+      {method === 'check' && (
+        <input value={checkNo} onChange={(e) => setCheckNo(e.target.value)} placeholder="Check # (optional)" className={inputCls + ' block w-full min-w-0 text-xs'} />
+      )}
+      <input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Amount (optional)" inputMode="decimal" className={inputCls + ' block w-full min-w-0 text-xs'} />
+      {err && <div className="text-xs text-red-600">{err}</div>}
+      <div className="flex gap-3 text-xs">
+        <button type="button" onClick={save} disabled={busy} className="font-semibold text-amber-700 hover:underline">
+          Save
+        </button>
+        <button type="button" onClick={() => onDone(false)} className="text-gray-500 hover:underline">
+          Cancel
+        </button>
+      </div>
+      <div className="text-[11px] text-gray-500">An issued certificate becomes downloadable right away.</div>
+    </div>
   );
 }
 
@@ -1065,17 +1320,29 @@ function ManualTimeForm({
 
 type IssuePreview = {
   course_hours: number;
-  rows: { id: string; name: string; credit_hours: number; partial: boolean; issued: boolean; eligible: boolean; reason?: string }[];
+  rows: {
+    id: string;
+    name: string;
+    credit_hours: number;
+    partial: boolean;
+    issued: boolean;
+    has_email: boolean;
+    payment_due: boolean;
+    eligible: boolean;
+    reason?: string;
+  }[];
 };
 
 function IssueCard({ course, onIssued }: { course: Course; onIssued: () => void }) {
   const [preview, setPreview] = useState<IssuePreview | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [force, setForce] = useState<Set<string>>(new Set());
 
   const check = async () => {
     setBusy(true);
     setMsg(null);
+    setForce(new Set());
     try {
       const res = await fetch(`/api/admin/certificates/courses/${course.id}/attendance/issue`, { cache: 'no-store' });
       const json = await res.json();
@@ -1088,18 +1355,26 @@ function IssueCard({ course, onIssued }: { course: Course; onIssued: () => void 
     }
   };
 
-  const issue = async () => {
+  // forceIds = held people Jen has checked herself and wants issued anyway.
+  const issue = async (forceIds: string[] = []) => {
+    if (forceIds.length && !window.confirm(`Issue certificates to ${forceIds.length} held ${forceIds.length === 1 ? 'person' : 'people'} anyway? Do this only after you've checked they attended.`)) return;
     setBusy(true);
     setMsg(null);
     try {
-      const res = await fetch(`/api/admin/certificates/courses/${course.id}/attendance/issue`, { method: 'POST' });
+      const res = await fetch(`/api/admin/certificates/courses/${course.id}/attendance/issue`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ force_ids: forceIds }),
+      });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Failed');
       const parts = [`Issued ${json.issued} certificate${json.issued === 1 ? '' : 's'}`];
       if (json.linked) parts.push(`linked ${json.linked} existing`);
+      if (json.on_hold) parts.push(`${json.on_hold} on payment hold (downloadable once paid)`);
       if (json.failed?.length) parts.push(`${json.failed.length} failed: ${json.failed.map((f: any) => f.name).join(', ')}`);
       setMsg({ ok: !json.failed?.length, text: parts.join(' · ') + '.' });
       setPreview(null);
+      setForce(new Set());
       onIssued();
     } catch (e: any) {
       setMsg({ ok: false, text: e.message });
@@ -1111,15 +1386,20 @@ function IssueCard({ course, onIssued }: { course: Course; onIssued: () => void 
   const ready = preview?.rows.filter((r) => r.eligible) || [];
   const held = preview?.rows.filter((r) => !r.eligible && !r.issued) || [];
   const done = preview?.rows.filter((r) => r.issued) || [];
+  // Only people with an email can be issued (they look certificates up by it).
+  const forceable = held.filter((r) => r.has_email);
+  const allForce = forceable.length > 0 && forceable.every((r) => force.has(r.id));
+  const holdNote = (r: { payment_due: boolean }) =>
+    r.payment_due ? <span className="text-red-700 dark:text-red-400"> · on payment hold</span> : null;
 
   return (
     <section className={card}>
       <h2 className="text-base font-bold mb-1">Issue certificates</h2>
       <p className="text-sm text-gray-500 mb-4">
-        Certificates go to everyone who attended (full {Number(course.hours)} hours) and anyone you gave partial credit.
-        People who need review are held until you fix their times or enter partial credit. You can run this again after
-        fixing reviews; nobody gets two certificates. Issued certificates appear on the Attendees tab and the public
-        certificate lookup.
+        Certificates go to everyone who checked in and out every day (full {Number(course.hours)} hours) and anyone you
+        gave partial credit. Anyone who still owes gets theirs on <strong>payment hold</strong>: it shows in the public
+        lookup but can&apos;t be downloaded until you mark them paid. Held people can be issued anyway once you&apos;ve
+        checked them. Nobody gets two certificates.
       </p>
       {!preview ? (
         <button type="button" onClick={check} disabled={busy} className={btn + ' bg-amber-500 text-white hover:bg-amber-600'}>
@@ -1139,6 +1419,7 @@ function IssueCard({ course, onIssued }: { course: Course; onIssued: () => void 
                 {ready.map((r) => (
                   <li key={r.id}>
                     {r.name} · {r.credit_hours} hrs{r.partial ? ' (partial)' : ''}
+                    {holdNote(r)}
                   </li>
                 ))}
               </ul>
@@ -1146,20 +1427,55 @@ function IssueCard({ course, onIssued }: { course: Course; onIssued: () => void 
           )}
           {held.length > 0 && (
             <div>
-              <div className="font-semibold mb-1">Held</div>
-              <ul className="text-gray-700 dark:text-gray-300">
+              <div className="flex items-center gap-2 font-semibold mb-1">
+                {forceable.length > 0 && (
+                  <input
+                    type="checkbox"
+                    checked={allForce}
+                    onChange={() => setForce(allForce ? new Set() : new Set(forceable.map((r) => r.id)))}
+                    aria-label="Select all held people who can be issued"
+                    className="h-4 w-4 accent-amber-500"
+                  />
+                )}
+                Held
+              </div>
+              <ul className="text-gray-700 dark:text-gray-300 space-y-0.5">
                 {held.map((r) => (
-                  <li key={r.id}>
-                    {r.name} · <span className="text-amber-700 dark:text-amber-400">{r.reason}</span>
+                  <li key={r.id} className="flex items-start gap-2">
+                    <input
+                      type="checkbox"
+                      disabled={!r.has_email}
+                      checked={force.has(r.id)}
+                      onChange={() =>
+                        setForce((cur) => {
+                          const next = new Set(cur);
+                          if (next.has(r.id)) next.delete(r.id);
+                          else next.add(r.id);
+                          return next;
+                        })
+                      }
+                      aria-label={`Select ${r.name}`}
+                      title={r.has_email ? 'Select to issue anyway' : 'Add an email first (Registrants list)'}
+                      className="h-4 w-4 mt-0.5 accent-amber-500 disabled:opacity-40"
+                    />
+                    <span>
+                      {r.name} · <span className="text-amber-700 dark:text-amber-400">{r.reason}</span>
+                      {holdNote(r)}
+                    </span>
                   </li>
                 ))}
               </ul>
             </div>
           )}
-          <div className="flex gap-2">
-            <button type="button" onClick={issue} disabled={busy || !ready.length} className={btn + ' bg-amber-500 text-white hover:bg-amber-600'}>
-              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} Issue {ready.length} certificate{ready.length === 1 ? '' : 's'}
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => issue()} disabled={busy || !ready.length} className={btn + ' bg-amber-500 text-white hover:bg-amber-600'}>
+              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} Issue {ready.length} ready
             </button>
+            {force.size > 0 && (
+              <button type="button" onClick={() => issue(Array.from(force))} disabled={busy} className={btn + ' bg-[#1B2E5B] text-white hover:opacity-90'}>
+                <Check className="w-4 h-4" /> Issue {force.size} selected held anyway
+              </button>
+            )}
             <button type="button" onClick={() => setPreview(null)} className={btn + ' bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}>
               Cancel
             </button>

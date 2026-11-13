@@ -11,7 +11,8 @@ const SHEET = { cols: 2, rows: 4, cellW: 3.5, cellH: 2.25, left: 0.75, top: 1 };
 const NUDGE_KEY = 'tt_badge_nudge_mm';
 
 type Nudge = { x: number; y: number };
-type Side = 'front' | 'back';
+// 'both' = front, back, front, back… for printers that print both sides.
+type Side = 'front' | 'back' | 'both';
 
 function readJSON<T>(key: string, fallback: T): T {
   try {
@@ -88,7 +89,7 @@ export function BadgePrintClient({ courseId, badges, event }: { courseId: string
         pdf.addImage(img, 'JPEG', 0, 0, 8.5, 11, undefined, 'FAST');
       }
       const base = event.name.replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'badges';
-      pdf.save(`${base}-badges-${s === 'front' ? '1-fronts' : '2-backs'}.pdf`);
+      pdf.save(`${base}-badges-${s === 'front' ? '1-fronts' : s === 'back' ? '2-backs' : '2-sided'}.pdf`);
     } catch (e: any) {
       setPdfError(e?.message || 'Could not make the PDF. Please try again.');
     } finally {
@@ -154,13 +155,22 @@ export function BadgePrintClient({ courseId, badges, event }: { courseId: string
             <button type="button" onClick={() => printSide('back')} disabled={!badges.length} className="inline-flex items-center gap-2 px-4 py-2 font-semibold bg-[#1B2E5B] text-white rounded-lg hover:opacity-90 disabled:opacity-50">
               <Printer className="w-4 h-4" /> 2. Print backs
             </button>
+            <span className="self-center text-gray-400">or</span>
+            <button type="button" onClick={() => printSide('both')} disabled={!badges.length} className="inline-flex items-center gap-2 px-4 py-2 font-semibold bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50">
+              <Printer className="w-4 h-4" /> Print 2-sided
+            </button>
           </div>
+          <p className="text-gray-600 -mt-2">
+            <strong>Printer prints both sides?</strong> Use <strong>Print 2-sided</strong> (or the 2-sided PDF below) and in the
+            print dialog turn on <strong>2-sided / duplex</strong>, set to <strong>flip on long edge</strong>. No flipping by hand.
+          </p>
 
           <div className="border-t border-gray-200 pt-4">
             <div className="font-medium mb-1">Sending to someone else to print?</div>
             <p className="text-gray-600 mb-2">
-              Download both PDFs and send them together. They print exactly like the buttons above (Letter, 100% / Actual
-              size, fronts first, then flip the sheets and print the backs).
+              <strong>2-sided printer:</strong> send the one <strong>2-sided PDF</strong> (print with 2-sided / duplex on,
+              flip on long edge). <strong>One-sided printer:</strong> send the fronts and backs PDFs (print fronts, flip the
+              sheets, print backs). All print at Letter, 100% / Actual size.
             </p>
             <div className="flex flex-wrap gap-2 items-center">
               <button type="button" onClick={() => downloadPdf('front')} disabled={!badges.length || capturing} className="inline-flex items-center gap-2 px-4 py-2 font-semibold bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50">
@@ -168,6 +178,9 @@ export function BadgePrintClient({ courseId, badges, event }: { courseId: string
               </button>
               <button type="button" onClick={() => downloadPdf('back')} disabled={!badges.length || capturing} className="inline-flex items-center gap-2 px-4 py-2 font-semibold bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50">
                 {capturing && side === 'back' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} Download backs PDF
+              </button>
+              <button type="button" onClick={() => downloadPdf('both')} disabled={!badges.length || capturing} className="inline-flex items-center gap-2 px-4 py-2 font-semibold bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50">
+                {capturing && side === 'both' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} Download 2-sided PDF
               </button>
               {progress && <span className="text-gray-500">{progress}</span>}
             </div>
@@ -180,6 +193,8 @@ export function BadgePrintClient({ courseId, badges, event }: { courseId: string
               <button type="button" onClick={() => setSide('front')} className={side === 'front' ? 'font-semibold underline' : 'hover:underline'}>fronts</button>
               {' / '}
               <button type="button" onClick={() => setSide('back')} className={side === 'back' ? 'font-semibold underline' : 'hover:underline'}>backs</button>
+              {' / '}
+              <button type="button" onClick={() => setSide('both')} className={side === 'both' ? 'font-semibold underline' : 'hover:underline'}>2-sided</button>
             </span>
           </div>
 
@@ -212,33 +227,36 @@ export function BadgePrintClient({ courseId, badges, event }: { courseId: string
       </div>
 
       <div className="badge-sheets">
-        {sheets.map((sheet, si) => (
-          <div key={si} className="badge-sheet">
-            {Array.from({ length: perSheet }).map((_, ci) => {
-              const row = Math.floor(ci / f.cols);
-              const frontCol = ci % f.cols;
-              // Flipping the sheet left-to-right mirrors the columns, so each
-              // back is drawn in the opposite column (and the x shift reverses).
-              const col = side === 'front' ? frontCol : f.cols - 1 - frontCol;
-              const dx = side === 'front' ? nudge.x : -nudge.x;
-              const b = sheet[ci];
-              return (
-                <div
-                  key={ci}
-                  className={`badge-cell ${guides ? 'outline' : capturing ? '' : 'outline screen-only'}`}
-                  style={{
-                    width: `${f.cellW}in`,
-                    height: `${f.cellH}in`,
-                    left: `calc(${f.left + col * f.cellW}in + ${dx}mm)`,
-                    top: `calc(${f.top + row * f.cellH}in + ${nudge.y}mm)`,
-                  }}
-                >
-                  {b && (side === 'front' ? <BadgeFront badge={b} event={event} /> : <BadgeBack badge={b} />)}
-                </div>
-              );
-            })}
-          </div>
-        ))}
+        {sheets.flatMap((sheet, si) =>
+          (side === 'both' ? (['front', 'back'] as const) : [side as 'front' | 'back']).map((face) => (
+            <div key={`${si}-${face}`} className="badge-sheet">
+              {Array.from({ length: perSheet }).map((_, ci) => {
+                const row = Math.floor(ci / f.cols);
+                const frontCol = ci % f.cols;
+                // Flipping the sheet on its long edge (by hand, or a 2-sided
+                // printer) mirrors the columns, so each back is drawn in the
+                // opposite column (and the x shift reverses).
+                const col = face === 'front' ? frontCol : f.cols - 1 - frontCol;
+                const dx = face === 'front' ? nudge.x : -nudge.x;
+                const b = sheet[ci];
+                return (
+                  <div
+                    key={ci}
+                    className={`badge-cell ${guides ? 'outline' : capturing ? '' : 'outline screen-only'}`}
+                    style={{
+                      width: `${f.cellW}in`,
+                      height: `${f.cellH}in`,
+                      left: `calc(${f.left + col * f.cellW}in + ${dx}mm)`,
+                      top: `calc(${f.top + row * f.cellH}in + ${nudge.y}mm)`,
+                    }}
+                  >
+                    {b && (face === 'front' ? <BadgeFront badge={b} event={event} /> : <BadgeBack badge={b} />)}
+                  </div>
+                );
+              })}
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

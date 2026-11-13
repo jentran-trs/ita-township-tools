@@ -125,6 +125,8 @@ export async function PATCH(req: Request, { params }: RouteParams) {
   if ('syllabus_file_name' in body) {
     patch.syllabus_file_name = body.syllabus_file_name?.trim() || null;
   }
+  // Hide from (or show again in) the admin course list. Nothing else changes.
+  if (body.hidden !== undefined) patch.hidden = !!body.hidden;
   if (typeof body.org_name === 'string') patch.org_name = body.org_name.trim();
   if (typeof body.logo_url === 'string' && body.logo_url.trim()) patch.logo_url = body.logo_url.trim();
 

@@ -106,6 +106,14 @@ export function BadgesClient({ courseId }: { courseId: string }) {
   return (
     <>
       <SettingsCard course={course} onSaved={load} />
+      {!course.badge_checkin_enabled && (
+        <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 text-blue-900 dark:text-blue-200 text-sm rounded-lg px-4 py-3">
+          Tick <strong>Use badges and QR check-in for this course</strong> and click <strong>Save settings</strong>. Then
+          you can import registrants here, print badges, and scan people in and out. (The orange &ldquo;Import attendees
+          for certificates&rdquo; button on the course page is the old way: it issues certificates straight away and
+          doesn&apos;t make badges.)
+        </div>
+      )}
       {course.badge_checkin_enabled && (
         <>
           <ImportCard courseId={courseId} onImported={load} />

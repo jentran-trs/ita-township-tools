@@ -98,7 +98,8 @@ export default async function CourseDetailPage({ params }: Params) {
             )}
             <Link
               href={`/admin/certificates/${course.id}/badges`}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold bg-[#1B2E5B] text-white rounded-lg hover:opacity-90"
+              title="Import registrants, print badges, scan check-in/out, then issue certificates from attendance"
             >
               <QrCode className="w-4 h-4" />
               Badges &amp; check-in
@@ -108,7 +109,7 @@ export default async function CourseDetailPage({ params }: Params) {
               className="inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold bg-amber-500 text-white rounded-lg hover:bg-amber-600"
             >
               <Upload className="w-4 h-4" />
-              Import attendees
+              Import attendees for certificates
             </Link>
           </div>
         </div>

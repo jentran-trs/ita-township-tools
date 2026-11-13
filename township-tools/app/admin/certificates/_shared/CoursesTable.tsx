@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Award, FileSignature, Loader2, Plus, Trash2 } from 'lucide-react';
+import { ArrowRight, Award, Eye, EyeOff, FileSignature, Loader2, Plus, Trash2 } from 'lucide-react';
 import { formatCourseDates } from '@/lib/certificates/date-range';
 
 type Course = {
@@ -16,6 +16,7 @@ type Course = {
   hours: number | string;
   active_count: number | null;
   last_issued_at: string | null;
+  hidden?: boolean;
 };
 
 const METHOD_LABEL: Record<string, string> = {
@@ -38,6 +39,34 @@ export function CoursesTable({ initialCourses }: { initialCourses: Course[] }) {
   const [courses, setCourses] = useState<Course[]>(initialCourses);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showHidden, setShowHidden] = useState(false);
+  const [hidingId, setHidingId] = useState<string | null>(null);
+
+  const hiddenCount = courses.filter((c) => c.hidden).length;
+  const visible = courses.filter((c) => showHidden || !c.hidden);
+
+  const onToggleHidden = async (course: Course) => {
+    setError(null);
+    setHidingId(course.id);
+    try {
+      const res = await fetch(`/api/admin/certificates/courses/${course.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hidden: !course.hidden }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Could not update the course');
+      setCourses((prev) => prev.map((c) => (c.id === course.id ? { ...c, hidden: !course.hidden } : c)));
+    } catch (e: any) {
+      setError(
+        /hidden/.test(e.message || '')
+          ? 'Hiding needs the v33 database update (supabase-schema-v33-course-hidden.sql).'
+          : e.message || 'Could not update the course'
+      );
+    } finally {
+      setHidingId(null);
+    }
+  };
 
   const onDelete = async (course: Course) => {
     const count = course.active_count ?? 0;
@@ -76,6 +105,18 @@ export function CoursesTable({ initialCourses }: { initialCourses: Course[] }) {
           {error}
         </div>
       )}
+      {hiddenCount > 0 && (
+        <div className="mb-3 flex justify-end">
+          <button
+            type="button"
+            onClick={() => setShowHidden((v) => !v)}
+            className="inline-flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-300 hover:underline"
+          >
+            {showHidden ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            {showHidden ? 'Hide hidden courses' : `Show hidden courses (${hiddenCount})`}
+          </button>
+        </div>
+      )}
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
         <table className="w-full">
           <thead className="bg-gray-50 dark:bg-gray-800/60 text-left text-xs uppercase tracking-wider text-gray-500">
@@ -90,14 +131,19 @@ export function CoursesTable({ initialCourses }: { initialCourses: Course[] }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-            {courses.map((c) => (
-              <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/40">
+            {visible.map((c) => (
+              <tr key={c.id} className={`hover:bg-gray-50 dark:hover:bg-gray-800/40 ${c.hidden ? 'opacity-60' : ''}`}>
                 <td className="px-4 py-3">
                   <Link href={`/admin/certificates/${c.id}`} className="font-medium hover:underline">
                     {c.name}
                   </Link>
                   <div className="text-xs text-gray-500 font-mono mt-0.5">
                     {c.course_id}
+                    {c.hidden && (
+                      <span className="ml-2 font-sans inline-block px-1.5 py-0.5 rounded bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                        Hidden
+                      </span>
+                    )}
                     {c.cert_type === 'participation' && (
                       <span className="ml-2 font-sans inline-block px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300">
                         Participation
@@ -123,6 +169,16 @@ export function CoursesTable({ initialCourses }: { initialCourses: Course[] }) {
                       View
                       <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
+                    <button
+                      type="button"
+                      onClick={() => onToggleHidden(c)}
+                      disabled={hidingId === c.id}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50"
+                      title={c.hidden ? 'Show this course in the list again' : 'Hide this course from the list (nothing is deleted)'}
+                    >
+                      {c.hidden ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                      {c.hidden ? 'Unhide' : 'Hide'}
+                    </button>
                     <button
                       type="button"
                       onClick={() => onDelete(c)}

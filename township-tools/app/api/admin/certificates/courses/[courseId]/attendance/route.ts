@@ -20,16 +20,13 @@ export async function GET(_req: Request, { params }: RouteParams) {
   const supabase = createServerSupabaseClient();
   const { data: pays } = await supabase
     .from('cert_payments')
-    .select('id, registrant_id, method, check_number, amount, detected_check_number, detected_amount, detected_payer, photo_path, photo_deleted_at, note, recorded_by, recorded_at')
+    .select('id, registrant_id, method, recorded_by, recorded_at')
     .eq('course_id', params.courseId)
     .is('voided_at', null)
     .order('recorded_at', { ascending: false });
   const latest = new Map<string, any>();
   (pays || []).forEach((p: any) => {
-    if (!latest.has(p.registrant_id)) {
-      const { photo_path, ...rest } = p;
-      latest.set(p.registrant_id, { ...rest, has_photo: !!photo_path && !p.photo_deleted_at });
-    }
+    if (!latest.has(p.registrant_id)) latest.set(p.registrant_id, p);
   });
 
   return NextResponse.json({

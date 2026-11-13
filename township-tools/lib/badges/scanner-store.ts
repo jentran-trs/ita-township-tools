@@ -16,16 +16,13 @@ export type RosterPerson = {
   balance_due?: number | null;
 };
 
-/** A payment taken at the door, waiting to upload. The photo (checks) is in IndexedDB under client_payment_id. */
+/** How someone paid at the door (method only), waiting to upload. */
 export type PaymentRecord = {
   client_payment_id: string;
   registrant_id: string;
   method: 'check' | 'card';
-  check_number?: string;
-  amount?: string;
   recorded_at: string;
   device_label?: string;
-  has_photo: boolean;
 };
 
 export type ScanRecord = {

@@ -842,14 +842,7 @@ function ScannerLink({ courseId }: { courseId: string }) {
 type DayAtt = { date: string; checkIn: string | null; checkOut: string | null; complete: boolean };
 type Payment = {
   id: string;
-  method: 'check' | 'card' | 'admin' | 'amo';
-  check_number: string | null;
-  amount: number | null;
-  detected_check_number: string | null;
-  detected_amount: number | null;
-  detected_payer: string | null;
-  has_photo: boolean;
-  note: string | null;
+  method: 'check' | 'card' | 'admin';
   recorded_by: string | null;
   recorded_at: string;
 };
@@ -890,7 +883,6 @@ function AttendanceCard({ course, reloadKey }: { course: Course; reloadKey: numb
   const [notice, setNotice] = useState<string | null>(null);
   const [editing, setEditing] = useState<{ id: string; date: string; direction: 'in' | 'out' } | null>(null);
   const [payingId, setPayingId] = useState<string | null>(null);
-  const [photoSel, setPhotoSel] = useState<Set<string>>(new Set());
 
   const load = useCallback(async () => {
     try {
@@ -937,24 +929,6 @@ function AttendanceCard({ course, reloadKey }: { course: Course; reloadKey: numb
     load();
   };
 
-  const deletePhotos = async () => {
-    const n = photoSel.size;
-    if (!n || !window.confirm(`Permanently delete ${n} check photo${n === 1 ? '' : 's'}? The payment records stay.`)) return;
-    const res = await fetch(`/api/admin/certificates/courses/${course.id}/payments/photos`, {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ payment_ids: Array.from(photoSel) }),
-    });
-    const json = await res.json().catch(() => ({}));
-    if (!res.ok) setError(json.error || 'Could not delete photos');
-    else setNotice(`Deleted ${json.deleted} check photo${json.deleted === 1 ? '' : 's'}.`);
-    setPhotoSel(new Set());
-    load();
-  };
-
-  const withPhotos = shown.filter((r) => r.payment?.has_photo);
-  const allPhotosSel = withPhotos.length > 0 && withPhotos.every((r) => photoSel.has(r.payment!.id));
-
   return (
     <section className={card}>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
@@ -962,7 +936,7 @@ function AttendanceCard({ course, reloadKey }: { course: Course; reloadKey: numb
           <h2 className="text-base font-bold">Attendance</h2>
           <p className="text-sm text-gray-500">
             Attended = checked in and checked out on every day{tracksPayment ? ', with payment recorded' : ''}. Times are
-            Eastern. Check photos are deleted automatically 90 days after they were taken.
+            Eastern.
           </p>
         </div>
         <div className="flex gap-2">
@@ -990,17 +964,6 @@ function AttendanceCard({ course, reloadKey }: { course: Course; reloadKey: numb
         ))}
       </div>
 
-      {photoSel.size > 0 && (
-        <div className="flex flex-wrap items-center gap-3 mb-3 px-3 py-2 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-sm">
-          <span className="font-semibold">{photoSel.size} check photo{photoSel.size === 1 ? '' : 's'} selected</span>
-          <button type="button" onClick={deletePhotos} className={btn + ' bg-red-600 text-white hover:bg-red-700'}>
-            <Trash2 className="w-4 h-4" /> Delete selected photos
-          </button>
-          <button type="button" onClick={() => setPhotoSel(new Set())} className="text-gray-600 dark:text-gray-300 hover:underline">
-            Clear selection
-          </button>
-        </div>
-      )}
       {notice && <p className="text-sm text-green-600 mb-3">{notice}</p>}
       {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
       {!rows ? (
@@ -1017,24 +980,7 @@ function AttendanceCard({ course, reloadKey }: { course: Course; reloadKey: numb
                   <th key={d} className="py-2 pr-3 whitespace-nowrap">{formatCourseDates(d, null, 'short').replace(/, \d{4}$/, '')}</th>
                 ))}
                 <th className="py-2 pr-3">Status</th>
-                {tracksPayment && (
-                  <th className="py-2 pr-3">
-                    <label className="inline-flex items-center gap-1.5">
-                      {withPhotos.length > 0 && (
-                        <input
-                          type="checkbox"
-                          checked={allPhotosSel}
-                          onChange={() =>
-                            setPhotoSel(allPhotosSel ? new Set() : new Set(withPhotos.map((r) => r.payment!.id)))
-                          }
-                          aria-label="Select all check photos shown"
-                          className="h-4 w-4 accent-amber-500"
-                        />
-                      )}
-                      Payment
-                    </label>
-                  </th>
-                )}
+                {tracksPayment && <th className="py-2 pr-3">Payment</th>}
                 <th className="py-2">Credit</th>
               </tr>
             </thead>
@@ -1108,28 +1054,13 @@ function AttendanceCard({ course, reloadKey }: { course: Course; reloadKey: numb
                       {payingId === r.id ? (
                         <MarkPaidForm
                           registrantId={r.id}
-                          balance={r.balance_due}
                           onDone={(changed) => {
                             setPayingId(null);
                             if (changed) load();
                           }}
                         />
                       ) : (
-                        <PaymentCell
-                          r={r}
-                          selected={!!r.payment && photoSel.has(r.payment.id)}
-                          onToggle={() =>
-                            setPhotoSel((cur) => {
-                              const next = new Set(cur);
-                              const id = r.payment!.id;
-                              if (next.has(id)) next.delete(id);
-                              else next.add(id);
-                              return next;
-                            })
-                          }
-                          onMarkPaid={() => setPayingId(r.id)}
-                          onUndo={() => undoPayment(r)}
-                        />
+                        <PaymentCell r={r} onMarkPaid={() => setPayingId(r.id)} onUndo={() => undoPayment(r)} />
                       )}
                     </td>
                   )}
@@ -1146,19 +1077,7 @@ function AttendanceCard({ course, reloadKey }: { course: Course; reloadKey: numb
   );
 }
 
-function PaymentCell({
-  r,
-  selected,
-  onToggle,
-  onMarkPaid,
-  onUndo,
-}: {
-  r: AttRow;
-  selected: boolean;
-  onToggle: () => void;
-  onMarkPaid: () => void;
-  onUndo: () => void;
-}) {
+function PaymentCell({ r, onMarkPaid, onUndo }: { r: AttRow; onMarkPaid: () => void; onUndo: () => void }) {
   if (!r.payment_status) return <span className="text-xs text-gray-400">Not tracked</span>;
   if (r.payment_status === 'due') {
     return (
@@ -1174,51 +1093,27 @@ function PaymentCell({
   }
   const p = r.payment;
   const method = METHOD_LABEL[p?.method || r.payment_method || 'amo'] || 'Paid';
-  const detected =
-    p && (p.detected_check_number || p.detected_amount != null || p.detected_payer)
-      ? [p.detected_check_number && `#${p.detected_check_number}`, money(p.detected_amount), p.detected_payer].filter(Boolean).join(' · ')
-      : null;
   return (
     <div className="text-xs space-y-0.5">
-      <div>
-        <span className="inline-block px-2 py-0.5 rounded-full font-semibold bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
-          Paid · {method}
-        </span>
-      </div>
-      {p && (p.check_number || p.amount != null) && (
-        <div className="text-gray-700 dark:text-gray-300">
-          {[p.check_number && `Check #${p.check_number}`, money(p.amount)].filter(Boolean).join(' · ')}
-        </div>
-      )}
-      {detected && <div className="text-gray-500" title="Read automatically from the check photo — please confirm">Read from photo: {detected}</div>}
+      <span className="inline-block px-2 py-0.5 rounded-full font-semibold bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+        Paid · {method}
+      </span>
       {p && (
         <div className="text-gray-500">
           {p.recorded_by || 'Recorded'} · {new Date(p.recorded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' })}
         </div>
       )}
-      <div className="flex flex-wrap items-center gap-3 pt-0.5">
-        {p?.has_photo && (
-          <label className="inline-flex items-center gap-1">
-            <input type="checkbox" checked={selected} onChange={onToggle} className="h-3.5 w-3.5 accent-amber-500" aria-label="Select this check photo" />
-            <a href={`/api/admin/certificates/payments/${p.id}/photo`} target="_blank" rel="noopener noreferrer" className="font-semibold text-amber-700 dark:text-amber-400 hover:underline">
-              View check
-            </a>
-          </label>
-        )}
-        {r.payment_method !== 'amo' && (
-          <button type="button" onClick={onUndo} className="text-gray-500 hover:underline">
-            Undo
-          </button>
-        )}
-      </div>
+      {r.payment_method !== 'amo' && (
+        <button type="button" onClick={onUndo} className="text-gray-500 hover:underline">
+          Undo
+        </button>
+      )}
     </div>
   );
 }
 
-function MarkPaidForm({ registrantId, balance, onDone }: { registrantId: string; balance: number | null; onDone: (changed: boolean) => void }) {
+function MarkPaidForm({ registrantId, onDone }: { registrantId: string; onDone: (changed: boolean) => void }) {
   const [method, setMethod] = useState<'admin' | 'check' | 'card'>('admin');
-  const [checkNo, setCheckNo] = useState('');
-  const [amount, setAmount] = useState(balance ? String(balance) : '');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const save = async () => {
@@ -1228,7 +1123,7 @@ function MarkPaidForm({ registrantId, balance, onDone }: { registrantId: string;
       const res = await fetch(`/api/admin/certificates/registrants/${registrantId}/payment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ method, check_number: method === 'check' ? checkNo : '', amount }),
+        body: JSON.stringify({ method }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Save failed');
@@ -1243,13 +1138,9 @@ function MarkPaidForm({ registrantId, balance, onDone }: { registrantId: string;
       <div className="text-xs font-semibold">Mark paid</div>
       <select value={method} onChange={(e) => setMethod(e.target.value as any)} className={inputCls + ' block w-full min-w-0 text-xs'}>
         <option value="admin">Paid (matched in AMO)</option>
-        <option value="check">Check</option>
-        <option value="card">Credit card</option>
+        <option value="check">Paid by check</option>
+        <option value="card">Paid by credit card</option>
       </select>
-      {method === 'check' && (
-        <input value={checkNo} onChange={(e) => setCheckNo(e.target.value)} placeholder="Check # (optional)" className={inputCls + ' block w-full min-w-0 text-xs'} />
-      )}
-      <input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Amount (optional)" inputMode="decimal" className={inputCls + ' block w-full min-w-0 text-xs'} />
       {err && <div className="text-xs text-red-600">{err}</div>}
       <div className="flex gap-3 text-xs">
         <button type="button" onClick={save} disabled={busy} className="font-semibold text-amber-700 hover:underline">

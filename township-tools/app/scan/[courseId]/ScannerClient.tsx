@@ -8,8 +8,7 @@ import { isBadgeToken } from '@/lib/badges/token';
 import { townshipLabel } from '@/lib/certificates/township';
 import { formatCourseDates } from '@/lib/certificates/date-range';
 import { deliverLabel, renderNiimbotLabel } from '@/lib/badges/niimbot-label';
-import { DoorPayment, PaymentFields, PaymentSheet } from './PaymentFields';
-import { deletePhoto, getPhoto, putPhoto } from '@/lib/badges/photo-store';
+import { DoorPayment, PaymentSheet } from './PaymentFields';
 import {
   ScannerState,
   RosterPerson,
@@ -66,19 +65,17 @@ export function ScannerClient({ courseId }: { courseId: string }) {
     }
   }, [courseId, setState]);
 
-  // Payments go one at a time (each may carry a check photo). Returns false
-  // when the phone is offline or signed out, so the rest wait.
+  // Payments (method only) upload after their person exists on the server.
+  // Returns false when the phone is offline or signed out, so the rest wait.
   const syncPayments = useCallback(async (): Promise<boolean> => {
     for (const pay of stateRef.current.pendingPayments || []) {
       try {
-        const fd = new FormData();
-        const { has_photo, ...meta } = pay;
-        fd.set('meta', JSON.stringify(meta));
-        if (has_photo) {
-          const blob = await getPhoto(pay.client_payment_id).catch(() => undefined);
-          if (blob) fd.set('photo', blob, 'check.jpg');
-        }
-        const res = await fetch(`/api/scan/${courseId}/payments`, { method: 'POST', credentials: 'same-origin', body: fd });
+        const res = await fetch(`/api/scan/${courseId}/payments`, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(pay),
+        });
         if (res.status === 401) {
           setPhase('pin');
           return false;
@@ -87,7 +84,6 @@ export function ScannerClient({ courseId }: { courseId: string }) {
         if (!res.ok && !json.rejected) throw new Error(json.error || 'Upload failed');
         if (json.rejected) setSyncError('A payment could not be saved (person removed from the event).');
         setState((cur) => ({ ...cur, pendingPayments: cur.pendingPayments.filter((x) => x.client_payment_id !== pay.client_payment_id) }));
-        if (has_photo) deletePhoto(pay.client_payment_id).catch(() => {});
       } catch {
         setOnline(false);
         return false;
@@ -404,26 +400,13 @@ function ScanScreen({
   );
 
   const queuePayment = useCallback(
-    async (personId: string, pay: DoorPayment) => {
-      const id = randomId();
-      let hasPhoto = false;
-      if (pay.photo) {
-        try {
-          await putPhoto(id, pay.photo);
-          hasPhoto = true;
-        } catch {
-          show({ kind: 'warn', title: 'Photo not saved', detail: 'The payment is recorded, but this phone could not store the photo.' });
-        }
-      }
+    (personId: string, pay: DoorPayment) => {
       const rec: PaymentRecord = {
-        client_payment_id: id,
+        client_payment_id: randomId(),
         registrant_id: personId,
         method: pay.method,
-        check_number: pay.check_number,
-        amount: pay.amount,
         recorded_at: new Date().toISOString(),
         device_label: state.deviceLabel || undefined,
-        has_photo: hasPhoto,
       };
       setState((s) => ({
         ...s,
@@ -431,7 +414,7 @@ function ScanScreen({
         roster: s.roster.map((p) => (p.id === personId ? { ...p, payment_status: 'paid' } : p)),
       }));
     },
-    [setState, show, state.deviceLabel]
+    [setState, state.deviceLabel]
   );
 
   const record = useCallback(
@@ -630,10 +613,10 @@ function ScanScreen({
           name={`${paymentFor.person.first_name} ${paymentFor.person.last_name}`}
           balance={paymentFor.person.balance_due}
           onCancel={() => setPaymentFor(null)}
-          onDone={async (pay) => {
+          onDone={(pay) => {
             const { person, source } = paymentFor;
             setPaymentFor(null);
-            if (pay) await queuePayment(person.id, pay);
+            if (pay) queuePayment(person.id, pay);
             record({ ...person, payment_status: pay ? 'paid' : 'due' }, source, { skipPayment: true, paidBy: pay ? pay.method : 'none' });
           }}
         />
@@ -643,7 +626,7 @@ function ScanScreen({
           mode={mode}
           tracksPayment={tracksPayment}
           onClose={() => setSheet(null)}
-          onSave={async (w, checkIn, pay) => {
+          onSave={(w, checkIn, pay) => {
             const person: RosterPerson = {
               id: w.id,
               first_name: w.first_name,
@@ -657,7 +640,7 @@ function ScanScreen({
             };
             const walkIn = { ...w, payment_status: person.payment_status };
             setState((s) => ({ ...s, roster: [...s.roster, person], pendingWalkIns: [...s.pendingWalkIns, walkIn] }));
-            if (pay) await queuePayment(person.id, pay);
+            if (pay) queuePayment(person.id, pay);
             setSheet(null);
             setLastWalkIn(person);
             if (checkIn) {
@@ -922,7 +905,7 @@ function WalkInSheet({
         className="space-y-3"
         onSubmit={(e) => {
           e.preventDefault();
-          if (!ok || payMethod !== 'none') return;
+            if (!ok) return;
           onSave(
             {
               id: randomId(),
@@ -936,7 +919,7 @@ function WalkInSheet({
               email: f.email.trim() || undefined,
             },
             checkIn,
-            null
+            tracksPayment && payMethod !== 'none' ? { method: payMethod } : null
           );
         }}
       >
@@ -983,38 +966,9 @@ function WalkInSheet({
             ))}
           </fieldset>
         )}
-        {tracksPayment && payMethod !== 'none' ? (
-          ok ? (
-            <PaymentFields
-              key={payMethod}
-              method={payMethod}
-              saveLabel="Add walk-in"
-              onSave={(pay) =>
-                onSave(
-                  {
-                    id: randomId(),
-                    badge_token: randomBadgeToken(),
-                    first_name: f.first_name.trim(),
-                    last_name: f.last_name.trim(),
-                    title: f.title.trim() || undefined,
-                    registrant_type: f.registrant_type,
-                    township: f.township.trim() || undefined,
-                    county: f.county.trim() || undefined,
-                    email: f.email.trim() || undefined,
-                  },
-                  checkIn,
-                  pay
-                )
-              }
-            />
-          ) : (
-            <p className="text-sm text-gray-500">Enter a first and last name first.</p>
-          )
-        ) : (
-          <button type="submit" disabled={!ok} className="w-full py-3.5 text-lg font-semibold bg-[#1B2E5B] text-white rounded-xl disabled:opacity-50">
-            Add walk-in
-          </button>
-        )}
+        <button type="submit" disabled={!ok} className="w-full py-3.5 text-lg font-semibold bg-[#1B2E5B] text-white rounded-xl disabled:opacity-50">
+          Add walk-in
+        </button>
         <p className="text-xs text-gray-500">Works offline. It uploads with the scans when the phone is back online.</p>
       </form>
     </Sheet>

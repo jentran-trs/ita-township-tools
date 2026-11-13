@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 type RouteParams = { params: { registrantId: string } };
 
-// POST { method: 'check' | 'card' | 'admin', check_number?, amount?, note? }
+// POST { method: 'check' | 'card' | 'admin' }
 // Jen records a payment (e.g. after matching it in AMO). Any certificate held
 // for payment becomes downloadable immediately.
 export async function POST(req: Request, { params }: RouteParams) {
@@ -32,14 +32,10 @@ export async function POST(req: Request, { params }: RouteParams) {
     .maybeSingle();
   if (!reg) return NextResponse.json({ error: 'Registrant not found' }, { status: 404 });
 
-  const amount = b.amount === '' || b.amount == null ? null : Number(b.amount);
   const { error } = await supabase.from('cert_payments').insert({
     course_id: reg.course_id,
     registrant_id: reg.id,
     method: b.method,
-    check_number: String(b.check_number || '').trim().slice(0, 40) || null,
-    amount: amount != null && Number.isFinite(amount) ? amount : null,
-    note: String(b.note || '').trim().slice(0, 300) || null,
     recorded_by: await adminName(),
   });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

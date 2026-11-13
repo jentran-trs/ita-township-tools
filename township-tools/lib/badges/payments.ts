@@ -27,6 +27,3 @@ export async function markRegistrantPaid(registrantId: string, method: PaymentMe
   }
   return reg;
 }
-
-/** Private storage bucket for check photos (see v36 migration). */
-export const CHECK_PHOTO_BUCKET = 'check-photos';

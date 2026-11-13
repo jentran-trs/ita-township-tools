@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Printer } from 'lucide-react';
+import { ArrowLeft, Download, Loader2, Printer } from 'lucide-react';
 import { BadgeBack, BadgeData, BadgeEvent, BadgeFront } from '@/components/badges/Badge';
 
 // Avery 5390: letter sheet, 2 x 4 inserts of 3.5" x 2.25", no gaps,
@@ -26,6 +26,10 @@ export function BadgePrintClient({ courseId, badges, event }: { courseId: string
   const [start, setStart] = useState(1);
   const [nudge, setNudge] = useState<Nudge>({ x: 0, y: 0 });
   const [guides, setGuides] = useState(false);
+  // While making a PDF, draw exactly what would print (no on-screen guides).
+  const [capturing, setCapturing] = useState(false);
+  const [progress, setProgress] = useState<string | null>(null);
+  const [pdfError, setPdfError] = useState<string | null>(null);
 
   useEffect(() => {
     const n = readJSON<any>(NUDGE_KEY, null);
@@ -52,6 +56,45 @@ export function BadgePrintClient({ courseId, badges, event }: { courseId: string
   const printSide = (s: Side) => {
     setSide(s);
     setTimeout(() => window.print(), 150);
+  };
+
+  // Build a PDF of every sheet for one side, for sending to whoever prints.
+  // Each sheet is captured at ~300 dpi and placed full-page on Letter paper,
+  // so it prints exactly like the Print button (alignment shift included).
+  const downloadPdf = async (s: Side) => {
+    setPdfError(null);
+    setSide(s);
+    setCapturing(true);
+    try {
+      // html-to-image draws with the browser's own engine (via SVG), so text
+      // lands exactly where it is on screen; html2canvas shifts custom fonts.
+      const { toJpeg } = await import('html-to-image');
+      const { jsPDF } = await import('jspdf');
+      // Let React render the chosen side, then wait for fonts and images.
+      await new Promise((r) => setTimeout(r, 200));
+      await (document as any).fonts?.ready;
+      const nodes = Array.from(document.querySelectorAll<HTMLElement>('.badge-sheets .badge-sheet'));
+      await Promise.all(
+        nodes.flatMap((n) => Array.from(n.querySelectorAll('img'))).map((img) =>
+          img.complete ? null : new Promise((r) => { img.onload = img.onerror = r; })
+        )
+      );
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'in', format: 'letter' });
+      for (let i = 0; i < nodes.length; i++) {
+        setProgress(`Making page ${i + 1} of ${nodes.length}…`);
+        // ~300 dpi; the shadow is screen-only decoration.
+        const img = await toJpeg(nodes[i], { pixelRatio: 3, quality: 0.92, backgroundColor: '#ffffff', style: { boxShadow: 'none', margin: '0' } });
+        if (i > 0) pdf.addPage('letter', 'portrait');
+        pdf.addImage(img, 'JPEG', 0, 0, 8.5, 11, undefined, 'FAST');
+      }
+      const base = event.name.replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'badges';
+      pdf.save(`${base}-badges-${s === 'front' ? '1-fronts' : '2-backs'}.pdf`);
+    } catch (e: any) {
+      setPdfError(e?.message || 'Could not make the PDF. Please try again.');
+    } finally {
+      setCapturing(false);
+      setProgress(null);
+    }
   };
 
   const setN = (k: keyof Nudge, v: string) => setNudge((cur) => ({ ...cur, [k]: parseFloat(v) || 0 }));
@@ -111,7 +154,28 @@ export function BadgePrintClient({ courseId, badges, event }: { courseId: string
             <button type="button" onClick={() => printSide('back')} disabled={!badges.length} className="inline-flex items-center gap-2 px-4 py-2 font-semibold bg-[#1B2E5B] text-white rounded-lg hover:opacity-90 disabled:opacity-50">
               <Printer className="w-4 h-4" /> 2. Print backs
             </button>
-            <span className="self-center text-gray-500">
+          </div>
+
+          <div className="border-t border-gray-200 pt-4">
+            <div className="font-medium mb-1">Sending to someone else to print?</div>
+            <p className="text-gray-600 mb-2">
+              Download both PDFs and send them together. They print exactly like the buttons above (Letter, 100% / Actual
+              size, fronts first, then flip the sheets and print the backs).
+            </p>
+            <div className="flex flex-wrap gap-2 items-center">
+              <button type="button" onClick={() => downloadPdf('front')} disabled={!badges.length || capturing} className="inline-flex items-center gap-2 px-4 py-2 font-semibold bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50">
+                {capturing && side === 'front' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} Download fronts PDF
+              </button>
+              <button type="button" onClick={() => downloadPdf('back')} disabled={!badges.length || capturing} className="inline-flex items-center gap-2 px-4 py-2 font-semibold bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50">
+                {capturing && side === 'back' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} Download backs PDF
+              </button>
+              {progress && <span className="text-gray-500">{progress}</span>}
+            </div>
+            {pdfError && <p className="text-red-600 mt-2">{pdfError}</p>}
+          </div>
+
+          <div>
+            <span className="text-gray-500">
               Previewing:{' '}
               <button type="button" onClick={() => setSide('front')} className={side === 'front' ? 'font-semibold underline' : 'hover:underline'}>fronts</button>
               {' / '}
@@ -161,7 +225,7 @@ export function BadgePrintClient({ courseId, badges, event }: { courseId: string
               return (
                 <div
                   key={ci}
-                  className={`badge-cell outline ${guides ? '' : 'screen-only'}`}
+                  className={`badge-cell ${guides ? 'outline' : capturing ? '' : 'outline screen-only'}`}
                   style={{
                     width: `${f.cellW}in`,
                     height: `${f.cellH}in`,

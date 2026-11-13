@@ -16,7 +16,7 @@ export type BadgeData = {
   county: string | null;
   registrantType: string | null;
   organization?: string | null;
-  qrSvg: string; // SVG markup for the badge_token QR code
+  qrSrc: string; // PNG data URL of the badge_token QR code
 };
 
 export type BadgeEvent = {
@@ -127,7 +127,8 @@ export function BadgeFront({ badge, event }: { badge: BadgeData; event: BadgeEve
 export function BadgeBack({ badge }: { badge: BadgeData }) {
   return (
     <div style={{ width: '3.5in', height: '2.25in', boxSizing: 'border-box', padding: '0.2in', display: 'flex', alignItems: 'center', gap: '0.18in', fontFamily: FONT, color: NAVY, background: '#fff', overflow: 'hidden' }}>
-      <div style={{ width: '1.6in', height: '1.6in', flexShrink: 0 }} dangerouslySetInnerHTML={{ __html: badge.qrSvg }} />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={badge.qrSrc} alt="" style={{ width: '1.6in', height: '1.6in', flexShrink: 0, imageRendering: 'pixelated' }} />
       <div style={{ minWidth: 0 }}>
         <div style={{ fontSize: badge.firstName.length <= 9 ? '22pt' : '16pt', fontWeight: 800, lineHeight: 1.05, wordBreak: 'break-word' }}>{badge.firstName}</div>
         <div style={{ fontSize: badge.lastName.length <= 12 ? '14pt' : '11pt', fontWeight: 800, lineHeight: 1.1, wordBreak: 'break-word' }}>{badge.lastName}</div>

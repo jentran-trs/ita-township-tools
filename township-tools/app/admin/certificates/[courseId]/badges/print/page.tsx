@@ -43,10 +43,8 @@ export default async function BadgePrintPage({ params, searchParams }: Props) {
       county: r.county,
       registrantType: r.registrant_type,
       organization: r.organization,
-      qrSvg: (await QRCode.toString(r.badge_token, { type: 'svg', margin: 0, errorCorrectionLevel: 'M' })).replace(
-        '<svg ',
-        '<svg width="100%" height="100%" '
-      ),
+      // 480px PNG = ~300 dpi at the 1.6" printed size.
+      qrSrc: await QRCode.toDataURL(r.badge_token, { margin: 0, width: 480, errorCorrectionLevel: 'M' }),
     }))
   );
 

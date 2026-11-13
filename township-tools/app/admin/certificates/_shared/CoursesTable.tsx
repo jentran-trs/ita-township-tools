@@ -149,7 +149,7 @@ export function CoursesTable({ initialCourses }: { initialCourses: Course[] }) {
                   {formatDate(c.last_issued_at)}
                 </td>
                 <td className="px-4 py-3">
-                  <div className="flex items-center justify-end gap-2">
+                  <div className="flex items-center justify-end gap-2 whitespace-nowrap">
                     <Link
                       href={`/admin/certificates/${c.id}`}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-900/60"
@@ -161,7 +161,7 @@ export function CoursesTable({ initialCourses }: { initialCourses: Course[] }) {
                       type="button"
                       onClick={() => onToggleHidden(c)}
                       disabled={hidingId === c.id}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold whitespace-nowrap shrink-0 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50"
                       title={c.hidden ? 'Show this course and its certificates on the public pages again' : 'Hide this course and its certificates from the public pages (nothing is deleted)'}
                     >
                       {c.hidden ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}

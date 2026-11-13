@@ -93,7 +93,7 @@ export async function PATCH(req: Request, { params }: RouteParams) {
       patch.scanner_pin_hash = hashPin(course.id, pin.trim());
     } else {
       return NextResponse.json(
-        { error: `PIN must be ${PIN_MIN_LENGTH}–${PIN_MAX_LENGTH} letters or digits` },
+        { error: `PIN must be ${PIN_MIN_LENGTH}–${PIN_MAX_LENGTH} numbers (no letters)` },
         { status: 400 }
       );
     }

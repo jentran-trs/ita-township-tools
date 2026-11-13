@@ -249,8 +249,10 @@ function PinScreen({
         <span className="block text-sm font-semibold mb-1">Event PIN</span>
         <input
           value={pin}
-          onChange={(e) => setPin(e.target.value)}
+          onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
           inputMode="numeric"
+          pattern="[0-9]*"
+          maxLength={8}
           autoComplete="one-time-code"
           autoFocus
           className="w-full text-2xl tracking-widest text-center px-4 py-3 border border-gray-300 rounded-xl"

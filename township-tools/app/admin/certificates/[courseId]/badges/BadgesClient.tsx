@@ -218,13 +218,15 @@ function SettingsCard({ course, onSaved }: { course: Course; onSaved: () => void
             type="text"
             inputMode="numeric"
             autoComplete="off"
+            pattern="[0-9]*"
+            maxLength={8}
             value={pin}
-            onChange={(e) => setPin(e.target.value)}
-            placeholder={course.has_pin ? 'Enter a new PIN to change it' : '4–12 letters or digits'}
+            onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
+            placeholder={course.has_pin ? 'Enter a new PIN to change it' : '4–8 numbers'}
             className={inputCls + ' w-full'}
           />
           <span className="block text-xs text-gray-500 mt-1">
-            Share only with the people scanning. Changing it signs out every phone.
+            Numbers only. Share only with the people scanning. Changing it signs out every phone.
           </span>
         </label>
       </div>

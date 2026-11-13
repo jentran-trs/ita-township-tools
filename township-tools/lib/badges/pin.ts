@@ -3,11 +3,13 @@ import crypto from 'crypto';
 // Per-event scanner PIN. Stored only as a salted SHA-256 hash on
 // cert_courses.scanner_pin_hash; the course id is the salt so the same PIN
 // on two events produces different hashes.
+// Digits only: the scanner shows a number keypad, which is fastest for door
+// volunteers and avoids upper/lower-case mistakes on phones.
 export const PIN_MIN_LENGTH = 4;
-export const PIN_MAX_LENGTH = 12;
+export const PIN_MAX_LENGTH = 8;
 
 export function isValidPin(pin: string): boolean {
-  return new RegExp(`^[0-9A-Za-z]{${PIN_MIN_LENGTH},${PIN_MAX_LENGTH}}$`).test(pin);
+  return new RegExp(`^[0-9]{${PIN_MIN_LENGTH},${PIN_MAX_LENGTH}}$`).test(pin);
 }
 
 export function hashPin(courseId: string, pin: string): string {

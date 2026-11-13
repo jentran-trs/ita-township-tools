@@ -28,13 +28,13 @@ export async function GET(_req: Request, { params }: RouteParams) {
 
   const { data: course, error: courseErr } = await supabase
     .from('cert_courses')
-    .select(
-      'course_id, name, hours, method, course_date, course_end_date, cert_type, org_name, syllabus, syllabus_file_url, syllabus_file_name'
-    )
+    // '*' so this keeps working whether or not the v35 `hidden` column exists.
+    .select('*')
     .eq('id', cert.course_id)
     .maybeSingle();
   if (courseErr) return NextResponse.json({ error: courseErr.message }, { status: 500 });
-  if (!course) return NextResponse.json({ error: 'Course not found' }, { status: 404 });
+  // A course hidden from the public verifies as not found.
+  if (!course || course.hidden) return NextResponse.json({ error: 'Credential not found' }, { status: 404 });
 
   return NextResponse.json({
     credential_id: cert.credential_id,

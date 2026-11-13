@@ -70,7 +70,8 @@ export async function POST(req: Request) {
   const result = certs
     .map((c) => {
       const course = courseMap.get(c.course_id);
-      if (!course) return null;
+      // Hidden from the public: don't list its certificates.
+      if (!course || course.hidden) return null;
       return {
         credential_id: c.credential_id,
         attendee_first: c.attendee_first,

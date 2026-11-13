@@ -1,7 +1,9 @@
--- v35: hide a course from the admin course list (e.g. test courses).
+-- v35: hide a course from the public (e.g. test courses).
 --
--- Additive only; safe to re-run. Hiding only tidies the admin list: the
--- course, its certificates and the public lookup/verify pages are unchanged.
+-- Additive only; safe to re-run. A hidden course stays in the admin list
+-- (marked "Hidden from public"), but it is left out of the public lookup
+-- page's course list, its certificates don't come up in the public lookup,
+-- and its verify/QR links show "not found". Nothing is deleted.
 ALTER TABLE cert_courses ADD COLUMN IF NOT EXISTS hidden BOOLEAN NOT NULL DEFAULT FALSE;
 
 -- Re-create the summary view so c.* picks up the new column.

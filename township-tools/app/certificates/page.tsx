@@ -18,9 +18,11 @@ export default async function CertificatesLookupPage() {
   const supabase = createServerSupabaseClient();
   const { data: courseRows } = await supabase
     .from('cert_courses')
-    .select('id, course_id, name, course_date')
+    // '*' so this keeps working whether or not the v35 `hidden` column exists.
+    .select('*')
     .order('course_date', { ascending: false });
-  const courses = (courseRows || []).map((c: any) => ({
+  // Courses hidden from the public (e.g. test courses) are left out.
+  const courses = (courseRows || []).filter((c: any) => !c.hidden).map((c: any) => ({
     id: c.id,
     course_id: c.course_id,
     name: c.name,

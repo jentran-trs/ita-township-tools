@@ -57,12 +57,12 @@ export default async function VerifyResultPage({ params }: Params) {
   if (cert?.course_id) {
     const { data } = await supabase
       .from('cert_courses')
-      .select(
-        'course_id, name, hours, method, course_date, course_end_date, cert_type, org_name, syllabus, syllabus_file_url, syllabus_file_name'
-      )
+      // '*' so this keeps working whether or not the v35 `hidden` column exists.
+      .select('*')
       .eq('id', cert.course_id)
       .maybeSingle();
-    course = data;
+    // A course hidden from the public shows the normal "not found" result.
+    course = data && !data.hidden ? data : null;
   }
 
   return (

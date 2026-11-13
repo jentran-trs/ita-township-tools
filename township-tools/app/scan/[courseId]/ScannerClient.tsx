@@ -434,6 +434,15 @@ function ScanScreen({
           return show({ kind: 'warn', title: `${name} is already checked out`, detail: `Checked out at ${easternTime(latest.scanned_at)}. Nothing recorded.` });
         }
       }
+      // Can't check out someone who never checked in today.
+      const hadIn = mine.some((x) => x.direction === 'in');
+      if (mode === 'out' && !hadIn) {
+        return show({
+          kind: 'error',
+          title: `${name} isn't checked in yet`,
+          detail: 'Nothing recorded. Switch to Check IN to check them in first.',
+        });
+      }
       // Owes and checking in: ask about payment first.
       if (mode === 'in' && person.payment_status === 'due' && !opts?.skipPayment) {
         setPaymentFor({ person, source });
@@ -451,10 +460,7 @@ function ScanScreen({
         device_label: state.deviceLabel || undefined,
       };
       setState((s) => ({ ...s, scans: [...s.scans, rec], pendingScans: [...s.pendingScans, rec] }));
-      const hadIn = mine.some((x) => x.direction === 'in');
-      if (mode === 'out' && !hadIn) {
-        show({ kind: 'warn', title: `${name} checked out`, detail: 'No check-in today, so this will be flagged for review.' });
-      } else if (mode === 'out' && same.length) {
+      if (mode === 'out' && same.length) {
         show({ kind: 'ok', title: `${name} checked out again`, detail: `Check-out time updated to ${easternTime(now)}.` });
       } else if (mode === 'in' && opts?.paidBy === 'none') {
         show({ kind: 'warn', title: `${name} checked in`, detail: 'No payment collected. They will be listed for follow-up.' });

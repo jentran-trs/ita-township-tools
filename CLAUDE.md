@@ -38,6 +38,7 @@ Place in `township-tools/.env.local`:
 | `RESEND_API_KEY`, optional `DIGEST_FROM_EMAIL` | Weekly Contact Verification digest email |
 | `CRON_SECRET` | Authorizes `/api/cron/*` (Vercel sends as `Authorization: Bearer …`) |
 | `CV_SUPERADMIN_PASSWORD` | Optional override of the hardcoded fallback (`TownshipVerify@2026`) for the password-cookie path to ITA superadmin |
+| `MERGER_MAP_PASSCODE` | Passcode that unlocks editing on the merger meeting map (ITA site and `/admin/merger-map`); editing is disabled if unset |
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | Optional GA4 tag in `app/layout.tsx` |
 
 ## High-level architecture
@@ -49,6 +50,7 @@ This is a multi-tool SaaS for Indiana townships. The tools share auth, database,
 | Tool | Path | Access |
 | --- | --- | --- |
 | SB 270 Scoring Tool | `/tools/scoring-tool` | Public, **completely bypasses Clerk middleware** |
+| Merger Meeting Map | ITA website (AMO paste block) + `/admin/merger-map` | The AMO page holds only `<div id="ita-merger-map">` + `<script src=".../merger-map/embed.js">` (AMO's CKEditor mangles inline scripts containing `<`). `public/merger-map/embed.js` is generated from `lib/merger-map/amo/amo-template.html` by `build-amo.mjs` — rerun it after editing the template — and reads `/api/merger-map/data` (public, CORS `*`). `/admin/merger-map` is a superadmin-only copy. Editing unlocks with `MERGER_MAP_PASSCODE` (sent per request in the `x-merger-map-passcode` header, not a cookie, since the ITA site is a different origin). Data in `merger_map_counties` / `merger_map_settings` (v31, v32) |
 | Verify Contacts Portal | `/verify-contacts/...` | Public; reviewer enters name+email, no auth |
 | Asset Collection Form | `/contribute/[shareId]`, `/asset-collection` | Public via project share link |
 | Report Builder | `/tools/report-builder` | Clerk org admin only |
@@ -98,6 +100,11 @@ Numbered files are sequential migrations applied to a single Supabase project. S
 - `lib/contact-verification/cutoff.ts#getRecentChangesCutoff()` suppresses "new since last visit" admin pills during that same window so the superadmin isn't spammed by activity in the closing days of the cycle.
 - xlsx import: `lib/contact-verification/xlsx.js` parses one workbook per ITA region (one sheet per county) with a townships-banner / contacts-table layout. Used by the superadmin import page.
 - v14 flipped `cv_completion_stats` to `SECURITY INVOKER` — if you add new views, do the same to avoid Supabase's "Security Definer View" lint.
+
+**Badges & QR check-in** (extends the Certificate Generator; opt-in per course via `cert_courses.badge_checkin_enabled`, migrations v33–v35):
+- `cert_registrants` (imported from the AMO export, or walk-ins) each carry an opaque `badge_token` printed as a QR code on the back of a 3.5"×2.25" Avery 5390 badge (`components/badges/Badge.tsx`, print page `/admin/certificates/[courseId]/badges/print`). `cert_attendance_scans` is an append-only in/out log; manual entries and voids are marked, never deleted.
+- Scanner: public `/scan/[courseId]` (excluded from Clerk middleware), unlocked with a per-event PIN; session cookie is HMAC-signed and tied to `scanner_pin_version` (`lib/badges/scan-session.ts`). Works offline: roster + queue in localStorage (`lib/badges/scanner-store.ts`), service worker `public/scan-sw.js` scoped to `/scan/`. Uploads are idempotent on `client_scan_id`.
+- Attendance rule (`lib/badges/attendance.ts`): checked in AND out on every event day, Eastern time. Partial credit = `cert_registrants.day_hours`; issued certificates carry `certificates.hours_override` (NULL = course hours), read by the lookup/verify routes.
 
 ### Cron
 

@@ -60,7 +60,7 @@ export function CoursesTable({ initialCourses }: { initialCourses: Course[] }) {
     } catch (e: any) {
       setError(
         /hidden/.test(e.message || '')
-          ? 'Hiding needs the v33 database update (supabase-schema-v33-course-hidden.sql).'
+          ? 'Hiding needs the v35 database update (supabase-schema-v35-course-hidden.sql).'
           : e.message || 'Could not update the course'
       );
     } finally {

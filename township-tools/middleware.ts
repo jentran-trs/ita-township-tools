@@ -22,6 +22,7 @@ const isPublicRoute = createRouteMatcher([
   // per-event PIN (checked in /api/scan) is the gate.
   '/scan(.*)',
   '/api/scan(.*)',
+  '/api/merger-map(.*)',
   '/',
 ]);
 

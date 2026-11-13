@@ -1,4 +1,4 @@
--- v32: badge registrant type + event tagline.
+-- v34 (was v32 on the badge branch): badge registrant type + event tagline.
 --
 -- Additive only; safe to re-run. Existing courses/registrants get NULLs and
 -- badges fall back to "ATTENDEE" with no tagline.

@@ -1,4 +1,4 @@
--- v31: Badges + QR check-in/check-out attendance for certificate courses.
+-- v33 (was v31 on the badge branch): Badges + QR check-in/check-out attendance for certificate courses.
 --
 -- Flow: registrants are imported before the event (AMO Excel export), each
 -- gets a random badge_token printed as a QR code on their badge. Door staff

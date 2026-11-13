@@ -1,4 +1,4 @@
--- v33: hide a course from the admin course list (e.g. test courses).
+-- v35: hide a course from the admin course list (e.g. test courses).
 --
 -- Additive only; safe to re-run. Hiding only tidies the admin list: the
 -- course, its certificates and the public lookup/verify pages are unchanged.

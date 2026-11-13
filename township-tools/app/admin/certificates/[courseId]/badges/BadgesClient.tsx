@@ -91,7 +91,7 @@ export function BadgesClient({ courseId }: { courseId: string }) {
     return (
       <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-red-800 dark:text-red-300 text-sm rounded-lg px-4 py-3">
         {loadError}. If this is the first time using badges, make sure{' '}
-        <code className="font-mono">supabase-schema-v31-badges-attendance.sql</code> has been run.
+        <code className="font-mono">supabase-schema-v33-badges-attendance.sql</code> has been run.
       </div>
     );
   }

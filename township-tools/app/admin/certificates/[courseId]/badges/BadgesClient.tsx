@@ -807,11 +807,29 @@ function PartialCreditCell({
 }
 
 function ScannerLink({ courseId }: { courseId: string }) {
-  const [copied, setCopied] = useState(false);
-  const url = typeof window !== 'undefined' ? `${window.location.origin}/scan/${courseId}` : `/scan/${courseId}`;
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
   return (
-    <div className="mt-5 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-sm">
-      <div className="font-semibold mb-1">Scanner link for door volunteers</div>
+    <div className="mt-5 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-sm space-y-3">
+      <ShareLinkRow
+        title="Scanner link for the check-in team"
+        url={`${origin}/scan/${courseId}`}
+        note="They open it on their phone and unlock it with the PIN once while online, before the event; after that it works without signal."
+      />
+      <ShareLinkRow
+        title="Print link for whoever prints the badges (e.g. Lydia)"
+        url={`${origin}/print/${courseId}`}
+        note="They open it on a computer and enter the same PIN to print or download the badge PDFs, with printing instructions on the page."
+      />
+      <p className="text-xs text-gray-500">No Township Tools login needed for either. Send the PIN separately from the link.</p>
+    </div>
+  );
+}
+
+function ShareLinkRow({ title, url, note }: { title: string; url: string; note: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div>
+      <div className="font-semibold mb-1">{title}</div>
       <div className="flex flex-wrap items-center gap-2">
         <code className="font-mono text-xs break-all">{url}</code>
         <button
@@ -821,20 +839,19 @@ function ScannerLink({ courseId }: { courseId: string }) {
               await navigator.clipboard.writeText(url);
               setCopied(true);
               setTimeout(() => setCopied(false), 2000);
-            } catch {}
+            } catch {
+              window.prompt('Copy this link:', url);
+            }
           }}
           className="text-xs font-semibold text-amber-700 dark:text-amber-400 hover:underline"
         >
-          {copied ? 'Copied' : 'Copy'}
+          {copied ? 'Copied' : 'Copy link'}
         </button>
         <a href={url} target="_blank" rel="noopener noreferrer" className="text-xs text-gray-600 dark:text-gray-300 hover:underline">
           Open
         </a>
       </div>
-      <p className="text-xs text-gray-500 mt-1">
-        Send this link and the PIN to the people scanning. They open it on their phone and unlock it once while online,
-        before the event; after that it works without signal. No Township Tools login is needed.
-      </p>
+      <p className="text-xs text-gray-500 mt-1">{note}</p>
     </div>
   );
 }

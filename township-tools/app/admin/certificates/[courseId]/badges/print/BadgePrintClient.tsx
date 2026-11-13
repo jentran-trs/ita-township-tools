@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Download, Loader2, Printer } from 'lucide-react';
+import { ArrowLeft, Copy, Download, Loader2, Printer } from 'lucide-react';
 import { BadgeBack, BadgeData, BadgeEvent, BadgeFront } from '@/components/badges/Badge';
 
 // Avery 5390: letter sheet, 2 x 4 inserts of 3.5" x 2.25", no gaps,
@@ -22,7 +22,36 @@ function readJSON<T>(key: string, fallback: T): T {
   return fallback;
 }
 
-export function BadgePrintClient({ courseId, badges, event }: { courseId: string; badges: BadgeData[]; event: BadgeEvent }) {
+// Plain-text printing instructions, shown on the page and copied into the
+// message for whoever prints the badges.
+const PRINT_STEPS_TWO_SIDED = [
+  'Paper: Avery 5390 name badge inserts (3.5" x 2.25", 8 per sheet).',
+  'Print the 2-sided PDF (or click "Print 2-sided").',
+  'In the print dialog: Letter, scale 100% / Actual size (not "Fit to page"), 2-sided / duplex ON, flip on long edge, paper type Matte or card stock.',
+  'Print one sheet first and check each QR code is behind the right badge.',
+];
+const PRINT_STEPS_ONE_SIDED = [
+  'Paper: Avery 5390 name badge inserts (3.5" x 2.25", 8 per sheet).',
+  'Print the fronts PDF (or click "1. Print fronts"): Letter, scale 100% / Actual size (not "Fit to page"), paper type Matte or card stock.',
+  'Flip the printed sheets over left to right (like turning a page), keep the top edge going in first, and put them back in the same order.',
+  'Print the backs PDF (or click "2. Print backs").',
+  'Test one sheet on plain paper first: hold it up to a window and check each QR code sits behind its badge.',
+];
+
+export function BadgePrintClient({
+  courseId,
+  badges,
+  event,
+  backHref,
+  showShareLink,
+}: {
+  courseId: string;
+  badges: BadgeData[];
+  event: BadgeEvent;
+  // Admin page only: link back to Badges & check-in, and the link to share with the printer.
+  backHref?: string;
+  showShareLink?: boolean;
+}) {
   const [side, setSide] = useState<Side>('front');
   const [start, setStart] = useState(1);
   const [nudge, setNudge] = useState<Nudge>({ x: 0, y: 0 });
@@ -123,30 +152,22 @@ export function BadgePrintClient({ courseId, badges, event }: { courseId: string
       `}</style>
 
       <div className="print-controls max-w-3xl mx-auto px-4 py-6 space-y-4">
-        <Link href={`/admin/certificates/${courseId}/badges`} className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-white rounded-lg hover:bg-gray-100">
-          <ArrowLeft className="w-4 h-4" /> Back to badges
-        </Link>
+        {backHref && (
+          <Link href={backHref} className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-white rounded-lg hover:bg-gray-100">
+            <ArrowLeft className="w-4 h-4" /> Back to badges
+          </Link>
+        )}
+        {showShareLink && <ShareWithPrinter courseId={courseId} eventName={event.name} />}
 
         <div className="bg-white rounded-xl p-5 space-y-4 text-sm">
           <div>
             <h1 className="text-lg font-bold">Print badges</h1>
             <p className="text-gray-600">
-              {badges.length} badge{badges.length === 1 ? '' : 's'} · {sheets.length} sheet{sheets.length === 1 ? '' : 's'} · Avery 5390 (3.5\" × 2.25\") · names on the front, QR code on the back
+              {badges.length} badge{badges.length === 1 ? '' : 's'} · {sheets.length} sheet{sheets.length === 1 ? '' : 's'} · Avery 5390 (3.5″ × 2.25″) · names on the front, QR code on the back
             </p>
           </div>
 
 
-          <ol className="list-decimal pl-5 text-gray-700 space-y-1.5">
-            <li>
-              <strong>Print the fronts.</strong> In the print dialog choose Letter, scale <strong>100% / Actual size</strong>, margins <strong>None</strong>, paper type <strong>Matte</strong>.
-            </li>
-            <li>
-              <strong>Flip the printed sheets over</strong> (turn each one over left to right, like a page in a book), keep the <strong>top edge going into the printer first</strong>, and put them back in the same order.
-            </li>
-            <li>
-              <strong>Print the backs.</strong> Each QR code lands behind the right person. First time on a printer, try this with one plain-paper sheet and hold it up to a window to check.
-            </li>
-          </ol>
 
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={() => printSide('front')} disabled={!badges.length} className="inline-flex items-center gap-2 px-4 py-2 font-semibold bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:opacity-50">
@@ -160,17 +181,14 @@ export function BadgePrintClient({ courseId, badges, event }: { courseId: string
               <Printer className="w-4 h-4" /> Print 2-sided
             </button>
           </div>
-          <p className="text-gray-600 -mt-2">
-            <strong>Printer prints both sides?</strong> Use <strong>Print 2-sided</strong> (or the 2-sided PDF below) and in the
-            print dialog turn on <strong>2-sided / duplex</strong>, set to <strong>flip on long edge</strong>. No flipping by hand.
-          </p>
+
+          <PrintInstructions />
 
           <div className="border-t border-gray-200 pt-4">
-            <div className="font-medium mb-1">Sending to someone else to print?</div>
+            <div className="font-medium mb-1">Download PDFs</div>
             <p className="text-gray-600 mb-2">
-              <strong>2-sided printer:</strong> send the one <strong>2-sided PDF</strong> (print with 2-sided / duplex on,
-              flip on long edge). <strong>One-sided printer:</strong> send the fronts and backs PDFs (print fronts, flip the
-              sheets, print backs). All print at Letter, 100% / Actual size.
+              Same layout as the print buttons. 2-sided printer: the one <strong>2-sided PDF</strong>. One-sided printer: the
+              <strong> fronts</strong> and <strong>backs</strong> PDFs.
             </p>
             <div className="flex flex-wrap gap-2 items-center">
               <button type="button" onClick={() => downloadPdf('front')} disabled={!badges.length || capturing} className="inline-flex items-center gap-2 px-4 py-2 font-semibold bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50">
@@ -257,6 +275,80 @@ export function BadgePrintClient({ courseId, badges, event }: { courseId: string
             </div>
           ))
         )}
+      </div>
+    </div>
+  );
+}
+
+function CopyButton({ text, label = 'Copy' }: { text: string; label?: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(text);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        } catch {
+          window.prompt('Copy this text:', text);
+        }
+      }}
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+    >
+      <Copy className="w-3.5 h-3.5" /> {copied ? 'Copied' : label}
+    </button>
+  );
+}
+
+function PrintInstructions() {
+  const block = (title: string, steps: string[]) => (
+    <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+      <div className="flex items-center justify-between gap-2 mb-1">
+        <div className="font-semibold">{title}</div>
+        <CopyButton text={`${title}\n${steps.map((x, i) => `${i + 1}. ${x}`).join('\n')}`} />
+      </div>
+      <ol className="list-decimal pl-5 text-gray-700 space-y-0.5">
+        {steps.map((x) => (
+          <li key={x}>{x}</li>
+        ))}
+      </ol>
+    </div>
+  );
+  return (
+    <div className="grid md:grid-cols-2 gap-3">
+      {block('Printer prints both sides', PRINT_STEPS_TWO_SIDED)}
+      {block('Printer prints one side', PRINT_STEPS_ONE_SIDED)}
+    </div>
+  );
+}
+
+function ShareWithPrinter({ courseId, eventName }: { courseId: string; eventName: string }) {
+  const url = typeof window !== 'undefined' ? `${window.location.origin}/print/${courseId}` : `/print/${courseId}`;
+  const message = [
+    `Hi Lydia, here are the name badges for ${eventName}.`,
+    '',
+    `Open this link: ${url}`,
+    'Enter the event PIN (I will send it separately). No Township Tools login is needed.',
+    'From there you can print directly or download the PDFs.',
+    '',
+    'If your printer prints both sides:',
+    ...PRINT_STEPS_TWO_SIDED.map((x, i) => `${i + 1}. ${x}`),
+    '',
+    'If your printer prints one side only:',
+    ...PRINT_STEPS_ONE_SIDED.map((x, i) => `${i + 1}. ${x}`),
+  ].join('\n');
+  return (
+    <div className="bg-white rounded-xl p-5 text-sm space-y-2">
+      <div className="font-bold">Send to whoever prints the badges</div>
+      <p className="text-gray-600">
+        They open this link and enter the <strong>event PIN</strong> (the same one the check-in team uses). No Township Tools
+        login needed. Send the PIN separately from the link.
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <code className="font-mono text-xs break-all bg-gray-50 border border-gray-200 rounded px-2 py-1">{url}</code>
+        <CopyButton text={url} label="Copy link" />
+        <CopyButton text={message} label="Copy message with instructions" />
       </div>
     </div>
   );

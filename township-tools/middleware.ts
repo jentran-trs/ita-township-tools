@@ -21,6 +21,8 @@ const isPublicRoute = createRouteMatcher([
   // Badge scanner: volunteers use it without a Township Tools login; the
   // per-event PIN (checked in /api/scan) is the gate.
   '/scan(.*)',
+  // Badge print page for whoever prints the badges; same event PIN.
+  '/print(.*)',
   '/api/scan(.*)',
   '/api/merger-map(.*)',
   '/',
@@ -41,7 +43,7 @@ export const config = {
     // `/certificates` (public lookup + verify) is also excluded so signed-out users
     // don't get redirected. The /admin/certificates routes still go through Clerk.
     // `/scan` (badge scanner, PIN-gated) is excluded for the same reason.
-    "/((?!_next|tools/scoring-tool|certificates|qa|scan|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    "/((?!_next|tools/scoring-tool|certificates|qa|scan|print|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
     "/(api|trpc)(.*)",
   ],
 };

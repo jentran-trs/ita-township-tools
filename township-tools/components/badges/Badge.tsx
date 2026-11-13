@@ -2,15 +2,10 @@ import { GOLD, NAVY } from '@/lib/certificates/theme';
 import { townshipLabel } from '@/lib/certificates/township';
 import { badgeTypeStyle } from '@/lib/badges/badge-type';
 
-// Printable name badges, sized in real inches so the browser prints them at
-// exactly that size (print at 100% / Actual size). The QR code goes on the
-// BACK; the front is for people to read.
-//
-// Formats:
-//   '5390' — 3.5" x 2.25" horizontal (Avery 5390, 8 per sheet). Default.
-//   '5392' — 3" x 4" vertical (Avery 5392, 6 per sheet).
-
-export type BadgeFormat = '5390' | '5392';
+// Printable 3.5" x 2.25" horizontal name badge (Avery 5390, 8 per sheet),
+// sized in real inches so the browser prints it at exactly that size (print
+// at 100% / Actual size). Names are for people to read on the front; the QR
+// code for check-in goes on the BACK.
 
 export type BadgeData = {
   id: string;
@@ -35,129 +30,109 @@ export type BadgeEvent = {
 const FONT = 'var(--font-badge), Arial, Helvetica, sans-serif';
 const MUTED = '#4b5563';
 
+/** Township · County, or the company for sponsors and vendors. */
 function place(b: BadgeData) {
   const twp = [townshipLabel(b.township), b.county ? `${b.county} County` : null].filter(Boolean).join(' · ');
   return twp || b.organization || '';
 }
 
-function fullNameSize(name: string, format: BadgeFormat): string {
+// Sizes chosen so the longest realistic text still fits the 3.16" line.
+function nameSize(name: string): string {
   const n = name.length;
-  if (format === '5390') return n <= 16 ? '21pt' : n <= 20 ? '18pt' : n <= 25 ? '15pt' : '12.5pt';
-  return n <= 14 ? '24pt' : n <= 19 ? '20pt' : n <= 24 ? '17pt' : '14pt';
+  return n <= 14 ? '26pt' : n <= 18 ? '22pt' : n <= 23 ? '18pt' : n <= 28 ? '15pt' : '13pt';
 }
-
+function lineSize(text: string, big: number): string {
+  const n = text.length;
+  return n <= 34 ? `${big}pt` : n <= 44 ? `${big - 1.5}pt` : `${big - 2.5}pt`;
+}
 function eventNameSize(name: string): string {
   return name.length <= 28 ? '9.5pt' : name.length <= 42 ? '8pt' : '7pt';
 }
 
-function TypeBar({ type, height }: { type: string | null; height: string }) {
-  const t = badgeTypeStyle(type);
+const oneLine = { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } as const;
+
+export function BadgeFront({ badge, event }: { badge: BadgeData; event: BadgeEvent }) {
+  const name = `${badge.firstName} ${badge.lastName}`;
+  const where = place(badge);
+  const when = [event.dates, event.times].filter(Boolean).join(' · ');
+  const type = badgeTypeStyle(badge.registrantType);
+
   return (
     <div
       style={{
-        height,
-        borderRadius: '0.05in',
-        background: t.bg,
-        color: t.fg,
+        width: '3.5in',
+        height: '2.25in',
+        boxSizing: 'border-box',
+        padding: '0.12in 0.17in 0.12in',
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: '8.5pt',
-        fontWeight: 800,
-        letterSpacing: '0.18em',
-        textTransform: 'uppercase',
+        flexDirection: 'column',
+        fontFamily: FONT,
+        color: NAVY,
+        background: '#fff',
+        overflow: 'hidden',
       }}
     >
-      {t.label}
-    </div>
-  );
-}
-
-function EventHeader({ event, logoSize, center }: { event: BadgeEvent; logoSize: string; center?: boolean }) {
-  const when = [event.dates, event.times].filter(Boolean).join(' · ');
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.09in', flexDirection: center ? 'column' : 'row', textAlign: center ? 'center' : 'left' }}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={event.logoUrl} alt="ITA" style={{ height: logoSize, width: logoSize, objectFit: 'contain', flexShrink: 0 }} />
-      <div style={{ minWidth: 0, lineHeight: 1.18 }}>
-        <div
-          style={{
-            fontSize: eventNameSize(event.name),
-            fontWeight: 800,
-            color: NAVY,
-            textTransform: 'uppercase',
-            letterSpacing: '0.02em',
-            maxHeight: '2.4em',
-            overflow: 'hidden',
-          }}
-        >
-          {event.name}
+      {/* Event header: logo + event name, tagline, date and time */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.09in' }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={event.logoUrl} alt="ITA" style={{ height: '0.48in', width: '0.48in', objectFit: 'contain', flexShrink: 0 }} />
+        <div style={{ minWidth: 0, lineHeight: 1.18 }}>
+          <div style={{ fontSize: eventNameSize(event.name), fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.02em', maxHeight: '2.4em', overflow: 'hidden' }}>
+            {event.name}
+          </div>
+          {event.tagline && <div style={{ fontSize: '7.5pt', fontWeight: 700, color: GOLD, ...oneLine }}>{event.tagline}</div>}
+          {when && <div style={{ fontSize: '6.5pt', fontWeight: 600, color: MUTED, whiteSpace: 'nowrap' }}>{when}</div>}
         </div>
-        {event.tagline && (
-          <div style={{ fontSize: '7.5pt', fontWeight: 700, color: GOLD, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {event.tagline}
+      </div>
+
+      <div style={{ height: '1.5px', background: GOLD, margin: '0.06in 0 0.04in' }} />
+
+      {/* Name, organization, title — big and centred */}
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
+        <div style={{ fontSize: nameSize(name), fontWeight: 800, lineHeight: 1.05, maxWidth: '100%', ...oneLine }}>{name}</div>
+        {where && (
+          <div style={{ fontSize: lineSize(where, 11), fontWeight: 700, marginTop: '0.04in', lineHeight: 1.15, maxWidth: '100%', ...oneLine }}>{where}</div>
+        )}
+        {badge.title && (
+          <div style={{ fontSize: lineSize(badge.title, 10), fontWeight: 600, color: MUTED, marginTop: '0.01in', lineHeight: 1.15, maxWidth: '100%', ...oneLine }}>
+            {badge.title}
           </div>
         )}
-        {when && <div style={{ fontSize: '6.5pt', fontWeight: 600, color: MUTED, whiteSpace: 'nowrap' }}>{when}</div>}
+      </div>
+
+      {/* Registrant type bar */}
+      <div
+        style={{
+          height: '0.21in',
+          marginTop: '0.04in',
+          borderRadius: '0.05in',
+          background: type.bg,
+          color: type.fg,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '8.5pt',
+          fontWeight: 800,
+          letterSpacing: '0.18em',
+          textTransform: 'uppercase',
+          flexShrink: 0,
+        }}
+      >
+        {type.label}
       </div>
     </div>
   );
 }
 
-const rule = (margin: string) => <div style={{ height: '1.5px', background: GOLD, margin }} />;
-
-export function BadgeFront({ badge, event, format = '5390' }: { badge: BadgeData; event: BadgeEvent; format?: BadgeFormat }) {
-  const name = `${badge.firstName} ${badge.lastName}`;
-  if (format === '5390') {
-    return (
-      <div style={{ width: '3.5in', height: '2.25in', boxSizing: 'border-box', padding: '0.13in 0.17in 0.13in', display: 'flex', flexDirection: 'column', fontFamily: FONT, color: NAVY, background: '#fff', overflow: 'hidden' }}>
-        <EventHeader event={event} logoSize="0.5in" />
-        {rule('0.07in 0 0.06in')}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: 0 }}>
-          <div style={{ fontSize: fullNameSize(name, format), fontWeight: 800, lineHeight: 1.05, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
-          {place(badge) && <div style={{ fontSize: '8pt', fontWeight: 700, marginTop: '0.03in', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{place(badge)}</div>}
-          {badge.title && <div style={{ fontSize: '7.5pt', fontWeight: 600, color: MUTED, marginTop: '0.01in', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{badge.title}</div>}
-        </div>
-        <TypeBar type={badge.registrantType} height="0.21in" />
-      </div>
-    );
-  }
+export function BadgeBack({ badge }: { badge: BadgeData }) {
   return (
-    <div style={{ width: '3in', height: '4in', boxSizing: 'border-box', padding: '0.18in 0.18in 0.16in', display: 'flex', flexDirection: 'column', fontFamily: FONT, color: NAVY, background: '#fff', overflow: 'hidden', textAlign: 'center' }}>
-      <EventHeader event={event} logoSize="0.62in" center />
-      {rule('0.1in 0.4in 0.08in')}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-        <div style={{ fontSize: fullNameSize(badge.firstName, format), fontWeight: 800, lineHeight: 1.05, wordBreak: 'break-word' }}>{badge.firstName}</div>
-        <div style={{ fontSize: '15pt', fontWeight: 800, lineHeight: 1.1, wordBreak: 'break-word' }}>{badge.lastName}</div>
-        {place(badge) && <div style={{ fontSize: '8.5pt', fontWeight: 700, marginTop: '0.06in' }}>{place(badge)}</div>}
-        {badge.title && <div style={{ fontSize: '8.5pt', fontWeight: 600, color: MUTED, marginTop: '0.02in' }}>{badge.title}</div>}
+    <div style={{ width: '3.5in', height: '2.25in', boxSizing: 'border-box', padding: '0.2in', display: 'flex', alignItems: 'center', gap: '0.18in', fontFamily: FONT, color: NAVY, background: '#fff', overflow: 'hidden' }}>
+      <div style={{ width: '1.6in', height: '1.6in', flexShrink: 0 }} dangerouslySetInnerHTML={{ __html: badge.qrSvg }} />
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: badge.firstName.length <= 9 ? '22pt' : '16pt', fontWeight: 800, lineHeight: 1.05, wordBreak: 'break-word' }}>{badge.firstName}</div>
+        <div style={{ fontSize: badge.lastName.length <= 12 ? '14pt' : '11pt', fontWeight: 800, lineHeight: 1.1, wordBreak: 'break-word' }}>{badge.lastName}</div>
+        <div style={{ fontSize: '6.5pt', fontWeight: 600, color: MUTED, marginTop: '0.06in' }}>Scan to check in &amp; out</div>
       </div>
-      <TypeBar type={badge.registrantType} height="0.26in" />
-    </div>
-  );
-}
-
-export function BadgeBack({ badge, format = '5390' }: { badge: BadgeData; format?: BadgeFormat }) {
-  const qr = (size: string) => <div style={{ width: size, height: size, flexShrink: 0 }} dangerouslySetInnerHTML={{ __html: badge.qrSvg }} />;
-  const caption = <div style={{ fontSize: '6.5pt', fontWeight: 600, color: MUTED, marginTop: '0.06in' }}>Scan to check in &amp; out</div>;
-  if (format === '5390') {
-    return (
-      <div style={{ width: '3.5in', height: '2.25in', boxSizing: 'border-box', padding: '0.2in', display: 'flex', alignItems: 'center', gap: '0.18in', fontFamily: FONT, color: NAVY, background: '#fff', overflow: 'hidden' }}>
-        {qr('1.6in')}
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: badge.firstName.length <= 9 ? '22pt' : '16pt', fontWeight: 800, lineHeight: 1.05, wordBreak: 'break-word' }}>{badge.firstName}</div>
-          <div style={{ fontSize: badge.lastName.length <= 12 ? '14pt' : '11pt', fontWeight: 800, lineHeight: 1.1, wordBreak: 'break-word' }}>{badge.lastName}</div>
-          {caption}
-        </div>
-      </div>
-    );
-  }
-  return (
-    <div style={{ width: '3in', height: '4in', boxSizing: 'border-box', padding: '0.3in 0.2in', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', fontFamily: FONT, color: NAVY, background: '#fff', overflow: 'hidden' }}>
-      {qr('1.9in')}
-      <div style={{ fontSize: badge.firstName.length <= 10 ? '24pt' : '18pt', fontWeight: 800, lineHeight: 1.05, marginTop: '0.18in', wordBreak: 'break-word' }}>{badge.firstName}</div>
-      <div style={{ fontSize: '15pt', fontWeight: 800, lineHeight: 1.1, wordBreak: 'break-word' }}>{badge.lastName}</div>
-      {caption}
     </div>
   );
 }

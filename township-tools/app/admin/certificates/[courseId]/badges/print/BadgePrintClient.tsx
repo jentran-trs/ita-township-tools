@@ -3,18 +3,12 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Printer } from 'lucide-react';
-import { BadgeBack, BadgeData, BadgeEvent, BadgeFormat, BadgeFront } from '@/components/badges/Badge';
+import { BadgeBack, BadgeData, BadgeEvent, BadgeFront } from '@/components/badges/Badge';
 
-// Avery templates (letter paper, no gaps between inserts):
-//   5390: 2 x 4 inserts of 3.5" x 2.25", 0.75" side margins, 1" top margin.
-//   5392: 2 x 3 inserts of 4" x 3", 0.25" side margins, 1" top margin; the
-//         vertical 3" x 4" badge is turned 90° to fit each insert.
-const FORMATS: Record<BadgeFormat, { label: string; cols: number; rows: number; cellW: number; cellH: number; left: number; top: number; rotate: boolean }> = {
-  '5390': { label: 'Avery 5390 · 3.5" × 2.25" horizontal · 8 per sheet', cols: 2, rows: 4, cellW: 3.5, cellH: 2.25, left: 0.75, top: 1, rotate: false },
-  '5392': { label: 'Avery 5392 · 3" × 4" vertical · 6 per sheet', cols: 2, rows: 3, cellW: 4, cellH: 3, left: 0.25, top: 1, rotate: true },
-};
+// Avery 5390: letter sheet, 2 x 4 inserts of 3.5" x 2.25", no gaps,
+// 0.75" side margins, 1" top margin.
+const SHEET = { cols: 2, rows: 4, cellW: 3.5, cellH: 2.25, left: 0.75, top: 1 };
 const NUDGE_KEY = 'tt_badge_nudge_mm';
-const FORMAT_KEY = 'tt_badge_format';
 
 type Nudge = { x: number; y: number };
 type Side = 'front' | 'back';
@@ -28,33 +22,25 @@ function readJSON<T>(key: string, fallback: T): T {
 }
 
 export function BadgePrintClient({ courseId, badges, event }: { courseId: string; badges: BadgeData[]; event: BadgeEvent }) {
-  const [format, setFormat] = useState<BadgeFormat>('5390');
   const [side, setSide] = useState<Side>('front');
   const [start, setStart] = useState(1);
-  const [nudges, setNudges] = useState<Record<BadgeFormat, Nudge>>({ '5390': { x: 0, y: 0 }, '5392': { x: 0, y: 0 } });
+  const [nudge, setNudge] = useState<Nudge>({ x: 0, y: 0 });
   const [guides, setGuides] = useState(false);
 
   useEffect(() => {
-    const f = readJSON<BadgeFormat>(FORMAT_KEY, '5390');
-    if (f in FORMATS) setFormat(f);
     const n = readJSON<any>(NUDGE_KEY, null);
-    // Older saved value was a single {x, y} for the 5392 layout.
-    if (n && Number.isFinite(n.x)) setNudges((cur) => ({ ...cur, '5392': n }));
-    else if (n && n['5390']) setNudges(n);
+    // Saved per paper type by an earlier version; keep the 5390 value.
+    const v = n && n['5390'] ? n['5390'] : n;
+    if (v && Number.isFinite(v.x) && Number.isFinite(v.y) && n && n['5390']) setNudge(v);
   }, []);
   useEffect(() => {
     try {
-      localStorage.setItem(NUDGE_KEY, JSON.stringify(nudges));
-      localStorage.setItem(FORMAT_KEY, JSON.stringify(format));
+      localStorage.setItem(NUDGE_KEY, JSON.stringify({ '5390': nudge }));
     } catch {}
-  }, [nudges, format]);
+  }, [nudge]);
 
-  const f = FORMATS[format];
+  const f = SHEET;
   const perSheet = f.cols * f.rows;
-  const nudge = nudges[format];
-  useEffect(() => {
-    if (start > perSheet) setStart(1);
-  }, [start, perSheet]);
 
   const sheets = useMemo(() => {
     const slots: (BadgeData | null)[] = [...Array(Math.max(0, start - 1)).fill(null), ...badges];
@@ -68,7 +54,7 @@ export function BadgePrintClient({ courseId, badges, event }: { courseId: string
     setTimeout(() => window.print(), 150);
   };
 
-  const setN = (k: keyof Nudge, v: string) => setNudges((cur) => ({ ...cur, [format]: { ...cur[format], [k]: parseFloat(v) || 0 } }));
+  const setN = (k: keyof Nudge, v: string) => setNudge((cur) => ({ ...cur, [k]: parseFloat(v) || 0 }));
 
   return (
     <div className="badge-print-page">
@@ -101,18 +87,10 @@ export function BadgePrintClient({ courseId, badges, event }: { courseId: string
           <div>
             <h1 className="text-lg font-bold">Print badges</h1>
             <p className="text-gray-600">
-              {badges.length} badge{badges.length === 1 ? '' : 's'} · {sheets.length} sheet{sheets.length === 1 ? '' : 's'} · names on the front, QR code on the back
+              {badges.length} badge{badges.length === 1 ? '' : 's'} · {sheets.length} sheet{sheets.length === 1 ? '' : 's'} · Avery 5390 (3.5\" × 2.25\") · names on the front, QR code on the back
             </p>
           </div>
 
-          <label className="block">
-            <span className="block font-medium mb-1">Badge paper</span>
-            <select value={format} onChange={(e) => setFormat(e.target.value as BadgeFormat)} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-              {(Object.keys(FORMATS) as BadgeFormat[]).map((k) => (
-                <option key={k} value={k}>{FORMATS[k].label}</option>
-              ))}
-            </select>
-          </label>
 
           <ol className="list-decimal pl-5 text-gray-700 space-y-1.5">
             <li>
@@ -180,8 +158,6 @@ export function BadgePrintClient({ courseId, badges, event }: { courseId: string
               const col = side === 'front' ? frontCol : f.cols - 1 - frontCol;
               const dx = side === 'front' ? nudge.x : -nudge.x;
               const b = sheet[ci];
-              const badgeW = f.rotate ? f.cellH : f.cellW;
-              const badgeH = f.rotate ? f.cellW : f.cellH;
               return (
                 <div
                   key={ci}
@@ -193,25 +169,7 @@ export function BadgePrintClient({ courseId, badges, event }: { courseId: string
                     top: `calc(${f.top + row * f.cellH}in + ${nudge.y}mm)`,
                   }}
                 >
-                  {b && (
-                    <div
-                      style={
-                        f.rotate
-                          ? {
-                              position: 'absolute',
-                              width: `${badgeW}in`,
-                              height: `${badgeH}in`,
-                              left: `${(f.cellW - badgeW) / 2}in`,
-                              top: `${(f.cellH - badgeH) / 2}in`,
-                              // Front's top points left; after the flip that end is on the right.
-                              transform: `rotate(${side === 'front' ? -90 : 90}deg)`,
-                            }
-                          : undefined
-                      }
-                    >
-                      {side === 'front' ? <BadgeFront badge={b} event={event} format={format} /> : <BadgeBack badge={b} format={format} />}
-                    </div>
-                  )}
+                  {b && (side === 'front' ? <BadgeFront badge={b} event={event} /> : <BadgeBack badge={b} />)}
                 </div>
               );
             })}

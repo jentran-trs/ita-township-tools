@@ -904,7 +904,8 @@ function WalkInSheet({
       <input value={f[k]} onChange={(e) => setF((x) => ({ ...x, [k]: e.target.value }))} className="w-full px-3 py-2.5 border border-gray-300 rounded-xl" {...props} />
     </label>
   );
-  const ok = f.first_name.trim() && f.last_name.trim();
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim());
+  const ok = f.first_name.trim() && f.last_name.trim() && emailOk;
   return (
     <Sheet title="Add walk-in" onClose={onClose}>
       <form
@@ -922,7 +923,7 @@ function WalkInSheet({
               registrant_type: f.registrant_type,
               township: f.township.trim() || undefined,
               county: f.county.trim() || undefined,
-              email: f.email.trim() || undefined,
+              email: f.email.trim(),
             },
             checkIn,
             tracksPayment && payMethod !== 'none' ? { method: payMethod } : null
@@ -952,7 +953,8 @@ function WalkInSheet({
           {field('township', 'Township', { autoCapitalize: 'words' })}
           {field('county', 'County', { autoCapitalize: 'words' })}
         </div>
-        {field('email', 'Email (for their certificate)', { type: 'email', inputMode: 'email', autoCapitalize: 'none' })}
+        {field('email', 'Email * (for their certificate)', { type: 'email', inputMode: 'email', autoCapitalize: 'none', required: true })}
+        {f.email.trim() && !emailOk && <p className="text-sm text-red-600 -mt-2">Check the email: it should look like name@example.com.</p>}
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={checkIn} onChange={(e) => setCheckIn(e.target.checked)} className="h-5 w-5" />
           Check them in now
@@ -975,6 +977,7 @@ function WalkInSheet({
         <button type="submit" disabled={!ok} className="w-full py-3.5 text-lg font-semibold bg-[#1B2E5B] text-white rounded-xl disabled:opacity-50">
           Add walk-in
         </button>
+        {!ok && <p className="text-xs text-gray-500 text-center">First name, last name and email are required.</p>}
         <p className="text-xs text-gray-500">Works offline. It uploads with the scans when the phone is back online.</p>
       </form>
     </Sheet>

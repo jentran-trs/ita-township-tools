@@ -29,6 +29,7 @@ export default async function NewCoursePage() {
     method: 'in_person',
     course_date: today,
     course_end_date: '',
+    day_hours: {},
     cert_type: 'training',
     participation_statement: '',
     show_sboa: false,

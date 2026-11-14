@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { cleanDayHours, dayHoursTotal } from '@/lib/certificates/day-hours';
 import { createServerSupabaseClient } from '../../../../../lib/supabase';
 import { requireSuperadmin } from '../../../../../lib/auth/superadmin';
 import {
@@ -16,6 +17,8 @@ type CourseInput = {
   method: 'in_person' | 'online' | 'hybrid';
   course_date: string;
   course_end_date?: string | null;
+  // Hours per day for multi-day training courses (v38); set by validation.
+  day_hours?: Record<string, number> | null;
   cert_type?: 'training' | 'participation';
   participation_statement?: string | null;
   show_sboa?: boolean;
@@ -76,6 +79,7 @@ export async function POST(req: Request) {
       method: body.method,
       course_date: body.course_date,
       course_end_date: body.course_end_date || null,
+      day_hours: body.day_hours ?? null,
       cert_type: body.cert_type || 'training',
       participation_statement: body.participation_statement?.trim() || null,
       show_sboa: !!body.show_sboa,
@@ -150,6 +154,14 @@ function validateCourseInput(b: any): string | null {
       return 'course_end_date must be YYYY-MM-DD';
     }
     if (b.course_end_date < b.course_date) return 'course_end_date can’t be before course_date';
+  }
+  if (b.cert_type !== 'participation') {
+    const dh = cleanDayHours(b.day_hours, b.course_date, b.course_end_date);
+    if (dh.error) return dh.error;
+    b.day_hours = dh.value;
+    if (dh.value) b.hours = dayHoursTotal(dh.value);
+  } else {
+    b.day_hours = null;
   }
   if (!Array.isArray(b.signatures) || b.signatures.length !== 1) {
     return 'Exactly one signer is required';

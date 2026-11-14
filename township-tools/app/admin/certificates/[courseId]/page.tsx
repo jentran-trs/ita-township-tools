@@ -46,6 +46,9 @@ export default async function CourseDetailPage({ params }: Params) {
     method: course.method,
     course_date: course.course_date,
     course_end_date: course.course_end_date || '',
+    day_hours: Object.fromEntries(
+      Object.entries((course.day_hours as Record<string, number> | null) || {}).map(([d, h]) => [d, String(h)])
+    ),
     cert_type: course.cert_type === 'participation' ? 'participation' : 'training',
     participation_statement: course.participation_statement || '',
     show_sboa: !!course.show_sboa,

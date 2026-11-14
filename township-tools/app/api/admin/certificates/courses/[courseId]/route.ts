@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { cleanDayHours, dayHoursTotal } from '@/lib/certificates/day-hours';
 import { createServerSupabaseClient } from '../../../../../../lib/supabase';
 import { requireSuperadmin } from '../../../../../../lib/auth/superadmin';
 import {
@@ -117,6 +118,23 @@ export async function PATCH(req: Request, { params }: RouteParams) {
       return NextResponse.json({ error: 'End date can’t be before the start date' }, { status: 400 });
     }
     patch.course_end_date = end;
+  }
+  // Hours per day for multi-day training courses; the total follows them.
+  if ('day_hours' in body) {
+    const start = typeof body.course_date === 'string' ? body.course_date : null;
+    const end = 'course_end_date' in body ? body.course_end_date || null : undefined;
+    let s = start;
+    let e = end;
+    if (!s || e === undefined) {
+      const { data: cur } = await supabase.from('cert_courses').select('course_date, course_end_date').eq('id', params.courseId).maybeSingle();
+      s = s || cur?.course_date;
+      e = e === undefined ? cur?.course_end_date : e;
+    }
+    const isParticipation = (body.cert_type ?? 'training') === 'participation';
+    const dh = isParticipation ? { value: null } : cleanDayHours(body.day_hours, s, e);
+    if ((dh as any).error) return NextResponse.json({ error: (dh as any).error }, { status: 400 });
+    patch.day_hours = dh.value;
+    if (dh.value) patch.hours = dayHoursTotal(dh.value);
   }
   if ('syllabus' in body) patch.syllabus = body.syllabus?.trim() || null;
   if ('syllabus_file_url' in body) {

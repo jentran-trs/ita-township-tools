@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Check, FileText, Loader2, RefreshCw, Upload, X } from 'lucide-react';
 import { SignatureUpload } from '@/components/certificates/SignatureUpload';
 import { suggestCourseId } from '@/lib/certificates/course-id';
+import { eventDays } from '@/lib/badges/attendance';
+import { formatCourseDates } from '@/lib/certificates/date-range';
 import {
   DEFAULT_PARTICIPATION_SBOA_TEXT,
   DEFAULT_PARTICIPATION_STATEMENT,
@@ -28,6 +30,8 @@ export type CourseFormInitial = {
   method: 'in_person' | 'online' | 'hybrid';
   course_date: string;
   course_end_date: string;
+  // Hours for each day of a multi-day course, keyed YYYY-MM-DD.
+  day_hours: Record<string, string>;
   cert_type: 'training' | 'participation';
   participation_statement: string;
   show_sboa: boolean;
@@ -114,6 +118,17 @@ export function CourseForm({ mode, initial, existingCourseIds, defaultSignature,
     });
   };
 
+  // Multi-day training courses set hours per day; the total is worked out.
+  const courseDays = useMemo(
+    () =>
+      form.course_date
+        ? eventDays(form.course_date, form.course_end_date && form.course_end_date > form.course_date ? form.course_end_date : null)
+        : [],
+    [form.course_date, form.course_end_date]
+  );
+  const multiDayTraining = form.cert_type === 'training' && courseDays.length > 1 && courseDays.length <= 31;
+  const dayTotal = Math.round(courseDays.reduce((sum, d) => sum + (parseFloat(form.day_hours[d] ?? '') || 0), 0) * 100) / 100;
+
   const validate = (): string | null => {
     if (!form.course_id.trim()) return 'Course ID is required';
     if (!form.name.trim()) return 'Course name is required';
@@ -124,6 +139,14 @@ export function CourseForm({ mode, initial, existingCourseIds, defaultSignature,
     if (!form.course_date) return 'Course date is required';
     if (form.course_end_date && form.course_end_date < form.course_date) {
       return 'End date can’t be before the start date';
+    }
+    if (form.cert_type === 'training' && courseDays.length > 1) {
+      for (const d of courseDays) {
+        const n = parseFloat(form.day_hours[d] ?? '');
+        if (!Number.isFinite(n) || n < 0 || n > 24) {
+          return `Enter the training hours for ${formatCourseDates(d, null, 'short')}`;
+        }
+      }
     }
     if (form.signatures.length !== 1) return 'A course must have exactly one signer';
     const s = form.signatures[0];
@@ -146,7 +169,10 @@ export function CourseForm({ mode, initial, existingCourseIds, defaultSignature,
         course_id: form.course_id.trim(),
         name: form.name.trim(),
         // Participation certificates don't show hours; store 0 if left blank.
-        hours: parseFloat(form.hours) || 0,
+        hours: multiDayTraining ? dayTotal : parseFloat(form.hours) || 0,
+        day_hours: multiDayTraining
+          ? Object.fromEntries(courseDays.map((d) => [d, parseFloat(form.day_hours[d])]))
+          : null,
         cert_type: form.cert_type,
         // Blank text falls back to the default wording on the certificate.
         participation_statement: form.participation_statement.trim() || null,
@@ -384,7 +410,34 @@ export function CourseForm({ mode, initial, existingCourseIds, defaultSignature,
             </>
           )}
 
-          {form.cert_type === 'training' && (
+          {multiDayTraining && (
+            <Field
+              label="Training hours for each day"
+              required
+              hint={`Total ${dayTotal} hours. Someone who checks in and out every day gets the total; someone who comes only some days gets those days' hours.`}
+            >
+              <div className="flex flex-wrap gap-3">
+                {courseDays.map((d) => (
+                  <label key={d} className="text-sm">
+                    <span className="block text-xs text-gray-500 mb-0.5">{formatCourseDates(d, null, 'short').replace(/, \d{4}$/, '')}</span>
+                    <input
+                      type="number"
+                      step="0.25"
+                      min="0"
+                      max="24"
+                      value={form.day_hours[d] ?? ''}
+                      onChange={(e) => setForm((f) => ({ ...f, day_hours: { ...f.day_hours, [d]: e.target.value } }))}
+                      className={inputCls + ' w-24'}
+                      placeholder="hrs"
+                      aria-label={`Training hours for ${d}`}
+                    />
+                  </label>
+                ))}
+              </div>
+            </Field>
+          )}
+
+          {form.cert_type === 'training' && !multiDayTraining && (
             <Field label="Training hours" required hint="Decimal, rendered as e.g. 5.0">
               <input
                 type="number"

@@ -156,6 +156,11 @@ export function BadgesClient({
   // Remember the open tab per course (and allow #attendance-style links).
   const tabKey = `tt_badges_tab_${courseId}`;
   const setTab = (t: Tab) => {
+    // Leaving Course settings: reload so saved changes (e.g. hours per day) show.
+    if (tab === 'settings' && t !== 'settings') {
+      load();
+      loadAtt();
+    }
     setTabState(t);
     try {
       localStorage.setItem(tabKey, t);
@@ -444,19 +449,7 @@ function SettingsCard({ course, onSaved }: { course: Course; onSaved: () => void
   const [pin, setPin] = useState('');
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
-  const days = eventDays(course.course_date, course.course_end_date);
-  const multiDay = days.length > 1;
-  const [dayHours, setDayHours] = useState<Record<string, string>>(() =>
-    Object.fromEntries(days.map((d) => [d, course.day_hours?.[d] != null ? String(course.day_hours[d]) : '']))
-  );
-  const filled = days.filter((d) => dayHours[d]?.trim() !== '');
-  const dayTotal = Math.round(days.reduce((sum, d) => sum + (parseFloat(dayHours[d]) || 0), 0) * 100) / 100;
-
   const save = async () => {
-    if (multiDay && filled.length > 0 && filled.length < days.length) {
-      setMsg({ ok: false, text: 'Enter hours for every day, or leave them all blank.' });
-      return;
-    }
     setSaving(true);
     setMsg(null);
     try {
@@ -466,9 +459,6 @@ function SettingsCard({ course, onSaved }: { course: Course; onSaved: () => void
         event_end_time: end || null,
         badge_tagline: tagline,
       };
-      if (multiDay) {
-        body.day_hours = filled.length ? Object.fromEntries(days.map((d) => [d, parseFloat(dayHours[d])])) : null;
-      }
       if (pin.trim()) body.scanner_pin = pin.trim();
       const res = await fetch(`/api/admin/certificates/courses/${course.id}/badges`, {
         method: 'PATCH',
@@ -554,45 +544,6 @@ function SettingsCard({ course, onSaved }: { course: Course; onSaved: () => void
           </span>
         </label>
       </div>
-
-      {multiDay && (
-        <div className="mt-5 border-t border-gray-200 dark:border-gray-800 pt-4">
-          <div className="font-medium text-sm mb-1">Hours per day</div>
-          <p className="text-xs text-gray-500 mb-3">
-            Optional. Leave blank and people must check in and out <strong>every</strong> day to get the full{' '}
-            {Number(course.hours)} hours. Fill these in and each day someone checks in and out earns that day&apos;s hours,
-            so someone who comes only one day gets that day&apos;s hours automatically.
-          </p>
-          <div className="flex flex-wrap gap-3 items-end">
-            {days.map((d) => (
-              <label key={d} className="text-sm">
-                <span className="block text-xs text-gray-500 mb-0.5">{dayLabel(d)}</span>
-                <input
-                  type="number"
-                  min={0}
-                  max={24}
-                  step={0.25}
-                  value={dayHours[d] ?? ''}
-                  onChange={(e) => setDayHours((v) => ({ ...v, [d]: e.target.value }))}
-                  placeholder="hrs"
-                  className={inputCls + ' w-24'}
-                  aria-label={`Hours for ${dayLabel(d)}`}
-                />
-              </label>
-            ))}
-            {filled.length > 0 && (
-              <div className="text-sm pb-2">
-                Total <strong>{dayTotal}</strong> hrs
-                {filled.length === days.length && dayTotal !== Number(course.hours) && (
-                  <span className="block text-xs text-amber-700 dark:text-amber-400">
-                    The course is set to {Number(course.hours)} hours (Course settings). Someone at every day gets {dayTotal}.
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {course.badge_checkin_enabled && course.has_pin && <ScannerLink courseId={course.id} />}
 
@@ -911,7 +862,7 @@ function RegistrantsCard({
             <>
               Everyone who checks in and out every day gets full credit ({Number(course.hours)} hours). Click{' '}
               <strong>Partial credit</strong> for someone who missed a day and enter the hours for each day they
-              attended, or set <strong>Hours per day</strong> in Setup &amp; import to do this automatically.
+              attended, or set the hours for each day in <strong>Course settings</strong> to do this automatically.
             </>
           )}
         </p>

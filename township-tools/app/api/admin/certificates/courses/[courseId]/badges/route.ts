@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { requireSuperadmin } from '@/lib/auth/superadmin';
 import { hashPin, isValidPin, PIN_MAX_LENGTH, PIN_MIN_LENGTH } from '@/lib/badges/pin';
-import { eventDays } from '@/lib/badges/attendance';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -59,7 +58,7 @@ export async function PATCH(req: Request, { params }: RouteParams) {
   const supabase = createServerSupabaseClient();
   const { data: course } = await supabase
     .from('cert_courses')
-    .select('id, scanner_pin_version, course_date, course_end_date')
+    .select('id, scanner_pin_version')
     .eq('id', params.courseId)
     .maybeSingle();
   if (!course) return NextResponse.json({ error: 'Course not found' }, { status: 404 });
@@ -84,26 +83,6 @@ export async function PATCH(req: Request, { params }: RouteParams) {
   const end = patch.event_end_time ?? body.event_end_time;
   if (start && end && end <= start) {
     return NextResponse.json({ error: 'End time must be after the start time' }, { status: 400 });
-  }
-
-  // Hours per event day for multi-day courses: { "YYYY-MM-DD": hours } or null.
-  if ('day_hours' in body) {
-    const v = body.day_hours;
-    if (v === null) patch.day_hours = null;
-    else if (typeof v === 'object' && !Array.isArray(v)) {
-      const days = eventDays(course.course_date, course.course_end_date);
-      const clean: Record<string, number> = {};
-      for (const d of days) {
-        const n = Number(v[d]);
-        if (v[d] === undefined || v[d] === '' || !Number.isFinite(n) || n < 0 || n > 24) {
-          return NextResponse.json({ error: 'Enter hours (0–24) for every day, or leave them all blank' }, { status: 400 });
-        }
-        clean[d] = Math.round(n * 100) / 100;
-      }
-      patch.day_hours = days.length > 1 ? clean : null;
-    } else {
-      return NextResponse.json({ error: 'day_hours must be an object' }, { status: 400 });
-    }
   }
 
   if ('scanner_pin' in body) {

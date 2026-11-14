@@ -1670,6 +1670,7 @@ type IssuePreview = {
     eligible: boolean;
     reason?: string;
   }[];
+
 };
 
 function IssueCard({ course, onIssued, manualHref }: { course: Course; onIssued: () => void; manualHref?: string }) {
@@ -1677,7 +1678,7 @@ function IssueCard({ course, onIssued, manualHref }: { course: Course; onIssued:
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [force, setForce] = useState<Set<string>>(new Set());
-  const [list, setList] = useState<'ready' | 'held' | 'issued'>('ready');
+  const [list, setList] = useState<'ready' | 'held'>('ready');
   const [query, setQuery] = useState('');
 
   const check = async (keepMsg = false) => {
@@ -1703,7 +1704,7 @@ function IssueCard({ course, onIssued, manualHref }: { course: Course; onIssued:
 
   // forceIds = held people Jen has checked herself and wants issued anyway.
   const issue = async (forceIds: string[] = []) => {
-    if (forceIds.length && !window.confirm(`Issue certificates to ${forceIds.length} held ${forceIds.length === 1 ? 'person' : 'people'} anyway? Do this only after you've checked they attended.`)) return;
+    if (forceIds.length && !window.confirm(`Issue certificates to ${forceIds.length} ${forceIds.length === 1 ? 'person who is' : 'people who are'} not ready?\n\nThey get the full ${Number(course.hours)} hours (or the partial hours you entered), even though their check-in/out isn't complete. Anyone who still owes gets theirs on payment hold.\n\nDo this only after you've checked they attended.`)) return;
     setBusy(true);
     setMsg(null);
     try {
@@ -1734,7 +1735,7 @@ function IssueCard({ course, onIssued, manualHref }: { course: Course; onIssued:
   const done = preview?.rows.filter((r) => r.issued) || [];
   const holdNote = (r: { payment_due: boolean }) =>
     r.payment_due ? <span className="text-red-700 dark:text-red-400"> · on payment hold</span> : null;
-  const source = list === 'ready' ? ready : list === 'held' ? held : done;
+  const source = list === 'ready' ? ready : held;
   const shown = query.trim() ? source.filter((r) => matches(r.name.toLowerCase(), query)) : source;
   const shownForceable = shown.filter((r) => r.has_email && !r.issued && !r.eligible);
   const allShownForced = shownForceable.length > 0 && shownForceable.every((r) => force.has(r.id));
@@ -1747,8 +1748,7 @@ function IssueCard({ course, onIssued, manualHref }: { course: Course; onIssued:
     });
   const LISTS = [
     { id: 'ready' as const, label: 'Ready', n: ready.length, cls: 'text-green-700 dark:text-green-400' },
-    { id: 'held' as const, label: 'Held', n: held.length, cls: 'text-amber-700 dark:text-amber-400' },
-    { id: 'issued' as const, label: 'Already issued', n: done.length, cls: 'text-gray-600 dark:text-gray-300' },
+    { id: 'held' as const, label: 'Not ready', n: held.length, cls: 'text-amber-700 dark:text-amber-400' },
   ];
 
   return (
@@ -1758,9 +1758,9 @@ function IssueCard({ course, onIssued, manualHref }: { course: Course; onIssued:
         <div>
           <h2 className="text-base font-bold mb-1">Issue certificates</h2>
           <p className="text-sm text-gray-500">
-            Certificates go to everyone who checked in and out every day (full {Number(course.hours)} hours) and anyone
-            you gave partial credit. Anyone who still owes gets theirs on <strong>payment hold</strong>: it shows in the
-            public lookup but can&apos;t be downloaded until you mark them paid. Nobody gets two certificates.
+            <strong>Ready</strong> = checked in and out every day (full {Number(course.hours)} hours), or given partial
+            credit. Anyone who still owes gets theirs on <strong>payment hold</strong>: they see it in the public lookup
+            with a note to complete payment, and can download it once you mark them paid. Nobody gets two certificates.
           </p>
         </div>
         <div className="grid grid-cols-3 gap-2">
@@ -1775,6 +1775,21 @@ function IssueCard({ course, onIssued, manualHref }: { course: Course; onIssued:
               <div className="text-xs text-gray-500">{l.label}</div>
             </button>
           ))}
+          {manualHref ? (
+            <Link
+              href={manualHref}
+              className="rounded-lg border border-gray-200 dark:border-gray-800 px-2 py-2 text-center hover:border-amber-400"
+              title="See every issued certificate on the Manual import & issued certificates page"
+            >
+              <div className="text-xl font-bold text-gray-600 dark:text-gray-300">{preview ? done.length : '–'}</div>
+              <div className="text-xs text-gray-500">Issued →</div>
+            </Link>
+          ) : (
+            <div className="rounded-lg border border-gray-200 dark:border-gray-800 px-2 py-2 text-center">
+              <div className="text-xl font-bold text-gray-600 dark:text-gray-300">{preview ? done.length : '–'}</div>
+              <div className="text-xs text-gray-500">Issued</div>
+            </div>
+          )}
         </div>
         <div className="flex flex-col gap-2">
           <button type="button" onClick={() => issue()} disabled={busy || !ready.length} className={btn + ' justify-center bg-amber-500 text-white hover:bg-amber-600'}>
@@ -1782,24 +1797,23 @@ function IssueCard({ course, onIssued, manualHref }: { course: Course; onIssued:
           </button>
           {force.size > 0 && (
             <button type="button" onClick={() => issue(Array.from(force))} disabled={busy} className={btn + ' justify-center bg-[#1B2E5B] text-white hover:opacity-90'}>
-              <Check className="w-4 h-4" /> Issue {force.size} selected held anyway
+              <Check className="w-4 h-4" /> Issue {force.size} selected anyway
             </button>
           )}
           <button type="button" onClick={() => check()} disabled={busy} className={btn + ' justify-center bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}>
             <RotateCcw className="w-4 h-4" /> Refresh lists
           </button>
         </div>
-        {held.length > 0 && (
+        {held.length > 0 && list !== 'held' && (
           <p className="text-xs text-gray-500">
-            To issue held people anyway (after you&apos;ve checked they attended), open <strong>Held</strong>, tick them,
-            then click <strong>Issue selected held anyway</strong>. Fixing their times on the Attendance tab moves them to
-            Ready instead.
+            {held.length} {held.length === 1 ? 'person is' : 'people are'} not ready (missing a check-in or check-out, or
+            no email). Open <strong>Not ready</strong> to see why and what you can do.
           </p>
         )}
         {msg && <p className={`text-sm ${msg.ok ? 'text-green-600' : 'text-red-600'}`}>{msg.text}</p>}
         {manualHref && (
           <p className="text-xs text-gray-500 border-t border-gray-200 dark:border-gray-800 pt-3">
-            To download, edit or revoke an issued certificate, open{' '}
+            To download, edit or revoke a certificate, or add someone by hand, open{' '}
             <Link href={manualHref} className="font-semibold text-amber-700 dark:text-amber-400 hover:underline">
               Manual import &amp; issued certificates
             </Link>
@@ -1829,19 +1843,40 @@ function IssueCard({ course, onIssued, manualHref }: { course: Course; onIssued:
             </label>
           )}
         </ListToolbar>
+        {preview && list === 'held' && held.length > 0 && (
+          <div className="mb-3 text-sm bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 text-blue-900 dark:text-blue-200 rounded-lg px-4 py-3 space-y-2">
+            <p>
+              <strong>These people aren&apos;t ready yet.</strong> The reason is next to each name. You have two options:
+            </p>
+            <ol className="list-decimal pl-5 space-y-1">
+              <li>
+                <strong>Fix the record</strong> (best): add the missing check-in or check-out time on the Attendance tab,
+                or give partial credit on the Registrants tab. They then move to Ready.
+              </li>
+              <li>
+                <strong>Issue anyway:</strong> tick them and click <strong>Issue selected anyway</strong>. Use this only
+                after you&apos;ve confirmed they attended. What happens:
+                <ul className="list-disc pl-5 mt-1 space-y-0.5">
+                  <li>
+                    They get a certificate for the full {Number(course.hours)} hours, or the partial hours you entered
+                    for them.
+                  </li>
+                  <li>Their check-in/out records aren&apos;t changed, so the gap still shows on the Attendance tab.</li>
+                  <li>If they still owe, the certificate is on payment hold until you mark them paid.</li>
+                  <li>They can look it up right away. You can revoke it later on the Manual import page.</li>
+                </ul>
+              </li>
+            </ol>
+            <p className="text-xs">People with no email can&apos;t be ticked. Add their email on the Registrants tab first.</p>
+          </div>
+        )}
         {!preview ? (
           <p className="text-sm text-gray-500 flex items-center gap-2">
             <Loader2 className="w-4 h-4 animate-spin" /> Checking who is ready…
           </p>
         ) : shown.length === 0 ? (
           <p className="text-sm text-gray-500">
-            {query.trim()
-              ? 'No one matches.'
-              : list === 'ready'
-                ? 'No one is ready right now.'
-                : list === 'held'
-                  ? 'No one is held.'
-                  : 'No certificates issued yet.'}
+            {query.trim() ? 'No one matches.' : list === 'ready' ? 'No one is ready right now.' : 'Everyone else is issued or ready.'}
           </p>
         ) : (
           <ul className="text-sm divide-y divide-gray-100 dark:divide-gray-800 max-h-[65vh] overflow-y-auto border border-gray-100 dark:border-gray-800 rounded-lg">
@@ -1868,7 +1903,7 @@ function IssueCard({ course, onIssued, manualHref }: { course: Course; onIssued:
                       · {r.credit_hours} hrs{r.partial ? ' (partial)' : ''}
                     </span>
                   )}
-                  {list !== 'issued' && holdNote(r)}
+                  {holdNote(r)}
                 </span>
               </li>
             ))}

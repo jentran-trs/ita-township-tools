@@ -202,11 +202,11 @@ export function BadgesClient({
     setTab('attendance');
   };
   const TABS: { id: Tab; label: string; badge?: number; disabled?: boolean }[] = [
+    ...(settingsTab ? [{ id: 'settings' as Tab, label: 'Course settings' }] : []),
     { id: 'setup', label: 'Setup & import' },
     { id: 'registrants', label: `Registrants (${registrants.length})`, disabled: !enabled },
     { id: 'attendance', label: 'Attendance', badge: stats.review || undefined, disabled: !enabled || !hasPeople },
     { id: 'certificates', label: 'Certificates', disabled: !enabled || !hasPeople },
-    ...(settingsTab ? [{ id: 'settings' as Tab, label: 'Course settings' }] : []),
   ];
 
   return (
@@ -1810,6 +1810,33 @@ function IssueCard({ course, onIssued, manualHref }: { course: Course; onIssued:
             no email). Open <strong>Not ready</strong> to see why and what you can do.
           </p>
         )}
+        {preview && list === 'held' && held.length > 0 && (
+          <div className="text-sm bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 text-blue-900 dark:text-blue-200 rounded-lg px-4 py-3 space-y-2">
+            <p>
+              <strong>These people aren&apos;t ready yet.</strong> The reason is next to each name on the right. You have two options:
+            </p>
+            <ol className="list-decimal pl-5 space-y-1">
+              <li>
+                <strong>Fix the record</strong> (best): add the missing check-in or check-out time on the Attendance tab,
+                or give partial credit on the Registrants tab. They then move to Ready.
+              </li>
+              <li>
+                <strong>Issue anyway:</strong> tick them and click <strong>Issue selected anyway</strong>. Use this only
+                after you&apos;ve confirmed they attended. What happens:
+                <ul className="list-disc pl-5 mt-1 space-y-0.5">
+                  <li>
+                    They get a certificate for the full {Number(course.hours)} hours, or the partial hours you entered
+                    for them.
+                  </li>
+                  <li>Their check-in/out records aren&apos;t changed, so the gap still shows on the Attendance tab.</li>
+                  <li>If they still owe, the certificate is on payment hold until you mark them paid.</li>
+                  <li>They can look it up right away. You can revoke it later on the Manual import page.</li>
+                </ul>
+              </li>
+            </ol>
+            <p className="text-xs">People with no email can&apos;t be ticked. Add their email on the Registrants tab first.</p>
+          </div>
+        )}
         {msg && <p className={`text-sm ${msg.ok ? 'text-green-600' : 'text-red-600'}`}>{msg.text}</p>}
         {manualHref && (
           <p className="text-xs text-gray-500 border-t border-gray-200 dark:border-gray-800 pt-3">
@@ -1843,33 +1870,6 @@ function IssueCard({ course, onIssued, manualHref }: { course: Course; onIssued:
             </label>
           )}
         </ListToolbar>
-        {preview && list === 'held' && held.length > 0 && (
-          <div className="mb-3 text-sm bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 text-blue-900 dark:text-blue-200 rounded-lg px-4 py-3 space-y-2">
-            <p>
-              <strong>These people aren&apos;t ready yet.</strong> The reason is next to each name. You have two options:
-            </p>
-            <ol className="list-decimal pl-5 space-y-1">
-              <li>
-                <strong>Fix the record</strong> (best): add the missing check-in or check-out time on the Attendance tab,
-                or give partial credit on the Registrants tab. They then move to Ready.
-              </li>
-              <li>
-                <strong>Issue anyway:</strong> tick them and click <strong>Issue selected anyway</strong>. Use this only
-                after you&apos;ve confirmed they attended. What happens:
-                <ul className="list-disc pl-5 mt-1 space-y-0.5">
-                  <li>
-                    They get a certificate for the full {Number(course.hours)} hours, or the partial hours you entered
-                    for them.
-                  </li>
-                  <li>Their check-in/out records aren&apos;t changed, so the gap still shows on the Attendance tab.</li>
-                  <li>If they still owe, the certificate is on payment hold until you mark them paid.</li>
-                  <li>They can look it up right away. You can revoke it later on the Manual import page.</li>
-                </ul>
-              </li>
-            </ol>
-            <p className="text-xs">People with no email can&apos;t be ticked. Add their email on the Registrants tab first.</p>
-          </div>
-        )}
         {!preview ? (
           <p className="text-sm text-gray-500 flex items-center gap-2">
             <Loader2 className="w-4 h-4 animate-spin" /> Checking who is ready…

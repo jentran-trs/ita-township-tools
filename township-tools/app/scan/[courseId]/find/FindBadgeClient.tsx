@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Maximize, Search, X } from 'lucide-react';
+import { ChevronUp, Delete, Maximize, Search, X } from 'lucide-react';
 
 type Person = { first: string; last: string; place: string; number: number };
 type Data = { event: { name: string }; people: Person[]; savedAt: number };
@@ -22,7 +22,8 @@ export function FindBadgeClient({ courseId }: { courseId: string }) {
   const [pinError, setPinError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [q, setQ] = useState('');
-  const input = useRef<HTMLInputElement>(null);
+  // Our own letters-only keyboard (the tablet's keyboard covers half the screen).
+  const [kbOpen, setKbOpen] = useState(true);
 
   // ---------- data ----------
   const fetchList = useCallback(async (): Promise<'ok' | 'pin' | 'offline'> => {
@@ -99,12 +100,30 @@ export function FindBadgeClient({ courseId }: { courseId: string }) {
     }
   };
 
-  // ---------- auto-clear 7 seconds after the last touch / key ----------
+  // ---------- auto-clear 5 seconds after the last touch / key ----------
   const clearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const clearName = useCallback(() => {
     setQ('');
-    input.current?.blur();
+    setKbOpen(true);
   }, []);
+  const press = useCallback((key: string) => {
+    setKbOpen(true);
+    setQ((cur) => (key === 'back' ? cur.slice(0, -1) : (cur + key).slice(0, 30)));
+  }, []);
+  // A real keyboard works too (handy for a laptop, and for testing).
+  useEffect(() => {
+    if (phase !== 'ready') return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === 'Backspace') press('back');
+      else if (e.key === 'Escape') clearName();
+      else if (/^[a-zA-Z' -]$/.test(e.key)) press(e.key.toUpperCase());
+      else return;
+      e.preventDefault();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [phase, press, clearName]);
   const poke = useCallback(() => {
     if (clearTimer.current) clearTimeout(clearTimer.current);
     clearTimer.current = setTimeout(clearName, CLEAR_AFTER_MS);
@@ -132,10 +151,10 @@ export function FindBadgeClient({ courseId }: { courseId: string }) {
     return hits.sort((a, b) => Number(!b.last.toLowerCase().startsWith(term)) - Number(!a.last.toLowerCase().startsWith(term)));
   }, [data, term]);
 
-  // One match: drop the keyboard after a short pause so the number fills the screen.
+  // One match: fold the keyboard away after a short pause so the number fills the screen.
   useEffect(() => {
     if (matches.length !== 1) return;
-    const t = setTimeout(() => input.current?.blur(), 900);
+    const t = setTimeout(() => setKbOpen(false), 1200);
     return () => clearTimeout(t);
   }, [matches.length, term]);
 
@@ -199,23 +218,21 @@ export function FindBadgeClient({ courseId }: { courseId: string }) {
 
       <div className="px-6 pt-4 flex-shrink-0">
         <div className="flex items-stretch gap-3">
-          <div className="relative flex-1">
+          {/* Looks like a search box but isn't a text field, so the tablet's keyboard never opens. */}
+          <div
+            role="textbox"
+            aria-label="Your last name"
+            onClick={() => setKbOpen(true)}
+            className="relative flex-1 flex items-center pl-20 pr-4 py-4 bg-white border-4 rounded-2xl cursor-text"
+            style={{ borderColor: NAVY }}
+          >
             <Search className="w-9 h-9 absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              ref={input}
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && input.current?.blur()}
-              placeholder="Type your last name"
-              autoComplete="off"
-              autoCorrect="off"
-              autoCapitalize="words"
-              spellCheck={false}
-              enterKeyHint="search"
-              aria-label="Your last name"
-              className="w-full h-full pl-20 pr-4 py-5 text-4xl font-semibold bg-white border-4 rounded-2xl focus:outline-none"
-              style={{ borderColor: NAVY }}
-            />
+            {q ? (
+              <span className="text-4xl font-semibold tracking-wide whitespace-pre">{q}</span>
+            ) : (
+              <span className="text-4xl font-semibold text-gray-400">Type your last name</span>
+            )}
+            {kbOpen && <span className="ml-0.5 w-[3px] h-10 animate-pulse" style={{ background: NAVY }} />}
           </div>
           <button
             type="button"
@@ -231,7 +248,7 @@ export function FindBadgeClient({ courseId }: { courseId: string }) {
       <main className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
         {term.replace(/[^a-z]/g, '').length < MIN_LETTERS ? (
           <div className="text-center pt-8 text-gray-500">
-            <p className="text-3xl font-semibold">Tap the box above and type your last name.</p>
+            <p className="text-3xl font-semibold">Type your last name on the keyboard below.</p>
             <p className="text-xl mt-3">Your badge number will appear here.</p>
           </div>
         ) : matches.length === 0 ? (
@@ -267,6 +284,61 @@ export function FindBadgeClient({ courseId }: { courseId: string }) {
           </>
         )}
       </main>
+
+      {kbOpen ? (
+        <LetterKeyboard onKey={press} />
+      ) : (
+        <button
+          type="button"
+          onClick={() => setKbOpen(true)}
+          className="flex-shrink-0 flex items-center justify-center gap-2 py-4 text-2xl font-bold text-white"
+          style={{ background: NAVY }}
+        >
+          <ChevronUp className="w-7 h-7" /> Show keyboard
+        </button>
+      )}
+    </div>
+  );
+}
+
+const ROWS = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
+
+/** Big letters-only keyboard. Keys react on touch-down so fast typing works. */
+function LetterKeyboard({ onKey }: { onKey: (key: string) => void }) {
+  const tap = (key: string) => (e: React.PointerEvent) => {
+    e.preventDefault();
+    onKey(key);
+  };
+  const keyCls =
+    'flex items-center justify-center rounded-xl bg-white border-b-4 border-gray-300 font-bold text-gray-900 shadow-sm active:bg-gray-200 active:border-b-2 active:translate-y-[2px] select-none';
+  const h = 'h-[clamp(3.25rem,8.5vh,5rem)]';
+  return (
+    <div className="flex-shrink-0 bg-gray-200 px-3 pt-3 pb-4 space-y-2" style={{ touchAction: 'manipulation' }}>
+      {ROWS.map((row, i) => (
+        <div key={row} className="flex gap-2 justify-center" style={{ paddingLeft: `${i * 3}%`, paddingRight: `${i * 3}%` }}>
+          {row.split('').map((k) => (
+            <button key={k} type="button" onPointerDown={tap(k)} className={`${keyCls} ${h} flex-1 max-w-[7rem] text-[clamp(1.5rem,3.6vh,2.25rem)]`}>
+              {k}
+            </button>
+          ))}
+          {i === 2 && (
+            <button type="button" onPointerDown={tap('back')} aria-label="Delete" className={`${keyCls} ${h} flex-[1.8] max-w-[12rem] bg-gray-100`}>
+              <Delete className="w-9 h-9" />
+            </button>
+          )}
+        </div>
+      ))}
+      <div className="flex gap-2 justify-center px-[9%]">
+        <button type="button" onPointerDown={tap("'")} className={`${keyCls} ${h} w-24 text-3xl`}>
+          &apos;
+        </button>
+        <button type="button" onPointerDown={tap('-')} className={`${keyCls} ${h} w-24 text-3xl`}>
+          -
+        </button>
+        <button type="button" onPointerDown={tap(' ')} className={`${keyCls} ${h} flex-1 text-xl text-gray-500`}>
+          space
+        </button>
+      </div>
     </div>
   );
 }

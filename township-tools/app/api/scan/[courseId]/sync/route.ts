@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { assignWalkInNumbers } from '@/lib/badges/badge-numbers';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { requireScanSession } from '@/lib/badges/scan-session';
 import { easternDate } from '@/lib/badges/attendance';
@@ -39,7 +40,7 @@ export async function POST(req: Request, { params }: { params: { courseId: strin
   if (s.error) return s.error;
   const { course } = s;
 
-  let body: { walk_ins?: WalkIn[]; scans?: Scan[] };
+  let body: { walk_ins?: WalkIn[]; scans?: Scan[]; voids?: { client_scan_id: string; device_label?: string }[] };
   try {
     body = await req.json();
   } catch {
@@ -85,6 +86,8 @@ export async function POST(req: Request, { params }: { params: { courseId: strin
     if (count) walkInRows.forEach((w: any) => (w.payment_status = 'due'));
     const { error } = await supabase.from('cert_registrants').upsert(walkInRows, { onConflict: 'id', ignoreDuplicates: true });
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    // "Walk-in #1, #2…" in the order they arrived.
+    await assignWalkInNumbers(supabase, course.id);
   }
 
   // 2. Scans — only for people registered for THIS event.
@@ -121,8 +124,25 @@ export async function POST(req: Request, { params }: { params: { courseId: strin
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  // 3. Scans undone on a phone ("scanned by mistake"): kept, marked void.
+  const voids: { client_scan_id: string; device_label?: string }[] = Array.isArray(body?.voids) ? body.voids.slice(0, 500) : [];
+  for (const v of voids) {
+    if (!v?.client_scan_id) continue;
+    await supabase
+      .from('cert_attendance_scans')
+      .update({
+        voided_at: new Date().toISOString(),
+        voided_by: String(v.device_label || 'Scanner').slice(0, 80),
+        void_note: 'Undone on the scanner (scanned by mistake)',
+      })
+      .eq('course_id', course.id)
+      .eq('client_scan_id', String(v.client_scan_id))
+      .is('voided_at', null);
+  }
+
   return NextResponse.json({
     ok: true,
+    accepted_voids: voids.map((v) => v.client_scan_id),
     accepted_walk_ins: walkInRows.map((w) => w.id),
     accepted_scans: scanRows.map((r) => r.client_scan_id),
     rejected,

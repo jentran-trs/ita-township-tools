@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Check, ChevronLeft, ChevronRight, Download, FileUp, Loader2, MoreHorizontal, Printer, RotateCcw, Search, Tag, Trash2, Upload, X } from 'lucide-react';
 import { deliverLabel, renderNiimbotLabel } from '@/lib/badges/niimbot-label';
+import { badgeNumberLabel } from '@/lib/badges/badge-numbers';
 import { townshipLabel } from '@/lib/certificates/township';
 import { formatCourseDates } from '@/lib/certificates/date-range';
 import { easternDate, easternTime, eventDays, formatEventTimes } from '@/lib/badges/attendance';
@@ -47,6 +48,8 @@ type Registrant = {
   is_walk_in: boolean;
   day_hours: Record<string, number> | null;
   certificate_id: string | null;
+  badge_number?: number | null;
+  walkin_number?: number | null;
 };
 
 type PreviewRow = {
@@ -759,7 +762,7 @@ function RegistrantsCard({
         (r) =>
           (!typeFilter || (typeFilter === 'walkin' ? r.is_walk_in : (r.registrant_type || 'Attendee') === typeFilter)) &&
           (!query.trim() ||
-            matches(haystack(r.first_name, r.last_name, r.email, r.title, r.registrant_type, r.organization, townshipLabel(r.township), r.county), query))
+            matches(haystack(r.first_name, r.last_name, r.email, r.title, r.registrant_type, r.organization, townshipLabel(r.township), r.county, badgeNumberLabel(r)), query))
       ),
     [registrants, query, typeFilter]
   );
@@ -901,6 +904,17 @@ function RegistrantsCard({
           </button>
         </div>
       )}
+      {registrants.length > 0 && (
+        <BadgeNumberNote
+          courseId={course.id}
+          registrants={registrants}
+          onDone={(text) => {
+            setNotice(text);
+            onChanged();
+          }}
+          onError={setError}
+        />
+      )}
       {notice && <p className="text-sm text-green-600 mb-3">{notice}</p>}
       {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
       {registrants.length === 0 ? (
@@ -931,6 +945,7 @@ function RegistrantsCard({
                     className="h-4 w-4 accent-amber-500"
                   />
                 </th>
+                <th className="py-2 pr-3 whitespace-nowrap" title="Badge number, printed big on the front of the badge">Badge #</th>
                 <th className="py-2 pr-3">Name</th>
                 <th className="py-2 pr-3">Title</th>
                 <th className="py-2 pr-3">Type</th>
@@ -950,6 +965,9 @@ function RegistrantsCard({
                       aria-label={`Select ${r.first_name} ${r.last_name}`}
                       className="h-4 w-4 accent-amber-500 mt-0.5"
                     />
+                  </td>
+                  <td className="py-2 pr-3 whitespace-nowrap font-bold text-[#1B2E5B] dark:text-blue-300">
+                    {badgeNumberLabel(r) || <span className="font-normal text-xs text-gray-400" title="Numbered when the badges are first opened for printing">—</span>}
                   </td>
                   <td className="py-2 pr-3">
                     <div className="font-medium">
@@ -1006,6 +1024,7 @@ function RegistrantsCard({
                           onClick: async () => {
                             try {
                               const blob = await renderNiimbotLabel({
+                                numberLabel: badgeNumberLabel(r) || null,
                                 firstName: r.first_name,
                                 lastName: r.last_name,
                                 title: r.title,
@@ -1059,6 +1078,66 @@ function RegistrantsCard({
       )}
       <Pager page={page} setPage={setPage} total={filtered.length} />
     </section>
+  );
+}
+
+/** How badge numbers work, plus "number now" / "start over" before printing. */
+function BadgeNumberNote({
+  courseId,
+  registrants,
+  onDone,
+  onError,
+}: {
+  courseId: string;
+  registrants: Registrant[];
+  onDone: (text: string) => void;
+  onError: (text: string) => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const pre = registrants.filter((r) => !r.is_walk_in);
+  const numbered = pre.filter((r) => r.badge_number != null).length;
+  const run = async (mode: 'assign' | 'renumber') => {
+    if (
+      mode === 'renumber' &&
+      !window.confirm(
+        'Start the badge numbers over in last-name order?\n\nOnly do this if the badges have NOT been printed yet. Printed badges would show the wrong numbers.'
+      )
+    )
+      return;
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/admin/certificates/courses/${courseId}/registrants/renumber`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode }),
+      });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Could not number badges');
+      onDone(mode === 'renumber' ? 'Badge numbers start over in last-name order.' : 'Badge numbers added.');
+    } catch (e: any) {
+      onError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="text-xs text-gray-500 mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+      <span>
+        <strong className="text-gray-700 dark:text-gray-300">Badge #</strong> is printed big on the front. Numbers go in
+        last-name order and are set the first time badges are opened for printing; people added later get the next
+        numbers. Walk-ins are numbered separately (Walk-in #1, #2…).
+        {numbered > 0 && numbered < pre.length && ` ${pre.length - numbered} not numbered yet.`}
+      </span>
+      {numbered < pre.length && (
+        <button type="button" disabled={busy} onClick={() => run('assign')} className="font-semibold text-amber-700 dark:text-amber-400 hover:underline">
+          Number them now
+        </button>
+      )}
+      {numbered > 0 && (
+        <button type="button" disabled={busy} onClick={() => run('renumber')} className="text-gray-600 dark:text-gray-300 hover:underline">
+          Start numbers over (before printing only)
+        </button>
+      )}
+    </div>
   );
 }
 

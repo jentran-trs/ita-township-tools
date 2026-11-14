@@ -6,6 +6,7 @@ import { Camera, CheckCircle2, CloudOff, LogIn, LogOut, RefreshCw, Search, UserP
 import { easternDate, easternTime } from '@/lib/badges/attendance';
 import { isBadgeToken } from '@/lib/badges/token';
 import { townshipLabel } from '@/lib/certificates/township';
+import { badgeNumberLabel } from '@/lib/badges/badge-numbers';
 import { formatCourseDates } from '@/lib/certificates/date-range';
 import { deliverLabel, renderNiimbotLabel } from '@/lib/badges/niimbot-label';
 import { DoorPayment, PaymentSheet } from './PaymentFields';
@@ -26,7 +27,7 @@ import {
 type Info = { id: string; name: string; dates: string; times: string | null; scanning_open: boolean };
 type Phase = 'loading' | 'notfound' | 'closed' | 'pin' | 'scan';
 type Mode = 'in' | 'out';
-type Result = { kind: 'ok' | 'warn' | 'error'; title: string; detail?: string; at: number };
+type Result = { kind: 'ok' | 'warn' | 'error'; title: string; detail?: string; at: number; undoScanId?: string };
 
 const SYNC_EVERY_MS = 15_000;
 
@@ -94,7 +95,7 @@ export function ScannerClient({ courseId }: { courseId: string }) {
 
   const sync = useCallback(async () => {
     const s = stateRef.current;
-    if (!s.pendingScans.length && !s.pendingWalkIns.length) {
+    if (!s.pendingScans.length && !s.pendingWalkIns.length && !(s.pendingVoids || []).length) {
       // Nothing else to send; upload any payments, then refresh the roster so
       // walk-ins and payments from other phones show up.
       if ((s.pendingPayments || []).length) {
@@ -113,7 +114,7 @@ export function ScannerClient({ courseId }: { courseId: string }) {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ walk_ins: s.pendingWalkIns, scans: s.pendingScans }),
+        body: JSON.stringify({ walk_ins: s.pendingWalkIns, scans: s.pendingScans, voids: s.pendingVoids || [] }),
       });
       if (res.status === 401) {
         setPhase('pin');
@@ -125,8 +126,10 @@ export function ScannerClient({ courseId }: { courseId: string }) {
       // fail forever (e.g. a person removed by the admin).
       const sentScans = new Set(s.pendingScans.map((x) => x.client_scan_id));
       const sentWalkIns = new Set(s.pendingWalkIns.map((x) => x.id));
+      const sentVoids = new Set((s.pendingVoids || []).map((x) => x.client_scan_id));
       setState((cur) => ({
         ...cur,
+        pendingVoids: (cur.pendingVoids || []).filter((x) => !sentVoids.has(x.client_scan_id)),
         pendingScans: cur.pendingScans.filter((x) => !sentScans.has(x.client_scan_id)),
         pendingWalkIns: cur.pendingWalkIns.filter((x) => !sentWalkIns.has(x.id)),
       }));
@@ -191,7 +194,8 @@ export function ScannerClient({ courseId }: { courseId: string }) {
   }, [phase, sync]);
 
   // Upload new scans right away (debounced) instead of waiting for the timer.
-  const pendingCount = state.pendingScans.length + state.pendingWalkIns.length + (state.pendingPayments || []).length;
+  const pendingCount =
+    state.pendingScans.length + state.pendingWalkIns.length + (state.pendingPayments || []).length + (state.pendingVoids || []).length;
   useEffect(() => {
     if (phase !== 'scan' || !pendingCount) return;
     const t = setTimeout(sync, 800);
@@ -461,20 +465,47 @@ function ScanScreen({
       };
       setState((s) => ({ ...s, scans: [...s.scans, rec], pendingScans: [...s.pendingScans, rec] }));
       if (mode === 'out' && same.length) {
-        show({ kind: 'ok', title: `${name} checked out again`, detail: `Check-out time updated to ${easternTime(now)}.` });
+        show({ kind: 'ok', title: `${name} checked out again`, detail: `Check-out time updated to ${easternTime(now)}.`, undoScanId: rec.client_scan_id });
       } else if (mode === 'in' && opts?.paidBy === 'none') {
-        show({ kind: 'warn', title: `${name} checked in`, detail: 'No payment collected. They will be listed for follow-up.' });
+        show({ kind: 'warn', title: `${name} checked in`, detail: 'No payment collected. They will be listed for follow-up.', undoScanId: rec.client_scan_id });
       } else {
         const paid = opts?.paidBy === 'check' ? 'Paid by check' : opts?.paidBy === 'card' ? 'Paid by card' : null;
         const owes = mode === 'out' && person.payment_status === 'due' ? 'Payment still due' : null;
         show({
           kind: owes ? 'warn' : 'ok',
           title: `${name} ${mode === 'in' ? 'checked in' : 'checked out'}`,
-          detail: [paid, owes, person.title, townshipLabel(person.township)].filter(Boolean).join(' · ') || undefined,
+          detail: [mode === 'in' ? (badgeNumberLabel(person) ? `Badge ${badgeNumberLabel(person)}` : null) : null, paid, owes, person.title, townshipLabel(person.township)].filter(Boolean).join(' · ') || undefined,
+          undoScanId: rec.client_scan_id,
         });
       }
     },
     [beep, mode, setState, show, state.deviceLabel, state.scans, today]
+  );
+
+  // Undo a scan made by mistake. Not uploaded yet: just drop it. Uploaded:
+  // queue it to be marked void on the server (kept in the record with a note).
+  const undoScan = useCallback(
+    (scanId: string) => {
+      const rec = state.scans.find((x) => x.client_scan_id === scanId);
+      if (!rec) return;
+      const person = state.roster.find((p) => p.id === rec.registrant_id);
+      const notUploaded = state.pendingScans.some((x) => x.client_scan_id === scanId);
+      setState((s) => ({
+        ...s,
+        scans: s.scans.filter((x) => x.client_scan_id !== scanId),
+        pendingScans: s.pendingScans.filter((x) => x.client_scan_id !== scanId),
+        pendingVoids: notUploaded
+          ? s.pendingVoids || []
+          : [...(s.pendingVoids || []), { client_scan_id: scanId, device_label: s.deviceLabel || undefined }],
+      }));
+      setResult({
+        kind: 'warn',
+        title: `Undone: ${person ? `${person.first_name} ${person.last_name}'s` : 'the'} check-${rec.direction}`,
+        detail: notUploaded ? 'Removed. Nothing was saved.' : 'Removed. Their history will show it was undone on the scanner.',
+        at: Date.now(),
+      });
+    },
+    [setState, state]
   );
 
   const lastCode = useRef<{ code: string; at: number } | null>(null);
@@ -540,7 +571,7 @@ function ScanScreen({
       </div>
 
       <div className="px-3 pt-3 min-h-[6.5rem]">
-        {result && <ResultCard result={result} />}
+        {result && <ResultCard result={result} onUndo={result.undoScanId ? () => undoScan(result.undoScanId!) : undefined} />}
       </div>
 
       <div className="px-3 grid grid-cols-2 gap-2">
@@ -558,7 +589,9 @@ function ScanScreen({
             type="button"
             onClick={async () => {
               try {
+                const fresh = state.roster.find((x) => x.id === lastWalkIn.id) || lastWalkIn;
                 const blob = await renderNiimbotLabel({
+                  numberLabel: badgeNumberLabel(fresh) || null,
                   firstName: lastWalkIn.first_name,
                   lastName: lastWalkIn.last_name,
                   title: lastWalkIn.title,
@@ -693,7 +726,7 @@ function ModeButton({ active, onClick, icon, label, color }: { active: boolean; 
   );
 }
 
-function ResultCard({ result }: { result: Result }) {
+function ResultCard({ result, onUndo }: { result: Result; onUndo?: () => void }) {
   const styles = {
     ok: 'bg-green-600 text-white',
     warn: 'bg-amber-400 text-amber-950',
@@ -703,10 +736,19 @@ function ResultCard({ result }: { result: Result }) {
   return (
     <div key={result.at} className={`rounded-xl p-4 flex gap-3 items-start ${styles}`} role="status" aria-live="assertive">
       <Icon className="w-7 h-7 shrink-0" />
-      <div>
+      <div className="flex-1 min-w-0">
         <div className="text-lg font-bold leading-tight">{result.title}</div>
         {result.detail && <div className="text-sm opacity-90 mt-0.5">{result.detail}</div>}
       </div>
+      {onUndo && (
+        <button
+          type="button"
+          onClick={onUndo}
+          className="shrink-0 self-center px-3 py-2 rounded-lg bg-white/90 text-gray-900 text-sm font-bold active:bg-white"
+        >
+          Undo
+        </button>
+      )}
     </div>
   );
 }
@@ -843,7 +885,12 @@ function SearchSheet({
     const t = q.trim().toLowerCase();
     if (!t) return [];
     return roster
-      .filter((p) => `${p.first_name} ${p.last_name}`.toLowerCase().includes(t) || `${p.last_name} ${p.first_name}`.toLowerCase().includes(t))
+      .filter(
+        (p) =>
+          `${p.first_name} ${p.last_name}`.toLowerCase().includes(t) ||
+          `${p.last_name} ${p.first_name}`.toLowerCase().includes(t) ||
+          (/^#?\d+$/.test(t) && !p.is_walk_in && String(p.badge_number ?? '') === t.replace('#', ''))
+      )
       .slice(0, 30);
   }, [q, roster]);
   const statusFor = (id: string) => {
@@ -861,14 +908,15 @@ function SearchSheet({
         autoFocus
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder="Type a first or last name"
+        placeholder="Type a last name (or badge number)"
         className="w-full px-4 py-3 border border-gray-300 rounded-xl mb-3"
       />
       {q.trim() && !matches.length && <p className="text-sm text-gray-500">No one by that name. Use “Add walk-in”.</p>}
       <ul className="divide-y">
         {matches.map((p) => (
           <li key={p.id}>
-            <button type="button" onClick={() => onPick(p)} className="w-full text-left py-3">
+            <button type="button" onClick={() => onPick(p)} className="w-full text-left py-3 flex items-center gap-3">
+              <span className="flex-1 min-w-0">
               <div className="font-semibold">
                 {p.first_name} {p.last_name}
                 {p.is_walk_in && <span className="ml-2 text-xs text-amber-600">walk-in</span>}
@@ -878,6 +926,12 @@ function SearchSheet({
                 {[p.title, townshipLabel(p.township)].filter(Boolean).join(' · ')}
                 {statusFor(p.id) && <span className="ml-1 text-gray-700">· {statusFor(p.id)}</span>}
               </div>
+              </span>
+              {badgeNumberLabel(p) && (
+                <span className={`flex-shrink-0 font-extrabold text-[#1B2E5B] text-right leading-none ${p.is_walk_in ? 'text-base' : 'text-2xl'}`}>
+                  {badgeNumberLabel(p)}
+                </span>
+              )}
             </button>
           </li>
         ))}

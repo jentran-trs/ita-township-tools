@@ -27,7 +27,8 @@ export async function GET(_req: Request, { params }: RouteParams) {
 
   const { data: registrants, error: rErr } = await supabase
     .from('cert_registrants')
-    .select('id, first_name, last_name, email, title, registrant_type, organization, township, county, badge_token, is_walk_in, day_hours, certificate_id, created_at')
+    // '*' so v39 badge_number / walkin_number are read when present.
+    .select('*')
     .eq('course_id', course.id)
     .order('last_name', { ascending: true })
     .order('first_name', { ascending: true });

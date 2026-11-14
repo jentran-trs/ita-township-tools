@@ -2,6 +2,7 @@ import ExcelJS from 'exceljs';
 import { requireSuperadmin } from '@/lib/auth/superadmin';
 import { loadCourseAttendance } from '@/lib/badges/admin-attendance';
 import { easternDate, easternTime } from '@/lib/badges/attendance';
+import { badgeNumberLabel } from '@/lib/badges/badge-numbers';
 import { formatCourseDates } from '@/lib/certificates/date-range';
 import { townshipLabel } from '@/lib/certificates/township';
 
@@ -25,7 +26,7 @@ export async function GET(_req: Request, { params }: { params: { courseId: strin
   ws.addRow([`${formatCourseDates(course.course_date, course.course_end_date)} · times are Eastern`]);
   ws.addRow([]);
   const header = [
-    'Last Name', 'First Name', 'Email', 'Title', 'Township', 'County', 'Walk-in',
+    'Badge #', 'Last Name', 'First Name', 'Email', 'Title', 'Township', 'County', 'Walk-in',
     ...days.flatMap((d) => [`${dayLabel(d)} In`, `${dayLabel(d)} Out`]),
     'Status', 'Needs review because', 'Payment', 'Credit Hours', 'Notes',
   ];
@@ -55,7 +56,7 @@ export async function GET(_req: Request, { params }: { params: { courseId: strin
 
   for (const r of rows) {
     const row = ws.addRow([
-      r.last_name, r.first_name, r.email, r.title || '', townshipLabel(r.township) || '',
+      badgeNumberLabel(r as any), r.last_name, r.first_name, r.email, r.title || '', townshipLabel(r.township) || '',
       r.county ? `${r.county} County` : '', r.is_walk_in ? 'Yes' : '',
       ...r.attendance.days.flatMap((d) => [d.checkIn ? easternTime(d.checkIn) : '', d.checkOut ? easternTime(d.checkOut) : '']),
       STATUS[r.status], r.status === 'review' ? r.reasons.join('; ') : '', paymentText(r), r.credit_hours, notesFor(r),
@@ -63,8 +64,8 @@ export async function GET(_req: Request, { params }: { params: { courseId: strin
     row.getCell(header.length).alignment = { wrapText: true, vertical: 'top' };
     if (r.status === 'review') row.getCell(header.length - 4).font = { color: { argb: 'FFB45309' }, bold: true };
   }
-  ws.columns.forEach((c, i) => (c.width = i < 3 ? 22 : i < 7 ? 18 : i === header.length - 4 ? 36 : i === header.length - 1 ? 60 : 14));
-  ws.views = [{ state: 'frozen', ySplit: 4, xSplit: 2 }];
+  ws.columns.forEach((c, i) => (c.width = i === 0 ? 12 : i < 4 ? 22 : i < 8 ? 18 : i === header.length - 4 ? 36 : i === header.length - 1 ? 60 : 14));
+  ws.views = [{ state: 'frozen', ySplit: 4, xSplit: 3 }];
 
   // Second sheet: every check-in/out entry, oldest first, nothing left out.
   const log = wb.addWorksheet('Check-in log');

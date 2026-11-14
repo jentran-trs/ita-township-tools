@@ -17,6 +17,10 @@ export type BadgeData = {
   registrantType: string | null;
   organization?: string | null;
   qrSrc: string; // PNG data URL of the badge_token QR code
+  // Badge number for finding it fast at check-in (v39).
+  badgeNumber?: number | null;
+  walkinNumber?: number | null;
+  isWalkIn?: boolean;
 };
 
 export type BadgeEvent = {
@@ -56,6 +60,7 @@ export function BadgeFront({ badge, event }: { badge: BadgeData; event: BadgeEve
   const where = place(badge);
   const when = [event.dates, event.times].filter(Boolean).join(' · ');
   const type = badgeTypeStyle(badge.registrantType);
+  const num = badge.isWalkIn ? badge.walkinNumber : badge.badgeNumber;
 
   return (
     <div
@@ -83,6 +88,15 @@ export function BadgeFront({ badge, event }: { badge: BadgeData; event: BadgeEve
           {event.tagline && <div style={{ fontSize: '7.5pt', fontWeight: 700, color: GOLD, ...oneLine }}>{event.tagline}</div>}
           {when && <div style={{ fontSize: '6.5pt', fontWeight: 600, color: MUTED, whiteSpace: 'nowrap' }}>{when}</div>}
         </div>
+        {/* Badge number, big and bold, for finding the badge in the box */}
+        {num ? (
+          <div style={{ marginLeft: 'auto', flexShrink: 0, textAlign: 'right', lineHeight: 1, paddingLeft: '0.06in' }}>
+            {badge.isWalkIn && (
+              <div style={{ fontSize: '6pt', fontWeight: 800, letterSpacing: '0.08em', color: MUTED }}>WALK-IN</div>
+            )}
+            <div style={{ fontSize: num >= 1000 ? '13pt' : '16pt', fontWeight: 800 }}>#{num}</div>
+          </div>
+        ) : null}
       </div>
 
       <div style={{ height: '1.5px', background: GOLD, margin: '0.06in 0 0.04in' }} />

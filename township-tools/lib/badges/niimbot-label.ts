@@ -16,6 +16,8 @@ export type LabelInput = {
   township: string | null;
   county: string | null;
   organization?: string | null;
+  // "Walk-in #2" / "#47", shown above the name.
+  numberLabel?: string | null;
   badgeToken: string;
   eventName: string;
 };
@@ -79,7 +81,8 @@ export async function renderNiimbotLabel(input: LabelInput): Promise<Blob> {
   const place = [townshipLabel(input.township), input.county ? `${input.county} County` : null].filter(Boolean).join(', ') || input.organization || '';
   type Line = { text: string; weight: string; max: number; min: number; gap: number };
   const lines: Line[] = [
-    { text: input.firstName, weight: 'bold', max: 56, min: 26, gap: 0 },
+    ...(input.numberLabel ? [{ text: input.numberLabel, weight: 'bold', max: 26, min: 18, gap: 0 }] : []),
+    { text: input.firstName, weight: 'bold', max: 56, min: 26, gap: input.numberLabel ? 6 : 0 },
     { text: input.lastName, weight: 'bold', max: 36, min: 20, gap: 2 },
     ...(input.title ? [{ text: input.title, weight: 'normal', max: 22, min: 16, gap: 10 }] : []),
     ...(place ? [{ text: place, weight: 'normal', max: 20, min: 15, gap: 4 }] : []),

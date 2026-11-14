@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from '@/lib/supabase';
 import { formatCourseDates } from '@/lib/certificates/date-range';
 import { formatEventTimes } from '@/lib/badges/attendance';
 import type { BadgeData, BadgeEvent } from '@/components/badges/Badge';
+import { assignBadgeNumbers, assignWalkInNumbers } from '@/lib/badges/badge-numbers';
 
 /**
  * Everything needed to print a course's badges: the event header and one
@@ -22,9 +23,14 @@ export async function loadBadgePrintData(
     .maybeSingle();
   if (!course) return null;
 
+  // Badges get their numbers the first time they're loaded for printing;
+  // anyone added since gets the next numbers. Numbers never change after.
+  await assignBadgeNumbers(supabase, course.id);
+  await assignWalkInNumbers(supabase, course.id);
+
   let query = supabase
     .from('cert_registrants')
-    .select('id, first_name, last_name, title, registrant_type, organization, township, county, badge_token')
+    .select('id, first_name, last_name, title, registrant_type, organization, township, county, badge_token, badge_number, walkin_number, is_walk_in')
     .eq('course_id', course.id)
     .order('last_name', { ascending: true })
     .order('first_name', { ascending: true });
@@ -41,6 +47,9 @@ export async function loadBadgePrintData(
       county: r.county,
       registrantType: r.registrant_type,
       organization: r.organization,
+      badgeNumber: r.badge_number ?? null,
+      walkinNumber: r.walkin_number ?? null,
+      isWalkIn: !!r.is_walk_in,
       // 480px PNG = ~300 dpi at the 1.6" printed size.
       qrSrc: await QRCode.toDataURL(r.badge_token, { margin: 0, width: 480, errorCorrectionLevel: 'M' }),
     }))

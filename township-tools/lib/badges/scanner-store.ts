@@ -12,6 +12,9 @@ export type RosterPerson = {
   organization?: string | null;
   badge_token: string;
   is_walk_in: boolean;
+  // "#47" for pre-printed badges, "Walk-in #2" for walk-ins (v39).
+  badge_number?: number | null;
+  walkin_number?: number | null;
   // 'due' = owes (AMO Balance Due > $0, or a walk-in at a paid event).
   payment_status?: 'paid' | 'due' | null;
   balance_due?: number | null;
@@ -59,6 +62,8 @@ export type ScannerState = {
   pendingScans: ScanRecord[];
   pendingWalkIns: WalkInRecord[];
   pendingPayments: PaymentRecord[];
+  // Scans already uploaded that were undone on this phone, waiting to be voided.
+  pendingVoids: { client_scan_id: string; device_label?: string }[];
   deviceLabel: string;
   lastSyncAt: string | null;
 };
@@ -66,7 +71,7 @@ export type ScannerState = {
 const key = (courseId: string) => `tt_scanner_${courseId}`;
 
 export function emptyState(): ScannerState {
-  return { event: null, roster: [], scans: [], pendingScans: [], pendingWalkIns: [], pendingPayments: [], deviceLabel: '', lastSyncAt: null };
+  return { event: null, roster: [], scans: [], pendingScans: [], pendingWalkIns: [], pendingPayments: [], pendingVoids: [], deviceLabel: '', lastSyncAt: null };
 }
 
 export function loadState(courseId: string): ScannerState {
@@ -92,6 +97,8 @@ export function mergeServer(
 ): ScannerState {
   const pendingIds = new Set(s.pendingScans.map((x) => x.client_scan_id));
   const serverIds = new Set(server.scans.map((x) => x.client_scan_id));
+  // Undone here but not voided on the server yet: keep it gone.
+  const undone = new Set((s.pendingVoids || []).map((x) => x.client_scan_id));
   // A payment taken on this phone but not uploaded yet still counts as paid here.
   const paidHere = new Set((s.pendingPayments || []).map((x) => x.registrant_id));
   const roster = server.registrants.map((r) => (paidHere.has(r.id) ? { ...r, payment_status: 'paid' as const } : r));
@@ -115,7 +122,10 @@ export function mergeServer(
     ...s,
     event: server.event,
     roster,
-    scans: [...server.scans, ...s.scans.filter((x) => pendingIds.has(x.client_scan_id) && !serverIds.has(x.client_scan_id))],
+    scans: [
+      ...server.scans.filter((x) => !undone.has(x.client_scan_id)),
+      ...s.scans.filter((x) => pendingIds.has(x.client_scan_id) && !serverIds.has(x.client_scan_id)),
+    ],
     lastSyncAt: new Date().toISOString(),
   };
 }

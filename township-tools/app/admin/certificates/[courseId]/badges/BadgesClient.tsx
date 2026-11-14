@@ -202,11 +202,11 @@ export function BadgesClient({
     setTab('attendance');
   };
   const TABS: { id: Tab; label: string; badge?: number; disabled?: boolean }[] = [
-    ...(settingsTab ? [{ id: 'settings' as Tab, label: 'Course settings' }] : []),
     { id: 'setup', label: 'Setup & import' },
     { id: 'registrants', label: `Registrants (${registrants.length})`, disabled: !enabled },
     { id: 'attendance', label: 'Attendance', badge: stats.review || undefined, disabled: !enabled || !hasPeople },
     { id: 'certificates', label: 'Certificates', disabled: !enabled || !hasPeople },
+    ...(settingsTab ? [{ id: 'settings' as Tab, label: 'Course settings' }] : []),
   ];
 
   return (

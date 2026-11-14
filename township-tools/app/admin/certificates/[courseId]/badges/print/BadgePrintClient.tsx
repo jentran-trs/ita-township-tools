@@ -151,7 +151,7 @@ export function BadgePrintClient({
         }
       `}</style>
 
-      <div className="print-controls max-w-3xl mx-auto px-4 py-6 space-y-4 lg:mx-0 lg:max-w-none lg:w-[27rem] lg:flex-shrink-0 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto lg:border-r lg:border-gray-300">
+      <div className="print-controls max-w-3xl mx-auto px-4 py-6 space-y-4 lg:mx-0 lg:max-w-none lg:w-1/3 lg:min-w-[24rem] lg:flex-shrink-0 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto lg:border-r lg:border-gray-300">
         {backHref && (
           <Link href={backHref} className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-white rounded-lg hover:bg-gray-100">
             <ArrowLeft className="w-4 h-4" /> Back to badges

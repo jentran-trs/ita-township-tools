@@ -567,9 +567,10 @@ function CertificateCard({ cert }: { cert: CertCard }) {
         <div className="flex-shrink-0">
           {cert.payment_hold ? (
             <div className="max-w-[16rem] text-sm bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-amber-900 dark:text-amber-200 rounded-lg px-4 py-3">
-              <div className="font-semibold mb-1">Certificate issued</div>
-              Your certificate will be available to download once your payment for this training has been recorded.
-              Questions? Contact the Indiana Township Association.
+              <div className="font-semibold mb-1">Your certificate is ready</div>
+              Your payment for this training still needs to be completed before you can download it. Once the Indiana
+              Township Association records your payment, a Download button will appear here. Questions? Contact the
+              Indiana Township Association.
             </div>
           ) : (
           <CertificateDownloadButton

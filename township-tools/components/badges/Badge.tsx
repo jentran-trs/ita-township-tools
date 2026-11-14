@@ -127,12 +127,17 @@ export function BadgeFront({ badge, event }: { badge: BadgeData; event: BadgeEve
 export function BadgeBack({ badge }: { badge: BadgeData }) {
   return (
     <div style={{ width: '3.5in', height: '2.25in', boxSizing: 'border-box', padding: '0.2in', display: 'flex', alignItems: 'center', gap: '0.18in', fontFamily: FONT, color: NAVY, background: '#fff', overflow: 'hidden' }}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={badge.qrSrc} alt="" style={{ width: '1.6in', height: '1.6in', flexShrink: 0, imageRendering: 'pixelated' }} />
+      {/* QR with its caption underneath */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0, width: '1.45in' }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={badge.qrSrc} alt="" style={{ width: '1.45in', height: '1.45in', imageRendering: 'pixelated' }} />
+        <div style={{ fontSize: '9pt', fontWeight: 700, color: NAVY, marginTop: '0.08in', whiteSpace: 'nowrap', lineHeight: 1 }}>
+          Scan to check in &amp; out
+        </div>
+      </div>
       <div style={{ minWidth: 0 }}>
         <div style={{ fontSize: badge.firstName.length <= 9 ? '22pt' : '16pt', fontWeight: 800, lineHeight: 1.05, wordBreak: 'break-word' }}>{badge.firstName}</div>
         <div style={{ fontSize: badge.lastName.length <= 12 ? '14pt' : '11pt', fontWeight: 800, lineHeight: 1.1, wordBreak: 'break-word' }}>{badge.lastName}</div>
-        <div style={{ fontSize: '6.5pt', fontWeight: 600, color: MUTED, marginTop: '0.06in' }}>Scan to check in &amp; out</div>
       </div>
     </div>
   );

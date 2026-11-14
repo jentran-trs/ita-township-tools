@@ -85,7 +85,7 @@ export function BadgeFront({ badge, event }: { badge: BadgeData; event: BadgeEve
           <div style={{ fontSize: eventNameSize(event.name), fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.02em', maxHeight: '2.4em', overflow: 'hidden' }}>
             {event.name}
           </div>
-          {event.tagline && <div style={{ fontSize: '7.5pt', fontWeight: 700, color: GOLD, ...oneLine }}>{event.tagline}</div>}
+          {event.tagline && <div style={{ fontSize: '7.5pt', fontWeight: 700, color: GOLD, lineHeight: 1.3, ...oneLine }}>{event.tagline}</div>}
           {when && <div style={{ fontSize: '6.5pt', fontWeight: 600, color: MUTED, whiteSpace: 'nowrap' }}>{when}</div>}
         </div>
         {/* Badge number, big and bold, for finding the badge in the box */}
@@ -103,12 +103,12 @@ export function BadgeFront({ badge, event }: { badge: BadgeData; event: BadgeEve
 
       {/* Name, organization, title — big and centred */}
       <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
-        <div style={{ fontSize: nameSize(name), fontWeight: 800, lineHeight: 1.05, maxWidth: '100%', ...oneLine }}>{name}</div>
+        <div style={{ fontSize: nameSize(name), fontWeight: 800, lineHeight: 1.25, maxWidth: '100%', ...oneLine }}>{name}</div>
         {where && (
-          <div style={{ fontSize: lineSize(where, 11), fontWeight: 700, marginTop: '0.04in', lineHeight: 1.15, maxWidth: '100%', ...oneLine }}>{where}</div>
+          <div style={{ fontSize: lineSize(where, 11), fontWeight: 700, marginTop: '0.01in', lineHeight: 1.3, maxWidth: '100%', ...oneLine }}>{where}</div>
         )}
         {badge.title && (
-          <div style={{ fontSize: lineSize(badge.title, 10), fontWeight: 600, color: MUTED, marginTop: '0.01in', lineHeight: 1.15, maxWidth: '100%', ...oneLine }}>
+          <div style={{ fontSize: lineSize(badge.title, 10), fontWeight: 600, color: MUTED, marginTop: 0, lineHeight: 1.3, maxWidth: '100%', ...oneLine }}>
             {badge.title}
           </div>
         )}

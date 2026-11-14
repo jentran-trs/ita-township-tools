@@ -349,7 +349,7 @@ function ScanScreen({
     }
   });
   const [result, setResult] = useState<Result | null>(null);
-  const [sheet, setSheet] = useState<null | 'search' | 'walkin' | 'lookup'>(null);
+  const [sheet, setSheet] = useState<null | 'walkin'>(null);
   const [lastWalkIn, setLastWalkIn] = useState<RosterPerson | null>(null);
   // Someone who owes, waiting for the team to choose check / card / no payment.
   const [paymentFor, setPaymentFor] = useState<{ person: RosterPerson; source: 'scan' | 'name_search' } | null>(null);
@@ -519,7 +519,7 @@ function ScanScreen({
       if (!isBadgeToken(token)) return show({ kind: 'error', title: 'Not an ITA badge', detail: 'This QR code is not a Township Tools badge.' });
       const person = byToken.get(token);
       if (!person)
-        return show({ kind: 'error', title: 'Badge not recognized', detail: 'It may be cancelled or from another event. Use “Find by name”.' });
+        return show({ kind: 'error', title: 'Badge not recognized', detail: 'It may be cancelled or from another event. Look them up by name below.' });
       record(person, 'scan');
     },
     [byToken, record, show]
@@ -574,18 +574,10 @@ function ScanScreen({
         {result && <ResultCard result={result} onUndo={result.undoScanId ? () => undoScan(result.undoScanId!) : undefined} />}
       </div>
 
-      <div className="px-3 grid grid-cols-2 gap-2">
-        <button
-          type="button"
-          onClick={() => setSheet('lookup')}
-          className="col-span-2 flex items-center justify-center gap-2 py-3 bg-[#1B2E5B] text-white rounded-xl font-semibold shadow-sm"
-        >
-          <Search className="w-5 h-5" /> Look up badge # by name
-        </button>
-        <button type="button" onClick={() => setSheet('search')} className="flex items-center justify-center gap-2 py-3 bg-white rounded-xl font-semibold shadow-sm">
-          <Search className="w-5 h-5" /> Find by name
-        </button>
-        <button type="button" onClick={() => setSheet('walkin')} className="flex items-center justify-center gap-2 py-3 bg-white rounded-xl font-semibold shadow-sm">
+      <NameLookup roster={state.roster} todays={todays} mode={mode} onCheck={(p) => record(p, 'name_search')} />
+
+      <div className="px-3 pt-2">
+        <button type="button" onClick={() => setSheet('walkin')} className="w-full flex items-center justify-center gap-2 py-3 bg-white rounded-xl font-semibold shadow-sm">
           <UserPlus className="w-5 h-5" /> Add walk-in
         </button>
       </div>
@@ -643,21 +635,6 @@ function ScanScreen({
         Today: <strong>{counts.ins}</strong> checked in · <strong>{counts.outs}</strong> checked out · {counts.total} registered
       </div>
 
-      {sheet === 'lookup' && (
-        <SearchSheet roster={state.roster} todays={todays} mode={mode} lookupOnly onPick={() => {}} onClose={() => setSheet(null)} />
-      )}
-      {sheet === 'search' && (
-        <SearchSheet
-          roster={state.roster}
-          todays={todays}
-          mode={mode}
-          onPick={(p) => {
-            setSheet(null);
-            record(p, 'name_search');
-          }}
-          onClose={() => setSheet(null)}
-        />
-      )}
       {paymentFor && (
         <PaymentSheet
           name={`${paymentFor.person.first_name} ${paymentFor.person.last_name}`}
@@ -845,10 +822,10 @@ function CameraView({ paused, onCode, onStart, mode }: { paused: boolean; onCode
           {status === 'denied' ? (
             <>
               <p className="font-semibold">Camera access was blocked.</p>
-              <p className="text-sm opacity-80">Allow the camera for this site in your browser settings, then tap below. You can still use “Find by name”.</p>
+              <p className="text-sm opacity-80">Allow the camera for this site in your browser settings, then tap below. You can still look people up by name below.</p>
             </>
           ) : status === 'error' ? (
-            <p className="text-sm opacity-80">Couldn&apos;t start the camera. Use “Find by name”, or try again.</p>
+            <p className="text-sm opacity-80">Couldn&apos;t start the camera. Look them up by name below, or try again.</p>
           ) : null}
           <button type="button" onClick={start} disabled={status === 'starting'} className="inline-flex items-center gap-2 px-5 py-3 bg-white text-gray-900 rounded-xl font-semibold">
             <Camera className="w-5 h-5" /> {status === 'starting' ? 'Starting…' : 'Start camera'}
@@ -877,21 +854,21 @@ function Sheet({ title, onClose, children }: { title: string; onClose: () => voi
   );
 }
 
-function SearchSheet({
+/**
+ * Search box on the scanner screen: type a last name to see the badge number
+ * (to pull the badge from the box) and today's status. Typing records nothing;
+ * "Check in"/"Check out" on a row is for someone without their badge.
+ */
+function NameLookup({
   roster,
   todays,
   mode,
-  onPick,
-  onClose,
-  lookupOnly,
+  onCheck,
 }: {
   roster: RosterPerson[];
   todays: ScanRecord[];
   mode: Mode;
-  onPick: (p: RosterPerson) => void;
-  onClose: () => void;
-  // Just show badge numbers; tapping a name records nothing.
-  lookupOnly?: boolean;
+  onCheck: (p: RosterPerson) => void;
 }) {
   const [q, setQ] = useState('');
   const matches = useMemo(() => {
@@ -904,7 +881,7 @@ function SearchSheet({
           `${p.last_name} ${p.first_name}`.toLowerCase().includes(t) ||
           (/^#?\d+$/.test(t) && !p.is_walk_in && String(p.badge_number ?? '') === t.replace('#', ''))
       )
-      .slice(0, 30);
+      .slice(0, 8);
   }, [q, roster]);
   const statusFor = (id: string) => {
     const mine = todays.filter((x) => x.registrant_id === id).sort((a, b) => a.scanned_at.localeCompare(b.scanned_at));
@@ -914,56 +891,61 @@ function SearchSheet({
       .filter(Boolean)
       .join(' · ');
   };
-
   return (
-    <Sheet title={lookupOnly ? 'Look up badge number' : `Find by name · ${mode === 'in' ? 'Check IN' : 'Check OUT'}`} onClose={onClose}>
-      {lookupOnly && (
-        <p className="text-sm text-gray-600 mb-2">
-          Find their badge by the number, hand it to them, then close this and scan the badge. Nothing is recorded here.
-        </p>
+    <div className="px-3">
+      <div className="relative">
+        <Search className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+        <input
+          type="search"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Find badge # by last name"
+          autoComplete="off"
+          className="w-full pl-12 pr-4 py-3.5 text-lg bg-white border-2 border-gray-300 rounded-xl focus:outline-none focus:border-[#1B2E5B]"
+        />
+      </div>
+      {q.trim() && (
+        <div className="mt-2 bg-white rounded-xl shadow-sm px-4">
+          {!matches.length ? (
+            <p className="text-sm text-gray-500 py-3">No one by that name. Use “Add walk-in”.</p>
+          ) : (
+            <ul className="divide-y">
+              {matches.map((p) => (
+                <li key={p.id} className="py-3 flex items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-lg leading-tight">
+                      {p.first_name} {p.last_name}
+                      {p.payment_status === 'due' && <span className="ml-2 text-xs font-semibold text-red-600">payment due</span>}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {[p.title, townshipLabel(p.township) || p.organization].filter(Boolean).join(' · ')}
+                      {statusFor(p.id) && <span className="ml-1 text-gray-700">· {statusFor(p.id)}</span>}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onCheck(p);
+                        setQ('');
+                      }}
+                      className="mt-1 text-sm font-semibold text-[#1B2E5B] underline underline-offset-2"
+                    >
+                      {mode === 'in' ? 'Check in without badge' : 'Check out without badge'}
+                    </button>
+                  </div>
+                  {badgeNumberLabel(p) ? (
+                    <span className={`flex-shrink-0 font-extrabold text-[#1B2E5B] text-right leading-none ${p.is_walk_in ? 'text-lg' : 'text-4xl'}`}>
+                      {badgeNumberLabel(p)}
+                    </span>
+                  ) : (
+                    <span className="flex-shrink-0 text-xs text-gray-400 text-right w-20">No badge printed yet</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
-      <input
-        autoFocus
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder="Type a last name (or badge number)"
-        className="w-full px-4 py-3 border border-gray-300 rounded-xl mb-3"
-      />
-      {q.trim() && !matches.length && <p className="text-sm text-gray-500">No one by that name. Use “Add walk-in”.</p>}
-      {lookupOnly && q.trim() && matches.some((p) => !badgeNumberLabel(p)) && (
-        <p className="text-xs text-gray-500 mb-1">
-          No number? Their badge hasn&apos;t been printed yet. Use Find by name to check them in.
-        </p>
-      )}
-      <ul className="divide-y">
-        {matches.map((p) => (
-          <li key={p.id}>
-            <button
-              type="button"
-              onClick={() => (lookupOnly ? undefined : onPick(p))}
-              className={`w-full text-left py-3 flex items-center gap-3 ${lookupOnly ? 'cursor-default' : ''}`}
-            >
-              <span className="flex-1 min-w-0">
-              <div className="font-semibold">
-                {p.first_name} {p.last_name}
-                {p.is_walk_in && <span className="ml-2 text-xs text-amber-600">walk-in</span>}
-                {p.payment_status === 'due' && <span className="ml-2 text-xs font-semibold text-red-600">payment due</span>}
-              </div>
-              <div className="text-sm text-gray-500">
-                {[p.title, townshipLabel(p.township)].filter(Boolean).join(' · ')}
-                {statusFor(p.id) && <span className="ml-1 text-gray-700">· {statusFor(p.id)}</span>}
-              </div>
-              </span>
-              {badgeNumberLabel(p) && (
-                <span className={`flex-shrink-0 font-extrabold text-[#1B2E5B] text-right leading-none ${p.is_walk_in ? 'text-base' : lookupOnly ? 'text-4xl' : 'text-2xl'}`}>
-                  {badgeNumberLabel(p)}
-                </span>
-              )}
-            </button>
-          </li>
-        ))}
-      </ul>
-    </Sheet>
+    </div>
   );
 }
 

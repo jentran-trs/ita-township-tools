@@ -2,6 +2,21 @@ import { createServerSupabaseClient } from '@/lib/supabase';
 import { computeAttendance, eventDays, AttendanceResult } from '@/lib/badges/attendance';
 import { formatCourseDates } from '@/lib/certificates/date-range';
 
+/** One check-in/out entry, including removed ones, with any notes. */
+export type ScanLogEntry = {
+  id: string;
+  date: string;
+  direction: 'in' | 'out';
+  at: string;
+  source: 'scan' | 'name_search' | 'manual';
+  // Scanner phone label, or the admin who entered it by hand.
+  by: string | null;
+  note: string | null;
+  voided_at: string | null;
+  voided_by: string | null;
+  void_note: string | null;
+};
+
 export type AttendanceRow = {
   id: string;
   first_name: string;
@@ -24,6 +39,8 @@ export type AttendanceRow = {
   reasons: string[];
   // Hours that would go on the certificate.
   credit_hours: number;
+  // Every entry for this person, oldest first (removed ones included).
+  log: ScanLogEntry[];
 };
 
 export type CourseAttendance = {
@@ -51,7 +68,8 @@ export async function loadCourseAttendance(courseId: string): Promise<CourseAtte
       .order('first_name', { ascending: true }),
     supabase
       .from('cert_attendance_scans')
-      .select('registrant_id, scan_date, direction, scanned_at, voided_at')
+      // '*' so the v37 void note columns are read when present.
+      .select('*')
       .eq('course_id', course.id),
   ]);
 
@@ -94,6 +112,21 @@ export async function loadCourseAttendance(courseId: string): Promise<CourseAtte
       status,
       reasons,
       credit_hours: credit,
+      log: (byPerson.get(r.id) || [])
+        .slice()
+        .sort((a: any, b: any) => String(a.scanned_at).localeCompare(String(b.scanned_at)))
+        .map((x: any) => ({
+          id: x.id,
+          date: x.scan_date,
+          direction: x.direction,
+          at: x.scanned_at,
+          source: x.source || 'scan',
+          by: x.entered_by || x.device_label || null,
+          note: x.note || null,
+          voided_at: x.voided_at || null,
+          voided_by: x.voided_by || null,
+          void_note: x.void_note || null,
+        })),
     };
   });
 

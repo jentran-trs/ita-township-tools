@@ -1,7 +1,7 @@
 "use client";
 
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Check, ChevronLeft, ChevronRight, Download, FileUp, Loader2, MoreHorizontal, Printer, RotateCcw, Search, Tag, Trash2, Upload, X } from 'lucide-react';
 import { deliverLabel, renderNiimbotLabel } from '@/lib/badges/niimbot-label';
 import { townshipLabel } from '@/lib/certificates/township';
@@ -1249,6 +1249,19 @@ function ShareLinkRow({ title, url, note }: { title: string; url: string; note: 
 }
 
 type DayAtt = { date: string; checkIn: string | null; checkOut: string | null; complete: boolean };
+type LogEntry = {
+  id: string;
+  date: string;
+  direction: 'in' | 'out';
+  at: string;
+  source: 'scan' | 'name_search' | 'manual';
+  by: string | null;
+  note: string | null;
+  voided_at: string | null;
+  voided_by: string | null;
+  void_note: string | null;
+};
+const SOURCE_LABEL: Record<LogEntry['source'], string> = { scan: 'Badge scan', name_search: 'Name search', manual: 'Entered by hand' };
 type Payment = {
   id: string;
   method: 'check' | 'card' | 'admin';
@@ -1271,6 +1284,7 @@ type AttRow = {
   payment_method: string | null;
   payment: Payment | null;
   attendance: { days: DayAtt[] };
+  log?: LogEntry[];
 };
 type Filter = 'review' | 'payment' | 'attended' | 'no_show' | 'all';
 
@@ -1314,6 +1328,7 @@ function AttendanceCard({
   const [notice] = useState<string | null>(null);
   const [editing, setEditing] = useState<{ id: string; date: string; direction: 'in' | 'out' } | null>(null);
   const [payingId, setPayingId] = useState<string | null>(null);
+  const [historyId, setHistoryId] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const load = reload;
 
@@ -1343,8 +1358,15 @@ function AttendanceCard({
   const pageRows = shown.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   const voidTime = async (r: AttRow, date: string, direction: 'in' | 'out') => {
-    if (!window.confirm(`Remove ${r.first_name} ${r.last_name}'s check-${direction} on ${date}?`)) return;
-    const qs = new URLSearchParams({ registrant_id: r.id, scan_date: date, direction });
+    const why = window.prompt(
+      `Remove ${r.first_name} ${r.last_name}'s check-${direction} on ${dayLabel(date)}?\n\nWhy? (required, kept on their record)`
+    );
+    if (why === null) return;
+    if (!why.trim()) {
+      setError('Removing a time needs a reason. Nothing was changed.');
+      return;
+    }
+    const qs = new URLSearchParams({ registrant_id: r.id, scan_date: date, direction, note: why.trim() });
     const res = await fetch(`/api/admin/certificates/courses/${course.id}/attendance?${qs}`, { method: 'DELETE' });
     if (!res.ok) setError((await res.json().catch(() => ({}))).error || 'Could not remove');
     load();
@@ -1433,13 +1455,26 @@ function AttendanceCard({
             </thead>
             <tbody>
               {pageRows.map((r) => (
-                <tr key={r.id} className="border-b border-gray-100 dark:border-gray-800 align-top">
+                <Fragment key={r.id}>
+                <tr className="border-b border-gray-100 dark:border-gray-800 align-top">
                   <td className="py-2 pr-3">
                     <div className="font-medium">
                       {r.first_name} {r.last_name}
                       {r.is_walk_in && <span className="ml-2 text-xs text-amber-600">walk-in</span>}
                     </div>
                     <div className="text-xs text-gray-500">{[r.title, townshipLabel(r.township)].filter(Boolean).join(' · ')}</div>
+                    {(r.log?.length || 0) > 0 && (() => {
+                      const noted = (r.log || []).filter((e) => e.source === 'manual' || e.voided_at).length;
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => setHistoryId(historyId === r.id ? null : r.id)}
+                          className={`mt-1 text-xs hover:underline ${noted ? 'font-semibold text-blue-700 dark:text-blue-400' : 'text-gray-500'}`}
+                        >
+                          {historyId === r.id ? 'Hide history' : noted ? `History · ${noted} note${noted === 1 ? '' : 's'}` : 'History'}
+                        </button>
+                      );
+                    })()}
                   </td>
                   {r.attendance.days.map((d) => (
                     <td key={d.date} className="py-2 pr-3 whitespace-nowrap">
@@ -1468,6 +1503,17 @@ function AttendanceCard({
                             {t ? (
                               <>
                                 <span>{easternTime(t)}</span>
+                                {(() => {
+                                  const m = (r.log || []).find((e) => !e.voided_at && e.source === 'manual' && e.date === d.date && e.direction === dir && e.at === t);
+                                  return m ? (
+                                    <span
+                                      className="text-[10px] font-semibold uppercase px-1 rounded bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300"
+                                      title={`Entered by hand${m.by ? ` by ${m.by}` : ''}${m.note ? `: ${m.note}` : ''}`}
+                                    >
+                                      by hand
+                                    </span>
+                                  ) : null;
+                                })()}
                                 <button type="button" onClick={() => voidTime(r, d.date, dir)} className="text-gray-400 hover:text-red-600" title="Remove this time">
                                   <X className="w-3 h-3" />
                                 </button>
@@ -1515,6 +1561,14 @@ function AttendanceCard({
                     {r.credit_hours} hrs{r.day_hours ? <span className="text-xs text-amber-600"> partial</span> : null}
                   </td>
                 </tr>
+                {historyId === r.id && (
+                  <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/40">
+                    <td colSpan={days.length + 3 + (tracksPayment ? 1 : 0)} className="px-3 py-3">
+                      <ScanHistory log={r.log || []} />
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
               ))}
             </tbody>
           </table>
@@ -1522,6 +1576,36 @@ function AttendanceCard({
       )}
       <Pager page={page} setPage={setPage} total={shown.length} />
     </section>
+  );
+}
+
+/** Every check-in/out entry for one person, with who recorded it and any notes. */
+function ScanHistory({ log }: { log: LogEntry[] }) {
+  if (!log.length) return <p className="text-xs text-gray-500">No check-ins or check-outs yet.</p>;
+  return (
+    <div>
+      <div className="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Every entry (Eastern time)</div>
+      <ul className="text-xs space-y-1">
+        {log.map((e) => (
+          <li key={e.id} className={e.voided_at ? 'text-gray-400' : ''}>
+            <span className={e.voided_at ? 'line-through' : 'font-medium'}>
+              {dayLabel(e.date)} · {e.direction === 'in' ? 'Check-in' : 'Check-out'} {easternTime(e.at)}
+            </span>{' '}
+            · {SOURCE_LABEL[e.source] || e.source}
+            {e.by ? ` by ${e.by}` : ''}
+            {e.note && <span className="text-blue-800 dark:text-blue-300"> · Note: {e.note}</span>}
+            {e.voided_at && (
+              <span className="text-red-700 dark:text-red-400">
+                {' '}
+                · Removed {dayLabel(easternDate(e.voided_at))} {easternTime(e.voided_at)}
+                {e.voided_by ? ` by ${e.voided_by}` : ''}
+                {e.void_note ? `: ${e.void_note}` : ''}
+              </span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -1643,10 +1727,10 @@ function ManualTimeForm({
     <div className="my-1 p-2 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 space-y-1 w-56 whitespace-normal overflow-hidden">
       <div className="text-xs font-semibold">Manual check-{direction}</div>
       <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className={inputCls + ' block w-full min-w-0 box-border'} />
-      <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="How you verified (optional)" className={inputCls + ' block w-full min-w-0 box-border text-xs'} />
+      <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="How you verified (required)" className={inputCls + ' block w-full min-w-0 box-border text-xs'} />
       {err && <div className="text-xs text-red-600">{err}</div>}
       <div className="flex gap-3 text-xs">
-        <button type="button" onClick={save} disabled={busy || !time} className="font-semibold text-amber-700 hover:underline">
+        <button type="button" onClick={save} disabled={busy || !time || !note.trim()} className="font-semibold text-amber-700 hover:underline disabled:opacity-40">
           Save
         </button>
         <button type="button" onClick={onDone} className="text-gray-500 hover:underline">

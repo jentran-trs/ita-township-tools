@@ -84,13 +84,14 @@ export async function DELETE(req: Request, { params }: RouteParams) {
   const registrantId = url.searchParams.get('registrant_id');
   const scanDate = url.searchParams.get('scan_date');
   const direction = url.searchParams.get('direction');
+  const note = (url.searchParams.get('note') || '').trim().slice(0, 300) || null;
   if (!registrantId || !scanDate || !['in', 'out'].includes(direction || '')) {
     return NextResponse.json({ error: 'registrant_id, scan_date and direction are required' }, { status: 400 });
   }
   const supabase = createServerSupabaseClient();
   const { error } = await supabase
     .from('cert_attendance_scans')
-    .update({ voided_at: new Date().toISOString() })
+    .update({ voided_at: new Date().toISOString(), voided_by: await adminName(), void_note: note })
     .eq('course_id', params.courseId)
     .eq('registrant_id', registrantId)
     .eq('scan_date', scanDate)

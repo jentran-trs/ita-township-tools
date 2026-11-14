@@ -52,6 +52,15 @@ export function easternDate(at: Date | string = new Date()): string {
 }
 
 /** "9:05 AM" in Eastern time. */
+/** Minutes after midnight, Eastern time (e.g. 2:15 PM → 855). */
+export function easternMinutes(at: string | Date): number {
+  const d = typeof at === 'string' ? new Date(at) : at;
+  const parts = new Intl.DateTimeFormat('en-US', { timeZone: EVENT_TIME_ZONE, hour: 'numeric', minute: 'numeric', hourCycle: 'h23' }).formatToParts(d);
+  const h = Number(parts.find((p) => p.type === 'hour')?.value || 0);
+  const m = Number(parts.find((p) => p.type === 'minute')?.value || 0);
+  return h * 60 + m;
+}
+
 export function easternTime(at: string | Date): string {
   const d = typeof at === 'string' ? new Date(at) : at;
   return d.toLocaleTimeString('en-US', {

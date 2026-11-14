@@ -1,5 +1,5 @@
 import { createServerSupabaseClient } from '@/lib/supabase';
-import { computeAttendance, easternDate, eventDays, AttendanceResult } from '@/lib/badges/attendance';
+import { computeAttendance, easternDate, easternMinutes, easternTime, eventDays, formatEventTimes, AttendanceResult } from '@/lib/badges/attendance';
 import { formatCourseDates } from '@/lib/certificates/date-range';
 
 /** One check-in/out entry, including removed ones, with any notes. */
@@ -79,6 +79,11 @@ export async function loadCourseAttendance(courseId: string): Promise<CourseAtte
   ]);
 
   const days = eventDays(course.course_date, course.course_end_date);
+  // Event end time "HH:MM:SS" → minutes, for the leaving-early check.
+  const endMinutes = course.event_end_time
+    ? Number(String(course.event_end_time).slice(0, 2)) * 60 + Number(String(course.event_end_time).slice(3, 5))
+    : null;
+  const endLabel = course.event_end_time ? formatEventTimes(course.event_end_time) : '';
   const today = easternDate();
   const byPerson = new Map<string, any[]>();
   (scans || []).forEach((s: any) => {
@@ -106,6 +111,10 @@ export async function loadCourseAttendance(courseId: string): Promise<CourseAtte
         if (d.checkIn && !d.checkOut) reasons.push(d.date === today ? 'Checked in, not out yet today' : `No check-out on ${label}`);
         else if (!d.checkIn && d.checkOut) reasons.push(`No check-in on ${label}`);
         else if (!d.checkIn && !d.checkOut && !plan) reasons.push(`Not scanned on ${label}`);
+        // Left more than 30 minutes before the event's end time.
+        else if (d.checkIn && d.checkOut && endMinutes != null && easternMinutes(d.checkOut) < endMinutes - EARLY_LEAVE_MINUTES) {
+          reasons.push(`Left early on ${label} at ${easternTime(d.checkOut)} (event ends ${endLabel})`);
+        }
       }
       // Not finished until the last day is over.
       if (upcoming) {
@@ -179,3 +188,6 @@ export function dayPlan(raw: unknown, days: string[]): Record<string, number> | 
   }
   return plan;
 }
+
+/** Checking out more than this many minutes before the end time needs review. */
+const EARLY_LEAVE_MINUTES = 30;

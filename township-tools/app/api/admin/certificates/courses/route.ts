@@ -80,6 +80,8 @@ export async function POST(req: Request) {
       course_date: body.course_date,
       course_end_date: body.course_end_date || null,
       day_hours: body.day_hours ?? null,
+      // New courses start hidden from the public lookup; show them from the course list when ready.
+      hidden: true,
       cert_type: body.cert_type || 'training',
       participation_statement: body.participation_statement?.trim() || null,
       show_sboa: !!body.show_sboa,

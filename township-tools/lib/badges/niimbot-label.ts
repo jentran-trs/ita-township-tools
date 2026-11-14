@@ -1,7 +1,11 @@
-// Walk-in label for the NIIMBOT B31 (75 x 50 mm, black thermal, 203 dpi).
-// Drawn on a canvas in the browser at the printer's native resolution
-// (8 px/mm → 600 x 400) and saved as a PNG; Jen prints it from the NIIMBOT
-// phone app (the printer can't be driven from a website).
+// Walk-in label for the NIIMBOT B31: 70 mm long x 40 mm wide labels, black
+// thermal, 203 dpi. Drawn on a canvas in the browser at the printer's native
+// resolution (8 px/mm → 560 x 320) and saved as a PNG; Jen adds it as a
+// picture in the NIIMBOT app (the printer can't be driven from a website).
+//
+// Layout: event name centred across the top; below it, the name, title and
+// township/company centred vertically on the left, and the QR code on the
+// right edge.
 import QRCode from 'qrcode';
 import { townshipLabel } from '@/lib/certificates/township';
 
@@ -11,15 +15,17 @@ export type LabelInput = {
   title: string | null;
   township: string | null;
   county: string | null;
+  organization?: string | null;
   badgeToken: string;
   eventName: string;
 };
 
 const PX_PER_MM = 8;
-const W = 75 * PX_PER_MM;
-const H = 50 * PX_PER_MM;
-const PAD = 3 * PX_PER_MM;
-const QR = 34 * PX_PER_MM;
+const W = 70 * PX_PER_MM;
+const H = 40 * PX_PER_MM;
+const PAD = 2.5 * PX_PER_MM;
+const HEADER = 7 * PX_PER_MM; // event name strip at the top
+const QR = 30 * PX_PER_MM;
 const FONT = 'Arial, Helvetica, sans-serif';
 
 function fitFont(ctx: CanvasRenderingContext2D, text: string, weight: string, maxPx: number, minPx: number, maxWidth: number) {
@@ -48,43 +54,48 @@ export async function renderNiimbotLabel(input: LabelInput): Promise<Blob> {
   ctx.fillStyle = '#fff';
   ctx.fillRect(0, 0, W, H);
   ctx.fillStyle = '#000';
-  ctx.textBaseline = 'alphabetic';
 
-  // QR code on the right, vertically centred.
+  // Event name, centred across the top.
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  fitFont(ctx, input.eventName, 'bold', 26, 16, W - PAD * 2);
+  ctx.fillText(ellipsize(ctx, input.eventName, W - PAD * 2), W / 2, PAD + HEADER / 2 - 4);
+  ctx.fillRect(PAD, PAD + HEADER, W - PAD * 2, 2);
+
+  // QR code on the right edge, centred in the space under the header.
+  // A white gap under the line keeps the QR code's quiet zone, so it scans reliably.
+  const bodyTop = PAD + HEADER + 2 + 10;
+  const bodyH = H - bodyTop - PAD;
+  const qrSize = Math.min(QR, bodyH);
+  const qrX = W - PAD - qrSize;
   const qrCanvas = document.createElement('canvas');
-  await QRCode.toCanvas(qrCanvas, input.badgeToken, { margin: 0, width: QR, errorCorrectionLevel: 'M' });
+  await QRCode.toCanvas(qrCanvas, input.badgeToken, { margin: 0, width: qrSize, errorCorrectionLevel: 'M' });
   ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(qrCanvas, W - PAD - QR, (H - QR) / 2, QR, QR);
+  ctx.drawImage(qrCanvas, qrX, bodyTop + (bodyH - qrSize) / 2, qrSize, qrSize);
 
-  const textW = W - PAD * 3 - QR;
-  let y = PAD;
-
-  const first = fitFont(ctx, input.firstName, 'bold', 64, 28, textW);
-  y += first;
-  ctx.fillText(ellipsize(ctx, input.firstName, textW), PAD, y);
-
-  const last = fitFont(ctx, input.lastName, 'bold', 40, 22, textW);
-  y += last + 4;
-  ctx.fillText(ellipsize(ctx, input.lastName, textW), PAD, y);
-
-  ctx.font = `24px ${FONT}`;
-  if (input.title) {
-    y += 34;
-    ctx.fillText(ellipsize(ctx, input.title, textW), PAD, y);
+  // Name, title, township/company: centred left of the QR, vertically centred.
+  const textW = qrX - PAD * 2;
+  const cx = PAD + textW / 2;
+  const place = [townshipLabel(input.township), input.county ? `${input.county} County` : null].filter(Boolean).join(', ') || input.organization || '';
+  type Line = { text: string; weight: string; max: number; min: number; gap: number };
+  const lines: Line[] = [
+    { text: input.firstName, weight: 'bold', max: 56, min: 26, gap: 0 },
+    { text: input.lastName, weight: 'bold', max: 36, min: 20, gap: 2 },
+    ...(input.title ? [{ text: input.title, weight: 'normal', max: 22, min: 16, gap: 10 }] : []),
+    ...(place ? [{ text: place, weight: 'normal', max: 20, min: 15, gap: 4 }] : []),
+  ];
+  // Measure first so the whole block can be centred.
+  const sized = lines.map((l) => ({ ...l, size: fitFont(ctx, l.text, l.weight, l.max, l.min, textW) }));
+  const blockH = sized.reduce((h, l) => h + l.gap + l.size * 1.1, 0);
+  let y = bodyTop + (bodyH - blockH) / 2;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  for (const l of sized) {
+    y += l.gap;
+    ctx.font = `${l.weight} ${l.size}px ${FONT}`;
+    ctx.fillText(ellipsize(ctx, l.text, textW), cx, y);
+    y += l.size * 1.1;
   }
-  const twp = townshipLabel(input.township);
-  if (twp) {
-    y += 30;
-    ctx.fillText(ellipsize(ctx, twp, textW), PAD, y);
-  }
-  if (input.county) {
-    y += 30;
-    ctx.fillText(ellipsize(ctx, `${input.county} County`, textW), PAD, y);
-  }
-
-  // Event name along the bottom in small type.
-  ctx.font = `18px ${FONT}`;
-  ctx.fillText(ellipsize(ctx, input.eventName, textW), PAD, H - PAD);
 
   return new Promise((resolve, reject) =>
     canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Could not create label image'))), 'image/png')

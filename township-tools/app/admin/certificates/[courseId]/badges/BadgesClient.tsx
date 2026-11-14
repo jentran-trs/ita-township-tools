@@ -635,6 +635,7 @@ function RegistrantsCard({
                             title: r.title,
                             township: r.township,
                             county: r.county,
+                            organization: r.organization,
                             badgeToken: r.badge_token,
                             eventName: course.name,
                           });
@@ -644,7 +645,7 @@ function RegistrantsCard({
                         }
                       }}
                       className="inline-flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300 hover:underline mr-3"
-                      title="Save a 75 x 50 mm NIIMBOT label image with this person's QR code"
+                      title="Save a 70 x 40 mm NIIMBOT label image with this person's QR code"
                     >
                       <Tag className="w-3 h-3" /> NIIMBOT label
                     </button>

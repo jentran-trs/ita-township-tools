@@ -1363,7 +1363,12 @@ function ScannerLink({ courseId }: { courseId: string }) {
         url={`${origin}/print/${courseId}`}
         note="They open it on a computer and enter the same PIN to print the badges, with printing instructions on the page."
       />
-      <p className="text-xs text-gray-500">No Township Tools login needed for either. Send the PIN separately from the link.</p>
+      <ShareLinkRow
+        title="“Find my badge number” screen for attendees"
+        url={`${origin}/scan/${courseId}/find`}
+        note="Open it on a touchscreen tablet at check-in and enter the same PIN once. Attendees type their last name to see their badge number; it clears itself 7 seconds after the last touch. It shows only name, township/company and badge number, and records nothing."
+      />
+      <p className="text-xs text-gray-500">No Township Tools login needed for any of these. Send the PIN separately from the link.</p>
     </div>
   );
 }

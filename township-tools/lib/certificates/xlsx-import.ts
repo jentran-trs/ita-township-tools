@@ -155,8 +155,11 @@ export async function parseAttendeeWorkbook(buffer: Buffer, filename: string): P
     let organization = '';
     if (!township && !county && index.organization >= 0) {
       const org = valueToString(r[index.organization]);
-      if (!/township|county/i.test(org)) organization = org;
-      if (/township|county/i.test(org)) {
+      // Only "X Township" / "Y County" parts are a place; anything else
+      // ("Indiana Township Association", "Township Software Co.") is an organization.
+      const isPlace = org.split(',').some((part) => /\b(township|twp\.?|county)\s*$/i.test(part.trim()));
+      if (!isPlace) organization = org;
+      if (isPlace) {
         const split = splitOrganization(org);
         township = split.township;
         county = split.county;

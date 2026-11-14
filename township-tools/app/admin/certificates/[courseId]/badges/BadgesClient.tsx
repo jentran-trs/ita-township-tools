@@ -1610,12 +1610,12 @@ function AttendanceCard({
                       })}
                     </td>
                   ))}
-                  <td className="py-2 pr-3 max-w-[14rem]">
+                  <td className="py-2 pr-3 min-w-[15rem]">
                     <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_CLS[r.status]}`}>{STATUS_LABEL[r.status]}</span>
                     {r.status === 'review' && r.reasons.length > 0 && (
                       <ul className="mt-1 text-xs text-amber-800 dark:text-amber-300 space-y-0.5">
                         {r.reasons.map((x) => (
-                          <li key={x}>• {x}</li>
+                          <li key={x} className="whitespace-nowrap">• {x}</li>
                         ))}
                       </ul>
                     )}

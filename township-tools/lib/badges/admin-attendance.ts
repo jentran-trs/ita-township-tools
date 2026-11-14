@@ -1,5 +1,5 @@
 import { createServerSupabaseClient } from '@/lib/supabase';
-import { computeAttendance, eventDays, AttendanceResult } from '@/lib/badges/attendance';
+import { computeAttendance, easternDate, eventDays, AttendanceResult } from '@/lib/badges/attendance';
 import { formatCourseDates } from '@/lib/certificates/date-range';
 
 /** One check-in/out entry, including removed ones, with any notes. */
@@ -79,6 +79,7 @@ export async function loadCourseAttendance(courseId: string): Promise<CourseAtte
   ]);
 
   const days = eventDays(course.course_date, course.course_end_date);
+  const today = easternDate();
   const byPerson = new Map<string, any[]>();
   (scans || []).forEach((s: any) => {
     const list = byPerson.get(s.registrant_id) || [];
@@ -92,12 +93,24 @@ export async function loadCourseAttendance(courseId: string): Promise<CourseAtte
     // Hours per day set on the course: each full day earns its hours, and a
     // day someone simply didn't come isn't a problem, just fewer hours.
     const plan = dayPlan(course.day_hours, days);
+    // Days still to come aren't held against anyone, and someone checked in
+    // today simply hasn't left yet.
+    let upcoming = false;
     if (attendance.anyScan) {
       for (const d of attendance.days) {
         const label = formatCourseDates(d.date, null, 'short').replace(/, \d{4}$/, '');
-        if (d.checkIn && !d.checkOut) reasons.push(`No check-out on ${label}`);
+        if (d.date > today && !d.checkIn && !d.checkOut) {
+          upcoming = true;
+          continue;
+        }
+        if (d.checkIn && !d.checkOut) reasons.push(d.date === today ? 'Checked in, not out yet today' : `No check-out on ${label}`);
         else if (!d.checkIn && d.checkOut) reasons.push(`No check-in on ${label}`);
         else if (!d.checkIn && !d.checkOut && !plan) reasons.push(`Not scanned on ${label}`);
+      }
+      // Not finished until the last day is over.
+      if (upcoming) {
+        const left = attendance.days.filter((d) => d.date > today).map((d) => formatCourseDates(d.date, null, 'short').replace(/, \d{4}$/, ''));
+        reasons.push(`Still to come: ${left.join(', ')}`);
       }
     }
     const attendanceOk = attendance.anyScan && reasons.length === 0;

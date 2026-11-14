@@ -7,7 +7,7 @@ export function badgeTypeStyle(type: string | null | undefined): { label: string
   const t = label.toLowerCase();
   // Most common ITA types: Attendee, Sponsor, Speaker, Resource Vendor.
   if (/vendor|exhibitor/.test(t)) return { label, bg: '#2F6F5E', fg: '#ffffff' };
-  if (/sponsor/.test(t)) return { label, bg: GOLD, fg: '#1f2937' };
+  if (/sponsor/.test(t)) return { label, bg: GOLD, fg: '#ffffff' };
   if (/speaker|presenter|panel/.test(t)) return { label, bg: '#7A1F2B', fg: '#ffffff' };
   if (/staff|volunteer|board|organizer/.test(t)) return { label, bg: '#4B5563', fg: '#ffffff' };
   return { label, bg: NAVY, fg: '#ffffff' };

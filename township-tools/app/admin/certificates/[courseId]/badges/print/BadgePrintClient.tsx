@@ -130,7 +130,7 @@ export function BadgePrintClient({
   const setN = (k: keyof Nudge, v: string) => setNudge((cur) => ({ ...cur, [k]: parseFloat(v) || 0 }));
 
   return (
-    <div className="badge-print-page">
+    <div className="badge-print-page lg:flex lg:items-start">
       <style>{`
         @page { size: letter; margin: 0; }
         .badge-print-page { background: #e5e7eb; min-height: 100vh; color: #111827; }
@@ -141,7 +141,7 @@ export function BadgePrintClient({
           html, body { height: auto !important; min-height: 0 !important; background: #fff !important; }
           body * { visibility: hidden; }
           .badge-sheets, .badge-sheets * { visibility: visible; }
-          .badge-sheets { position: absolute; left: 0; top: 0; }
+          .badge-sheets { position: absolute; left: 0; top: 0; padding: 0 !important; overflow: visible !important; }
           .badge-print-page { background: #fff; min-height: 0; height: 0; }
           .badge-sheet { margin: 0; box-shadow: none; break-after: page; page-break-after: always; }
           .badge-sheet:last-child { break-after: auto; page-break-after: auto; }
@@ -151,7 +151,7 @@ export function BadgePrintClient({
         }
       `}</style>
 
-      <div className="print-controls max-w-3xl mx-auto px-4 py-6 space-y-4">
+      <div className="print-controls max-w-3xl mx-auto px-4 py-6 space-y-4 lg:mx-0 lg:max-w-none lg:w-[27rem] lg:flex-shrink-0 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto lg:border-r lg:border-gray-300">
         {backHref && (
           <Link href={backHref} className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium bg-white rounded-lg hover:bg-gray-100">
             <ArrowLeft className="w-4 h-4" /> Back to badges
@@ -216,7 +216,7 @@ export function BadgePrintClient({
             </span>
           </div>
 
-          <div className="grid sm:grid-cols-3 gap-4">
+          <div className="grid sm:grid-cols-3 lg:grid-cols-1 gap-4">
             <label>
               <span className="block font-medium mb-1">Start at spot</span>
               <select value={start} onChange={(e) => setStart(parseInt(e.target.value, 10))} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
@@ -244,7 +244,11 @@ export function BadgePrintClient({
         </div>
       </div>
 
-      <div className="badge-sheets">
+      <div className="badge-sheets lg:flex-1 lg:min-w-0 overflow-x-auto px-4 py-6">
+        <div className="print-controls text-sm text-gray-600 text-center mb-3">
+          Preview · {sheets.length * (side === 'both' ? 2 : 1)} page{sheets.length * (side === 'both' ? 2 : 1) === 1 ? '' : 's'} ·{' '}
+          {side === 'front' ? 'fronts' : side === 'back' ? 'backs' : 'fronts and backs alternating'} · scroll to see them all
+        </div>
         {sheets.flatMap((sheet, si) =>
           (side === 'both' ? (['front', 'back'] as const) : [side as 'front' | 'back']).map((face) => (
             <div key={`${si}-${face}`} className="badge-sheet">
@@ -316,7 +320,7 @@ function PrintInstructions() {
     </div>
   );
   return (
-    <div className="grid md:grid-cols-2 gap-3">
+    <div className="grid md:grid-cols-2 lg:grid-cols-1 gap-3">
       {block('Printer prints both sides', PRINT_STEPS_TWO_SIDED)}
       {block('Printer prints one side', PRINT_STEPS_ONE_SIDED)}
     </div>

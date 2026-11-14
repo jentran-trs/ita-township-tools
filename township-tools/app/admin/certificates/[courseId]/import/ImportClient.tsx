@@ -96,7 +96,7 @@ export function ImportClient({ courseId, courseLabel }: { courseId: string; cour
         <CommitResult
           result={result}
           onDone={() => {
-            router.push(`/admin/certificates/${courseId}`);
+            router.push(`/admin/certificates/${courseId}/manual`);
             router.refresh(); // ensure the attendee list reflects the import
           }}
           onAgain={onReset}

@@ -28,7 +28,7 @@ export default async function ImportAttendeesPage({ params }: Params) {
       <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <BackLink href={`/admin/certificates/${course.id}`}>{course.name}</BackLink>
+            <BackLink href={`/admin/certificates/${course.id}/manual`}>Manual import &amp; issued certificates</BackLink>
             <div className="flex items-center gap-2">
               <Upload className="w-5 h-5 text-amber-600 dark:text-amber-400" />
               <h1 className="text-xl font-bold">Import attendees</h1>
@@ -38,7 +38,7 @@ export default async function ImportAttendeesPage({ params }: Params) {
             href={`/admin/certificates/${course.id}`}
             className="text-sm text-gray-500 hover:underline"
           >
-            View course
+            Back to course
           </Link>
         </div>
       </header>

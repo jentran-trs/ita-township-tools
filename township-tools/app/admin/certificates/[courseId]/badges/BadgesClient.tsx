@@ -66,7 +66,7 @@ const inputCls =
 const btn = 'inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold rounded-lg disabled:opacity-50';
 const hhmm = (t: string | null) => (t ? t.slice(0, 5) : '');
 
-type Tab = 'setup' | 'registrants' | 'attendance' | 'certificates';
+type Tab = 'setup' | 'registrants' | 'attendance' | 'certificates' | 'settings';
 const PAGE_SIZE = 50;
 
 /** Lower-case text to match a search box against. */
@@ -74,7 +74,19 @@ const haystack = (...parts: (string | null | undefined)[]) => parts.filter(Boole
 /** Every word typed must appear somewhere ("clay trustee" finds Clay Township trustees). */
 const matches = (text: string, q: string) => q.trim().toLowerCase().split(/\s+/).every((w) => text.includes(w));
 
-export function BadgesClient({ courseId }: { courseId: string }) {
+export function BadgesClient({
+  courseId,
+  settingsTab,
+  manualHref,
+  certificateCount = 0,
+}: {
+  courseId: string;
+  // The course's own settings form, shown as the last tab.
+  settingsTab?: React.ReactNode;
+  // The secondary page: manual import + every issued certificate.
+  manualHref?: string;
+  certificateCount?: number;
+}) {
   const [course, setCourse] = useState<Course | null>(null);
   const [registrants, setRegistrants] = useState<Registrant[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -143,13 +155,16 @@ export function BadgesClient({ courseId }: { courseId: string }) {
     if (!course || tab) return;
     let t: Tab | null = null;
     const hash = window.location.hash.replace('#', '') as Tab;
-    if (['setup', 'registrants', 'attendance', 'certificates'].includes(hash)) t = hash;
+    if (['setup', 'registrants', 'attendance', 'certificates', 'settings'].includes(hash)) t = hash;
     if (!t) {
       try {
         t = localStorage.getItem(tabKey) as Tab | null;
       } catch {}
     }
-    if (!course.badge_checkin_enabled || !hasPeople) t = 'setup';
+    const needsSetup = !course.badge_checkin_enabled || !hasPeople;
+    if (needsSetup && t !== 'settings') t = 'setup';
+    // Hash links (#attendance) are one-off; clear so a refresh uses the remembered tab.
+    if (hash) history.replaceState(null, '', window.location.pathname + window.location.search);
     setTabState(t || 'attendance');
   }, [course, tab, tabKey, hasPeople]);
 
@@ -191,10 +206,22 @@ export function BadgesClient({ courseId }: { courseId: string }) {
     { id: 'registrants', label: `Registrants (${registrants.length})`, disabled: !enabled },
     { id: 'attendance', label: 'Attendance', badge: stats.review || undefined, disabled: !enabled || !hasPeople },
     { id: 'certificates', label: 'Certificates', disabled: !enabled || !hasPeople },
+    ...(settingsTab ? [{ id: 'settings' as Tab, label: 'Course settings' }] : []),
   ];
 
   return (
     <>
+      {!enabled && certificateCount > 0 && manualHref && (
+        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-amber-900 dark:text-amber-200 text-sm rounded-lg px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+          <span>
+            This course has <strong>{certificateCount}</strong> certificate{certificateCount === 1 ? '' : 's'} issued by
+            manual import (no badges).
+          </span>
+          <Link href={manualHref} className={btn + ' bg-amber-500 text-white hover:bg-amber-600'}>
+            View issued certificates
+          </Link>
+        </div>
+      )}
       {enabled && hasPeople && (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <StatTile label="Registered" value={registrants.length} onClick={() => setTab('registrants')} />
@@ -243,9 +270,17 @@ export function BadgesClient({ courseId }: { courseId: string }) {
           {!enabled && (
             <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 text-blue-900 dark:text-blue-200 text-sm rounded-lg px-4 py-3">
               Tick <strong>Use badges and QR check-in for this course</strong> and click <strong>Save settings</strong>. Then
-              you can import registrants here, print badges, and scan people in and out. (The orange &ldquo;Import attendees
-              for certificates&rdquo; button on the course page is the old way: it issues certificates straight away and
-              doesn&apos;t make badges.)
+              you can import registrants here, print badges, and scan people in and out, and issue certificates from
+              attendance.{manualHref && (
+                <>
+                  {' '}
+                  To skip badges and issue certificates straight from a list, use{' '}
+                  <Link href={manualHref} className="font-semibold underline">
+                    Manual import &amp; issued certificates
+                  </Link>
+                  .
+                </>
+              )}
             </div>
           )}
           {enabled && (
@@ -275,9 +310,11 @@ export function BadgesClient({ courseId }: { courseId: string }) {
           setQuery={setQuery}
         />
       )}
+      {tab === 'settings' && settingsTab}
       {tab === 'certificates' && enabled && hasPeople && (
         <IssueCard
           course={course}
+          manualHref={manualHref}
           onIssued={() => {
             load();
             loadAtt();
@@ -1635,7 +1672,7 @@ type IssuePreview = {
   }[];
 };
 
-function IssueCard({ course, onIssued }: { course: Course; onIssued: () => void }) {
+function IssueCard({ course, onIssued, manualHref }: { course: Course; onIssued: () => void; manualHref?: string }) {
   const [preview, setPreview] = useState<IssuePreview | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -1760,6 +1797,15 @@ function IssueCard({ course, onIssued }: { course: Course; onIssued: () => void 
           </p>
         )}
         {msg && <p className={`text-sm ${msg.ok ? 'text-green-600' : 'text-red-600'}`}>{msg.text}</p>}
+        {manualHref && (
+          <p className="text-xs text-gray-500 border-t border-gray-200 dark:border-gray-800 pt-3">
+            To download, edit or revoke an issued certificate, open{' '}
+            <Link href={manualHref} className="font-semibold text-amber-700 dark:text-amber-400 hover:underline">
+              Manual import &amp; issued certificates
+            </Link>
+            .
+          </p>
+        )}
       </div>
 
       {/* Right: one list at a time, searchable, scrolls on its own. */}

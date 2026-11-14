@@ -1,11 +1,11 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
-import { ExternalLink, QrCode, Upload } from 'lucide-react';
+import { ExternalLink, FileSpreadsheet } from 'lucide-react';
 import { isSuperadmin } from '@/lib/auth/superadmin';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { BackLink } from '../_shared/BackLink';
-import { CourseFormInitial } from '../_shared/CourseForm';
-import { CourseTabs } from './CourseTabs';
+import { CourseForm, CourseFormInitial } from '../_shared/CourseForm';
+import { BadgesClient } from './badges/BadgesClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -97,30 +97,34 @@ export default async function CourseDetailPage({ params }: Params) {
               </span>
             )}
             <Link
-              href={`/admin/certificates/${course.id}/badges`}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold bg-[#1B2E5B] text-white rounded-lg hover:opacity-90"
-              title="Import registrants, print badges, scan check-in/out, then issue certificates from attendance"
+              href={`/admin/certificates/${course.id}/manual`}
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
+              title="Issue certificates straight from a list (no badges), and see every issued certificate"
             >
-              <QrCode className="w-4 h-4" />
-              Badges &amp; check-in
-            </Link>
-            <Link
-              href={`/admin/certificates/${course.id}/import`}
-              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold bg-amber-500 text-white rounded-lg hover:bg-amber-600"
-            >
-              <Upload className="w-4 h-4" />
-              Import attendees for certificates
+              <FileSpreadsheet className="w-4 h-4" />
+              Manual import &amp; issued certificates
+              {certificates && certificates.length > 0 && (
+                <span className="text-xs text-gray-500">({certificates.length})</span>
+              )}
             </Link>
           </div>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-8 pb-32">
-        <CourseTabs
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-8 pb-32 space-y-6">
+        <BadgesClient
           courseId={course.id}
-          certificates={certificates || []}
-          formInitial={initial}
-          existingCourseIds={(otherCourses || []).map((c: any) => c.course_id)}
+          manualHref={`/admin/certificates/${course.id}/manual`}
+          certificateCount={certificates?.length || 0}
+          settingsTab={
+            <CourseForm
+              mode="edit"
+              initial={initial}
+              existingCourseIds={(otherCourses || []).map((c: any) => c.course_id)}
+              defaultSignature={null}
+              attendeeCount={certificates?.length || 0}
+            />
+          }
         />
       </main>
     </div>

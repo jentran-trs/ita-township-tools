@@ -30,7 +30,7 @@ const SECTIONS: { status: ChecklistPerson['status']; title: string; note: string
   {
     status: 'review',
     title: 'Needs review',
-    note: 'Check the reason first (fix it on the Badges & check-in page), then update AMO.',
+    note: 'Check the reason first (fix it on the Attendance tab of the course page), then update AMO.',
   },
   { status: 'no_show', title: 'Not scanned', note: 'Never checked in. Mark as not attended in AMO if you track that.' },
 ];
@@ -80,10 +80,10 @@ export function AmoChecklistClient({ courseId, courseName, courseCode, dates, mu
       <div className="max-w-5xl mx-auto px-4 py-6">
         <div className="no-print flex flex-wrap items-center gap-2 mb-4">
           <Link
-            href={`/admin/certificates/${courseId}/badges`}
+            href={`/admin/certificates/${courseId}#attendance`}
             className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 mr-auto"
           >
-            <ArrowLeft className="w-4 h-4" /> Back to Badges & check-in
+            <ArrowLeft className="w-4 h-4" /> Back to course
           </Link>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={showTimes} onChange={(e) => setShowTimes(e.target.checked)} />

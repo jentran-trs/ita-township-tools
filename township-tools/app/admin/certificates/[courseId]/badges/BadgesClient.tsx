@@ -22,6 +22,8 @@ type Course = {
   event_end_time: string | null;
   badge_tagline: string | null;
   has_pin: boolean;
+  // The current scanner PIN (superadmin only); null if set before it was saved.
+  pin?: string | null;
   // Hours per event day for multi-day courses (v38); null = all days for full hours.
   day_hours?: Record<string, number> | null;
 };
@@ -545,6 +547,7 @@ function SettingsCard({ course, onSaved }: { course: Course; onSaved: () => void
           <span className="block text-xs text-gray-500 mt-1">
             Numbers only. Share only with the people scanning. Changing it signs out every phone.
           </span>
+          {course.has_pin && <CurrentPin pin={course.pin ?? null} />}
         </label>
       </div>
 
@@ -558,6 +561,44 @@ function SettingsCard({ course, onSaved }: { course: Course; onSaved: () => void
         {msg && <span className={`text-sm ${msg.ok ? 'text-green-600' : 'text-red-600'}`}>{msg.text}</span>}
       </div>
     </section>
+  );
+}
+
+/** The event PIN, hidden until "Show", so it isn't forgotten. */
+function CurrentPin({ pin }: { pin: string | null }) {
+  const [show, setShow] = useState(false);
+  const [copied, setCopied] = useState(false);
+  if (!pin) {
+    return (
+      <span className="block text-xs text-amber-700 dark:text-amber-400 mt-1">
+        This PIN was set before PINs were saved, so it can&apos;t be shown. Enter it again (or a new one) and save to
+        see it here.
+      </span>
+    );
+  }
+  return (
+    <span className="flex items-center gap-2 mt-2 text-sm">
+      <span className="text-gray-500">Current PIN:</span>
+      <span className="font-mono font-bold tracking-widest">{show ? pin : '•'.repeat(pin.length)}</span>
+      <button type="button" onClick={() => setShow((v) => !v)} className="text-xs font-semibold text-amber-700 dark:text-amber-400 hover:underline">
+        {show ? 'Hide' : 'Show'}
+      </button>
+      <button
+        type="button"
+        onClick={async () => {
+          try {
+            await navigator.clipboard.writeText(pin);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+          } catch {
+            window.prompt('Event PIN:', pin);
+          }
+        }}
+        className="text-xs text-gray-600 dark:text-gray-300 hover:underline"
+      >
+        {copied ? 'Copied' : 'Copy'}
+      </button>
+    </span>
   );
 }
 

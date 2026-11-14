@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { requireSuperadmin } from '@/lib/auth/superadmin';
-import { hashPin, isValidPin, PIN_MAX_LENGTH, PIN_MIN_LENGTH } from '@/lib/badges/pin';
+import { decryptPin, encryptPin, hashPin, isValidPin, PIN_MAX_LENGTH, PIN_MIN_LENGTH } from '@/lib/badges/pin';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -34,9 +34,10 @@ export async function GET(_req: Request, { params }: RouteParams) {
     .order('first_name', { ascending: true });
   if (rErr) return NextResponse.json({ error: rErr.message }, { status: 500 });
 
-  const { scanner_pin_hash, ...rest } = course as any;
+  const { scanner_pin_hash, scanner_pin_enc, ...rest } = course as any;
   return NextResponse.json({
-    course: { ...rest, has_pin: !!scanner_pin_hash },
+    // Superadmin only: the current PIN so it isn't forgotten (null if set before v40).
+    course: { ...rest, has_pin: !!scanner_pin_hash, pin: scanner_pin_hash ? decryptPin(course.id, scanner_pin_enc) : null },
     registrants: registrants || [],
   });
 }
@@ -90,8 +91,10 @@ export async function PATCH(req: Request, { params }: RouteParams) {
     const pin = body.scanner_pin;
     if (pin === null || pin === '') {
       patch.scanner_pin_hash = null;
+      patch.scanner_pin_enc = null;
     } else if (typeof pin === 'string' && isValidPin(pin.trim())) {
       patch.scanner_pin_hash = hashPin(course.id, pin.trim());
+      patch.scanner_pin_enc = encryptPin(course.id, pin.trim());
     } else {
       return NextResponse.json(
         { error: `PIN must be ${PIN_MIN_LENGTH}–${PIN_MAX_LENGTH} numbers (no letters)` },

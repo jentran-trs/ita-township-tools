@@ -862,6 +862,8 @@ function RegistrantsCard({
     }
   };
 
+  const [editing, setEditing] = useState<Registrant | null>(null);
+
   const call = async (id: string, init: RequestInit, confirmText?: string) => {
     if (confirmText && !window.confirm(confirmText)) return;
     setBusy(id);
@@ -1050,6 +1052,14 @@ function RegistrantsCard({
                     </td>
                   )}
                   <td className="py-2 text-right whitespace-nowrap">
+                    <button
+                      type="button"
+                      onClick={() => setEditing(r)}
+                      className="text-xs font-semibold text-amber-700 dark:text-amber-400 hover:underline mr-3"
+                      title="Fix their name, email, title, type, township/county or organization"
+                    >
+                      Edit
+                    </button>
                     <Link
                       href={`/admin/certificates/${course.id}/badges/print?ids=${r.id}`}
                       className="text-xs text-gray-600 dark:text-gray-300 hover:underline mr-3"
@@ -1118,7 +1128,136 @@ function RegistrantsCard({
         </div>
       )}
       <Pager page={page} setPage={setPage} total={filtered.length} />
+      {editing && (
+        <EditRegistrant
+          registrant={editing}
+          onClose={() => setEditing(null)}
+          onSaved={(text) => {
+            setEditing(null);
+            setNotice(text);
+            onChanged();
+          }}
+        />
+      )}
     </section>
+  );
+}
+
+const TYPES = ['Attendee', 'Sponsor', 'Speaker', 'Resource Vendor', 'Staff'];
+
+/** Edit one person's details. Kept by later AMO imports; copied to their certificate. */
+function EditRegistrant({
+  registrant: r,
+  onClose,
+  onSaved,
+}: {
+  registrant: Registrant;
+  onClose: () => void;
+  onSaved: (notice: string) => void;
+}) {
+  const [f, setF] = useState({
+    first_name: r.first_name || '',
+    last_name: r.last_name || '',
+    email: r.email || '',
+    title: r.title || '',
+    registrant_type: r.registrant_type || 'Attendee',
+    township: r.township || '',
+    county: r.county || '',
+    organization: r.organization || '',
+  });
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF((x) => ({ ...x, [k]: e.target.value }));
+  const types = TYPES.includes(f.registrant_type) ? TYPES : [f.registrant_type, ...TYPES];
+  const badgeChanged =
+    f.first_name !== (r.first_name || '') ||
+    f.last_name !== (r.last_name || '') ||
+    f.title !== (r.title || '') ||
+    f.registrant_type !== (r.registrant_type || 'Attendee') ||
+    f.township !== (r.township || '') ||
+    f.county !== (r.county || '') ||
+    f.organization !== (r.organization || '');
+
+  const save = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    setErr(null);
+    try {
+      const res = await fetch(`/api/admin/certificates/registrants/${r.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(f),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Could not save');
+      onSaved(
+        `Saved ${f.first_name} ${f.last_name}.` +
+          (json.certificate_updated ? ' Their certificate shows the new details too.' : '') +
+          (badgeChanged ? ' Reprint their badge to show the change.' : '')
+      );
+    } catch (e: any) {
+      setErr(e.message);
+      setBusy(false);
+    }
+  };
+
+  const field = (k: keyof typeof f, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
+    <label className="block text-sm">
+      <span className="block font-medium mb-1">{label}</span>
+      <input value={f[k]} onChange={set(k)} className={inputCls + ' w-full'} {...props} />
+    </label>
+  );
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
+      <form
+        onSubmit={save}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-lg bg-white dark:bg-gray-900 rounded-xl shadow-xl p-5 space-y-3 max-h-[90vh] overflow-y-auto"
+      >
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-bold">Edit registrant</h3>
+          <button type="button" onClick={onClose} className="p-1 text-gray-500 hover:text-gray-900" aria-label="Close">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          {field('first_name', 'First name *', { required: true, autoFocus: true })}
+          {field('last_name', 'Last name *', { required: true })}
+        </div>
+        {field('email', 'Email', { type: 'email' })}
+        <div className="grid grid-cols-2 gap-3">
+          {field('title', 'Title')}
+          <label className="block text-sm">
+            <span className="block font-medium mb-1">Type</span>
+            <select value={f.registrant_type} onChange={set('registrant_type')} className={inputCls + ' w-full'}>
+              {types.map((t) => (
+                <option key={t}>{t}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          {field('township', 'Township', { placeholder: 'e.g. Clay' })}
+          {field('county', 'County', { placeholder: 'e.g. Boone' })}
+        </div>
+        {field('organization', 'Organization (company or agency)', { placeholder: 'e.g. Indiana Township Association' })}
+        <p className="text-xs text-gray-500">
+          The badge shows Township &amp; County when filled in; otherwise the Organization. Your changes are kept when you
+          re-import the AMO file.
+          {r.certificate_id ? ' Their issued certificate is updated too.' : ''}
+        </p>
+        {err && <p className="text-sm text-red-600">{err}</p>}
+        <div className="flex gap-2 justify-end">
+          <button type="button" onClick={onClose} className={btn + ' bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}>
+            Cancel
+          </button>
+          <button type="submit" disabled={busy} className={btn + ' bg-amber-500 text-white hover:bg-amber-600'}>
+            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} Save
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }
 

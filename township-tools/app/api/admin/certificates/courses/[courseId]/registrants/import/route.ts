@@ -55,12 +55,16 @@ export async function POST(req: Request, { params }: RouteParams) {
 
   const { data: existing, error: exErr } = await supabase
     .from('cert_registrants')
-    .select('id, email, first_name, last_name, payment_status, payment_method')
+    .select('id, email, first_name, last_name, payment_status, payment_method, edited_at, original_key')
     .eq('course_id', course.id);
   if (exErr) return NextResponse.json({ error: exErr.message }, { status: 500 });
   const existingByKey = new Map<string, string>(
     (existing || []).map((r: any) => [recipientKey(r.email, r.first_name, r.last_name), r.id])
   );
+  // People edited by hand are still found by how AMO knew them before the edit.
+  (existing || []).forEach((r: any) => {
+    if (r.original_key && !existingByKey.has(r.original_key)) existingByKey.set(r.original_key, r.id);
+  });
   const existingById = new Map<string, any>((existing || []).map((r: any) => [r.id, r]));
 
   const inFile = findInFileDuplicates(parsed);
@@ -124,7 +128,13 @@ export async function POST(req: Request, { params }: RouteParams) {
     };
     const existingId = existingByKey.get(recipientKey(r.email, r.first, r.last));
     if (existingId) {
-      const { error } = await supabase.from('cert_registrants').update(fields).eq('id', existingId);
+      // Edited by hand: keep those details; only balance/payment comes from AMO.
+      const handEdited = !!existingById.get(existingId)?.edited_at;
+      if (handEdited && !Object.keys(payment).length) {
+        updated += 1;
+        continue;
+      }
+      const { error } = await supabase.from('cert_registrants').update(handEdited ? payment : fields).eq('id', existingId);
       if (error) skipped.push({ row_number: r.row_number, reason: error.message });
       else updated += 1;
       continue;

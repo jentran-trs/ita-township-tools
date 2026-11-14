@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { requireSuperadmin } from '@/lib/auth/superadmin';
 import { generateBadgeToken } from '@/lib/badges/token';
+import { recipientKey } from '@/lib/certificates/xlsx-import';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -10,7 +11,9 @@ type RouteParams = { params: { registrantId: string } };
 
 // PATCH — { action: 'cancel_badge' } issues a new QR code so a lost badge
 // stops working (reprint afterwards). Or { day_hours: {"YYYY-MM-DD": n} | null }
-// to record partial-credit hours.
+// to record partial-credit hours. Or edit details: first_name, last_name,
+// email, title, registrant_type, organization, township, county (hand edits
+// are kept by later AMO imports, and copied to an issued certificate).
 export async function PATCH(req: Request, { params }: RouteParams) {
   const sErr = await requireSuperadmin();
   if (sErr) return sErr;
@@ -55,9 +58,40 @@ export async function PATCH(req: Request, { params }: RouteParams) {
     }
   }
 
+  // Details edited by hand.
+  const text = (v: any, max: number) => String(v ?? '').trim().replace(/\s+/g, ' ').slice(0, max);
+  for (const k of ['first_name', 'last_name'] as const) {
+    if (k in body) {
+      const v = text(body[k], 100);
+      if (!v) return NextResponse.json({ error: 'First and last name are required' }, { status: 400 });
+      patch[k] = v;
+    }
+  }
+  if ('title' in body) patch.title = text(body.title, 150) || null;
+  if ('registrant_type' in body) patch.registrant_type = text(body.registrant_type, 50) || null;
+  if ('organization' in body) patch.organization = text(body.organization, 150) || null;
+  // Stored bare ("Oregon", "Allen"); "Township"/"County" are added for display.
+  if ('township' in body) patch.township = text(body.township, 100).replace(/\s+township\s*$/i, '') || null;
+  if ('county' in body) patch.county = text(body.county, 100).replace(/\s+county\s*$/i, '') || null;
+  const DETAILS = ['first_name', 'last_name', 'email', 'title', 'registrant_type', 'organization', 'township', 'county'];
+  const editsDetails = DETAILS.some((k) => k in patch);
+
   if (!Object.keys(patch).length) return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
 
   const supabase = createServerSupabaseClient();
+  let certificateId: string | null = null;
+  if (editsDetails) {
+    const { data: cur } = await supabase
+      .from('cert_registrants')
+      .select('*')
+      .eq('id', params.registrantId)
+      .maybeSingle();
+    if (!cur) return NextResponse.json({ error: 'Registrant not found' }, { status: 404 });
+    patch.edited_at = new Date().toISOString();
+    // Remember how AMO knew them, so the next import still matches after a name/email fix.
+    if (!cur.original_key && !cur.is_walk_in) patch.original_key = recipientKey(cur.email, cur.first_name, cur.last_name);
+    certificateId = cur.certificate_id || null;
+  }
   const { data, error } = await supabase
     .from('cert_registrants')
     .update(patch)
@@ -66,7 +100,18 @@ export async function PATCH(req: Request, { params }: RouteParams) {
     .maybeSingle();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!data) return NextResponse.json({ error: 'Registrant not found' }, { status: 404 });
-  return NextResponse.json({ ok: true, registrant: data });
+
+  // Keep an issued certificate in step with the corrected details.
+  if (certificateId) {
+    const cert: Record<string, any> = {};
+    if ('first_name' in patch) cert.attendee_first = patch.first_name;
+    if ('last_name' in patch) cert.attendee_last = patch.last_name;
+    if ('email' in patch && patch.email) cert.attendee_email = patch.email;
+    if ('township' in patch) cert.attendee_township = patch.township;
+    if ('county' in patch) cert.attendee_county = patch.county;
+    if (Object.keys(cert).length) await supabase.from('certificates').update(cert).eq('id', certificateId);
+  }
+  return NextResponse.json({ ok: true, registrant: data, certificate_updated: !!certificateId });
 }
 
 // DELETE — remove a registrant (and their scans). Refused once a certificate

@@ -322,8 +322,8 @@ function LetterKeyboard({ onKey }: { onKey: (key: string) => void }) {
             </button>
           ))}
           {i === 2 && (
-            <button type="button" onPointerDown={tap('back')} aria-label="Delete" className={`${keyCls} ${h} flex-[1.8] max-w-[12rem] bg-gray-100`}>
-              <Delete className="w-9 h-9" />
+            <button type="button" onPointerDown={tap('back')} aria-label="Delete" className={`${keyCls} ${h} flex-[2.2] max-w-[14rem] bg-gray-100 gap-2 text-[clamp(1.25rem,3vh,1.875rem)]`}>
+              <Delete className="w-8 h-8 flex-shrink-0" /> Delete
             </button>
           )}
         </div>
@@ -335,8 +335,8 @@ function LetterKeyboard({ onKey }: { onKey: (key: string) => void }) {
         <button type="button" onPointerDown={tap('-')} className={`${keyCls} ${h} w-24 text-3xl`}>
           -
         </button>
-        <button type="button" onPointerDown={tap(' ')} className={`${keyCls} ${h} flex-1 text-xl text-gray-500`}>
-          space
+        <button type="button" onPointerDown={tap(' ')} className={`${keyCls} ${h} flex-1 text-[clamp(1.5rem,3.6vh,2.25rem)]`}>
+          Space
         </button>
       </div>
     </div>

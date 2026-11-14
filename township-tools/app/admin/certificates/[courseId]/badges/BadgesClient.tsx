@@ -1092,17 +1092,6 @@ function RegistrantsCard({
                           },
                         },
                         {
-                          label: 'Copy QR text',
-                          onClick: async () => {
-                            try {
-                              await navigator.clipboard.writeText(r.badge_token);
-                              setNotice(`Copied ${r.first_name} ${r.last_name}'s QR code. Paste it into a QR code on the NIIMBOT label.`);
-                            } catch {
-                              window.prompt('Copy this QR code text:', r.badge_token);
-                            }
-                          },
-                        },
-                        {
                           label: 'Cancel badge',
                           onClick: () =>
                             call(

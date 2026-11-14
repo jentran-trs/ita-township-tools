@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, FileText, Loader2, RefreshCw, Trash2, Upload, X } from 'lucide-react';
+import { Check, FileText, Loader2, RefreshCw, Upload, X } from 'lucide-react';
 import { SignatureUpload } from '@/components/certificates/SignatureUpload';
 import { suggestCourseId } from '@/lib/certificates/course-id';
 import {
@@ -63,7 +63,6 @@ export function CourseForm({ mode, initial, existingCourseIds, defaultSignature,
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedFlash, setSavedFlash] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const [courseIdEdited, setCourseIdEdited] = useState(mode === 'edit');
   const errorRef = useRef<HTMLDivElement>(null);
 
@@ -198,25 +197,6 @@ export function CourseForm({ mode, initial, existingCourseIds, defaultSignature,
     }
   };
 
-  const onDelete = async () => {
-    if (!initial.id) return;
-    const message =
-      attendeeCount && attendeeCount > 0
-        ? `Delete this course AND its ${attendeeCount} issued certificate${attendeeCount === 1 ? '' : 's'}?\n\nThis is permanent. Attendees will no longer be able to download these certificates, and the credential IDs will no longer verify.`
-        : 'Delete this course? This is permanent.';
-    if (!confirm(message)) return;
-    setDeleting(true);
-    try {
-      const res = await fetch(`/api/admin/certificates/courses/${initial.id}`, { method: 'DELETE' });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Delete failed');
-      router.push('/admin/certificates');
-    } catch (e: any) {
-      setError(e.message || 'Delete failed');
-      setDeleting(false);
-    }
-  };
-
   const editCaption = useMemo(() => {
     if (mode !== 'edit') return null;
     if (!attendeeCount) return 'Edits apply to all certificates issued by this course the next time an attendee downloads.';
@@ -225,20 +205,6 @@ export function CourseForm({ mode, initial, existingCourseIds, defaultSignature,
 
   return (
     <div className="space-y-6">
-      {mode === 'edit' && (
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={onDelete}
-            disabled={deleting}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/40 rounded-lg hover:bg-red-100 dark:hover:bg-red-950/60 disabled:opacity-50"
-          >
-            <Trash2 className="w-4 h-4" />
-            {deleting ? 'Deleting…' : 'Delete Course'}
-          </button>
-        </div>
-      )}
-
       {error && (
         <div
           ref={errorRef}

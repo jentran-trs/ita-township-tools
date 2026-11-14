@@ -12,6 +12,8 @@ type Eligibility = { eligible: boolean; reason?: string; hold: boolean };
 
 // Who gets a certificate from badge attendance:
 //  - Checked in and out every day → full course hours.
+//  - Course has hours per day (v38) → the hours for each day they checked
+//    in and out, as long as no day is half-done (in without out).
 //  - Partial credit entered by Jen with more than 0 hours → those hours.
 //  - Anyone Jen chooses to "Issue anyway" after checking them herself.
 //  - Everyone else is held, with the reasons shown. Nobody without an email
@@ -37,7 +39,7 @@ function eligibility(r: AttendanceRow, forced: Set<string>): Eligibility {
 }
 
 function hoursFor(r: AttendanceRow, courseHours: number) {
-  return r.day_hours ? r.credit_hours : courseHours;
+  return r.cert_hours_override ?? courseHours;
 }
 
 // GET — preview: who would get a certificate and who is held back, and why.
@@ -52,7 +54,7 @@ export async function GET(_req: Request, { params }: { params: { courseId: strin
     id: r.id,
     name: `${r.first_name} ${r.last_name}`,
     credit_hours: hoursFor(r, courseHours),
-    partial: !!r.day_hours,
+    partial: r.cert_hours_override != null,
     issued: !!r.certificate_id,
     has_email: !!r.email,
     payment_due: r.payment_status === 'due',
@@ -85,7 +87,7 @@ export async function POST(req: Request, { params }: { params: { courseId: strin
   for (const r of data.rows.filter((x) => x.certificate_id)) {
     await supabase
       .from('certificates')
-      .update({ hours_override: r.day_hours ? r.credit_hours : null, payment_hold: r.payment_status === 'due' })
+      .update({ hours_override: r.cert_hours_override, payment_hold: r.payment_status === 'due' })
       .eq('id', r.certificate_id!);
   }
 
@@ -107,7 +109,7 @@ export async function POST(req: Request, { params }: { params: { courseId: strin
   const failed: { name: string; reason: string }[] = [];
 
   for (const r of targets) {
-    const hoursOverride = r.day_hours ? r.credit_hours : null;
+    const hoursOverride = r.cert_hours_override;
     const paymentHold = r.payment_status === 'due';
     const existingId = existingByKey.get(recipientKey(r.email, r.first_name, r.last_name));
     let certId = existingId as string | undefined;

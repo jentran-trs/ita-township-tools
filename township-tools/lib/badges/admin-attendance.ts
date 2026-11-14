@@ -39,6 +39,10 @@ export type AttendanceRow = {
   reasons: string[];
   // Hours that would go on the certificate.
   credit_hours: number;
+  // What to store in certificates.hours_override (null = course hours).
+  cert_hours_override: number | null;
+  // Days with both a check-in and a check-out.
+  days_attended: number;
   // Every entry for this person, oldest first (removed ones included).
   log: ScanLogEntry[];
 };
@@ -54,7 +58,8 @@ export async function loadCourseAttendance(courseId: string): Promise<CourseAtte
   const supabase = createServerSupabaseClient();
   const { data: course } = await supabase
     .from('cert_courses')
-    .select('id, course_id, name, hours, cert_type, course_date, course_end_date, event_start_time, event_end_time, badge_checkin_enabled')
+    // '*' so the v38 day_hours column is read when present.
+    .select('*')
     .eq('id', courseId)
     .maybeSingle();
   if (!course) return null;
@@ -84,34 +89,46 @@ export async function loadCourseAttendance(courseId: string): Promise<CourseAtte
   const rows: AttendanceRow[] = (regs || []).map((r: any) => {
     const attendance = computeAttendance(days, byPerson.get(r.id) || []);
     const reasons: string[] = [];
+    // Hours per day set on the course: each full day earns its hours, and a
+    // day someone simply didn't come isn't a problem, just fewer hours.
+    const plan = dayPlan(course.day_hours, days);
     if (attendance.anyScan) {
       for (const d of attendance.days) {
         const label = formatCourseDates(d.date, null, 'short').replace(/, \d{4}$/, '');
         if (d.checkIn && !d.checkOut) reasons.push(`No check-out on ${label}`);
         else if (!d.checkIn && d.checkOut) reasons.push(`No check-in on ${label}`);
-        else if (!d.checkIn && !d.checkOut) reasons.push(`Not scanned on ${label}`);
+        else if (!d.checkIn && !d.checkOut && !plan) reasons.push(`Not scanned on ${label}`);
       }
     }
+    const attendanceOk = attendance.anyScan && reasons.length === 0;
     if (r.payment_status === 'due') {
       const owed = r.balance_due != null && Number(r.balance_due) > 0 ? ` ($${Number(r.balance_due).toFixed(2)} due)` : '';
       reasons.push(`Payment not completed${owed}`);
     }
     const status: AttendanceRow['status'] = !attendance.anyScan ? 'no_show' : reasons.length ? 'review' : 'attended';
-    const credit = r.day_hours
-      ? Math.round(days.reduce((sum, d) => sum + (Number(r.day_hours[d]) || 0), 0) * 10) / 10
+    const courseHours = Number(course.hours);
+    const daysAttended = attendance.days.filter((d) => d.complete).length;
+    const earned = plan
+      ? round1(attendance.days.reduce((sum, d) => sum + (d.complete ? plan[d.date] : 0), 0))
       : attendance.attended
-        ? Number(course.hours)
+        ? courseHours
         : 0;
+    // Partial credit entered by hand wins; otherwise what they earned.
+    const credit = r.day_hours ? round1(days.reduce((sum, d) => sum + (Number(r.day_hours[d]) || 0), 0)) : earned;
+    const complete = plan ? attendanceOk && earned > 0 : attendance.attended;
+    const override = r.day_hours ? credit : plan && complete && earned !== courseHours ? earned : null;
     return {
       ...r,
       balance_due: r.balance_due != null ? Number(r.balance_due) : null,
       payment_status: r.payment_status ?? null,
       payment_method: r.payment_method ?? null,
       attendance,
-      attendance_complete: attendance.attended,
+      attendance_complete: complete,
       status,
       reasons,
       credit_hours: credit,
+      cert_hours_override: override,
+      days_attended: daysAttended,
       log: (byPerson.get(r.id) || [])
         .slice()
         .sort((a: any, b: any) => String(a.scanned_at).localeCompare(String(b.scanned_at)))
@@ -131,4 +148,21 @@ export async function loadCourseAttendance(courseId: string): Promise<CourseAtte
   });
 
   return { course, days, rows };
+}
+
+const round1 = (n: number) => Math.round(n * 10) / 10;
+
+/**
+ * The course's hours per day, if set for every event day (v38). Returns null
+ * when not set, so the course uses the all-days rule.
+ */
+export function dayPlan(raw: unknown, days: string[]): Record<string, number> | null {
+  if (!raw || typeof raw !== 'object' || days.length < 2) return null;
+  const plan: Record<string, number> = {};
+  for (const d of days) {
+    const v = Number((raw as any)[d]);
+    if (!Number.isFinite(v) || v < 0) return null;
+    plan[d] = v;
+  }
+  return plan;
 }

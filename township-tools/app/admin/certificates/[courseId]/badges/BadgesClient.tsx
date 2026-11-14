@@ -21,7 +21,17 @@ type Course = {
   event_end_time: string | null;
   badge_tagline: string | null;
   has_pin: boolean;
+  // Hours per event day for multi-day courses (v38); null = all days for full hours.
+  day_hours?: Record<string, number> | null;
 };
+
+/** The course's hours per day, when set for every event day. */
+function coursePlan(course: Course, days: string[]): Record<string, number> | null {
+  const raw = course.day_hours;
+  if (!raw || days.length < 2) return null;
+  for (const d of days) if (!Number.isFinite(Number(raw[d]))) return null;
+  return raw;
+}
 
 type Registrant = {
   id: string;
@@ -434,8 +444,19 @@ function SettingsCard({ course, onSaved }: { course: Course; onSaved: () => void
   const [pin, setPin] = useState('');
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const days = eventDays(course.course_date, course.course_end_date);
+  const multiDay = days.length > 1;
+  const [dayHours, setDayHours] = useState<Record<string, string>>(() =>
+    Object.fromEntries(days.map((d) => [d, course.day_hours?.[d] != null ? String(course.day_hours[d]) : '']))
+  );
+  const filled = days.filter((d) => dayHours[d]?.trim() !== '');
+  const dayTotal = Math.round(days.reduce((sum, d) => sum + (parseFloat(dayHours[d]) || 0), 0) * 100) / 100;
 
   const save = async () => {
+    if (multiDay && filled.length > 0 && filled.length < days.length) {
+      setMsg({ ok: false, text: 'Enter hours for every day, or leave them all blank.' });
+      return;
+    }
     setSaving(true);
     setMsg(null);
     try {
@@ -445,6 +466,9 @@ function SettingsCard({ course, onSaved }: { course: Course; onSaved: () => void
         event_end_time: end || null,
         badge_tagline: tagline,
       };
+      if (multiDay) {
+        body.day_hours = filled.length ? Object.fromEntries(days.map((d) => [d, parseFloat(dayHours[d])])) : null;
+      }
       if (pin.trim()) body.scanner_pin = pin.trim();
       const res = await fetch(`/api/admin/certificates/courses/${course.id}/badges`, {
         method: 'PATCH',
@@ -530,6 +554,45 @@ function SettingsCard({ course, onSaved }: { course: Course; onSaved: () => void
           </span>
         </label>
       </div>
+
+      {multiDay && (
+        <div className="mt-5 border-t border-gray-200 dark:border-gray-800 pt-4">
+          <div className="font-medium text-sm mb-1">Hours per day</div>
+          <p className="text-xs text-gray-500 mb-3">
+            Optional. Leave blank and people must check in and out <strong>every</strong> day to get the full{' '}
+            {Number(course.hours)} hours. Fill these in and each day someone checks in and out earns that day&apos;s hours,
+            so someone who comes only one day gets that day&apos;s hours automatically.
+          </p>
+          <div className="flex flex-wrap gap-3 items-end">
+            {days.map((d) => (
+              <label key={d} className="text-sm">
+                <span className="block text-xs text-gray-500 mb-0.5">{dayLabel(d)}</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={24}
+                  step={0.25}
+                  value={dayHours[d] ?? ''}
+                  onChange={(e) => setDayHours((v) => ({ ...v, [d]: e.target.value }))}
+                  placeholder="hrs"
+                  className={inputCls + ' w-24'}
+                  aria-label={`Hours for ${dayLabel(d)}`}
+                />
+              </label>
+            ))}
+            {filled.length > 0 && (
+              <div className="text-sm pb-2">
+                Total <strong>{dayTotal}</strong> hrs
+                {filled.length === days.length && dayTotal !== Number(course.hours) && (
+                  <span className="block text-xs text-amber-700 dark:text-amber-400">
+                    The course is set to {Number(course.hours)} hours (Course settings). Someone at every day gets {dayTotal}.
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {course.badge_checkin_enabled && course.has_pin && <ScannerLink courseId={course.id} />}
 
@@ -838,9 +901,19 @@ function RegistrantsCard({
       </div>
       {multiDay && (
         <p className="text-sm text-gray-500 mb-3">
-          Everyone gets full credit ({Number(course.hours)} hours) unless you click <strong>Partial credit</strong>{' '}
-          for someone who missed a day and enter the hours for each day they attended. Their certificate then shows
-          the total of those hours.
+          {coursePlan(course, days) ? (
+            <>
+              Credit comes from attendance: each day someone checks in and out earns that day&apos;s hours (
+              {days.map((d) => `${dayLabel(d)}: ${coursePlan(course, days)![d]} hrs`).join(', ')}). Click{' '}
+              <strong>Partial credit</strong> to set someone&apos;s hours by hand instead.
+            </>
+          ) : (
+            <>
+              Everyone who checks in and out every day gets full credit ({Number(course.hours)} hours). Click{' '}
+              <strong>Partial credit</strong> for someone who missed a day and enter the hours for each day they
+              attended, or set <strong>Hours per day</strong> in Setup &amp; import to do this automatically.
+            </>
+          )}
         </p>
       )}
       {registrants.length > 0 && (
@@ -958,6 +1031,7 @@ function RegistrantsCard({
                         registrant={r}
                         days={days}
                         courseHours={Number(course.hours)}
+                        plan={coursePlan(course, days)}
                         busy={busy === r.id}
                         onSave={(dayHours) =>
                           call(r.id, { method: 'PATCH', body: JSON.stringify({ day_hours: dayHours }) })
@@ -1097,12 +1171,14 @@ function PartialCreditCell({
   registrant,
   days,
   courseHours,
+  plan,
   busy,
   onSave,
 }: {
   registrant: Registrant;
   days: string[];
   courseHours: number;
+  plan: Record<string, number> | null;
   busy: boolean;
   onSave: (dayHours: Record<string, number> | null) => void;
 }) {
@@ -1111,7 +1187,7 @@ function PartialCreditCell({
   const [values, setValues] = useState<Record<string, string>>({});
 
   const startEditing = () => {
-    setValues(Object.fromEntries(days.map((d) => [d, saved?.[d] != null ? String(saved[d]) : ''])));
+    setValues(Object.fromEntries(days.map((d) => [d, saved?.[d] != null ? String(saved[d]) : plan ? String(plan[d]) : ''])));
     setEditing(true);
   };
 
@@ -1119,7 +1195,7 @@ function PartialCreditCell({
     if (!saved) {
       return (
         <div className="whitespace-nowrap">
-          <span className="text-gray-700 dark:text-gray-300">Full credit ({courseHours} hrs)</span>
+          <span className="text-gray-700 dark:text-gray-300">{plan ? 'From attendance' : `Full credit (${courseHours} hrs)`}</span>
           <button type="button" disabled={busy} onClick={startEditing} className="ml-3 text-xs text-amber-700 dark:text-amber-400 hover:underline">
             Partial credit
           </button>
@@ -1190,7 +1266,7 @@ function PartialCreditCell({
             }}
             className="text-gray-500 hover:underline"
           >
-            Back to full credit
+            {plan ? 'Back to automatic' : 'Back to full credit'}
           </button>
         )}
       </div>
@@ -1210,7 +1286,7 @@ function ScannerLink({ courseId }: { courseId: string }) {
       <ShareLinkRow
         title="Print link for whoever prints the badges (e.g. Lydia)"
         url={`${origin}/print/${courseId}`}
-        note="They open it on a computer and enter the same PIN to print or download the badge PDFs, with printing instructions on the page."
+        note="They open it on a computer and enter the same PIN to print the badges, with printing instructions on the page."
       />
       <p className="text-xs text-gray-500">No Township Tools login needed for either. Send the PIN separately from the link.</p>
     </div>
@@ -1279,6 +1355,8 @@ type AttRow = {
   status: 'attended' | 'review' | 'no_show';
   reasons: string[];
   credit_hours: number;
+  cert_hours_override?: number | null;
+  days_attended?: number;
   balance_due: number | null;
   payment_status: 'paid' | 'due' | null;
   payment_method: string | null;
@@ -1558,7 +1636,14 @@ function AttendanceCard({
                     </td>
                   )}
                   <td className="py-2 whitespace-nowrap">
-                    {r.credit_hours} hrs{r.day_hours ? <span className="text-xs text-amber-600"> partial</span> : null}
+                    {r.credit_hours} hrs
+                    {r.day_hours ? (
+                      <span className="text-xs text-amber-600"> partial (by hand)</span>
+                    ) : r.cert_hours_override != null && days.length > 1 ? (
+                      <span className="block text-xs text-amber-600">
+                        {r.days_attended} of {days.length} days
+                      </span>
+                    ) : null}
                   </td>
                 </tr>
                 {historyId === r.id && (
@@ -1842,8 +1927,11 @@ function IssueCard({ course, onIssued, manualHref }: { course: Course; onIssued:
         <div>
           <h2 className="text-base font-bold mb-1">Issue certificates</h2>
           <p className="text-sm text-gray-500">
-            <strong>Ready</strong> = checked in and out every day (full {Number(course.hours)} hours), or given partial
-            credit. Anyone who still owes gets theirs on <strong>payment hold</strong>: they see it in the public lookup
+            <strong>Ready</strong> ={' '}
+            {coursePlan(course, eventDays(course.course_date, course.course_end_date))
+              ? 'checked in and out on at least one day, with no day left half-done; they get the hours for the days they attended'
+              : `checked in and out every day (full ${Number(course.hours)} hours)`}
+            , or given partial credit. Anyone who still owes gets theirs on <strong>payment hold</strong>: they see it in the public lookup
             with a note to complete payment, and can download it once you mark them paid. Nobody gets two certificates.
           </p>
         </div>

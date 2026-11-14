@@ -644,9 +644,9 @@ function RegistrantsCard({
                         }
                       }}
                       className="inline-flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300 hover:underline mr-3"
-                      title="NIIMBOT 75 x 50 mm label"
+                      title="Save a 75 x 50 mm NIIMBOT label image with this person's QR code"
                     >
-                      <Tag className="w-3 h-3" /> Label
+                      <Tag className="w-3 h-3" /> NIIMBOT label
                     </button>
                     <button
                       type="button"

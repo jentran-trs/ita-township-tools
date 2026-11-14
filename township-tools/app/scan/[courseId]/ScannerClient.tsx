@@ -574,7 +574,7 @@ function ScanScreen({
             }}
             className="w-full flex items-center justify-center gap-2 py-3 bg-amber-500 text-white rounded-xl font-semibold"
           >
-            <Tag className="w-5 h-5" /> NIIMBOT label image for {lastWalkIn.first_name} {lastWalkIn.last_name}
+            <Tag className="w-5 h-5" /> Save NIIMBOT label with QR code ({lastWalkIn.first_name} {lastWalkIn.last_name})
           </button>
           <button
             type="button"

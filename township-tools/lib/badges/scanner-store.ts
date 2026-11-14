@@ -9,6 +9,7 @@ export type RosterPerson = {
   title: string | null;
   township: string | null;
   county: string | null;
+  organization?: string | null;
   badge_token: string;
   is_walk_in: boolean;
   // 'due' = owes (AMO Balance Due > $0, or a walk-in at a paid event).
@@ -47,6 +48,8 @@ export type WalkInRecord = {
   payment_status?: 'paid' | 'due' | null;
   township?: string;
   county?: string;
+  // Company for sponsors, speakers, vendors.
+  organization?: string;
 };
 
 export type ScannerState = {

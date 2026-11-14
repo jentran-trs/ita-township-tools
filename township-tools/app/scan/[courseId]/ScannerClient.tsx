@@ -564,6 +564,7 @@ function ScanScreen({
                   title: lastWalkIn.title,
                   township: lastWalkIn.township,
                   county: lastWalkIn.county,
+                  organization: lastWalkIn.organization,
                   badgeToken: lastWalkIn.badge_token,
                   eventName: event.name,
                 });
@@ -640,6 +641,7 @@ function ScanScreen({
               title: w.title || null,
               township: w.township || null,
               county: w.county || null,
+              organization: w.organization || null,
               badge_token: w.badge_token,
               is_walk_in: true,
               payment_status: tracksPayment ? (pay ? 'paid' : 'due') : null,
@@ -896,7 +898,7 @@ function WalkInSheet({
   onClose: () => void;
 }) {
   const [payMethod, setPayMethod] = useState<'none' | 'check' | 'card'>('none');
-  const [f, setF] = useState({ first_name: '', last_name: '', title: '', township: '', county: '', email: '', registrant_type: 'Attendee' });
+  const [f, setF] = useState({ first_name: '', last_name: '', title: '', township: '', county: '', organization: '', email: '', registrant_type: 'Attendee' });
   const [checkIn, setCheckIn] = useState(mode === 'in');
   const field = (k: keyof typeof f, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
     <label className="block">
@@ -906,6 +908,8 @@ function WalkInSheet({
   );
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim());
   const ok = f.first_name.trim() && f.last_name.trim() && emailOk;
+  // Sponsors, speakers and vendors come from a company, not a township.
+  const usesOrg = ['Sponsor', 'Speaker', 'Resource Vendor'].includes(f.registrant_type);
   return (
     <Sheet title="Add walk-in" onClose={onClose}>
       <form
@@ -921,8 +925,9 @@ function WalkInSheet({
               last_name: f.last_name.trim(),
               title: f.title.trim() || undefined,
               registrant_type: f.registrant_type,
-              township: f.township.trim() || undefined,
-              county: f.county.trim() || undefined,
+              township: (!usesOrg && f.township.trim()) || undefined,
+              county: (!usesOrg && f.county.trim()) || undefined,
+              organization: (usesOrg && f.organization.trim()) || undefined,
               email: f.email.trim(),
             },
             checkIn,
@@ -949,10 +954,14 @@ function WalkInSheet({
             </select>
           </label>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          {field('township', 'Township', { autoCapitalize: 'words' })}
-          {field('county', 'County', { autoCapitalize: 'words' })}
-        </div>
+        {usesOrg ? (
+          field('organization', 'Organization', { autoCapitalize: 'words', placeholder: 'Company or agency name' })
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            {field('township', 'Township', { autoCapitalize: 'words' })}
+            {field('county', 'County', { autoCapitalize: 'words' })}
+          </div>
+        )}
         {field('email', 'Email * (for their certificate)', { type: 'email', inputMode: 'email', autoCapitalize: 'none', required: true })}
         {f.email.trim() && !emailOk && <p className="text-sm text-red-600 -mt-2">Check the email: it should look like name@example.com.</p>}
         <label className="flex items-center gap-2 text-sm">

@@ -937,7 +937,7 @@ function NameLookup({
                       {badgeNumberLabel(p)}
                     </span>
                   ) : (
-                    <span className="flex-shrink-0 text-xs text-gray-400 text-right w-20">No badge printed yet</span>
+                    <span className="flex-shrink-0 text-lg font-extrabold text-[#1B2E5B] text-right">Walk-in</span>
                   )}
                 </li>
               ))}

@@ -1094,8 +1094,29 @@ function BadgeNumberNote({
   onError: (text: string) => void;
 }) {
   const [busy, setBusy] = useState(false);
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
   const pre = registrants.filter((r) => !r.is_walk_in);
   const numbered = pre.filter((r) => r.badge_number != null).length;
+  const highest = pre.reduce((m, r) => Math.max(m, r.badge_number || 0), 0);
+  const fresh = pre.length - numbered;
+  const printHref = (f: number, t: number) => `/admin/certificates/${courseId}/badges/print?from=${f}&to=${t}`;
+  // Late registrants (e.g. Monday's import): number them after everyone else and print only them.
+  const printNew = async () => {
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/admin/certificates/courses/${courseId}/registrants/renumber`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'assign' }),
+      });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Could not number badges');
+      window.location.href = printHref(highest + 1, highest + fresh);
+    } catch (e: any) {
+      onError(e.message);
+      setBusy(false);
+    }
+  };
   const run = async (mode: 'assign' | 'renumber') => {
     if (
       mode === 'renumber' &&
@@ -1127,10 +1148,34 @@ function BadgeNumberNote({
         numbers. Walk-ins are numbered separately (Walk-in #1, #2…).
         {numbered > 0 && numbered < pre.length && ` ${pre.length - numbered} not numbered yet.`}
       </span>
-      {numbered < pre.length && (
+      {fresh > 0 && numbered > 0 && (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={printNew}
+          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500 text-white font-semibold hover:bg-amber-600"
+          title={`Gives the ${fresh} new people #${highest + 1}–#${highest + fresh} and opens the print page with only their badges`}
+        >
+          <Printer className="w-3.5 h-3.5" /> Number &amp; print the {fresh} new badge{fresh === 1 ? '' : 's'} (#{highest + 1}–#{highest + fresh})
+        </button>
+      )}
+      {fresh > 0 && numbered === 0 && (
         <button type="button" disabled={busy} onClick={() => run('assign')} className="font-semibold text-amber-700 dark:text-amber-400 hover:underline">
           Number them now
         </button>
+      )}
+      {numbered > 0 && (
+        <span className="inline-flex items-center gap-1">
+          Print only #
+          <input value={from} onChange={(e) => setFrom(e.target.value.replace(/\D/g, ''))} className={inputCls + ' w-16 py-1'} placeholder="from" aria-label="From badge number" />
+          to #
+          <input value={to} onChange={(e) => setTo(e.target.value.replace(/\D/g, ''))} className={inputCls + ' w-16 py-1'} placeholder="to" aria-label="To badge number" />
+          {from && (
+            <Link href={printHref(parseInt(from, 10), parseInt(to || String(highest), 10))} className="font-semibold text-amber-700 dark:text-amber-400 hover:underline">
+              Print
+            </Link>
+          )}
+        </span>
       )}
       {numbered > 0 && (
         <button type="button" disabled={busy} onClick={() => run('renumber')} className="text-gray-600 dark:text-gray-300 hover:underline">

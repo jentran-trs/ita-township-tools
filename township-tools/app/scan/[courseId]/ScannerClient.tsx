@@ -349,7 +349,7 @@ function ScanScreen({
     }
   });
   const [result, setResult] = useState<Result | null>(null);
-  const [sheet, setSheet] = useState<null | 'search' | 'walkin'>(null);
+  const [sheet, setSheet] = useState<null | 'search' | 'walkin' | 'lookup'>(null);
   const [lastWalkIn, setLastWalkIn] = useState<RosterPerson | null>(null);
   // Someone who owes, waiting for the team to choose check / card / no payment.
   const [paymentFor, setPaymentFor] = useState<{ person: RosterPerson; source: 'scan' | 'name_search' } | null>(null);
@@ -575,6 +575,13 @@ function ScanScreen({
       </div>
 
       <div className="px-3 grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={() => setSheet('lookup')}
+          className="col-span-2 flex items-center justify-center gap-2 py-3 bg-[#1B2E5B] text-white rounded-xl font-semibold shadow-sm"
+        >
+          <Search className="w-5 h-5" /> Look up badge # by name
+        </button>
         <button type="button" onClick={() => setSheet('search')} className="flex items-center justify-center gap-2 py-3 bg-white rounded-xl font-semibold shadow-sm">
           <Search className="w-5 h-5" /> Find by name
         </button>
@@ -636,6 +643,9 @@ function ScanScreen({
         Today: <strong>{counts.ins}</strong> checked in · <strong>{counts.outs}</strong> checked out · {counts.total} registered
       </div>
 
+      {sheet === 'lookup' && (
+        <SearchSheet roster={state.roster} todays={todays} mode={mode} lookupOnly onPick={() => {}} onClose={() => setSheet(null)} />
+      )}
       {sheet === 'search' && (
         <SearchSheet
           roster={state.roster}
@@ -873,12 +883,15 @@ function SearchSheet({
   mode,
   onPick,
   onClose,
+  lookupOnly,
 }: {
   roster: RosterPerson[];
   todays: ScanRecord[];
   mode: Mode;
   onPick: (p: RosterPerson) => void;
   onClose: () => void;
+  // Just show badge numbers; tapping a name records nothing.
+  lookupOnly?: boolean;
 }) {
   const [q, setQ] = useState('');
   const matches = useMemo(() => {
@@ -903,7 +916,12 @@ function SearchSheet({
   };
 
   return (
-    <Sheet title={`Find by name · ${mode === 'in' ? 'Check IN' : 'Check OUT'}`} onClose={onClose}>
+    <Sheet title={lookupOnly ? 'Look up badge number' : `Find by name · ${mode === 'in' ? 'Check IN' : 'Check OUT'}`} onClose={onClose}>
+      {lookupOnly && (
+        <p className="text-sm text-gray-600 mb-2">
+          Find their badge by the number, hand it to them, then close this and scan the badge. Nothing is recorded here.
+        </p>
+      )}
       <input
         autoFocus
         value={q}
@@ -912,10 +930,19 @@ function SearchSheet({
         className="w-full px-4 py-3 border border-gray-300 rounded-xl mb-3"
       />
       {q.trim() && !matches.length && <p className="text-sm text-gray-500">No one by that name. Use “Add walk-in”.</p>}
+      {lookupOnly && q.trim() && matches.some((p) => !badgeNumberLabel(p)) && (
+        <p className="text-xs text-gray-500 mb-1">
+          No number? Their badge hasn&apos;t been printed yet. Use Find by name to check them in.
+        </p>
+      )}
       <ul className="divide-y">
         {matches.map((p) => (
           <li key={p.id}>
-            <button type="button" onClick={() => onPick(p)} className="w-full text-left py-3 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => (lookupOnly ? undefined : onPick(p))}
+              className={`w-full text-left py-3 flex items-center gap-3 ${lookupOnly ? 'cursor-default' : ''}`}
+            >
               <span className="flex-1 min-w-0">
               <div className="font-semibold">
                 {p.first_name} {p.last_name}
@@ -928,7 +955,7 @@ function SearchSheet({
               </div>
               </span>
               {badgeNumberLabel(p) && (
-                <span className={`flex-shrink-0 font-extrabold text-[#1B2E5B] text-right leading-none ${p.is_walk_in ? 'text-base' : 'text-2xl'}`}>
+                <span className={`flex-shrink-0 font-extrabold text-[#1B2E5B] text-right leading-none ${p.is_walk_in ? 'text-base' : lookupOnly ? 'text-4xl' : 'text-2xl'}`}>
                   {badgeNumberLabel(p)}
                 </span>
               )}

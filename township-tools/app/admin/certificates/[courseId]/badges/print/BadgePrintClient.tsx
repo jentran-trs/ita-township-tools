@@ -44,6 +44,7 @@ export function BadgePrintClient({
   event,
   backHref,
   showShareLink,
+  range,
 }: {
   courseId: string;
   badges: BadgeData[];
@@ -51,7 +52,10 @@ export function BadgePrintClient({
   // Admin page only: link back to Badges & check-in, and the link to share with the printer.
   backHref?: string;
   showShareLink?: boolean;
+  // Printing only badges #from–#to (e.g. late registrants).
+  range?: { from: number | null; to: number | null };
 }) {
+  const rangeLabel = range ? `#${range.from ?? 1}–${range.to ? `#${range.to}` : 'end'}` : null;
   const [side, setSide] = useState<Side>('front');
   const [start, setStart] = useState(1);
   const [nudge, setNudge] = useState<Nudge>({ x: 0, y: 0 });
@@ -114,11 +118,11 @@ export function BadgePrintClient({
             <ArrowLeft className="w-4 h-4" /> Back to badges
           </Link>
         )}
-        {showShareLink && <ShareWithPrinter courseId={courseId} eventName={event.name} />}
+        {showShareLink && <ShareWithPrinter courseId={courseId} eventName={event.name} range={range} rangeLabel={rangeLabel} />}
 
         <div className="bg-white rounded-xl p-5 space-y-4 text-sm">
           <div>
-            <h1 className="text-lg font-bold">Print badges</h1>
+            <h1 className="text-lg font-bold">Print badges{rangeLabel ? ` ${rangeLabel} only` : ''}</h1>
             <p className="text-gray-600">
               {badges.length} badge{badges.length === 1 ? '' : 's'} · {sheets.length} sheet{sheets.length === 1 ? '' : 's'} · Avery 5390 (3.5″ × 2.25″) · names on the front, QR code on the back
             </p>
@@ -272,10 +276,26 @@ function PrintInstructions() {
   );
 }
 
-function ShareWithPrinter({ courseId, eventName }: { courseId: string; eventName: string }) {
-  const url = typeof window !== 'undefined' ? `${window.location.origin}/print/${courseId}` : `/print/${courseId}`;
+function ShareWithPrinter({
+  courseId,
+  eventName,
+  range,
+  rangeLabel,
+}: {
+  courseId: string;
+  eventName: string;
+  range?: { from: number | null; to: number | null };
+  rangeLabel?: string | null;
+}) {
+  const q = new URLSearchParams();
+  if (range?.from) q.set('from', String(range.from));
+  if (range?.to) q.set('to', String(range.to));
+  const path = `/print/${courseId}${q.toString() ? `?${q}` : ''}`;
+  const url = typeof window !== 'undefined' ? `${window.location.origin}${path}` : path;
   const message = [
-    `Hi Lydia, here are the name badges for ${eventName}.`,
+    rangeLabel
+      ? `Hi Lydia, here are the NEW name badges for ${eventName} (badges ${rangeLabel}). Please print just these and add them to the end of the box.`
+      : `Hi Lydia, here are the name badges for ${eventName}.`,
     '',
     `Open this link: ${url}`,
     'Enter the event PIN (I will send it separately). No Township Tools login is needed.',

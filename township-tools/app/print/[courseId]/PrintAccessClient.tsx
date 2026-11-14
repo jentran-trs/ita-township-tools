@@ -13,15 +13,24 @@ export function PrintAccessClient({ courseId }: { courseId: string }) {
   const [pin, setPin] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // A link like /print/<id>?from=251&to=260 prints only those badge numbers.
+  const [rangeQuery] = useState(() => {
+    if (typeof window === 'undefined') return '';
+    const q = new URLSearchParams(window.location.search);
+    const p = new URLSearchParams();
+    if (q.get('from')) p.set('from', q.get('from')!);
+    if (q.get('to')) p.set('to', q.get('to')!);
+    return p.toString() ? `?${p}` : '';
+  });
 
   // Already unlocked on this computer (cookie)? Load straight away.
   const loadBadges = useCallback(async (): Promise<boolean> => {
-    const res = await fetch(`/api/scan/${courseId}/badges`, { cache: 'no-store', credentials: 'same-origin' });
+    const res = await fetch(`/api/scan/${courseId}/badges${rangeQuery}`, { cache: 'no-store', credentials: 'same-origin' });
     if (!res.ok) return false;
     setData(await res.json());
     setPhase('ready');
     return true;
-  }, [courseId]);
+  }, [courseId, rangeQuery]);
 
   useEffect(() => {
     (async () => {
@@ -60,7 +69,7 @@ export function PrintAccessClient({ courseId }: { courseId: string }) {
     }
   };
 
-  if (phase === 'ready' && data) return <BadgePrintClient courseId={courseId} badges={data.badges} event={data.event} />;
+  if (phase === 'ready' && data) return <BadgePrintClient courseId={courseId} badges={data.badges} event={data.event}  range={(() => { const q = new URLSearchParams(rangeQuery); const f = parseInt(q.get('from') || '', 10) || null; const t = parseInt(q.get('to') || '', 10) || null; return f || t ? { from: f, to: t } : undefined; })()} />;
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">

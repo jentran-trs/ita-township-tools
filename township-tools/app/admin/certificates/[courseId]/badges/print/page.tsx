@@ -6,13 +6,15 @@ import { badgeFont } from '@/lib/badges/fonts';
 
 export const dynamic = 'force-dynamic';
 
-type Props = { params: { courseId: string }; searchParams: { ids?: string } };
+type Props = { params: { courseId: string }; searchParams: { ids?: string; from?: string; to?: string } };
 
 export default async function BadgePrintPage({ params, searchParams }: Props) {
   if (!(await isSuperadmin())) redirect('/admin/contact-verification');
 
   const ids = (searchParams.ids || '').split(',').map((s) => s.trim()).filter(Boolean);
-  const data = await loadBadgePrintData(params.courseId, ids);
+  const from = parseInt(searchParams.from || '', 10) || null;
+  const to = parseInt(searchParams.to || '', 10) || null;
+  const data = await loadBadgePrintData(params.courseId, ids, { from, to });
   if (!data) notFound();
 
   return (
@@ -23,6 +25,7 @@ export default async function BadgePrintPage({ params, searchParams }: Props) {
         event={data.event}
         backHref={`/admin/certificates/${params.courseId}#registrants`}
         showShareLink
+        range={from || to ? { from, to } : undefined}
       />
     </div>
   );

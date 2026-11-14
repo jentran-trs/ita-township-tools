@@ -13,7 +13,9 @@ import { assignBadgeNumbers, assignWalkInNumbers } from '@/lib/badges/badge-numb
  */
 export async function loadBadgePrintData(
   courseId: string,
-  ids: string[] = []
+  ids: string[] = [],
+  // Only badges #from–#to (pre-registered), e.g. the new ones added Monday.
+  range?: { from?: number | null; to?: number | null }
 ): Promise<{ event: BadgeEvent; badges: BadgeData[] } | null> {
   const supabase = createServerSupabaseClient();
   const { data: course } = await supabase
@@ -35,6 +37,11 @@ export async function loadBadgePrintData(
     .order('last_name', { ascending: true })
     .order('first_name', { ascending: true });
   if (ids.length) query = query.in('id', ids);
+  if (range?.from || range?.to) {
+    query = query.eq('is_walk_in', false);
+    if (range.from) query = query.gte('badge_number', range.from);
+    if (range.to) query = query.lte('badge_number', range.to);
+  }
   const { data: registrants } = await query;
 
   const badges: BadgeData[] = await Promise.all(

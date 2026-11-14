@@ -517,11 +517,11 @@ function SettingsCard({ course, onSaved }: { course: Course; onSaved: () => void
 
       <div className="grid sm:grid-cols-3 gap-4">
         <label className="text-sm">
-          <span className="block font-medium mb-1">Start time</span>
+          <span className="block font-medium mb-1">Event Start Time</span>
           <input type="time" value={start} onChange={(e) => setStart(e.target.value)} className={inputCls + ' w-full'} />
         </label>
         <label className="text-sm">
-          <span className="block font-medium mb-1">End time</span>
+          <span className="block font-medium mb-1">Event End Time</span>
           <input type="time" value={end} onChange={(e) => setEnd(e.target.value)} className={inputCls + ' w-full'} />
         </label>
         <label className="text-sm">

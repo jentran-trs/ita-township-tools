@@ -6,7 +6,7 @@ import { Maximize, Search, X } from 'lucide-react';
 type Person = { first: string; last: string; place: string; number: number };
 type Data = { event: { name: string }; people: Person[]; savedAt: number };
 
-const CLEAR_AFTER_MS = 7_000; // after the last touch or key press
+const CLEAR_AFTER_MS = 5_000; // after the last touch or key press
 const REFRESH_EVERY_MS = 3 * 60_000; // pick up late additions
 const MIN_LETTERS = 2;
 const MAX_SHOWN = 6;

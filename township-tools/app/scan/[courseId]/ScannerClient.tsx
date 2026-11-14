@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import jsQR from 'jsqr';
-import { Camera, CheckCircle2, CloudOff, LogIn, LogOut, RefreshCw, Search, UserPlus, X, XCircle, AlertTriangle, Tag } from 'lucide-react';
+import { Camera, CheckCircle2, CloudOff, LogIn, LogOut, RefreshCw, Search, UserPlus, X, XCircle, AlertTriangle } from 'lucide-react';
 import { easternDate, easternTime } from '@/lib/badges/attendance';
 import { isBadgeToken } from '@/lib/badges/token';
 import { townshipLabel } from '@/lib/certificates/township';
@@ -610,27 +610,12 @@ function ScanScreen({
                 show({ kind: 'error', title: 'Could not make the label', detail: e.message });
               }
             }}
-            className="w-full flex items-center justify-center gap-2 py-3 bg-amber-500 text-white rounded-xl font-semibold"
+            className="w-full py-3 px-4 bg-amber-500 text-white rounded-xl text-center leading-snug"
           >
-            <Tag className="w-5 h-5" /> Save NIIMBOT label with QR code ({lastWalkIn.first_name} {lastWalkIn.last_name})
-          </button>
-          <button
-            type="button"
-            onClick={async () => {
-              try {
-                await navigator.clipboard.writeText(lastWalkIn.badge_token);
-                show({
-                  kind: 'ok',
-                  title: 'QR code copied',
-                  detail: 'In the NIIMBOT app, add a QR code to the label and paste this as its content. Add the name as text.',
-                });
-              } catch {
-                window.prompt('Copy this QR code text into the NIIMBOT app:', lastWalkIn.badge_token);
-              }
-            }}
-            className="mt-2 w-full flex items-center justify-center gap-2 py-3 bg-white rounded-xl font-semibold shadow-sm"
-          >
-            Copy QR code for NIIMBOT
+            <span className="block font-semibold">Save NIIMBOT label with QR code</span>
+            <span className="block text-sm opacity-90">
+              {lastWalkIn.first_name} {lastWalkIn.last_name}
+            </span>
           </button>
         </div>
       )}

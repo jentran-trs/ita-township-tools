@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { assignWalkInNumbers } from '@/lib/badges/badge-numbers';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { requireScanSession } from '@/lib/badges/scan-session';
 import { eventDays } from '@/lib/badges/attendance';
@@ -13,6 +14,9 @@ export async function GET(_req: Request, { params }: { params: { courseId: strin
   if (s.error) return s.error;
   const { course } = s;
   const supabase = createServerSupabaseClient();
+
+  // Walk-ins are numbered in the order they arrived (catches any not numbered yet).
+  await assignWalkInNumbers(supabase, course.id);
 
   const [{ data: registrants, error: rErr }, { data: scans, error: sErr }] = await Promise.all([
     supabase

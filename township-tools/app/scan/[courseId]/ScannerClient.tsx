@@ -570,11 +570,16 @@ function ScanScreen({
         }} mode={mode} />
       </div>
 
-      <div className="px-3 pt-3 min-h-[6.5rem]">
-        {result && <ResultCard result={result} onUndo={result.undoScanId ? () => undoScan(result.undoScanId!) : undefined} />}
+      {/* Search sits right under the camera: look up the badge #, then scan it. */}
+      <div className="pt-2">
+        <NameLookup roster={state.roster} todays={todays} mode={mode} onCheck={(p) => record(p, 'name_search')} onAddWalkIn={() => setSheet('walkin')} />
       </div>
 
-      <NameLookup roster={state.roster} todays={todays} mode={mode} onCheck={(p) => record(p, 'name_search')} onAddWalkIn={() => setSheet('walkin')} />
+      {result && (
+        <div className="px-3 pt-2">
+          <ResultCard result={result} onUndo={result.undoScanId ? () => undoScan(result.undoScanId!) : undefined} />
+        </div>
+      )}
 
       <div className="px-3 pt-2">
         <button type="button" onClick={() => setSheet('walkin')} className="w-full flex items-center justify-center gap-2 py-3 bg-white rounded-xl font-semibold shadow-sm">

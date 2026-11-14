@@ -964,6 +964,9 @@ function AttendanceCard({ course, reloadKey }: { course: Course; reloadKey: numb
           <a href={`/api/admin/certificates/courses/${course.id}/attendance/export`} className={btn + ' bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}>
             <Download className="w-4 h-4" /> Excel
           </a>
+          <Link href={`/admin/certificates/${course.id}/badges/amo-checklist`} className={btn + ' bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}>
+            <Printer className="w-4 h-4" /> AMO checklist
+          </Link>
         </div>
       </div>
 

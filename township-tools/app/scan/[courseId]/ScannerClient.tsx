@@ -574,7 +574,7 @@ function ScanScreen({
         {result && <ResultCard result={result} onUndo={result.undoScanId ? () => undoScan(result.undoScanId!) : undefined} />}
       </div>
 
-      <NameLookup roster={state.roster} todays={todays} mode={mode} onCheck={(p) => record(p, 'name_search')} />
+      <NameLookup roster={state.roster} todays={todays} mode={mode} onCheck={(p) => record(p, 'name_search')} onAddWalkIn={() => setSheet('walkin')} />
 
       <div className="px-3 pt-2">
         <button type="button" onClick={() => setSheet('walkin')} className="w-full flex items-center justify-center gap-2 py-3 bg-white rounded-xl font-semibold shadow-sm">
@@ -864,11 +864,13 @@ function NameLookup({
   todays,
   mode,
   onCheck,
+  onAddWalkIn,
 }: {
   roster: RosterPerson[];
   todays: ScanRecord[];
   mode: Mode;
   onCheck: (p: RosterPerson) => void;
+  onAddWalkIn: () => void;
 }) {
   const [q, setQ] = useState('');
   const matches = useMemo(() => {
@@ -907,7 +909,19 @@ function NameLookup({
       {q.trim() && (
         <div className="mt-2 bg-white rounded-xl shadow-sm px-4">
           {!matches.length ? (
-            <p className="text-sm text-gray-500 py-3">No one by that name. Use “Add walk-in”.</p>
+            <div className="py-3 flex items-center gap-3">
+              <p className="flex-1 text-sm text-gray-600">No one by that name, so they&apos;re a walk-in.</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setQ('');
+                  onAddWalkIn();
+                }}
+                className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 bg-[#1B2E5B] text-white rounded-lg font-semibold text-sm"
+              >
+                <UserPlus className="w-4 h-4" /> Add walk-in
+              </button>
+            </div>
           ) : (
             <ul className="divide-y">
               {matches.map((p) => (
@@ -936,9 +950,9 @@ function NameLookup({
                     <span className={`flex-shrink-0 font-extrabold text-[#1B2E5B] text-right leading-none ${p.is_walk_in ? 'text-lg' : 'text-4xl'}`}>
                       {badgeNumberLabel(p)}
                     </span>
-                  ) : (
+                  ) : p.is_walk_in ? (
                     <span className="flex-shrink-0 text-lg font-extrabold text-[#1B2E5B] text-right">Walk-in</span>
-                  )}
+                  ) : null}
                 </li>
               ))}
             </ul>

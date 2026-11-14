@@ -256,7 +256,7 @@ export function FindBadgeClient({ courseId }: { courseId: string }) {
             <p className="text-4xl font-bold" style={{ color: NAVY }}>
               Can&apos;t find your name?
             </p>
-            <p className="text-3xl mt-3 text-gray-700">Please go to the check-in table.</p>
+            <p className="text-3xl mt-3 text-gray-700">Please go to the Registration Table to sign up and get your badge.</p>
           </div>
         ) : matches.length === 1 ? (
           <BigResult p={matches[0]} />

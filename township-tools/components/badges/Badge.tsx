@@ -94,7 +94,7 @@ export function BadgeFront({ badge, event }: { badge: BadgeData; event: BadgeEve
             {badge.isWalkIn && (
               <div style={{ fontSize: '6pt', fontWeight: 800, letterSpacing: '0.08em', color: MUTED }}>WALK-IN</div>
             )}
-            <div style={{ fontSize: num >= 1000 ? '13pt' : '16pt', fontWeight: 800 }}>#{num}</div>
+            <div style={{ fontSize: num >= 1000 ? '13pt' : '16pt', fontWeight: 800, color: '#C1272D' }}>#{num}</div>
           </div>
         ) : null}
       </div>

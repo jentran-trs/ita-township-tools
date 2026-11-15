@@ -6,7 +6,7 @@ import { ChevronUp, Delete, Maximize, Search, X } from 'lucide-react';
 type Person = { first: string; last: string; place: string; number: number };
 type Data = { event: { name: string }; people: Person[]; savedAt: number };
 
-const CLEAR_AFTER_MS = 10_000; // after the last touch or key press
+const CLEAR_AFTER_MS = 7_000; // after the last touch or key press
 const REFRESH_EVERY_MS = 3 * 60_000; // pick up late additions
 const MIN_LETTERS = 2;
 const MAX_SHOWN = 6;
@@ -102,7 +102,7 @@ export function FindBadgeClient({ courseId }: { courseId: string }) {
     }
   };
 
-  // ---------- auto-clear 10 seconds after the last touch / key ----------
+  // ---------- auto-clear 7 seconds after the last touch / key ----------
   const clearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const clearName = useCallback(() => {
     setQ('');

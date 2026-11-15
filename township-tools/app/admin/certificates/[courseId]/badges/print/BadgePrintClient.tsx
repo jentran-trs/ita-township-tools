@@ -59,7 +59,8 @@ export function BadgePrintClient({
   const [side, setSide] = useState<Side>('front');
   const [start, setStart] = useState(1);
   const [nudge, setNudge] = useState<Nudge>({ x: 0, y: 0 });
-  const [guides, setGuides] = useState(false);
+  // Cut lines print by default (plain-paper alignment test); untick for Avery sheets if preferred.
+  const [guides, setGuides] = useState(true);
 
   useEffect(() => {
     const n = readJSON<any>(NUDGE_KEY, null);

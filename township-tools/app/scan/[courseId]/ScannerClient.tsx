@@ -1046,7 +1046,7 @@ function NameLookup({
                     </button>
                   </div>
                   {badgeNumberLabel(p) ? (
-                    <span className={`flex-shrink-0 font-extrabold text-[#1B2E5B] text-right leading-none ${p.is_walk_in ? 'text-lg' : 'text-4xl'}`}>
+                    <span className={`flex-shrink-0 font-extrabold text-[#C1272D] text-right leading-none ${p.is_walk_in ? 'text-lg' : 'text-4xl'}`}>
                       {badgeNumberLabel(p)}
                     </span>
                   ) : p.is_walk_in ? (

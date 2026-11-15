@@ -11,6 +11,8 @@ const REFRESH_EVERY_MS = 3 * 60_000; // pick up late additions
 const MIN_LETTERS = 2;
 const MAX_SHOWN = 6;
 const NAVY = '#1B2E5B';
+// Badge numbers are red, matching the number printed on the badge.
+const RED = '#C1272D';
 
 const storeKey = (courseId: string) => `tt_find_${courseId}`;
 
@@ -271,7 +273,7 @@ export function FindBadgeClient({ courseId }: { courseId: string }) {
                     </div>
                     {p.place && <div className={`text-gray-600 leading-snug ${matches.length <= 4 ? 'text-xl' : 'text-lg'}`}>{p.place}</div>}
                   </div>
-                  <div className={`font-extrabold leading-none flex-shrink-0 ${matches.length <= 4 ? 'text-7xl' : 'text-6xl'}`} style={{ color: NAVY }}>
+                  <div className={`font-extrabold leading-none flex-shrink-0 ${matches.length <= 4 ? 'text-7xl' : 'text-6xl'}`} style={{ color: RED }}>
                     #{p.number}
                   </div>
                 </div>
@@ -355,7 +357,7 @@ function BigResult({ p }: { p: Person }) {
       </div>
       <div className="text-center flex-shrink-0">
         <div className="text-2xl font-bold tracking-widest text-gray-500">YOUR BADGE</div>
-        <div className="font-extrabold leading-none" style={{ color: NAVY, fontSize: 'clamp(6rem, 18vw, 13rem)' }}>
+        <div className="font-extrabold leading-none" style={{ color: RED, fontSize: 'clamp(6rem, 18vw, 13rem)' }}>
           #{p.number}
         </div>
       </div>

@@ -206,21 +206,25 @@ export function FindBadgeClient({ courseId }: { courseId: string }) {
   return (
     <div className="h-[100dvh] flex flex-col bg-gray-50 text-gray-900 overflow-hidden">
       {/* Compact header so the search and results stay above the on-screen keyboard. */}
-      <header className="flex items-center gap-4 px-6 py-3 text-white flex-shrink-0" style={{ background: NAVY }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        {/* Same width on both sides so the title sits in the true middle. */}
-        <div className="w-14 flex-shrink-0">
-          <img src="/badges/ita-logo.png" alt="ITA" className="h-12 w-12 rounded-full bg-white object-contain" />
+      <header className="relative flex items-center justify-center px-20 py-3 text-white flex-shrink-0" style={{ background: NAVY }}>
+        {/* Logo, title and event name together in the middle of the banner. */}
+        <div className="flex items-center gap-4 min-w-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/badges/ita-logo.png" alt="ITA" className="h-12 w-12 flex-shrink-0 rounded-full bg-white object-contain" />
+          <div className="min-w-0">
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-wide leading-none whitespace-nowrap">FIND MY BADGE NUMBER</h1>
+            {name && <div className="text-base opacity-80 truncate mt-1">{name}</div>}
+          </div>
         </div>
-        <div className="flex-1 min-w-0 text-center">
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-wide leading-none">FIND MY BADGE NUMBER</h1>
-          {name && <div className="text-base opacity-80 truncate mt-1">{name}</div>}
-        </div>
-        <div className="w-14 flex-shrink-0 flex justify-end">
-          <button type="button" onClick={fullscreen} className="p-2 rounded-lg hover:bg-white/10" aria-label="Full screen" title="Full screen">
-            <Maximize className="w-6 h-6" />
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={fullscreen}
+          className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-lg hover:bg-white/10"
+          aria-label="Full screen"
+          title="Full screen"
+        >
+          <Maximize className="w-6 h-6" />
+        </button>
       </header>
 
       <div className="px-6 pt-4 flex-shrink-0">

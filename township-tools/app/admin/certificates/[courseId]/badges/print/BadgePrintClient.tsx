@@ -40,7 +40,7 @@ const PRINT_STEPS_ONE_SIDED = [
 
 export function BadgePrintClient({
   courseId,
-  badges,
+  badges: allBadges,
   event,
   backHref,
   showShareLink,
@@ -56,6 +56,46 @@ export function BadgePrintClient({
   range?: { from: number | null; to: number | null };
 }) {
   const rangeLabel = range ? `#${range.from ?? 1}–${range.to ? `#${range.to}` : 'end'}` : null;
+  // Which badges to print: everyone, only those added on one day (e.g. the
+  // final AMO import), or walk-ins. ?added=YYYY-MM-DD / ?added=walkin preselects.
+  const [batch, setBatch] = useState<string>('all');
+  useEffect(() => {
+    const v = new URLSearchParams(window.location.search).get('added');
+    if (v) setBatch(v);
+  }, []);
+  const batches = useMemo(() => {
+    const byDay = new Map<string, number>();
+    let walkIns = 0;
+    allBadges.forEach((b) => {
+      if (b.isWalkIn) walkIns += 1;
+      else if (b.addedOn) byDay.set(b.addedOn, (byDay.get(b.addedOn) || 0) + 1);
+    });
+    const days = Array.from(byDay.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+    return { days, walkIns };
+  }, [allBadges]);
+  const badges = useMemo(
+    () =>
+      batch === 'all'
+        ? allBadges
+        : batch === 'walkin'
+          ? allBadges.filter((b) => b.isWalkIn)
+          : allBadges.filter((b) => !b.isWalkIn && b.addedOn === batch),
+    [allBadges, batch]
+  );
+  const chooseBatch = (v: string) => {
+    setBatch(v);
+    try {
+      const u = new URL(window.location.href);
+      if (v === 'all') u.searchParams.delete('added');
+      else u.searchParams.set('added', v);
+      window.history.replaceState(null, '', u.toString());
+    } catch {}
+  };
+  const dayName = (d: string) =>
+    new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
+  const batchLabel =
+    batch === 'all' ? null : batch === 'walkin' ? 'walk-ins only' : `added ${dayName(batch)} only`;
+
   const [side, setSide] = useState<Side>('front');
   const [start, setStart] = useState(1);
   const [nudge, setNudge] = useState<Nudge>({ x: 0, y: 0 });
@@ -119,11 +159,41 @@ export function BadgePrintClient({
             <ArrowLeft className="w-4 h-4" /> Back to badges
           </Link>
         )}
-        {showShareLink && <ShareWithPrinter courseId={courseId} eventName={event.name} range={range} rangeLabel={rangeLabel} />}
+        {showShareLink && (
+          <ShareWithPrinter
+            courseId={courseId}
+            eventName={event.name}
+            range={range}
+            rangeLabel={rangeLabel}
+            added={batch === 'all' ? null : batch}
+            addedLabel={batch === 'all' ? null : batch === 'walkin' ? 'the walk-in badges' : `the badges added ${dayName(batch)}`}
+          />
+        )}
 
         <div className="bg-white rounded-xl p-5 space-y-4 text-sm">
           <div>
-            <h1 className="text-lg font-bold">Print badges{rangeLabel ? ` ${rangeLabel} only` : ''}</h1>
+            <h1 className="text-lg font-bold">
+              Print badges{rangeLabel ? ` ${rangeLabel} only` : ''}
+              {batchLabel ? ` · ${batchLabel}` : ''}
+            </h1>
+            {(batches.days.length > 1 || batches.walkIns > 0 || batch !== 'all') && (
+              <label className="block my-2">
+                <span className="block font-medium mb-1">Which badges</span>
+                <select value={batch} onChange={(e) => chooseBatch(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white">
+                  <option value="all">All badges ({allBadges.length})</option>
+                  {batches.days.map(([d, n]) => (
+                    <option key={d} value={d}>
+                      Added {dayName(d)} ({n})
+                    </option>
+                  ))}
+                  {batches.walkIns > 0 && <option value="walkin">Walk-ins ({batches.walkIns})</option>}
+                </select>
+                <span className="block text-xs text-gray-500 mt-1">
+                  To print only the people added in the latest import, pick that day. Each person is listed under the day
+                  they were first added.
+                </span>
+              </label>
+            )}
             <p className="text-gray-600">
               {badges.length} badge{badges.length === 1 ? '' : 's'} · {sheets.length} sheet{sheets.length === 1 ? '' : 's'} · Avery 5390 (3.5″ × 2.25″) · names on the front, QR code on the back
             </p>
@@ -282,21 +352,28 @@ function ShareWithPrinter({
   eventName,
   range,
   rangeLabel,
+  added,
+  addedLabel,
 }: {
   courseId: string;
   eventName: string;
   range?: { from: number | null; to: number | null };
   rangeLabel?: string | null;
+  added?: string | null;
+  addedLabel?: string | null;
 }) {
   const q = new URLSearchParams();
   if (range?.from) q.set('from', String(range.from));
   if (range?.to) q.set('to', String(range.to));
+  if (added) q.set('added', added);
   const path = `/print/${courseId}${q.toString() ? `?${q}` : ''}`;
   const url = typeof window !== 'undefined' ? `${window.location.origin}${path}` : path;
   const message = [
-    rangeLabel
-      ? `Hi Lydia, here are the NEW name badges for ${eventName} (badges ${rangeLabel}). Please print just these and add them to the end of the box.`
-      : `Hi Lydia, here are the name badges for ${eventName}.`,
+    addedLabel
+      ? `Hi Lydia, here are the NEW name badges for ${eventName} (${addedLabel}). The link opens with just those selected. Please print them and add them to the box in number order.`
+      : rangeLabel
+        ? `Hi Lydia, here are the NEW name badges for ${eventName} (badges ${rangeLabel}). Please print just these and add them to the end of the box.`
+        : `Hi Lydia, here are the name badges for ${eventName}.`,
     '',
     `Open this link: ${url}`,
     'Enter the event PIN (I will send it separately). No Township Tools login is needed.',

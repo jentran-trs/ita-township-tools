@@ -21,6 +21,8 @@ export type BadgeData = {
   badgeNumber?: number | null;
   walkinNumber?: number | null;
   isWalkIn?: boolean;
+  // Eastern date they were first added (import or walk-in), "YYYY-MM-DD".
+  addedOn?: string | null;
 };
 
 export type BadgeEvent = {

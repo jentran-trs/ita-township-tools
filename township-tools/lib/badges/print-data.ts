@@ -1,7 +1,7 @@
 import QRCode from 'qrcode';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { formatCourseDates } from '@/lib/certificates/date-range';
-import { formatEventTimes } from '@/lib/badges/attendance';
+import { easternDate, formatEventTimes } from '@/lib/badges/attendance';
 import type { BadgeData, BadgeEvent } from '@/components/badges/Badge';
 import { assignBadgeNumbers, assignWalkInNumbers } from '@/lib/badges/badge-numbers';
 
@@ -32,7 +32,7 @@ export async function loadBadgePrintData(
 
   let query = supabase
     .from('cert_registrants')
-    .select('id, first_name, last_name, title, registrant_type, organization, township, county, badge_token, badge_number, walkin_number, is_walk_in')
+    .select('id, first_name, last_name, title, registrant_type, organization, township, county, badge_token, badge_number, walkin_number, is_walk_in, created_at')
     .eq('course_id', course.id)
     .order('last_name', { ascending: true })
     .order('first_name', { ascending: true });
@@ -57,6 +57,7 @@ export async function loadBadgePrintData(
       badgeNumber: r.badge_number ?? null,
       walkinNumber: r.walkin_number ?? null,
       isWalkIn: !!r.is_walk_in,
+      addedOn: r.created_at ? easternDate(r.created_at) : null,
       // 480px PNG = ~300 dpi at the 1.6" printed size.
       qrSrc: await QRCode.toDataURL(r.badge_token, { margin: 0, width: 480, errorCorrectionLevel: 'M' }),
     }))

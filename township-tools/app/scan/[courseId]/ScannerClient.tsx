@@ -350,7 +350,9 @@ function ScanScreen({
   });
   const [result, setResult] = useState<Result | null>(null);
   const [sheet, setSheet] = useState<null | 'walkin'>(null);
+  // Last walk-in added, or someone whose details were just fixed: offer their NIIMBOT label.
   const [lastWalkIn, setLastWalkIn] = useState<RosterPerson | null>(null);
+  const [fixFor, setFixFor] = useState<RosterPerson | null>(null);
   // Someone who owes, waiting for the team to choose check / card / no payment.
   const [paymentFor, setPaymentFor] = useState<{ person: RosterPerson; source: 'scan' | 'name_search' } | null>(null);
   // This event tracks payment if anyone imported with a Balance Due.
@@ -572,7 +574,14 @@ function ScanScreen({
 
       {/* Search sits right under the camera: look up the badge #, then scan it. */}
       <div className="pt-2">
-        <NameLookup roster={state.roster} todays={todays} mode={mode} onCheck={(p) => record(p, 'name_search')} onAddWalkIn={() => setSheet('walkin')} />
+        <NameLookup
+          roster={state.roster}
+          todays={todays}
+          mode={mode}
+          onCheck={(p) => record(p, 'name_search')}
+          onAddWalkIn={() => setSheet('walkin')}
+          onFix={(p) => setFixFor(p)}
+        />
       </div>
 
       {result && (
@@ -624,6 +633,20 @@ function ScanScreen({
       <div className="px-4 pt-4 pb-20 text-center text-sm text-gray-600">
         Today: <strong>{counts.ins}</strong> checked in · <strong>{counts.outs}</strong> checked out · {counts.total} registered
       </div>
+
+      {fixFor && (
+        <FixDetailsSheet
+          courseId={event.id}
+          person={fixFor}
+          onClose={() => setFixFor(null)}
+          onSaved={(updated) => {
+            setState((st) => ({ ...st, roster: st.roster.map((x) => (x.id === updated.id ? { ...x, ...updated } : x)) }));
+            setFixFor(null);
+            setLastWalkIn(updated);
+            show({ kind: 'ok', title: `Saved ${updated.first_name} ${updated.last_name}`, detail: 'Print their new NIIMBOT label below. Same QR code, so either badge scans.' });
+          }}
+        />
+      )}
 
       {paymentFor && (
         <PaymentSheet
@@ -828,6 +851,80 @@ function CameraView({ paused, onCode, onStart, mode }: { paused: boolean; onCode
 
 /* ───────────────────────────── Sheets ───────────────────────────── */
 
+/** Fix someone's name/title/township on the spot, then print a new NIIMBOT label. */
+function FixDetailsSheet({
+  courseId,
+  person,
+  onClose,
+  onSaved,
+}: {
+  courseId: string;
+  person: RosterPerson;
+  onClose: () => void;
+  onSaved: (p: RosterPerson) => void;
+}) {
+  const [f, setF] = useState({
+    first_name: person.first_name || '',
+    last_name: person.last_name || '',
+    title: person.title || '',
+    township: person.township || '',
+    county: person.county || '',
+    organization: person.organization || '',
+  });
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const field = (k: keyof typeof f, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
+    <label className="block">
+      <span className="block text-sm font-semibold mb-1">{label}</span>
+      <input value={f[k]} onChange={(e) => setF((x) => ({ ...x, [k]: e.target.value }))} className="w-full px-3 py-2.5 border border-gray-300 rounded-xl" {...props} />
+    </label>
+  );
+  const save = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!f.first_name.trim() || !f.last_name.trim()) return setErr('First and last name are required.');
+    setBusy(true);
+    setErr(null);
+    try {
+      const res = await fetch(`/api/scan/${courseId}/edit`, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ registrant_id: person.id, ...f }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || 'Could not save');
+      onSaved(json.person);
+    } catch (e: any) {
+      setErr(e?.message === 'Failed to fetch' ? 'No connection. Try again when the phone is back online.' : e.message);
+      setBusy(false);
+    }
+  };
+  return (
+    <Sheet title="Fix name & reprint label" onClose={onClose}>
+      <form onSubmit={save} className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          {field('first_name', 'First name *', { autoCapitalize: 'words' })}
+          {field('last_name', 'Last name *', { autoCapitalize: 'words' })}
+        </div>
+        {field('title', 'Title', { autoCapitalize: 'words' })}
+        <div className="grid grid-cols-2 gap-3">
+          {field('township', 'Township', { autoCapitalize: 'words' })}
+          {field('county', 'County', { autoCapitalize: 'words' })}
+        </div>
+        {field('organization', 'Organization (sponsors, speakers, vendors)', { autoCapitalize: 'words' })}
+        {err && <p className="text-sm text-red-600">{err}</p>}
+        <button type="submit" disabled={busy} className="w-full py-3.5 text-lg font-semibold bg-[#1B2E5B] text-white rounded-xl disabled:opacity-50">
+          {busy ? 'Saving…' : 'Save and make new label'}
+        </button>
+        <p className="text-xs text-gray-500">
+          Needs internet. Their badge number and QR code stay the same, so the old badge still scans. The fix is kept when
+          the AMO list is imported again.
+        </p>
+      </form>
+    </Sheet>
+  );
+}
+
 function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 z-40 bg-black/40 flex items-end sm:items-center justify-center" onClick={onClose}>
@@ -855,12 +952,14 @@ function NameLookup({
   mode,
   onCheck,
   onAddWalkIn,
+  onFix,
 }: {
   roster: RosterPerson[];
   todays: ScanRecord[];
   mode: Mode;
   onCheck: (p: RosterPerson) => void;
   onAddWalkIn: () => void;
+  onFix: (p: RosterPerson) => void;
 }) {
   const [q, setQ] = useState('');
   const matches = useMemo(() => {
@@ -934,6 +1033,16 @@ function NameLookup({
                       className="mt-1 text-sm font-semibold text-[#1B2E5B] underline underline-offset-2"
                     >
                       {mode === 'in' ? 'Check in without badge' : 'Check out without badge'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onFix(p);
+                        setQ('');
+                      }}
+                      className="mt-1 ml-4 text-sm font-semibold text-amber-700 underline underline-offset-2"
+                    >
+                      Fix name &amp; reprint
                     </button>
                   </div>
                   {badgeNumberLabel(p) ? (

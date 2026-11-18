@@ -668,7 +668,7 @@ function ScanScreen({
         Today: <strong>{counts.ins}</strong> checked in · <strong>{counts.outs}</strong> checked out · {counts.total} registered
       </div>
 
-      {shareOpen && <ShareScannerSheet eventName={event.name} onClose={() => setShareOpen(false)} />}
+      {shareOpen && <ShareScannerSheet courseId={event.id} eventName={event.name} onClose={() => setShareOpen(false)} />}
 
       {fixFor && (
         <FixDetailsSheet
@@ -959,8 +959,16 @@ function CameraView({ paused, onCode, onStart, mode }: { paused: boolean; onCode
 /* ───────────────────────────── Sheets ───────────────────────────── */
 
 /** Big QR code of this scanner's link: a team member scans it, then enters the event PIN. */
-function ShareScannerSheet({ eventName, onClose }: { eventName: string; onClose: () => void }) {
+function ShareScannerSheet({ courseId, eventName, onClose }: { courseId: string; eventName: string; onClose: () => void }) {
   const [src, setSrc] = useState<string | null>(null);
+  // The event PIN (needs internet); undefined while loading, null if unavailable.
+  const [pin, setPin] = useState<string | null | undefined>(undefined);
+  useEffect(() => {
+    fetch(`/api/scan/${courseId}/pin`, { credentials: 'same-origin', cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : { pin: null }))
+      .then((j) => setPin(j.pin || null))
+      .catch(() => setPin(null));
+  }, [courseId]);
   const url = typeof window !== 'undefined' ? window.location.origin + window.location.pathname : '';
   useEffect(() => {
     QRCode.toDataURL(url, { margin: 1, width: 600, errorCorrectionLevel: 'M' })
@@ -981,9 +989,16 @@ function ShareScannerSheet({ eventName, onClose }: { eventName: string; onClose:
             <div className="w-72 h-72 bg-gray-100 rounded-xl" />
           )}
         </div>
-        <p className="text-base text-gray-700">
-          They&apos;ll need the <strong>event PIN</strong> to sign in. Tell them in person; it isn&apos;t in the code.
-        </p>
+        <div className="rounded-xl bg-gray-100 px-4 py-3">
+          <div className="text-base text-gray-700">Then they enter the event PIN:</div>
+          {pin ? (
+            <div className="text-5xl font-extrabold tracking-[0.2em] text-[#1B2E5B] mt-1">{pin}</div>
+          ) : (
+            <div className="text-lg text-gray-600 mt-1">
+              {pin === undefined ? 'Loading…' : "Couldn't show the PIN (no connection?). It's on the course page's Setup tab."}
+            </div>
+          )}
+        </div>
         <p className="text-sm text-gray-500 break-all">{url}</p>
       </div>
     </Sheet>

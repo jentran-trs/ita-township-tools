@@ -23,7 +23,7 @@ export type BadgeData = {
   isWalkIn?: boolean;
   // Eastern date they were first added (import or walk-in), "YYYY-MM-DD".
   addedOn?: string | null;
-  // Blank template: logo + type bar only (a walk-in's NIIMBOT label goes on it).
+  // Blank template: type bar only (a walk-in's NIIMBOT label goes on it).
   blank?: boolean;
 };
 
@@ -59,8 +59,8 @@ function eventNameSize(name: string): string {
 
 const oneLine = { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } as const;
 
-/** Blank badge: ITA logo and the type bar, nothing else. No event name or tagline. */
-function BlankBadgeFront({ badge, logoUrl }: { badge: BadgeData; logoUrl: string }) {
+/** Blank badge: the type bar only (no logo, event name or tagline). The NIIMBOT label goes on it. */
+function BlankBadgeFront({ badge }: { badge: BadgeData }) {
   const type = badgeTypeStyle(badge.registrantType);
   return (
     <div
@@ -77,15 +77,8 @@ function BlankBadgeFront({ badge, logoUrl }: { badge: BadgeData; logoUrl: string
         overflow: 'hidden',
       }}
     >
-      {/* Logo in a narrow left column; the rest (about 2.9" x 1.8") is left
-          clear for a 70 x 40 mm NIIMBOT label (2.76" x 1.57"). */}
-      <div style={{ flex: 1, minHeight: 0, display: 'flex', gap: '0.06in' }}>
-        <div style={{ width: '0.4in', flexShrink: 0, display: 'flex', alignItems: 'flex-start', paddingTop: '0.02in' }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={logoUrl} alt="ITA" style={{ height: '0.4in', width: '0.4in', objectFit: 'contain' }} />
-        </div>
-        <div style={{ flex: 1 }} />
-      </div>
+      {/* Left clear for a 70 x 40 mm NIIMBOT label (2.76" x 1.57"). */}
+      <div style={{ flex: 1, minHeight: 0 }} />
       <div
         style={{
           height: '0.21in',
@@ -110,7 +103,7 @@ function BlankBadgeFront({ badge, logoUrl }: { badge: BadgeData; logoUrl: string
 }
 
 export function BadgeFront({ badge, event }: { badge: BadgeData; event: BadgeEvent }) {
-  if (badge.blank) return <BlankBadgeFront badge={badge} logoUrl={event.logoUrl} />;
+  if (badge.blank) return <BlankBadgeFront badge={badge} />;
   const name = `${badge.firstName} ${badge.lastName}`;
   const where = place(badge);
   const when = [event.dates, event.times].filter(Boolean).join(' · ');

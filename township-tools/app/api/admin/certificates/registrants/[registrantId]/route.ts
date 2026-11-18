@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from '@/lib/supabase';
 import { requireSuperadmin } from '@/lib/auth/superadmin';
 import { generateBadgeToken } from '@/lib/badges/token';
 import { recipientKey } from '@/lib/certificates/xlsx-import';
+import { substitutePatch, syncCertificate, undoSubstitutePatch } from '@/lib/badges/registrant-edit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -14,6 +15,8 @@ type RouteParams = { params: { registrantId: string } };
 // to record partial-credit hours. Or edit details: first_name, last_name,
 // email, title, registrant_type, organization, township, county (hand edits
 // are kept by later AMO imports, and copied to an issued certificate).
+// substitute: true = someone else attends on this registration (the original
+// registrant is kept in substituted_for); undo_substitute: true puts them back.
 export async function PATCH(req: Request, { params }: RouteParams) {
   const sErr = await requireSuperadmin();
   if (sErr) return sErr;
@@ -74,9 +77,11 @@ export async function PATCH(req: Request, { params }: RouteParams) {
   if ('township' in body) patch.township = text(body.township, 100).replace(/\s+township\s*$/i, '') || null;
   if ('county' in body) patch.county = text(body.county, 100).replace(/\s+county\s*$/i, '') || null;
   const DETAILS = ['first_name', 'last_name', 'email', 'title', 'registrant_type', 'organization', 'township', 'county'];
-  const editsDetails = DETAILS.some((k) => k in patch);
+  const substitute = body.substitute === true;
+  const undoSubstitute = body.undo_substitute === true;
+  const editsDetails = DETAILS.some((k) => k in patch) || substitute || undoSubstitute;
 
-  if (!Object.keys(patch).length) return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
+  if (!Object.keys(patch).length && !undoSubstitute) return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
 
   const supabase = createServerSupabaseClient();
   let certificateId: string | null = null;
@@ -87,6 +92,19 @@ export async function PATCH(req: Request, { params }: RouteParams) {
       .eq('id', params.registrantId)
       .maybeSingle();
     if (!cur) return NextResponse.json({ error: 'Registrant not found' }, { status: 404 });
+    if (undoSubstitute) {
+      const back = undoSubstitutePatch(cur);
+      if (!back) return NextResponse.json({ error: 'Nobody is attending in their place' }, { status: 400 });
+      Object.keys(patch).forEach((k) => delete patch[k]);
+      Object.assign(patch, back);
+    } else if (substitute) {
+      const same =
+        String(patch.first_name ?? cur.first_name).toLowerCase() === String(cur.first_name).toLowerCase() &&
+        String(patch.last_name ?? cur.last_name).toLowerCase() === String(cur.last_name).toLowerCase();
+      if (same) return NextResponse.json({ error: "Enter the name of the person who's attending instead" }, { status: 400 });
+      if (!(patch.email ?? cur.email)) return NextResponse.json({ error: 'Email is required, so they can get their certificate' }, { status: 400 });
+      Object.assign(patch, substitutePatch(cur, 'Admin'));
+    }
     patch.edited_at = new Date().toISOString();
     // Remember how AMO knew them, so the next import still matches after a name/email fix.
     if (!cur.original_key && !cur.is_walk_in) patch.original_key = recipientKey(cur.email, cur.first_name, cur.last_name);
@@ -102,15 +120,7 @@ export async function PATCH(req: Request, { params }: RouteParams) {
   if (!data) return NextResponse.json({ error: 'Registrant not found' }, { status: 404 });
 
   // Keep an issued certificate in step with the corrected details.
-  if (certificateId) {
-    const cert: Record<string, any> = {};
-    if ('first_name' in patch) cert.attendee_first = patch.first_name;
-    if ('last_name' in patch) cert.attendee_last = patch.last_name;
-    if ('email' in patch && patch.email) cert.attendee_email = patch.email;
-    if ('township' in patch) cert.attendee_township = patch.township;
-    if ('county' in patch) cert.attendee_county = patch.county;
-    if (Object.keys(cert).length) await supabase.from('certificates').update(cert).eq('id', certificateId);
-  }
+  await syncCertificate(supabase, certificateId, patch);
   return NextResponse.json({ ok: true, registrant: data, certificate_updated: !!certificateId });
 }
 

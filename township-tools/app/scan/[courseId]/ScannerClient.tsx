@@ -353,6 +353,8 @@ function ScanScreen({
   // Last walk-in added, or someone whose details were just fixed: offer their NIIMBOT label.
   const [lastWalkIn, setLastWalkIn] = useState<RosterPerson | null>(null);
   const [fixFor, setFixFor] = useState<RosterPerson | null>(null);
+  // true = "Someone else is attending" on this registration.
+  const [fixSub, setFixSub] = useState(false);
   // Paying ahead of check-in (e.g. a trustee paying for their staff).
   const [payOnlyFor, setPayOnlyFor] = useState<RosterPerson | null>(null);
   // Owes for an earlier event: collect at check-in (or record ahead with payOnly).
@@ -590,7 +592,14 @@ function ScanScreen({
           mode={mode}
           onCheck={(p) => record(p, 'name_search')}
           onAddWalkIn={() => setSheet('walkin')}
-          onFix={(p) => setFixFor(p)}
+          onFix={(p) => {
+            setFixSub(false);
+            setFixFor(p);
+          }}
+          onSubstitute={(p) => {
+            setFixSub(true);
+            setFixFor(p);
+          }}
           onPay={(p) => ((p.prior_unpaid || []).length ? setPriorFor({ person: p, source: 'name_search', payOnly: true }) : setPayOnlyFor(p))}
         />
       </div>
@@ -650,12 +659,21 @@ function ScanScreen({
         <FixDetailsSheet
           courseId={event.id}
           person={fixFor}
+          substitute={fixSub}
           onClose={() => setFixFor(null)}
           onSaved={(updated) => {
             setState((st) => ({ ...st, roster: st.roster.map((x) => (x.id === updated.id ? { ...x, ...updated } : x)) }));
             setFixFor(null);
             setLastWalkIn(updated);
-            show({ kind: 'ok', title: `Saved ${updated.first_name} ${updated.last_name}`, detail: 'Print their new NIIMBOT label below. Same QR code, so either badge scans.' });
+            show(
+              fixSub
+                ? {
+                    kind: 'ok',
+                    title: `${updated.first_name} ${updated.last_name} is attending for ${updated.in_place_of || `${fixFor.first_name} ${fixFor.last_name}`}`,
+                    detail: 'Print their NIIMBOT label below, then scan it to check them in. Same QR code as the original badge.',
+                  }
+                : { kind: 'ok', title: `Saved ${updated.first_name} ${updated.last_name}`, detail: 'Print their new NIIMBOT label below. Same QR code, so either badge scans.' }
+            );
           }}
         />
       )}
@@ -925,18 +943,22 @@ function CameraView({ paused, onCode, onStart, mode }: { paused: boolean; onCode
 function FixDetailsSheet({
   courseId,
   person,
+  substitute = false,
   onClose,
   onSaved,
 }: {
   courseId: string;
   person: RosterPerson;
+  // Someone else is attending on this registration: start with a blank name.
+  substitute?: boolean;
   onClose: () => void;
   onSaved: (p: RosterPerson) => void;
 }) {
   const [f, setF] = useState({
-    first_name: person.first_name || '',
-    last_name: person.last_name || '',
-    title: person.title || '',
+    first_name: substitute ? '' : person.first_name || '',
+    last_name: substitute ? '' : person.last_name || '',
+    email: '',
+    title: substitute ? '' : person.title || '',
     township: person.township || '',
     county: person.county || '',
     organization: person.organization || '',
@@ -952,6 +974,7 @@ function FixDetailsSheet({
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!f.first_name.trim() || !f.last_name.trim()) return setErr('First and last name are required.');
+    if (substitute && !f.email.trim()) return setErr('Email is required, so they can get their certificate.');
     setBusy(true);
     setErr(null);
     try {
@@ -959,7 +982,9 @@ function FixDetailsSheet({
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ registrant_id: person.id, ...f }),
+        body: JSON.stringify(
+          substitute ? { registrant_id: person.id, substitute: true, ...f } : { registrant_id: person.id, ...f, email: undefined }
+        ),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error || 'Could not save');
@@ -970,12 +995,20 @@ function FixDetailsSheet({
     }
   };
   return (
-    <Sheet title="Fix name & reprint label" onClose={onClose}>
+    <Sheet title={substitute ? 'Someone else is attending' : 'Fix name & reprint label'} onClose={onClose}>
       <form onSubmit={save} className="space-y-3">
+        {substitute && (
+          <div className="rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 text-sm">
+            Registration of <strong>{person.in_place_of || `${person.first_name} ${person.last_name}`}</strong>
+            {badgeNumberLabel(person) ? ` (${badgeNumberLabel(person)})` : ''}. Enter the person who&apos;s attending instead.
+            {person.in_place_of ? '' : ` ${person.first_name} ${person.last_name} stays on record as the registrant.`}
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-3">
-          {field('first_name', 'First name *', { autoCapitalize: 'words' })}
+          {field('first_name', 'First name *', { autoCapitalize: 'words', autoFocus: substitute })}
           {field('last_name', 'Last name *', { autoCapitalize: 'words' })}
         </div>
+        {substitute && field('email', 'Email * (for their certificate)', { type: 'email', inputMode: 'email', autoCapitalize: 'none' })}
         {field('title', 'Title', { autoCapitalize: 'words' })}
         <div className="grid grid-cols-2 gap-3">
           {field('township', 'Township', { autoCapitalize: 'words' })}
@@ -984,11 +1017,12 @@ function FixDetailsSheet({
         {field('organization', 'Organization (sponsors, speakers, vendors)', { autoCapitalize: 'words' })}
         {err && <p className="text-sm text-red-600">{err}</p>}
         <button type="submit" disabled={busy} className="w-full py-3.5 text-lg font-semibold bg-[#1B2E5B] text-white rounded-xl disabled:opacity-50">
-          {busy ? 'Saving…' : 'Save and make new label'}
+          {busy ? 'Saving…' : substitute ? 'Save and make their label' : 'Save and make new label'}
         </button>
         <p className="text-xs text-gray-500">
-          Needs internet. Their badge number and QR code stay the same, so the old badge still scans. The fix is kept when
-          the AMO list is imported again.
+          {substitute
+            ? 'Needs internet. They use this registration (badge number, QR code and payment). The original registrant is kept on record, and an AMO re-import won\'t undo it.'
+            : 'Needs internet. Their badge number and QR code stay the same, so the old badge still scans. The fix is kept when the AMO list is imported again.'}
         </p>
       </form>
     </Sheet>
@@ -1023,6 +1057,7 @@ function NameLookup({
   onCheck,
   onAddWalkIn,
   onFix,
+  onSubstitute,
   onPay,
 }: {
   roster: RosterPerson[];
@@ -1031,6 +1066,7 @@ function NameLookup({
   onCheck: (p: RosterPerson) => void;
   onAddWalkIn: () => void;
   onFix: (p: RosterPerson) => void;
+  onSubstitute: (p: RosterPerson) => void;
   onPay: (p: RosterPerson) => void;
 }) {
   const [q, setQ] = useState('');
@@ -1042,6 +1078,8 @@ function NameLookup({
         (p) =>
           `${p.first_name} ${p.last_name}`.toLowerCase().includes(t) ||
           `${p.last_name} ${p.first_name}`.toLowerCase().includes(t) ||
+          // The original registrant's name finds who's attending in their place.
+          (!!p.in_place_of && p.in_place_of.toLowerCase().includes(t)) ||
           (/^#?\d+$/.test(t) && !p.is_walk_in && String(p.badge_number ?? '') === t.replace('#', '')) ||
           // Township or organization, e.g. "Ohio" lists everyone from Ohio Township
           // (a trustee paying for their staff).
@@ -1107,6 +1145,7 @@ function NameLookup({
                       )}
                       {p.payment_status === 'due' && <span className="ml-2 text-xs font-semibold text-red-600">payment due</span>}
                     </div>
+                    {p.in_place_of && <div className="text-sm font-semibold text-amber-700">In place of {p.in_place_of}</div>}
                     {(p.prior_unpaid || []).map((d, i) => (
                       <div key={i} className="text-sm font-semibold text-red-700">
                         Owes {d.balance_due ? `$${Number(d.balance_due).toFixed(2)} ` : ''}from {d.course_name}
@@ -1137,6 +1176,18 @@ function NameLookup({
                     >
                       Fix name &amp; reprint
                     </button>
+                    {!p.is_walk_in && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onSubstitute(p);
+                          setQ('');
+                        }}
+                        className="text-sm font-semibold text-amber-700 underline underline-offset-2"
+                      >
+                        Someone else is attending
+                      </button>
+                    )}
                     {(p.payment_status === 'due' || (p.prior_unpaid || []).length > 0) && (
                       <button
                         type="button"

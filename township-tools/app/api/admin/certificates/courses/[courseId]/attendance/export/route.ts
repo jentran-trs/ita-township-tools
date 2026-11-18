@@ -1,3 +1,4 @@
+import { inPlaceOf } from '@/lib/badges/registrant-edit';
 import ExcelJS from 'exceljs';
 import { requireSuperadmin } from '@/lib/auth/superadmin';
 import { loadCourseAttendance } from '@/lib/badges/admin-attendance';
@@ -26,7 +27,7 @@ export async function GET(_req: Request, { params }: { params: { courseId: strin
   ws.addRow([`${formatCourseDates(course.course_date, course.course_end_date)} · times are Eastern`]);
   ws.addRow([]);
   const header = [
-    'Badge #', 'Last Name', 'First Name', 'Email', 'Title', 'Township', 'County', 'Walk-in',
+    'Badge #', 'Last Name', 'First Name', 'Email', 'Title', 'Township', 'County', 'Walk-in', 'In place of (registrant)',
     ...days.flatMap((d) => [`${dayLabel(d)} In`, `${dayLabel(d)} Out`]),
     'Status', 'Needs review because', 'Payment', 'Owes from past event', 'Credit Hours', 'Notes',
   ];
@@ -58,6 +59,7 @@ export async function GET(_req: Request, { params }: { params: { courseId: strin
     const row = ws.addRow([
       badgeNumberLabel(r as any), r.last_name, r.first_name, r.email, r.title || '', townshipLabel(r.township) || '',
       r.county ? `${r.county} County` : '', r.is_walk_in ? 'Yes' : '',
+      inPlaceOf(r as any) ? `${inPlaceOf(r as any)}${(r as any).substituted_for?.email ? ` (${(r as any).substituted_for.email})` : ''}` : '',
       ...r.attendance.days.flatMap((d) => [d.checkIn ? easternTime(d.checkIn) : '', d.checkOut ? easternTime(d.checkOut) : '']),
       STATUS[r.status], r.status === 'review' ? r.reasons.join('; ') : '', paymentText(r),
       r.prior_unpaid.map((d) => `${d.balance_due ? `$${Number(d.balance_due).toFixed(2)} ` : ''}from ${d.course_name}${d.matched_by === 'name' ? ' (name match)' : ''}`).join('; '),
@@ -66,7 +68,7 @@ export async function GET(_req: Request, { params }: { params: { courseId: strin
     row.getCell(header.length).alignment = { wrapText: true, vertical: 'top' };
     if (r.status === 'review') row.getCell(header.length - 5).font = { color: { argb: 'FFB45309' }, bold: true };
   }
-  ws.columns.forEach((c, i) => (c.width = i === 0 ? 12 : i < 4 ? 22 : i < 8 ? 18 : i === header.length - 5 || i === header.length - 3 ? 36 : i === header.length - 1 ? 60 : 14));
+  ws.columns.forEach((c, i) => (c.width = i === 0 ? 12 : i < 4 ? 22 : i < 8 ? 18 : i === 8 ? 30 : i === header.length - 5 || i === header.length - 3 ? 36 : i === header.length - 1 ? 60 : 14));
   ws.views = [{ state: 'frozen', ySplit: 4, xSplit: 3 }];
 
   // Second sheet: every check-in/out entry, oldest first, nothing left out.

@@ -4,6 +4,7 @@ import { loadCourseAttendance } from '@/lib/badges/admin-attendance';
 import { easternTime } from '@/lib/badges/attendance';
 import { formatCourseDates } from '@/lib/certificates/date-range';
 import { townshipLabel } from '@/lib/certificates/township';
+import { inPlaceOf } from '@/lib/badges/registrant-edit';
 import { AmoChecklistClient, ChecklistPerson } from './AmoChecklistClient';
 
 export const dynamic = 'force-dynamic';
@@ -25,6 +26,8 @@ export default async function AmoChecklistPage({ params }: { params: { courseId:
       (r as any).organization ||
       '',
     walkIn: r.is_walk_in,
+    // AMO has the registration under the original registrant's name.
+    inPlaceOf: inPlaceOf(r as any),
     status: r.status,
     reasons: r.reasons,
     times: r.attendance.days.map((d) => ({

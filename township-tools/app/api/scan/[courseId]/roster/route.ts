@@ -1,3 +1,4 @@
+import { inPlaceOf } from '@/lib/badges/registrant-edit';
 import { NextResponse } from 'next/server';
 import { assignWalkInNumbers } from '@/lib/badges/badge-numbers';
 import { createServerSupabaseClient } from '@/lib/supabase';
@@ -65,6 +66,8 @@ export async function GET(_req: Request, { params }: { params: { courseId: strin
       })),
       payment_status: r.payment_status ?? null,
       balance_due: r.balance_due != null ? Number(r.balance_due) : null,
+      // Someone else is attending on this registration (v44).
+      in_place_of: inPlaceOf(r),
     })),
     scans: scans || [],
   });

@@ -20,6 +20,8 @@ export type RosterPerson = {
   // 'due' = owes (AMO Balance Due > $0, or a walk-in at a paid event).
   payment_status?: 'paid' | 'due' | null;
   balance_due?: number | null;
+  // "Sheri Bartoli": someone else is attending on her registration.
+  in_place_of?: string | null;
 };
 
 /** How someone paid at the door (method only), waiting to upload. */

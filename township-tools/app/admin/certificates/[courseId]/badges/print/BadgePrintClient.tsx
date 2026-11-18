@@ -219,8 +219,8 @@ export function BadgePrintClient({
                   <option value="blank-sponsor">Blank badges · Sponsor</option>
                 </select>
                 <span className="block text-xs text-gray-500 mt-1">
-                  To print only the people added in the latest import, pick that day. Blank badges have the ITA logo and
-                  the type bar only, for walk-ins: stick their NIIMBOT label in the middle.
+                  To print only the people added in the latest import, pick that day. Blank badges have only the
+                  Attendee/Sponsor bar, for walk-ins: stick their NIIMBOT label in the middle.
                 </span>
               </label>
             )}

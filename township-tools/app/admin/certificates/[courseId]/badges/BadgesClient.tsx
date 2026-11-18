@@ -5,6 +5,7 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { AlertTriangle, Check, ChevronLeft, ChevronRight, Download, FileUp, Loader2, MoreHorizontal, Printer, RotateCcw, Search, Tag, Trash2, Upload, X } from 'lucide-react';
 import { deliverLabel, renderNiimbotLabel } from '@/lib/badges/niimbot-label';
 import { badgeNumberLabel } from '@/lib/badges/badge-numbers';
+import { inPlaceOf } from '@/lib/badges/registrant-edit';
 import { getSupabaseClient } from '@/lib/supabase';
 import { fileSize, printedWhen } from '@/components/badges/PrintFilesList';
 import { townshipLabel } from '@/lib/certificates/township';
@@ -54,6 +55,8 @@ type Registrant = {
   certificate_id: string | null;
   badge_number?: number | null;
   walkin_number?: number | null;
+  // Someone else is attending on this registration (v44): the original registrant.
+  substituted_for?: { first_name: string; last_name: string; email: string | null } | null;
 };
 
 type PreviewRow = {
@@ -968,7 +971,7 @@ function RegistrantsCard({
         (r) =>
           (!typeFilter || (typeFilter === 'walkin' ? r.is_walk_in : (r.registrant_type || 'Attendee') === typeFilter)) &&
           (!query.trim() ||
-            matches(haystack(r.first_name, r.last_name, r.email, r.title, r.registrant_type, r.organization, townshipLabel(r.township), r.county, badgeNumberLabel(r)), query))
+            matches(haystack(r.first_name, r.last_name, r.email, r.title, r.registrant_type, r.organization, townshipLabel(r.township), r.county, badgeNumberLabel(r), inPlaceOf(r)), query))
       ),
     [registrants, query, typeFilter]
   );
@@ -1182,6 +1185,9 @@ function RegistrantsCard({
                       {r.first_name} {r.last_name}
                       {r.is_walk_in && <span className="ml-2 text-xs text-amber-600">walk-in</span>}
                     </div>
+                    {inPlaceOf(r as any) && (
+                      <div className="text-xs font-semibold text-amber-700 dark:text-amber-400">In place of {inPlaceOf(r as any)}</div>
+                    )}
                     {r.email ? (
                       <div className="text-xs text-gray-500">{r.email}</div>
                     ) : (
@@ -1322,8 +1328,36 @@ function EditRegistrant({
   });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  // "Someone else is attending": the registration becomes them; the original is kept.
+  const [substitute, setSubstitute] = useState(false);
+  const original = inPlaceOf(r);
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF((x) => ({ ...x, [k]: e.target.value }));
   const types = TYPES.includes(f.registrant_type) ? TYPES : [f.registrant_type, ...TYPES];
+  const toggleSubstitute = (on: boolean) => {
+    setSubstitute(on);
+    setF((x) =>
+      on
+        ? { ...x, first_name: '', last_name: '', email: '', title: '' }
+        : { ...x, first_name: r.first_name || '', last_name: r.last_name || '', email: r.email || '', title: r.title || '' }
+    );
+  };
+  const undoSubstitute = async () => {
+    if (!window.confirm(`Put ${original} back as the person attending? ${r.first_name} ${r.last_name}'s name comes off this registration.`)) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/admin/certificates/registrants/${r.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ undo_substitute: true }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Could not save');
+      onSaved(`${original} is back on this registration. Reprint their badge if needed.`);
+    } catch (e: any) {
+      setErr(e.message);
+      setBusy(false);
+    }
+  };
   const badgeChanged =
     f.first_name !== (r.first_name || '') ||
     f.last_name !== (r.last_name || '') ||
@@ -1341,12 +1375,14 @@ function EditRegistrant({
       const res = await fetch(`/api/admin/certificates/registrants/${r.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(f),
+        body: JSON.stringify(substitute ? { ...f, substitute: true } : f),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Could not save');
       onSaved(
-        `Saved ${f.first_name} ${f.last_name}.` +
+        (substitute
+          ? `Saved: ${f.first_name} ${f.last_name} is attending in place of ${original || `${r.first_name} ${r.last_name}`}.`
+          : `Saved ${f.first_name} ${f.last_name}.`) +
           (json.certificate_updated ? ' Their certificate shows the new details too.' : '') +
           (badgeChanged ? ' Reprint their badge to show the change.' : '')
       );
@@ -1371,16 +1407,35 @@ function EditRegistrant({
         className="w-full max-w-lg bg-white dark:bg-gray-900 rounded-xl shadow-xl p-5 space-y-3 max-h-[90vh] overflow-y-auto"
       >
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold">Edit registrant</h3>
+          <h3 className="text-lg font-bold">{substitute ? 'Someone else is attending' : 'Edit registrant'}</h3>
           <button type="button" onClick={onClose} className="p-1 text-gray-500 hover:text-gray-900" aria-label="Close">
             <X className="w-5 h-5" />
           </button>
         </div>
+        {original ? (
+          <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-3 py-2 text-sm">
+            Attending in place of <strong>{original}</strong>
+            {r.substituted_for?.email ? ` (${r.substituted_for.email})` : ''}, whose registration this is.{' '}
+            <button type="button" onClick={undoSubstitute} disabled={busy} className="font-semibold text-amber-800 dark:text-amber-300 underline">
+              Undo: {original} is attending
+            </button>
+          </div>
+        ) : (
+          !r.is_walk_in && (
+            <label className="flex items-start gap-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2 cursor-pointer">
+              <input type="checkbox" checked={substitute} onChange={(e) => toggleSubstitute(e.target.checked)} className="mt-0.5 h-4 w-4" />
+              <span>
+                <span className="font-medium">Someone else is attending</span> in place of {r.first_name} {r.last_name}. Enter
+                the person attending; {r.first_name} {r.last_name} stays on record as the registrant.
+              </span>
+            </label>
+          )
+        )}
         <div className="grid grid-cols-2 gap-3">
           {field('first_name', 'First name *', { required: true, autoFocus: true })}
           {field('last_name', 'Last name *', { required: true })}
         </div>
-        {field('email', 'Email', { type: 'email' })}
+        {field('email', substitute ? 'Email * (for their certificate)' : 'Email', { type: 'email', required: substitute })}
         <div className="grid grid-cols-2 gap-3">
           {field('title', 'Title')}
           <label className="block text-sm">
@@ -1839,7 +1894,7 @@ function AttendanceCard({
   const searchText = useMemo(() => {
     const m = new Map<string, string>();
     registrants.forEach((r) =>
-      m.set(r.id, haystack(r.first_name, r.last_name, r.email, r.title, r.registrant_type, r.organization, townshipLabel(r.township), r.county))
+      m.set(r.id, haystack(r.first_name, r.last_name, r.email, r.title, r.registrant_type, r.organization, townshipLabel(r.township), r.county, inPlaceOf(r)))
     );
     return m;
   }, [registrants]);
@@ -1963,6 +2018,9 @@ function AttendanceCard({
                       {r.first_name} {r.last_name}
                       {r.is_walk_in && <span className="ml-2 text-xs text-amber-600">walk-in</span>}
                     </div>
+                    {inPlaceOf(r as any) && (
+                      <div className="text-xs font-semibold text-amber-700 dark:text-amber-400">In place of {inPlaceOf(r as any)}</div>
+                    )}
                     <div className="text-xs text-gray-500">{[r.title, townshipLabel(r.township)].filter(Boolean).join(' · ')}</div>
                     {(r.prior_unpaid || []).map((d) => (
                       <a

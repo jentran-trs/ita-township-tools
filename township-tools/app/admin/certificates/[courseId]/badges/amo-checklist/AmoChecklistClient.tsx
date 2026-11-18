@@ -8,6 +8,7 @@ export type ChecklistPerson = {
   id: string;
   lastName: string;
   firstName: string;
+  inPlaceOf?: string | null;
   email: string;
   place: string;
   walkIn: boolean;
@@ -158,6 +159,9 @@ export function AmoChecklistClient({ courseId, courseName, courseCode, dates, mu
                       </td>
                       <td className="py-1.5 pr-2 font-medium whitespace-nowrap">
                         {p.lastName}, {p.firstName}
+                        {p.inPlaceOf && (
+                          <div className="text-xs font-normal text-amber-800">registered as {p.inPlaceOf}</div>
+                        )}
                         {p.walkIn && (
                           <span className="ml-1 text-[10px] font-semibold uppercase border border-amber-600 text-amber-700 rounded px-1">
                             Walk-in

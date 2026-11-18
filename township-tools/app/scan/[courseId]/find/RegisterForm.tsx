@@ -28,13 +28,24 @@ export function RegisterForm({ courseId, onDone }: { courseId: string; eventName
   const [err, setErr] = useState<string | null>(null);
   const [thanks, setThanks] = useState<string | null>(null);
 
-  // Leave the form if nobody touches it for a while (and after the thank-you).
+  const doneRef = useRef(onDone);
+  doneRef.current = onDone;
+  // After submitting: thank-you, then back to Find My Badge Number after 5 s,
+  // whatever is tapped meanwhile.
+  useEffect(() => {
+    if (!thanks) return;
+    const t = setTimeout(() => doneRef.current(), THANKS_MS);
+    return () => clearTimeout(t);
+  }, [thanks]);
+
+  // Leave the form if nobody touches it for a while.
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const poke = useCallback(() => {
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(onDone, thanks ? THANKS_MS : IDLE_MS);
-  }, [onDone, thanks]);
+    timer.current = setTimeout(() => doneRef.current(), IDLE_MS);
+  }, []);
   useEffect(() => {
+    if (thanks) return;
     poke();
     const events = ['pointerdown', 'keydown'] as const;
     events.forEach((ev) => window.addEventListener(ev, poke, { passive: true }));
@@ -42,7 +53,7 @@ export function RegisterForm({ courseId, onDone }: { courseId: string; eventName
       events.forEach((ev) => window.removeEventListener(ev, poke));
       if (timer.current) clearTimeout(timer.current);
     };
-  }, [poke]);
+  }, [poke, thanks]);
 
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim());
   const ok = !!(f.first_name.trim() && f.last_name.trim() && emailOk);

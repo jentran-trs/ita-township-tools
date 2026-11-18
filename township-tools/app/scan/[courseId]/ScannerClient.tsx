@@ -624,8 +624,8 @@ function ScanScreen({
       )}
 
       <div className="px-3 pt-2">
-        <button type="button" onClick={() => setSheet('walkin')} className="w-full flex items-center justify-center gap-2 py-3 bg-white rounded-xl font-semibold shadow-sm">
-          <UserPlus className="w-5 h-5" /> Add walk-in
+        <button type="button" onClick={() => setSheet('walkin')} className="w-full flex items-center justify-center gap-2.5 py-2 bg-white rounded-xl font-bold text-2xl shadow-sm">
+          <UserPlus className="w-7 h-7" /> Add walk-in
         </button>
       </div>
 
@@ -978,9 +978,16 @@ function ShareScannerSheet({ courseId, eventName, onClose }: { courseId: string;
   return (
     <Sheet title="Help scan" onClose={onClose}>
       <div className="text-center space-y-3">
-        <p className="text-xl">
-          Scan to help check in attendees for <strong>{eventName}</strong>
-        </p>
+        <div>
+          <p className="text-xl">Scan to help check in attendees for</p>
+          <p
+            className={`font-bold whitespace-nowrap overflow-hidden text-ellipsis ${
+              eventName.length <= 24 ? 'text-2xl' : eventName.length <= 30 ? 'text-xl' : eventName.length <= 36 ? 'text-lg' : 'text-base'
+            }`}
+          >
+            {eventName}
+          </p>
+        </div>
         <div className="flex justify-center">
           {src ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -1190,9 +1197,9 @@ function NameLookup({
                   setQ('');
                   onAddWalkIn();
                 }}
-                className="w-full flex items-center justify-center gap-2 py-3.5 bg-[#1B2E5B] text-white rounded-xl font-bold text-lg"
+                className="w-full flex items-center justify-center gap-2.5 py-3 bg-[#1B2E5B] text-white rounded-xl font-bold text-2xl"
               >
-                <UserPlus className="w-5 h-5" /> Add walk-in
+                <UserPlus className="w-7 h-7" /> Add walk-in
               </button>
             </div>
           ) : (
@@ -1200,12 +1207,12 @@ function NameLookup({
               {matches.map((p) => {
                 const st = stateFor(p.id);
                 const owes = p.payment_status === 'due' || (p.prior_unpaid || []).length > 0;
-                const action = 'w-full py-3.5 px-4 rounded-xl text-lg font-bold text-left border-2';
+                const action = 'w-full py-3.5 px-4 rounded-xl text-xl font-bold text-left border-2';
                 return (
                   <li key={p.id} className="py-4">
                     <div className="flex items-start gap-3">
                       <div className="flex-1 min-w-0">
-                        <div className="font-bold text-2xl leading-tight">
+                        <div className="font-bold text-3xl leading-tight">
                           {p.first_name} {p.last_name}
                         </div>
                         {st && (
@@ -1240,7 +1247,7 @@ function NameLookup({
                       </div>
                     )}
                     {p.in_place_of && <div className="mt-1 text-lg font-semibold text-amber-700">In place of {p.in_place_of}</div>}
-                    {p.cancelled && <div className="mt-1 text-lg text-red-700">Came anyway? Check them in as usual.</div>}
+                    {p.cancelled && <div className="mt-1 text-base text-red-700">Came anyway? Check them in as usual.</div>}
                     {(p.prior_unpaid || []).map((d, i) => (
                       <div key={i} className="mt-1 text-lg font-semibold text-red-700">
                         Owes {d.balance_due ? `$${Number(d.balance_due).toFixed(2)} ` : ''}from {d.course_name}

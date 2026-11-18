@@ -131,7 +131,7 @@ export function RegisterForm({ courseId, onDone }: { courseId: string; eventName
         <p className="text-5xl font-extrabold" style={{ color: NAVY }}>
           Thank you, {thanks}!
         </p>
-        <p className="text-3xl text-gray-700 max-w-3xl">Please go to the Registration Table to pay and pick up your badge.</p>
+        <p className="text-gray-700 whitespace-nowrap text-[clamp(1rem,2.5vw,2.25rem)]">Please go to the Registration Table to pay and pick up your badge.</p>
         <button type="button" onClick={onDone} className="mt-4 px-10 py-5 text-2xl font-bold text-white rounded-2xl" style={{ background: NAVY }}>
           Done
         </button>

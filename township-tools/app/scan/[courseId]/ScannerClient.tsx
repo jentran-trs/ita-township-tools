@@ -670,6 +670,16 @@ function ScanScreen({
         </button>
       </div>
 
+      {/* Today's numbers, right under Add walk-in; "registered" on its own line. */}
+      <div className="px-4 pt-3 text-center text-lg text-gray-600 leading-snug">
+        <div className="whitespace-nowrap">
+          Today: <strong>{counts.ins}</strong> checked in · <strong>{counts.outs}</strong> checked out
+        </div>
+        <div>
+          <strong>{counts.total}</strong> registered
+        </div>
+      </div>
+
       {lastWalkIn && (
         <div className="px-3 pt-2">
           <button
@@ -704,10 +714,8 @@ function ScanScreen({
         </div>
       )}
 
-      {/* pb leaves room for the floating dark-mode button */}
-      <div className="px-4 pt-4 pb-20 text-center text-lg text-gray-600">
-        Today: <strong>{counts.ins}</strong> checked in · <strong>{counts.outs}</strong> checked out · {counts.total} registered
-      </div>
+      {/* Room for the floating dark-mode button */}
+      <div className="pb-20" />
 
       {finishFor && (
         <FinishWalkInSheet

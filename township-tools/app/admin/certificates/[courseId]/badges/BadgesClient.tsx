@@ -1192,7 +1192,9 @@ function RegistrantsCard({
                   <td className="py-2 pr-3">
                     <div className="font-medium">
                       {r.first_name} {r.last_name}
-                      {r.is_walk_in && <span className="ml-2 text-xs text-amber-600">walk-in</span>}
+                      {r.is_walk_in && (
+                        <span className="ml-2 text-xs text-amber-600">{(r as any).self_registered_at ? 'walk-in (tablet)' : 'walk-in'}</span>
+                      )}
                     </div>
                     {inPlaceOf(r as any) && (
                       <div className="text-xs font-semibold text-amber-700 dark:text-amber-400">In place of {inPlaceOf(r as any)}</div>
@@ -2058,7 +2060,9 @@ function AttendanceCard({
                   <td className="py-2 pr-3">
                     <div className="font-medium">
                       {r.first_name} {r.last_name}
-                      {r.is_walk_in && <span className="ml-2 text-xs text-amber-600">walk-in</span>}
+                      {r.is_walk_in && (
+                        <span className="ml-2 text-xs text-amber-600">{(r as any).self_registered_at ? 'walk-in (tablet)' : 'walk-in'}</span>
+                      )}
                     </div>
                     {inPlaceOf(r as any) && (
                       <div className="text-xs font-semibold text-amber-700 dark:text-amber-400">In place of {inPlaceOf(r as any)}</div>

@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronUp, Delete, Maximize, Search, X } from 'lucide-react';
+import { ChevronUp, Delete, Maximize, Search, UserPlus, X } from 'lucide-react';
+import { RegisterForm } from './RegisterForm';
 
 type Person = { first: string; last: string; place: string; number: number };
 type Data = { event: { name: string }; people: Person[]; savedAt: number };
@@ -26,6 +27,8 @@ export function FindBadgeClient({ courseId }: { courseId: string }) {
   const [q, setQ] = useState('');
   // Our own letters-only keyboard (the tablet's keyboard covers half the screen).
   const [kbOpen, setKbOpen] = useState(true);
+  // Walk-in self-registration form (instead of the search).
+  const [registering, setRegistering] = useState(false);
 
   // ---------- data ----------
   const fetchList = useCallback(async (): Promise<'ok' | 'pin' | 'offline'> => {
@@ -114,7 +117,7 @@ export function FindBadgeClient({ courseId }: { courseId: string }) {
   }, []);
   // A real keyboard works too (handy for a laptop, and for testing).
   useEffect(() => {
-    if (phase !== 'ready') return;
+    if (phase !== 'ready' || registering) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (e.key === 'Backspace') press('back');
@@ -125,20 +128,20 @@ export function FindBadgeClient({ courseId }: { courseId: string }) {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [phase, press, clearName]);
+  }, [phase, registering, press, clearName]);
   const poke = useCallback(() => {
     if (clearTimer.current) clearTimeout(clearTimer.current);
     clearTimer.current = setTimeout(clearName, CLEAR_AFTER_MS);
   }, [clearName]);
   useEffect(() => {
-    if (phase !== 'ready') return;
+    if (phase !== 'ready' || registering) return;
     const events = ['pointerdown', 'keydown', 'input', 'touchstart'] as const;
     events.forEach((ev) => window.addEventListener(ev, poke, { passive: true }));
     return () => {
       events.forEach((ev) => window.removeEventListener(ev, poke));
       if (clearTimer.current) clearTimeout(clearTimer.current);
     };
-  }, [phase, poke]);
+  }, [phase, registering, poke]);
 
   // ---------- search ----------
   const term = q.trim().toLowerCase().replace(/\s+/g, ' ');
@@ -206,13 +209,28 @@ export function FindBadgeClient({ courseId }: { courseId: string }) {
   return (
     <div className="h-[100dvh] flex flex-col bg-gray-50 text-gray-900 overflow-hidden">
       {/* Compact header so the search and results stay above the on-screen keyboard. */}
-      <header className="relative flex items-center justify-center px-20 py-3 text-white flex-shrink-0" style={{ background: NAVY }}>
+      <header className="relative flex items-center justify-center px-40 py-3 text-white flex-shrink-0" style={{ background: NAVY }}>
+        {!registering && (
+          <button
+            type="button"
+            onClick={() => {
+              clearName();
+              setRegistering(true);
+            }}
+            className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white text-xl font-bold active:scale-95 transition-transform"
+            style={{ color: NAVY }}
+          >
+            <UserPlus className="w-6 h-6" /> Register
+          </button>
+        )}
         {/* Logo, title and event name together in the middle of the banner. */}
         <div className="flex items-center gap-4 min-w-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/badges/ita-logo.png" alt="ITA" className="h-12 w-12 flex-shrink-0 rounded-full bg-white object-contain" />
           <div className="min-w-0">
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-wide leading-none whitespace-nowrap">FIND MY BADGE NUMBER</h1>
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-wide leading-none whitespace-nowrap">
+              {registering ? 'REGISTER' : 'FIND MY BADGE NUMBER'}
+            </h1>
             {name && <div className="text-base opacity-80 truncate mt-1">{name}</div>}
           </div>
         </div>
@@ -227,6 +245,10 @@ export function FindBadgeClient({ courseId }: { courseId: string }) {
         </button>
       </header>
 
+      {registering ? (
+        <RegisterForm courseId={courseId} eventName={name} onDone={() => setRegistering(false)} />
+      ) : (
+      <>
       <div className="px-6 pt-4 flex-shrink-0">
         <div className="flex items-stretch gap-3">
           {/* Looks like a search box but isn't a text field, so the tablet's keyboard never opens. */}
@@ -267,7 +289,18 @@ export function FindBadgeClient({ courseId }: { courseId: string }) {
             <p className="text-4xl font-bold" style={{ color: NAVY }}>
               Can&apos;t find your name?
             </p>
-            <p className="text-3xl mt-3 text-gray-700">Please go to the Registration Table to sign up and get your badge.</p>
+            <p className="text-3xl mt-3 text-gray-700">Not registered yet? Sign up here, then go to the Registration Table to pay and get your badge.</p>
+            <button
+              type="button"
+              onClick={() => {
+                clearName();
+                setRegistering(true);
+              }}
+              className="mt-6 inline-flex items-center gap-3 px-10 py-5 text-3xl font-bold text-white rounded-2xl active:scale-95 transition-transform"
+              style={{ background: NAVY }}
+            >
+              <UserPlus className="w-9 h-9" /> Register
+            </button>
           </div>
         ) : matches.length === 1 ? (
           <BigResult p={matches[0]} />
@@ -307,6 +340,8 @@ export function FindBadgeClient({ courseId }: { courseId: string }) {
         >
           <ChevronUp className="w-7 h-7" /> Show keyboard
         </button>
+      )}
+      </>
       )}
     </div>
   );

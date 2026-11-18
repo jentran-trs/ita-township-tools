@@ -70,6 +70,11 @@ export async function GET(_req: Request, { params }: { params: { courseId: strin
       in_place_of: inPlaceOf(r),
       // Marked cancelled (v45): shown on search; a scan still records (they came after all).
       cancelled: !!r.cancelled_at,
+      // Registered themselves on the check-in tablet (v46): the desk finishes
+      // them (payment, check-in, label) and copies their email to the card reader.
+      self_registered: !!r.self_registered_at,
+      email: r.self_registered_at ? r.email : undefined,
+      registrant_type: r.self_registered_at ? r.registrant_type : undefined,
     })),
     scans: scans || [],
   });

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import jsQR from 'jsqr';
 import QRCode from 'qrcode';
-import { Camera, CheckCircle2, CloudOff, LogIn, LogOut, QrCode, RefreshCw, Search, UserPlus, X, XCircle, AlertTriangle } from 'lucide-react';
+import { Camera, Check, CheckCircle2, CloudOff, Copy, LogIn, LogOut, QrCode, RefreshCw, Search, Tablet, UserPlus, X, XCircle, AlertTriangle } from 'lucide-react';
 import { easternDate, easternTime } from '@/lib/badges/attendance';
 import { isBadgeToken } from '@/lib/badges/token';
 import { extraOrganization, townshipLabel } from '@/lib/certificates/township';
@@ -365,6 +365,12 @@ function ScanScreen({
   const [paymentFor, setPaymentFor] = useState<{ person: RosterPerson; source: 'scan' | 'name_search' } | null>(null);
   // This event tracks payment if anyone imported with a Balance Due.
   const tracksPayment = useMemo(() => state.roster.some((p) => p.payment_status), [state.roster]);
+  // Walk-ins who registered on the tablet and haven't been checked in yet.
+  const waiting = useMemo(() => {
+    const scanned = new Set(state.scans.map((x) => x.registrant_id));
+    return state.roster.filter((p) => p.self_registered && !scanned.has(p.id) && !p.cancelled);
+  }, [state.roster, state.scans]);
+  const [finishFor, setFinishFor] = useState<RosterPerson | null>(null);
   const audio = useRef<AudioContext | null>(null);
   const today = easternDate(new Date());
   const isEventDay = event.days.includes(today);
@@ -625,6 +631,39 @@ function ScanScreen({
         </div>
       )}
 
+      {waiting.length > 0 && (
+        <div className="px-3 pt-2">
+          <div className="bg-amber-50 border-2 border-amber-400 rounded-xl p-3">
+            <div className="flex items-center gap-2 text-xl font-bold text-amber-900">
+              <Tablet className="w-6 h-6" /> Waiting at the desk ({waiting.length})
+            </div>
+            <p className="text-base text-amber-900 mb-2">Registered on the tablet. Tap a name to take payment, check in and print their label.</p>
+            <div className="flex flex-col gap-2">
+              {waiting.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setFinishFor(p)}
+                  className="w-full flex items-center justify-between gap-3 px-4 py-3 bg-white border-2 border-amber-300 rounded-xl text-left"
+                >
+                  <span className="min-w-0">
+                    <span className="block text-xl font-bold leading-tight">
+                      {p.first_name} {p.last_name}
+                    </span>
+                    <span className="block text-base text-gray-600">
+                      {[p.registrant_type && p.registrant_type !== 'Attendee' ? p.registrant_type : null, townshipLabel(p.township) || p.organization]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </span>
+                  </span>
+                  {badgeNumberLabel(p) && <span className="flex-shrink-0 text-lg font-extrabold text-[#C1272D]">{badgeNumberLabel(p)}</span>}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="px-3 pt-2">
         <button type="button" onClick={() => setSheet('walkin')} className="w-full flex items-center justify-center gap-2.5 py-2 bg-white rounded-xl font-bold text-2xl shadow-sm">
           <UserPlus className="w-7 h-7" /> Add walk-in
@@ -669,6 +708,46 @@ function ScanScreen({
       <div className="px-4 pt-4 pb-20 text-center text-lg text-gray-600">
         Today: <strong>{counts.ins}</strong> checked in · <strong>{counts.outs}</strong> checked out · {counts.total} registered
       </div>
+
+      {finishFor && (
+        <FinishWalkInSheet
+          person={finishFor}
+          tracksPayment={tracksPayment}
+          onClose={() => setFinishFor(null)}
+          onFix={() => {
+            const p = finishFor;
+            setFinishFor(null);
+            setFixSub(false);
+            setFixFor(p);
+          }}
+          onDone={(checkIn, pay) => {
+            const person = finishFor;
+            setFinishFor(null);
+            if (pay) queuePayment(person.id, pay);
+            setLastWalkIn(person);
+            if (checkIn) {
+              const now = new Date();
+              const rec: ScanRecord = {
+                client_scan_id: randomId(),
+                registrant_id: person.id,
+                direction: 'in',
+                scanned_at: now.toISOString(),
+                scan_date: easternDate(now),
+                source: 'name_search',
+                device_label: state.deviceLabel || undefined,
+              };
+              setState((st) => ({ ...st, scans: [...st.scans, rec], pendingScans: [...st.pendingScans, rec] }));
+            }
+            show({
+              kind: tracksPayment && !pay && person.payment_status === 'due' ? 'warn' : 'ok',
+              title: `${person.first_name} ${person.last_name} ${checkIn ? 'checked in' : 'saved'}`,
+              detail:
+                (tracksPayment && !pay && person.payment_status === 'due' ? 'No payment collected; listed for follow-up. ' : '') +
+                'Print their NIIMBOT label below.',
+            });
+          }}
+        />
+      )}
 
       {shareOpen && <ShareScannerSheet courseId={event.id} eventName={event.name} onClose={() => setShareOpen(false)} />}
 
@@ -959,6 +1038,119 @@ function CameraView({ paused, onCode, onStart, mode }: { paused: boolean; onCode
 }
 
 /* ───────────────────────────── Sheets ───────────────────────────── */
+
+/** Copy to the clipboard (e.g. an email into the Square card reader). */
+function CopyButton({ text, label = 'Copy' }: { text: string; label?: string }) {
+  const [done, setDone] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // Older browsers: copy through a hidden field.
+      const t = document.createElement('textarea');
+      t.value = text;
+      t.style.position = 'fixed';
+      t.style.opacity = '0';
+      document.body.appendChild(t);
+      t.select();
+      try {
+        document.execCommand('copy');
+      } catch {}
+      document.body.removeChild(t);
+    }
+    setDone(true);
+    setTimeout(() => setDone(false), 1500);
+  };
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-lg font-bold ${done ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-900 active:bg-gray-300'}`}
+      aria-label={`${label} ${text}`}
+    >
+      {done ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
+      {done ? 'Copied' : label}
+    </button>
+  );
+}
+
+/** Finish a walk-in who registered on the tablet: payment, check-in, then their label. */
+function FinishWalkInSheet({
+  person,
+  tracksPayment,
+  onClose,
+  onFix,
+  onDone,
+}: {
+  person: RosterPerson;
+  tracksPayment: boolean;
+  onClose: () => void;
+  onFix: () => void;
+  onDone: (checkIn: boolean, pay: DoorPayment | null) => void;
+}) {
+  const owes = tracksPayment && person.payment_status === 'due';
+  const [payMethod, setPayMethod] = useState<'none' | 'check' | 'card' | 'amo'>('none');
+  const [checkIn, setCheckIn] = useState(true);
+  const place = [townshipLabel(person.township), person.county ? `${person.county} County` : null].filter(Boolean).join(', ');
+  return (
+    <Sheet title="Finish walk-in" onClose={onClose}>
+      <div className="space-y-4">
+        <div>
+          <div className="text-3xl font-bold leading-tight">
+            {person.first_name} {person.last_name}
+          </div>
+          {[person.title, person.registrant_type && person.registrant_type !== 'Attendee' ? person.registrant_type : null].filter(Boolean).length > 0 && (
+            <div className="text-lg text-gray-700">
+              {[person.title, person.registrant_type && person.registrant_type !== 'Attendee' ? person.registrant_type : null].filter(Boolean).join(' · ')}
+            </div>
+          )}
+          {place && <div className="text-lg text-gray-700">{place}</div>}
+          {person.organization && <div className="text-lg text-gray-700">{person.organization}</div>}
+          {badgeNumberLabel(person) && <div className="text-lg font-bold text-[#C1272D]">{badgeNumberLabel(person)}</div>}
+        </div>
+        {person.email && (
+          <div>
+            <div className="text-base font-semibold text-gray-600 mb-1">Email</div>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 min-w-0 px-3 py-2.5 bg-gray-100 rounded-xl text-lg break-all">{person.email}</div>
+              <CopyButton text={person.email} />
+            </div>
+          </div>
+        )}
+        <button type="button" onClick={onFix} className="text-lg font-semibold text-[#1B2E5B] underline underline-offset-2">
+          Fix a typo in their details
+        </button>
+        <label className="flex items-center gap-3 text-xl font-semibold py-1">
+          <input type="checkbox" checked={checkIn} onChange={(e) => setCheckIn(e.target.checked)} className="h-7 w-7 shrink-0" />
+          Check them in now
+        </label>
+        {owes && (
+          <fieldset className="space-y-1">
+            <legend className="text-xl font-bold mb-1">Payment</legend>
+            {([
+              ['check', 'Paid by check'],
+              ['card', 'Paid by credit card'],
+              ['amo', 'Paid in AMO'],
+              ['none', 'Not paid yet (listed for follow-up)'],
+            ] as const).map(([v, label]) => (
+              <label key={v} className="flex items-center gap-3 text-xl py-1.5">
+                <input type="radio" name="finish-pay" checked={payMethod === v} onChange={() => setPayMethod(v)} className="h-7 w-7 shrink-0" />
+                {label}
+              </label>
+            ))}
+          </fieldset>
+        )}
+        <button
+          type="button"
+          onClick={() => onDone(checkIn, owes && payMethod !== 'none' ? { method: payMethod } : null)}
+          className="w-full py-3.5 text-2xl font-bold bg-[#1B2E5B] text-white rounded-xl"
+        >
+          {checkIn ? 'Check in' : 'Save'}
+        </button>
+      </div>
+    </Sheet>
+  );
+}
 
 /** Big QR code of this scanner's link: a team member scans it, then enters the event PIN. */
 function ShareScannerSheet({ courseId, eventName, onClose }: { courseId: string; eventName: string; onClose: () => void }) {
@@ -1392,7 +1584,14 @@ function WalkInSheet({
           {field('county', usesOrg ? 'County (optional)' : 'County', { autoCapitalize: 'words' })}
         </div>
         {!usesOrg && field('organization', 'Organization (optional)', { autoCapitalize: 'words', placeholder: 'Company or agency name' })}
-        {field('email', 'Email * (for their certificate)', { type: 'email', inputMode: 'email', autoCapitalize: 'none', required: true })}
+        <div className="relative">
+          {field('email', 'Email * (for their certificate)', { type: 'email', inputMode: 'email', autoCapitalize: 'none', required: true })}
+          {f.email.trim() && (
+            <div className="absolute right-2 bottom-2">
+              <CopyButton text={f.email.trim()} />
+            </div>
+          )}
+        </div>
         {f.email.trim() && !emailOk && <p className="text-sm text-red-600 -mt-2">Check the email: it should look like name@example.com.</p>}
         <label className="flex items-center gap-3 text-xl font-semibold py-1">
           <input type="checkbox" checked={checkIn} onChange={(e) => setCheckIn(e.target.checked)} className="h-7 w-7 shrink-0" />

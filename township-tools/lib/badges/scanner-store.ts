@@ -24,6 +24,10 @@ export type RosterPerson = {
   in_place_of?: string | null;
   // Registration marked cancelled by the office.
   cancelled?: boolean;
+  // Walk-in who registered on the check-in tablet; email/type only for them.
+  self_registered?: boolean;
+  email?: string;
+  registrant_type?: string | null;
 };
 
 /** How someone paid at the door (method only), waiting to upload. */

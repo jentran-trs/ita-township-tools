@@ -1328,7 +1328,8 @@ function WalkInSheet({
 }) {
   const [payMethod, setPayMethod] = useState<'none' | 'check' | 'card' | 'amo'>('none');
   const [f, setF] = useState({ first_name: '', last_name: '', title: '', township: '', county: '', organization: '', email: '', registrant_type: 'Attendee' });
-  const [checkIn, setCheckIn] = useState(mode === 'in');
+  // Checked by default (most walk-ins are checking in); untick to only add them.
+  const [checkIn, setCheckIn] = useState(true);
   const field = (k: keyof typeof f, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
     <label className="block">
       <span className="block text-base font-semibold mb-1">{label}</span>
@@ -1393,21 +1394,21 @@ function WalkInSheet({
         )}
         {field('email', 'Email * (for their certificate)', { type: 'email', inputMode: 'email', autoCapitalize: 'none', required: true })}
         {f.email.trim() && !emailOk && <p className="text-sm text-red-600 -mt-2">Check the email: it should look like name@example.com.</p>}
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={checkIn} onChange={(e) => setCheckIn(e.target.checked)} className="h-5 w-5" />
+        <label className="flex items-center gap-3 text-xl font-semibold py-1">
+          <input type="checkbox" checked={checkIn} onChange={(e) => setCheckIn(e.target.checked)} className="h-7 w-7 shrink-0" />
           Check them in now
         </label>
         {tracksPayment && (
           <fieldset className="space-y-1">
-            <legend className="text-sm font-semibold mb-1">Payment</legend>
+            <legend className="text-xl font-bold mb-1">Payment</legend>
             {([
               ['check', 'Paid by check'],
               ['card', 'Paid by credit card'],
               ['amo', 'Paid in AMO'],
               ['none', 'Not paid yet (listed for follow-up)'],
             ] as const).map(([v, label]) => (
-              <label key={v} className="flex items-center gap-2 text-sm">
-                <input type="radio" name="walkin-pay" checked={payMethod === v} onChange={() => setPayMethod(v)} className="h-5 w-5" />
+              <label key={v} className="flex items-center gap-3 text-xl py-1.5">
+                <input type="radio" name="walkin-pay" checked={payMethod === v} onChange={() => setPayMethod(v)} className="h-7 w-7 shrink-0" />
                 {label}
               </label>
             ))}

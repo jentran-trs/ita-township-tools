@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronUp, Delete, Maximize, Search, UserPlus, X } from 'lucide-react';
+import { ArrowLeft, ChevronUp, Delete, Maximize, Search, UserPlus, X } from 'lucide-react';
 import { RegisterForm } from './RegisterForm';
 
 type Person = { first: string; last: string; place: string; number: number };
@@ -221,6 +221,16 @@ export function FindBadgeClient({ courseId }: { courseId: string }) {
             style={{ color: NAVY }}
           >
             <UserPlus className="w-9 h-9" /> Register
+          </button>
+        )}
+        {registering && (
+          <button
+            type="button"
+            onClick={() => setRegistering(false)}
+            className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 px-5 py-3.5 rounded-2xl bg-white text-xl font-bold shadow-lg active:scale-95 transition-transform"
+            style={{ color: NAVY }}
+          >
+            <ArrowLeft className="w-7 h-7" /> Back to find badge number
           </button>
         )}
         {/* Logo, title and event name together in the middle of the banner. */}

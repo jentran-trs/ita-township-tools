@@ -1,21 +1,29 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { ArrowUp, CheckCircle2, ChevronRight, Delete } from 'lucide-react';
 
 const NAVY = '#1B2E5B';
 const IDLE_MS = 90_000; // walked away mid-form: back to the search screen after 1.5 minutes
 const THANKS_MS = 12_000;
 const TYPES = ['Attendee', 'Sponsor', 'Speaker', 'Resource Vendor', 'Staff'];
 
+type FieldKey = 'first_name' | 'last_name' | 'title' | 'township' | 'county' | 'organization' | 'email';
+// Order the "Next" key moves through.
+const ORDER: FieldKey[] = ['first_name', 'last_name', 'title', 'township', 'county', 'organization', 'email'];
+const MAX: Record<FieldKey, number> = { first_name: 60, last_name: 60, title: 80, township: 60, county: 60, organization: 100, email: 120 };
+
 /**
  * Self-registration on the check-in tablet for walk-ins. Same details as the
- * desk's walk-in form, minus payment (the desk does that). Saved straight away;
- * the person then appears in the scanner's "Waiting at the desk" list.
+ * desk's walk-in form, minus payment (the desk does that). Uses its own
+ * on-screen keyboard and number pad (no text inputs), so the tablet's keyboard
+ * never opens and the whole form stays on screen.
  */
 export function RegisterForm({ courseId, onDone }: { courseId: string; eventName?: string; onDone: () => void }) {
-  const empty = { first_name: '', last_name: '', title: '', registrant_type: 'Attendee', township: '', county: '', organization: '', email: '' };
-  const [f, setF] = useState(empty);
+  const [f, setF] = useState<Record<FieldKey, string>>({ first_name: '', last_name: '', title: '', township: '', county: '', organization: '', email: '' });
+  const [type, setType] = useState('Attendee');
+  const [active, setActive] = useState<FieldKey>('first_name');
+  const [shift, setShift] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [thanks, setThanks] = useState<string | null>(null);
@@ -28,7 +36,7 @@ export function RegisterForm({ courseId, onDone }: { courseId: string; eventName
   }, [onDone, thanks]);
   useEffect(() => {
     poke();
-    const events = ['pointerdown', 'keydown', 'input'] as const;
+    const events = ['pointerdown', 'keydown'] as const;
     events.forEach((ev) => window.addEventListener(ev, poke, { passive: true }));
     return () => {
       events.forEach((ev) => window.removeEventListener(ev, poke));
@@ -36,13 +44,36 @@ export function RegisterForm({ courseId, onDone }: { courseId: string; eventName
     };
   }, [poke]);
 
-  const usesOrg = ['Sponsor', 'Speaker', 'Resource Vendor'].includes(f.registrant_type);
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim());
-  const ok = f.first_name.trim() && f.last_name.trim() && emailOk;
+  const ok = !!(f.first_name.trim() && f.last_name.trim() && emailOk);
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!ok) return setErr('Please fill in your first name, last name and email.');
+  // Typing: names and places capitalise each word; the email stays lowercase.
+  const type1 = useCallback(
+    (key: string) => {
+      setErr(null);
+      setF((cur) => {
+        const v = cur[active];
+        if (key === 'back') return { ...cur, [active]: v.slice(0, -1) };
+        let ch = key;
+        if (active === 'email') ch = ch.toLowerCase();
+        else if (/^[a-z]$/i.test(ch)) {
+          const startOfWord = v === '' || /[\s\-']$/.test(v);
+          ch = startOfWord || shift ? ch.toUpperCase() : ch.toLowerCase();
+        }
+        if (active === 'email' && ch === ' ') return cur;
+        return { ...cur, [active]: (v + ch).slice(0, MAX[active]) };
+      });
+      if (key !== 'back') setShift(false);
+    },
+    [active, shift]
+  );
+  const next = useCallback(() => setActive((a) => ORDER[(ORDER.indexOf(a) + 1) % ORDER.length]), []);
+
+  const submit = useCallback(async () => {
+    if (!ok) {
+      setErr('Please fill in your first name, last name and email.');
+      return;
+    }
     setBusy(true);
     setErr(null);
     try {
@@ -50,7 +81,7 @@ export function RegisterForm({ courseId, onDone }: { courseId: string; eventName
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(f),
+        body: JSON.stringify({ ...f, registrant_type: type }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error || 'Something went wrong. Please ask at the Registration Table.');
@@ -60,19 +91,27 @@ export function RegisterForm({ courseId, onDone }: { courseId: string; eventName
     } finally {
       setBusy(false);
     }
-  };
+  }, [courseId, f, ok, type]);
 
-  const field = (k: keyof typeof f, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
-    <label className="block">
-      <span className="block text-2xl font-semibold mb-1.5">{label}</span>
-      <input
-        value={f[k]}
-        onChange={(e) => setF((x) => ({ ...x, [k]: e.target.value }))}
-        className="w-full px-4 py-3.5 text-2xl bg-white border-2 border-gray-300 rounded-xl focus:outline-none focus:border-[#1B2E5B]"
-        {...props}
-      />
-    </label>
-  );
+  // A real keyboard works too (laptop, testing).
+  useEffect(() => {
+    if (thanks) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if ((e.target as HTMLElement)?.tagName === 'SELECT') return;
+      if (e.key === 'Backspace') type1('back');
+      else if (e.key === 'Tab') next();
+      else if (e.key === 'Enter') submit();
+      else if (e.key.length === 1) {
+        // Keep the capital letters someone types on a real keyboard.
+        if (/^[A-Z]$/.test(e.key) && active !== 'email') setShift(true);
+        type1(e.key);
+      } else return;
+      e.preventDefault();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [thanks, type1, next, submit, active]);
 
   if (thanks) {
     return (
@@ -89,53 +128,157 @@ export function RegisterForm({ courseId, onDone }: { courseId: string; eventName
     );
   }
 
+  const usesOrg = ['Sponsor', 'Speaker', 'Resource Vendor'].includes(type);
+  const box = (k: FieldKey, label: string, className = '') => {
+    const on = active === k;
+    return (
+      <div className={`min-w-0 ${className}`}>
+        <div className="text-xl font-bold mb-1 whitespace-nowrap truncate">{label}</div>
+        <div
+          role="textbox"
+          aria-label={label}
+          onPointerDown={(e) => {
+            e.preventDefault();
+            setActive(k);
+          }}
+          className={`h-16 flex items-center px-4 bg-white rounded-xl border-[3px] cursor-text overflow-hidden ${on ? '' : 'border-gray-300'}`}
+          style={on ? { borderColor: NAVY } : undefined}
+        >
+          <span className="text-3xl whitespace-pre truncate">{f[k]}</span>
+          {on && <span className="ml-0.5 w-[3px] h-9 flex-shrink-0 animate-pulse" style={{ background: NAVY }} />}
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <form onSubmit={submit} className="flex-1 min-h-0 overflow-y-auto px-6 py-5">
-      <div className="max-w-3xl mx-auto space-y-5">
-        <div className="flex items-center justify-between gap-4">
-          <p className="text-2xl text-gray-700">Not on the list? Fill this in, then pay at the Registration Table.</p>
-          <button type="button" onClick={onDone} className="flex items-center gap-2 px-5 py-3 text-xl font-bold rounded-xl bg-gray-200 active:bg-gray-300">
-            <ArrowLeft className="w-6 h-6" /> Back
-          </button>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          {field('first_name', 'First name *', { autoCapitalize: 'words', autoComplete: 'off', autoFocus: true })}
-          {field('last_name', 'Last name *', { autoCapitalize: 'words', autoComplete: 'off' })}
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          {field('title', 'Title', { autoCapitalize: 'words', autoComplete: 'off' })}
-          <label className="block">
-            <span className="block text-2xl font-semibold mb-1.5">I am a…</span>
+    <div className="flex-1 min-h-0 flex flex-col">
+      <div className="flex-1 min-h-0 overflow-y-auto px-6 pt-4 pb-2 space-y-3">
+        <div className="grid grid-cols-12 gap-3">
+          {box('first_name', 'First name *', 'col-span-3')}
+          {box('last_name', 'Last name *', 'col-span-3')}
+          {box('title', 'Title', 'col-span-3')}
+          <div className="col-span-3 min-w-0">
+            <div className="text-xl font-bold mb-1">I am a…</div>
             <select
-              value={f.registrant_type}
-              onChange={(e) => setF((x) => ({ ...x, registrant_type: e.target.value }))}
-              className="w-full px-4 py-3.5 text-2xl bg-white border-2 border-gray-300 rounded-xl"
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+              aria-label="I am a"
+              className="w-full h-16 px-3 text-3xl bg-white border-[3px] border-gray-300 rounded-xl"
             >
               {TYPES.map((t) => (
                 <option key={t}>{t}</option>
               ))}
             </select>
-          </label>
+          </div>
         </div>
-        {usesOrg && field('organization', 'Organization', { autoCapitalize: 'words', autoComplete: 'off', placeholder: 'Company or agency name' })}
-        <div className="grid grid-cols-2 gap-4">
-          {field('township', usesOrg ? 'Township (optional)' : 'Township', { autoCapitalize: 'words', autoComplete: 'off' })}
-          {field('county', usesOrg ? 'County (optional)' : 'County', { autoCapitalize: 'words', autoComplete: 'off' })}
+        <div className="grid grid-cols-12 gap-3">
+          {box('township', usesOrg ? 'Township (optional)' : 'Township', 'col-span-3')}
+          {box('county', usesOrg ? 'County (optional)' : 'County', 'col-span-3')}
+          {box('organization', usesOrg ? 'Organization' : 'Organization (optional)', 'col-span-6')}
         </div>
-        {!usesOrg && field('organization', 'Organization (optional)', { autoCapitalize: 'words', autoComplete: 'off', placeholder: 'Company or agency name' })}
-        {field('email', 'Email * (for your certificate)', { type: 'email', inputMode: 'email', autoCapitalize: 'none', autoComplete: 'off' })}
-        {f.email.trim() && !emailOk && <p className="text-xl text-red-600 -mt-3">Please check your email: it should look like name@example.com.</p>}
-        {err && <p className="text-2xl text-red-600">{err}</p>}
-        <button
-          type="submit"
-          disabled={busy || !ok}
-          className="w-full py-5 text-3xl font-bold text-white rounded-2xl disabled:opacity-40"
-          style={{ background: NAVY }}
-        >
-          {busy ? 'Saving…' : 'Register'}
-        </button>
-        <p className="text-xl text-gray-600 text-center pb-6">Then go to the Registration Table to pay and pick up your badge.</p>
+        <div className="grid grid-cols-12 gap-3 items-end">
+          {box('email', 'Email * (for your certificate)', 'col-span-8')}
+          <button
+            type="button"
+            onClick={submit}
+            disabled={busy}
+            className="col-span-4 h-16 text-3xl font-extrabold text-white rounded-xl disabled:opacity-50"
+            style={{ background: ok ? NAVY : '#94a3b8' }}
+          >
+            {busy ? 'Saving…' : 'Register'}
+          </button>
+        </div>
+        <p className={`text-xl ${err || (f.email && !emailOk) ? 'text-red-600' : 'text-gray-600'}`}>
+          {err ||
+            (f.email && !emailOk
+              ? 'Please check your email: it should look like name@example.com.'
+              : 'Then go to the Registration Table to pay and pick up your badge.')}
+        </p>
       </div>
-    </form>
+      <FullKeyboard onKey={type1} onNext={next} shift={shift} setShift={setShift} lower={active === 'email'} />
+    </div>
+  );
+}
+
+const ROWS = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
+
+/** Letters, symbols for names/emails, and a number pad on the right. Keys react on touch-down. */
+function FullKeyboard({
+  onKey,
+  onNext,
+  shift,
+  setShift,
+  lower,
+}: {
+  onKey: (key: string) => void;
+  onNext: () => void;
+  shift: boolean;
+  setShift: (v: boolean) => void;
+  lower: boolean;
+}) {
+  const tap = (fn: () => void) => (e: React.PointerEvent) => {
+    e.preventDefault();
+    fn();
+  };
+  const keyCls =
+    'flex items-center justify-center rounded-xl bg-white border-b-4 border-gray-300 font-bold text-gray-900 shadow-sm active:bg-gray-200 active:border-b-2 active:translate-y-[2px] select-none';
+  const h = 'h-[clamp(3rem,7.6vh,4.5rem)]';
+  const txt = 'text-[clamp(1.4rem,3.4vh,2.1rem)]';
+  const label = (k: string) => (lower ? k.toLowerCase() : k);
+  return (
+    <div className="flex-shrink-0 bg-gray-200 px-3 pt-3 pb-4 flex gap-4" style={{ touchAction: 'manipulation' }}>
+      {/* Letters */}
+      <div className="flex-1 min-w-0 space-y-2">
+        {ROWS.map((row, i) => (
+          <div key={row} className="flex gap-2 justify-center" style={{ paddingLeft: `${i * 2.5}%`, paddingRight: i === 2 ? 0 : `${i * 2.5}%` }}>
+            {i === 2 && (
+              <button
+                type="button"
+                onPointerDown={tap(() => setShift(!shift))}
+                aria-label="Capital letter"
+                className={`${keyCls} ${h} flex-[1.4] ${shift ? '!bg-[#1B2E5B] !text-white' : 'bg-gray-100'}`}
+              >
+                <ArrowUp className="w-8 h-8" />
+              </button>
+            )}
+            {row.split('').map((k) => (
+              <button key={k} type="button" onPointerDown={tap(() => onKey(k))} className={`${keyCls} ${h} flex-1 ${txt}`}>
+                {label(k)}
+              </button>
+            ))}
+            {i === 2 && (
+              <button type="button" onPointerDown={tap(() => onKey('back'))} aria-label="Delete" className={`${keyCls} ${h} flex-[2] bg-gray-100 gap-2 text-2xl`}>
+                <Delete className="w-8 h-8 flex-shrink-0" /> Delete
+              </button>
+            )}
+          </div>
+        ))}
+        <div className="flex gap-2">
+          {['@', '.', '_', '-', "'"].map((k) => (
+            <button key={k} type="button" onPointerDown={tap(() => onKey(k))} className={`${keyCls} ${h} flex-1 ${txt}`}>
+              {k}
+            </button>
+          ))}
+          <button type="button" onPointerDown={tap(() => onKey(' '))} className={`${keyCls} ${h} flex-[4] text-2xl`}>
+            Space
+          </button>
+          <button type="button" onPointerDown={tap(onNext)} className={`${keyCls} ${h} flex-[2] gap-1 text-2xl !bg-[#1B2E5B] !text-white !border-[#0f1d3d]`}>
+            Next <ChevronRight className="w-7 h-7" />
+          </button>
+        </div>
+      </div>
+      {/* Number pad */}
+      <div className="w-[24%] max-w-[18rem] grid grid-cols-3 gap-2 content-start">
+        {['7', '8', '9', '4', '5', '6', '1', '2', '3'].map((k) => (
+          <button key={k} type="button" onPointerDown={tap(() => onKey(k))} className={`${keyCls} ${h} ${txt}`}>
+            {k}
+          </button>
+        ))}
+        <button type="button" onPointerDown={tap(() => onKey('0'))} className={`${keyCls} ${h} col-span-3 ${txt}`}>
+          0
+        </button>
+      </div>
+    </div>
   );
 }

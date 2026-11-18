@@ -50,7 +50,7 @@ export async function requireScanSession(
   const supabase = createServerSupabaseClient();
   const { data: course } = await supabase
     .from('cert_courses')
-    .select('id, name, course_date, course_end_date, event_start_time, event_end_time, badge_checkin_enabled, scanner_pin_hash, scanner_pin_version')
+    .select('id, name, course_date, course_end_date, event_start_time, event_end_time, badge_checkin_enabled, badge_tagline, scanner_pin_hash, scanner_pin_version')
     .eq('id', courseId)
     .maybeSingle();
   if (!course) return { error: NextResponse.json({ error: 'Event not found' }, { status: 404 }) };

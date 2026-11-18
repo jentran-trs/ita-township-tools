@@ -23,6 +23,8 @@ export type BadgeData = {
   isWalkIn?: boolean;
   // Eastern date they were first added (import or walk-in), "YYYY-MM-DD".
   addedOn?: string | null;
+  // Blank template: logo + type bar only (a walk-in's NIIMBOT label goes on it).
+  blank?: boolean;
 };
 
 export type BadgeEvent = {
@@ -57,7 +59,58 @@ function eventNameSize(name: string): string {
 
 const oneLine = { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } as const;
 
+/** Blank badge: ITA logo and the type bar, nothing else. No event name or tagline. */
+function BlankBadgeFront({ badge, logoUrl }: { badge: BadgeData; logoUrl: string }) {
+  const type = badgeTypeStyle(badge.registrantType);
+  return (
+    <div
+      style={{
+        width: '3.5in',
+        height: '2.25in',
+        boxSizing: 'border-box',
+        padding: '0.08in 0.12in 0.1in',
+        display: 'flex',
+        flexDirection: 'column',
+        fontFamily: FONT,
+        color: NAVY,
+        background: '#fff',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Logo in a narrow left column; the rest (about 2.9" x 1.8") is left
+          clear for a 70 x 40 mm NIIMBOT label (2.76" x 1.57"). */}
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', gap: '0.06in' }}>
+        <div style={{ width: '0.4in', flexShrink: 0, display: 'flex', alignItems: 'flex-start', paddingTop: '0.02in' }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={logoUrl} alt="ITA" style={{ height: '0.4in', width: '0.4in', objectFit: 'contain' }} />
+        </div>
+        <div style={{ flex: 1 }} />
+      </div>
+      <div
+        style={{
+          height: '0.21in',
+          marginTop: '0.04in',
+          borderRadius: '0.05in',
+          background: type.bg,
+          color: type.fg,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '8.5pt',
+          fontWeight: 800,
+          letterSpacing: '0.18em',
+          textTransform: 'uppercase',
+          flexShrink: 0,
+        }}
+      >
+        {type.label}
+      </div>
+    </div>
+  );
+}
+
 export function BadgeFront({ badge, event }: { badge: BadgeData; event: BadgeEvent }) {
+  if (badge.blank) return <BlankBadgeFront badge={badge} logoUrl={event.logoUrl} />;
   const name = `${badge.firstName} ${badge.lastName}`;
   const where = place(badge);
   const when = [event.dates, event.times].filter(Boolean).join(' · ');
@@ -141,6 +194,7 @@ export function BadgeFront({ badge, event }: { badge: BadgeData; event: BadgeEve
 }
 
 export function BadgeBack({ badge }: { badge: BadgeData }) {
+  if (badge.blank) return <div style={{ width: '3.5in', height: '2.25in', background: '#fff' }} />;
   return (
     <div style={{ width: '3.5in', height: '2.25in', boxSizing: 'border-box', padding: '0.2in', display: 'flex', alignItems: 'center', gap: '0.18in', fontFamily: FONT, color: NAVY, background: '#fff', overflow: 'hidden' }}>
       {/* QR with its caption underneath */}

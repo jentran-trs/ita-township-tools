@@ -42,6 +42,7 @@ export async function GET(_req: Request, { params }: { params: { courseId: strin
       days: eventDays(course.course_date, course.course_end_date),
       start_time: course.event_start_time,
       end_time: course.event_end_time,
+      tagline: course.badge_tagline ?? null,
     },
     // Only what the door needs (no emails etc. on volunteers' phones).
     registrants: (registrants || []).map((r: any) => ({

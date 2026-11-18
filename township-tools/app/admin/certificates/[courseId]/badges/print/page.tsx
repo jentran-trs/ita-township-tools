@@ -25,6 +25,7 @@ export default async function BadgePrintPage({ params, searchParams }: Props) {
         event={data.event}
         backHref={`/admin/certificates/${params.courseId}#registrants`}
         showShareLink
+        filesApi={`/api/admin/certificates/courses/${params.courseId}/files`}
         range={from || to ? { from, to } : undefined}
       />
     </div>

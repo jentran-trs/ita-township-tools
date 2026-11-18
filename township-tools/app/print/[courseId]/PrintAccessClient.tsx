@@ -69,7 +69,7 @@ export function PrintAccessClient({ courseId }: { courseId: string }) {
     }
   };
 
-  if (phase === 'ready' && data) return <BadgePrintClient courseId={courseId} badges={data.badges} event={data.event}  range={(() => { const q = new URLSearchParams(rangeQuery); const f = parseInt(q.get('from') || '', 10) || null; const t = parseInt(q.get('to') || '', 10) || null; return f || t ? { from: f, to: t } : undefined; })()} />;
+  if (phase === 'ready' && data) return <BadgePrintClient courseId={courseId} badges={data.badges} event={data.event} filesApi={`/api/scan/${courseId}/files`}  range={(() => { const q = new URLSearchParams(rangeQuery); const f = parseInt(q.get('from') || '', 10) || null; const t = parseInt(q.get('to') || '', 10) || null; return f || t ? { from: f, to: t } : undefined; })()} />;
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">

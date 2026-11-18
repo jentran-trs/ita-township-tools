@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Copy, Printer } from 'lucide-react';
 import { BadgeBack, BadgeData, BadgeEvent, BadgeFront } from '@/components/badges/Badge';
+import { PrintFilesList } from '@/components/badges/PrintFilesList';
 
 // Avery 5390: letter sheet, 2 x 4 inserts of 3.5" x 2.25", no gaps,
 // 0.75" side margins, 1" top margin.
@@ -45,6 +46,7 @@ export function BadgePrintClient({
   backHref,
   showShareLink,
   range,
+  filesApi,
 }: {
   courseId: string;
   badges: BadgeData[];
@@ -52,6 +54,8 @@ export function BadgePrintClient({
   // Admin page only: link back to Badges & check-in, and the link to share with the printer.
   backHref?: string;
   showShareLink?: boolean;
+  // Where the event's other files to print come from (admin or PIN API).
+  filesApi?: string;
   // Printing only badges #from–#to (e.g. late registrants).
   range?: { from: number | null; to: number | null };
 }) {
@@ -73,15 +77,30 @@ export function BadgePrintClient({
     const days = Array.from(byDay.entries()).sort((a, b) => a[0].localeCompare(b[0]));
     return { days, walkIns };
   }, [allBadges]);
-  const badges = useMemo(
-    () =>
-      batch === 'all'
-        ? allBadges
-        : batch === 'walkin'
-          ? allBadges.filter((b) => b.isWalkIn)
-          : allBadges.filter((b) => !b.isWalkIn && b.addedOn === batch),
-    [allBadges, batch]
-  );
+  // Blank badges (no name, number or QR): a walk-in's NIIMBOT label goes on top.
+  const [blankSheets, setBlankSheets] = useState(1);
+  const isBlank = batch === 'blank-attendee' || batch === 'blank-sponsor';
+  const badges = useMemo(() => {
+    if (isBlank) {
+      const type = batch === 'blank-sponsor' ? 'Sponsor' : 'Attendee';
+      return Array.from({ length: Math.max(1, blankSheets) * 8 }, (_, i) => ({
+        id: `blank-${i}`,
+        firstName: '',
+        lastName: '',
+        title: null,
+        township: null,
+        county: null,
+        registrantType: type,
+        qrSrc: '',
+        blank: true,
+      })) as BadgeData[];
+    }
+    return batch === 'all'
+      ? allBadges
+      : batch === 'walkin'
+        ? allBadges.filter((b) => b.isWalkIn)
+        : allBadges.filter((b) => !b.isWalkIn && b.addedOn === batch);
+  }, [allBadges, batch, isBlank, blankSheets]);
   const chooseBatch = (v: string) => {
     setBatch(v);
     try {
@@ -94,7 +113,15 @@ export function BadgePrintClient({
   const dayName = (d: string) =>
     new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
   const batchLabel =
-    batch === 'all' ? null : batch === 'walkin' ? 'walk-ins only' : `added ${dayName(batch)} only`;
+    batch === 'all'
+      ? null
+      : batch === 'walkin'
+        ? 'walk-ins only'
+        : batch === 'blank-attendee'
+          ? 'blank Attendee badges'
+          : batch === 'blank-sponsor'
+            ? 'blank Sponsor badges'
+            : `added ${dayName(batch)} only`;
 
   const [side, setSide] = useState<Side>('front');
   const [start, setStart] = useState(1);
@@ -159,14 +186,15 @@ export function BadgePrintClient({
             <ArrowLeft className="w-4 h-4" /> Back to badges
           </Link>
         )}
+        {filesApi && <PrintFilesList api={filesApi} />}
         {showShareLink && (
           <ShareWithPrinter
             courseId={courseId}
             eventName={event.name}
             range={range}
             rangeLabel={rangeLabel}
-            added={batch === 'all' ? null : batch}
-            addedLabel={batch === 'all' ? null : batch === 'walkin' ? 'the walk-in badges' : `the badges added ${dayName(batch)}`}
+            added={batch === 'all' || isBlank ? null : batch}
+            addedLabel={batch === 'all' || isBlank ? null : batch === 'walkin' ? 'the walk-in badges' : `the badges added ${dayName(batch)}`}
           />
         )}
 
@@ -176,7 +204,7 @@ export function BadgePrintClient({
               Print badges{rangeLabel ? ` ${rangeLabel} only` : ''}
               {batchLabel ? ` · ${batchLabel}` : ''}
             </h1>
-            {(batches.days.length > 1 || batches.walkIns > 0 || batch !== 'all') && (
+            {(
               <label className="block my-2">
                 <span className="block font-medium mb-1">Which badges</span>
                 <select value={batch} onChange={(e) => chooseBatch(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white">
@@ -187,11 +215,26 @@ export function BadgePrintClient({
                     </option>
                   ))}
                   {batches.walkIns > 0 && <option value="walkin">Walk-ins ({batches.walkIns})</option>}
+                  <option value="blank-attendee">Blank badges · Attendee</option>
+                  <option value="blank-sponsor">Blank badges · Sponsor</option>
                 </select>
                 <span className="block text-xs text-gray-500 mt-1">
-                  To print only the people added in the latest import, pick that day. Each person is listed under the day
-                  they were first added.
+                  To print only the people added in the latest import, pick that day. Blank badges have the ITA logo and
+                  the type bar only, for walk-ins: stick their NIIMBOT label in the middle.
                 </span>
+              </label>
+            )}
+            {isBlank && (
+              <label className="block mb-2">
+                <span className="block font-medium mb-1">Sheets of blank badges (8 per sheet)</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={50}
+                  value={blankSheets}
+                  onChange={(e) => setBlankSheets(Math.max(1, Math.min(50, parseInt(e.target.value, 10) || 1)))}
+                  className="w-24 px-3 py-2 border border-gray-300 rounded-lg"
+                />
               </label>
             )}
             <p className="text-gray-600">

@@ -3,9 +3,10 @@
 // resolution (8 px/mm → 560 x 320) and saved as a PNG; Jen adds it as a
 // picture in the NIIMBOT app (the printer can't be driven from a website).
 //
-// Layout: event name centred across the top; below it, the name, title and
-// township/company centred vertically on the left, and the QR code on the
-// right edge.
+// Layout: a header strip with the ITA logo (left), event name + tagline, and
+// the badge number big in the top-right corner (like the printed badge); below
+// it, the name, title and township/company centred on the left, and the QR
+// code on the right edge.
 import QRCode from 'qrcode';
 import { townshipLabel } from '@/lib/certificates/township';
 
@@ -16,18 +17,20 @@ export type LabelInput = {
   township: string | null;
   county: string | null;
   organization?: string | null;
-  // "Walk-in #2" / "#47", shown above the name.
+  // "Walk-in #2" / "#47", shown big in the top-right corner.
   numberLabel?: string | null;
   badgeToken: string;
   eventName: string;
+  tagline?: string | null;
+  logoUrl?: string;
 };
 
 const PX_PER_MM = 8;
 const W = 70 * PX_PER_MM;
 const H = 40 * PX_PER_MM;
 const PAD = 2.5 * PX_PER_MM;
-const HEADER = 7 * PX_PER_MM; // event name strip at the top
-const QR = 30 * PX_PER_MM;
+const HEADER = 11 * PX_PER_MM; // logo + event name (1–2 lines) + tagline + badge number
+const QR = 22 * PX_PER_MM;
 const FONT = 'Arial, Helvetica, sans-serif';
 
 function fitFont(ctx: CanvasRenderingContext2D, text: string, weight: string, maxPx: number, minPx: number, maxWidth: number) {
@@ -48,6 +51,15 @@ function ellipsize(ctx: CanvasRenderingContext2D, text: string, maxWidth: number
   return t + '…';
 }
 
+function loadImage(src: string): Promise<HTMLImageElement | null> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
 export async function renderNiimbotLabel(input: LabelInput): Promise<Blob> {
   const canvas = document.createElement('canvas');
   canvas.width = W;
@@ -57,16 +69,79 @@ export async function renderNiimbotLabel(input: LabelInput): Promise<Blob> {
   ctx.fillRect(0, 0, W, H);
   ctx.fillStyle = '#000';
 
-  // Event name, centred across the top.
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  fitFont(ctx, input.eventName, 'bold', 26, 16, W - PAD * 2);
-  ctx.fillText(ellipsize(ctx, input.eventName, W - PAD * 2), W / 2, PAD + HEADER / 2 - 4);
-  ctx.fillRect(PAD, PAD + HEADER, W - PAD * 2, 2);
+  // ── Header: logo | event name + tagline | badge number ──
+  const logo = await loadImage(input.logoUrl || '/badges/ita-logo.png');
+  const logoSize = HEADER;
+  if (logo) ctx.drawImage(logo, PAD, PAD, logoSize, logoSize);
 
-  // QR code on the right edge, centred in the space under the header.
+  // Badge number, big, top-right ("WALK-IN" small above a walk-in's number).
+  let numberLeft = W - PAD;
+  if (input.numberLabel) {
+    const walkIn = /^walk-in/i.test(input.numberLabel);
+    const num = walkIn ? input.numberLabel.replace(/^walk-in\s*/i, '') : input.numberLabel;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.font = `bold ${walkIn ? 44 : 52}px ${FONT}`;
+    const numW = ctx.measureText(num).width;
+    ctx.fillText(num, W - PAD, PAD + (walkIn ? HEADER * 0.62 : HEADER / 2));
+    let blockW = numW;
+    if (walkIn) {
+      ctx.font = `bold 15px ${FONT}`;
+      ctx.fillText('WALK-IN', W - PAD, PAD + HEADER * 0.16);
+      blockW = Math.max(numW, ctx.measureText('WALK-IN').width);
+    }
+    numberLeft = W - PAD - blockW;
+  }
+
+  // Event name and tagline between the logo and the number.
+  const textLeft = PAD + (logo ? logoSize + 10 : 0);
+  const textRight = numberLeft - 10;
+  const midW = Math.max(40, textRight - textLeft);
+  const midX = textLeft + midW / 2;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  // Event name as big as fits: one line if it can be large, else two lines.
+  const tagSize = input.tagline ? 18 : 0;
+  const nameMax = input.tagline ? 40 : 46;
+  let nameLines = [input.eventName];
+  let nameSize = fitFont(ctx, input.eventName, 'bold', nameMax, 12, midW);
+  if (nameSize < 30 && input.eventName.includes(' ')) {
+    const words = input.eventName.split(/\s+/);
+    let best: string[] = [input.eventName];
+    let bestW = Infinity;
+    for (let i = 1; i < words.length; i++) {
+      const a = words.slice(0, i).join(' ');
+      const b = words.slice(i).join(' ');
+      ctx.font = `bold 30px ${FONT}`;
+      const w = Math.max(ctx.measureText(a).width, ctx.measureText(b).width);
+      if (w < bestW) {
+        bestW = w;
+        best = [a, b];
+      }
+    }
+    const twoMax = input.tagline ? 32 : 40;
+    const twoSize = Math.min(fitFont(ctx, best[0], 'bold', twoMax, 12, midW), fitFont(ctx, best[1], 'bold', twoMax, 12, midW));
+    if (twoSize > nameSize) {
+      nameLines = best;
+      nameSize = twoSize;
+    }
+  }
+  const groupH = nameLines.length * nameSize * 1.05 + (tagSize ? 4 + tagSize : 0);
+  let ty = PAD + (HEADER - groupH) / 2;
+  ctx.font = `bold ${nameSize}px ${FONT}`;
+  for (const line of nameLines) {
+    ctx.fillText(ellipsize(ctx, line, midW), midX, ty);
+    ty += nameSize * 1.05;
+  }
+  if (input.tagline) {
+    fitFont(ctx, input.tagline, 'normal', tagSize, 12, midW);
+    ctx.fillText(ellipsize(ctx, input.tagline, midW), midX, ty + 4);
+  }
+  ctx.fillRect(PAD, PAD + HEADER + 4, W - PAD * 2, 2);
+
+  // ── Body: QR code on the right edge, centred in the space under the header.
   // A white gap under the line keeps the QR code's quiet zone, so it scans reliably.
-  const bodyTop = PAD + HEADER + 2 + 10;
+  const bodyTop = PAD + HEADER + 6 + 10;
   const bodyH = H - bodyTop - PAD;
   const qrSize = Math.min(QR, bodyH);
   const qrX = W - PAD - qrSize;
@@ -75,21 +150,27 @@ export async function renderNiimbotLabel(input: LabelInput): Promise<Blob> {
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(qrCanvas, qrX, bodyTop + (bodyH - qrSize) / 2, qrSize, qrSize);
 
-  // Name, title, township/company: centred left of the QR, vertically centred.
+  // Name, title, township/company: big, centred left of the QR, vertically centred.
   const textW = qrX - PAD * 2;
   const cx = PAD + textW / 2;
   const place = [townshipLabel(input.township), input.county ? `${input.county} County` : null].filter(Boolean).join(', ') || input.organization || '';
   type Line = { text: string; weight: string; max: number; min: number; gap: number };
   const lines: Line[] = [
-    ...(input.numberLabel ? [{ text: input.numberLabel, weight: 'bold', max: 26, min: 18, gap: 0 }] : []),
-    { text: input.firstName, weight: 'bold', max: 56, min: 26, gap: input.numberLabel ? 6 : 0 },
-    { text: input.lastName, weight: 'bold', max: 36, min: 20, gap: 2 },
-    ...(input.title ? [{ text: input.title, weight: 'normal', max: 22, min: 16, gap: 10 }] : []),
-    ...(place ? [{ text: place, weight: 'normal', max: 20, min: 15, gap: 4 }] : []),
+    { text: input.firstName, weight: 'bold', max: 64, min: 30, gap: 0 },
+    { text: input.lastName, weight: 'bold', max: 46, min: 24, gap: 0 },
+    ...(input.title ? [{ text: input.title, weight: 'normal', max: 27, min: 17, gap: 8 }] : []),
+    ...(place ? [{ text: place, weight: 'normal', max: 25, min: 16, gap: 2 }] : []),
   ];
-  // Measure first so the whole block can be centred.
-  const sized = lines.map((l) => ({ ...l, size: fitFont(ctx, l.text, l.weight, l.max, l.min, textW) }));
-  const blockH = sized.reduce((h, l) => h + l.gap + l.size * 1.1, 0);
+  // Fit each line to the width, then shrink everything together if the block
+  // is taller than the space.
+  let sized = lines.map((l) => ({ ...l, size: fitFont(ctx, l.text, l.weight, l.max, l.min, textW) }));
+  const heightOf = (ls: typeof sized) => ls.reduce((h, l) => h + l.gap + l.size * 1.12, 0);
+  let blockH = heightOf(sized);
+  if (blockH > bodyH) {
+    const k = bodyH / blockH;
+    sized = sized.map((l) => ({ ...l, size: Math.floor(l.size * k), gap: Math.floor(l.gap * k) }));
+    blockH = heightOf(sized);
+  }
   let y = bodyTop + (bodyH - blockH) / 2;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
@@ -97,7 +178,7 @@ export async function renderNiimbotLabel(input: LabelInput): Promise<Blob> {
     y += l.gap;
     ctx.font = `${l.weight} ${l.size}px ${FONT}`;
     ctx.fillText(ellipsize(ctx, l.text, textW), cx, y);
-    y += l.size * 1.1;
+    y += l.size * 1.12;
   }
 
   return new Promise((resolve, reject) =>

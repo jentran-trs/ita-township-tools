@@ -5,6 +5,8 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import { AlertTriangle, Check, ChevronLeft, ChevronRight, Download, FileUp, Loader2, MoreHorizontal, Printer, RotateCcw, Search, Tag, Trash2, Upload, X } from 'lucide-react';
 import { deliverLabel, renderNiimbotLabel } from '@/lib/badges/niimbot-label';
 import { badgeNumberLabel } from '@/lib/badges/badge-numbers';
+import { getSupabaseClient } from '@/lib/supabase';
+import { fileSize, printedWhen } from '@/components/badges/PrintFilesList';
 import { townshipLabel } from '@/lib/certificates/township';
 import { formatCourseDates } from '@/lib/certificates/date-range';
 import { easternDate, easternTime, eventDays, formatEventTimes } from '@/lib/badges/attendance';
@@ -324,6 +326,7 @@ export function BadgesClient({
               }}
             />
           )}
+          {enabled && <PrintFilesCard courseId={courseId} />}
         </>
       )}
       {tab === 'registrants' && enabled && <RegistrantsCard course={course} registrants={registrants} onChanged={load} query={query} setQuery={setQuery} />}
@@ -611,6 +614,156 @@ function CurrentPin({ pin }: { pin: string | null }) {
         {copied ? 'Copied' : 'Copy'}
       </button>
     </span>
+  );
+}
+
+type AdminPrintFile = {
+  id: string;
+  file_name: string;
+  size_bytes: number | null;
+  copies: number;
+  printed_at: string | null;
+  printed_by: string | null;
+  download_url: string | null;
+};
+
+/** Files for whoever prints (Lydia) to download, print N copies of, and tick "Printed". */
+function PrintFilesCard({ courseId }: { courseId: string }) {
+  const api = `/api/admin/certificates/courses/${courseId}/files`;
+  const [files, setFiles] = useState<AdminPrintFile[] | null>(null);
+  const [copies, setCopies] = useState('1');
+  const [uploading, setUploading] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch(api, { cache: 'no-store' });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Could not load files');
+      setFiles(json.files);
+    } catch (e: any) {
+      setErr(e.message);
+    }
+  }, [api]);
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const upload = async (list: FileList | null) => {
+    if (!list?.length) return;
+    setErr(null);
+    for (const file of Array.from(list)) {
+      setUploading(file.name);
+      try {
+        const res = await fetch(api, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ file_name: file.name, size_bytes: file.size, content_type: file.type, copies: parseInt(copies, 10) || 1 }),
+        });
+        const start = await res.json();
+        if (!res.ok) throw new Error(start.error || 'Could not upload');
+        // Straight to storage (bypasses the 4.5 MB limit on server functions).
+        const { error } = await getSupabaseClient()
+          .storage.from(start.bucket)
+          .uploadToSignedUrl(start.path, start.token, file, { contentType: file.type || 'application/octet-stream' });
+        if (error) {
+          await fetch(`${api}?id=${start.id}`, { method: 'DELETE' });
+          throw new Error(error.message);
+        }
+        await fetch(api, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: start.id, uploaded: true }) });
+      } catch (e: any) {
+        setErr(`${file.name}: ${e.message}`);
+      }
+    }
+    setUploading(null);
+    if (fileInput.current) fileInput.current.value = '';
+    load();
+  };
+
+  const patch = async (id: string, body: Record<string, any>) => {
+    const res = await fetch(api, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...body }) });
+    if (!res.ok) setErr((await res.json().catch(() => ({}))).error || 'Could not save');
+    load();
+  };
+  const remove = async (f: AdminPrintFile) => {
+    if (!window.confirm(`Remove "${f.file_name}"? It disappears from the print page too.`)) return;
+    await fetch(`${api}?id=${f.id}`, { method: 'DELETE' });
+    load();
+  };
+
+  return (
+    <section className={card}>
+      <h2 className="text-base font-bold mb-1">Files to print</h2>
+      <p className="text-sm text-gray-500 mb-4">
+        Agendas, handouts, sign-in sheets… Upload them with the number of copies. They show on the badge print page (the
+        same link as the badges) where the printer downloads each one and ticks <strong>Printed</strong>. Up to 50 MB each.
+      </p>
+      <div className="flex flex-wrap items-end gap-3 mb-4">
+        <label className="text-sm">
+          <span className="block font-medium mb-1">Copies of each</span>
+          <input
+            type="number"
+            min={1}
+            max={10000}
+            value={copies}
+            onChange={(e) => setCopies(e.target.value)}
+            className={inputCls + ' w-24'}
+          />
+        </label>
+        <label className={btn + ' bg-amber-500 text-white hover:bg-amber-600 cursor-pointer'}>
+          {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+          {uploading ? `Uploading ${uploading}…` : 'Upload files'}
+          <input ref={fileInput} type="file" multiple className="hidden" disabled={!!uploading} onChange={(e) => upload(e.target.files)} />
+        </label>
+      </div>
+      {err && <p className="text-sm text-red-600 mb-3">{err}</p>}
+      {!files ? (
+        <p className="text-sm text-gray-500">Loading…</p>
+      ) : !files.length ? (
+        <p className="text-sm text-gray-500">No files yet.</p>
+      ) : (
+        <ul className="divide-y divide-gray-100 dark:divide-gray-800 border border-gray-200 dark:border-gray-800 rounded-lg text-sm">
+          {files.map((f) => (
+            <li key={f.id} className="px-3 py-2.5 flex flex-wrap items-center gap-3">
+              <div className="flex-1 min-w-[12rem]">
+                {f.download_url ? (
+                  <a href={f.download_url} className="font-medium hover:underline break-words">
+                    {f.file_name}
+                  </a>
+                ) : (
+                  <span className="font-medium break-words">{f.file_name}</span>
+                )}
+                <div className="text-xs text-gray-500">{fileSize(f.size_bytes)}</div>
+              </div>
+              <label className="flex items-center gap-1.5">
+                <span className="text-xs text-gray-500">Copies</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={10000}
+                  defaultValue={f.copies}
+                  onBlur={(e) => {
+                    const n = parseInt(e.target.value, 10);
+                    if (Number.isFinite(n) && n !== f.copies) patch(f.id, { copies: n });
+                  }}
+                  className={inputCls + ' w-20 py-1'}
+                />
+              </label>
+              <label className="flex items-center gap-1.5 cursor-pointer" title={f.printed_at ? `Ticked by ${f.printed_by || 'printer'}` : ''}>
+                <input type="checkbox" checked={!!f.printed_at} onChange={() => patch(f.id, { printed: !f.printed_at })} className="h-4 w-4 accent-green-600" />
+                <span className={f.printed_at ? 'text-green-700 dark:text-green-400 font-semibold' : 'text-gray-600'}>
+                  {f.printed_at ? `Printed ${printedWhen(f.printed_at)}` : 'Not printed'}
+                </span>
+              </label>
+              <button type="button" onClick={() => remove(f)} className="text-red-600 hover:text-red-700" aria-label={`Remove ${f.file_name}`} title="Remove">
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 
@@ -1096,6 +1249,7 @@ function RegistrantsCard({
                                 organization: r.organization,
                                 badgeToken: r.badge_token,
                                 eventName: course.name,
+                                tagline: course.badge_tagline,
                               });
                               await deliverLabel(blob, `label-${r.last_name}-${r.first_name}.png`.replace(/\s+/g, '-'));
                             } catch (e: any) {

@@ -624,6 +624,7 @@ function ScanScreen({
                   organization: lastWalkIn.organization,
                   badgeToken: lastWalkIn.badge_token,
                   eventName: event.name,
+                  tagline: event.tagline ?? null,
                 });
                 await deliverLabel(blob, `label-${lastWalkIn.last_name}-${lastWalkIn.first_name}.png`.replace(/\s+/g, '-'));
               } catch (e: any) {

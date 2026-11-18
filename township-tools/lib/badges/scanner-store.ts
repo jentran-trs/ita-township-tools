@@ -58,7 +58,7 @@ export type WalkInRecord = {
 };
 
 export type ScannerState = {
-  event: { id: string; name: string; days: string[]; start_time: string | null; end_time: string | null } | null;
+  event: { id: string; name: string; days: string[]; start_time: string | null; end_time: string | null; tagline?: string | null } | null;
   roster: RosterPerson[];
   scans: ScanRecord[]; // server scans + everything recorded on this phone
   pendingScans: ScanRecord[];

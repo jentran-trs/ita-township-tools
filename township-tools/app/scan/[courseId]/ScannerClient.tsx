@@ -1357,7 +1357,7 @@ function WalkInSheet({
               registrant_type: f.registrant_type,
               township: (!usesOrg && f.township.trim()) || undefined,
               county: (!usesOrg && f.county.trim()) || undefined,
-              organization: (usesOrg && f.organization.trim()) || undefined,
+              organization: f.organization.trim() || undefined,
               email: f.email.trim(),
             },
             checkIn,
@@ -1387,10 +1387,13 @@ function WalkInSheet({
         {usesOrg ? (
           field('organization', 'Organization', { autoCapitalize: 'words', placeholder: 'Company or agency name' })
         ) : (
-          <div className="grid grid-cols-2 gap-3">
-            {field('township', 'Township', { autoCapitalize: 'words' })}
-            {field('county', 'County', { autoCapitalize: 'words' })}
-          </div>
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              {field('township', 'Township', { autoCapitalize: 'words' })}
+              {field('county', 'County', { autoCapitalize: 'words' })}
+            </div>
+            {field('organization', 'Organization (optional)', { autoCapitalize: 'words', placeholder: 'Company or agency name' })}
+          </>
         )}
         {field('email', 'Email * (for their certificate)', { type: 'email', inputMode: 'email', autoCapitalize: 'none', required: true })}
         {f.email.trim() && !emailOk && <p className="text-sm text-red-600 -mt-2">Check the email: it should look like name@example.com.</p>}

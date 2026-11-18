@@ -6,7 +6,7 @@ import QRCode from 'qrcode';
 import { Camera, CheckCircle2, CloudOff, LogIn, LogOut, QrCode, RefreshCw, Search, UserPlus, X, XCircle, AlertTriangle } from 'lucide-react';
 import { easternDate, easternTime } from '@/lib/badges/attendance';
 import { isBadgeToken } from '@/lib/badges/token';
-import { townshipLabel } from '@/lib/certificates/township';
+import { extraOrganization, townshipLabel } from '@/lib/certificates/township';
 import { badgeNumberLabel } from '@/lib/badges/badge-numbers';
 import { formatCourseDates } from '@/lib/certificates/date-range';
 import { deliverLabel, renderNiimbotLabel } from '@/lib/badges/niimbot-label';
@@ -1250,6 +1250,7 @@ function NameLookup({
                     {(townshipLabel(p.township) || p.organization) && (
                       <div className="text-lg text-gray-600 leading-snug">{townshipLabel(p.township) || p.organization}</div>
                     )}
+                    {extraOrganization(p) && <div className="text-lg text-gray-600 leading-snug">{extraOrganization(p)}</div>}
                     {(p.cancelled || p.payment_status === 'due') && (
                       <div className="mt-2 flex flex-wrap gap-2">
                         {p.cancelled && <span className="px-3 py-1 rounded-full text-base font-bold bg-red-600 text-white">CANCELLED</span>}
@@ -1355,8 +1356,8 @@ function WalkInSheet({
               last_name: f.last_name.trim(),
               title: f.title.trim() || undefined,
               registrant_type: f.registrant_type,
-              township: (!usesOrg && f.township.trim()) || undefined,
-              county: (!usesOrg && f.county.trim()) || undefined,
+              township: f.township.trim() || undefined,
+              county: f.county.trim() || undefined,
               organization: f.organization.trim() || undefined,
               email: f.email.trim(),
             },
@@ -1384,17 +1385,13 @@ function WalkInSheet({
             </select>
           </label>
         </div>
-        {usesOrg ? (
-          field('organization', 'Organization', { autoCapitalize: 'words', placeholder: 'Company or agency name' })
-        ) : (
-          <>
-            <div className="grid grid-cols-2 gap-3">
-              {field('township', 'Township', { autoCapitalize: 'words' })}
-              {field('county', 'County', { autoCapitalize: 'words' })}
-            </div>
-            {field('organization', 'Organization (optional)', { autoCapitalize: 'words', placeholder: 'Company or agency name' })}
-          </>
-        )}
+        {/* Sponsors, speakers and vendors: organization first; everyone can have both. */}
+        {usesOrg && field('organization', 'Organization', { autoCapitalize: 'words', placeholder: 'Company or agency name' })}
+        <div className="grid grid-cols-2 gap-3">
+          {field('township', usesOrg ? 'Township (optional)' : 'Township', { autoCapitalize: 'words' })}
+          {field('county', usesOrg ? 'County (optional)' : 'County', { autoCapitalize: 'words' })}
+        </div>
+        {!usesOrg && field('organization', 'Organization (optional)', { autoCapitalize: 'words', placeholder: 'Company or agency name' })}
         {field('email', 'Email * (for their certificate)', { type: 'email', inputMode: 'email', autoCapitalize: 'none', required: true })}
         {f.email.trim() && !emailOk && <p className="text-sm text-red-600 -mt-2">Check the email: it should look like name@example.com.</p>}
         <label className="flex items-center gap-3 text-xl font-semibold py-1">

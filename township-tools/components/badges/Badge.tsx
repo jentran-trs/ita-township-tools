@@ -1,5 +1,5 @@
 import { GOLD, NAVY } from '@/lib/certificates/theme';
-import { townshipLabel } from '@/lib/certificates/township';
+import { extraOrganization, townshipLabel } from '@/lib/certificates/township';
 import { badgeTypeStyle } from '@/lib/badges/badge-type';
 
 // Printable 3.5" x 2.25" horizontal name badge (Avery 5390, 8 per sheet),
@@ -106,6 +106,7 @@ export function BadgeFront({ badge, event }: { badge: BadgeData; event: BadgeEve
   if (badge.blank) return <BlankBadgeFront badge={badge} />;
   const name = `${badge.firstName} ${badge.lastName}`;
   const where = place(badge);
+  const org = extraOrganization(badge);
   const when = [event.dates, event.times].filter(Boolean).join(' · ');
   const type = badgeTypeStyle(badge.registrantType);
   const num = badge.isWalkIn ? badge.walkinNumber : badge.badgeNumber;
@@ -155,6 +156,7 @@ export function BadgeFront({ badge, event }: { badge: BadgeData; event: BadgeEve
         {where && (
           <div style={{ fontSize: lineSize(where, 11), fontWeight: 700, marginTop: '0.01in', lineHeight: 1.3, maxWidth: '100%', ...oneLine }}>{where}</div>
         )}
+        {org && <div style={{ fontSize: lineSize(org, 10), fontWeight: 700, lineHeight: 1.3, maxWidth: '100%', ...oneLine }}>{org}</div>}
         {badge.title && (
           <div style={{ fontSize: lineSize(badge.title, 10), fontWeight: 600, color: MUTED, marginTop: 0, lineHeight: 1.3, maxWidth: '100%', ...oneLine }}>
             {badge.title}

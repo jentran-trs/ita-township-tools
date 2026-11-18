@@ -15,3 +15,17 @@ export function townshipLabel(township: string | null | undefined): string | nul
   if (!t) return null;
   return NOT_A_BARE_NAME.test(t) ? t : `${t} Township`;
 }
+
+/**
+ * Organization to show as an extra line on badges/labels when the person also
+ * has a township or county (otherwise the organization is already the place
+ * line). Skipped when it just repeats the township.
+ */
+export function extraOrganization(p: { township?: string | null; county?: string | null; organization?: string | null }): string | null {
+  const org = (p.organization || '').trim();
+  if (!org || !(p.township || p.county)) return null;
+  const twp = (p.township || '').trim().toLowerCase();
+  const o = org.toLowerCase();
+  if (twp && (o === twp || o === `${twp} township` || o === townshipLabel(p.township)?.toLowerCase())) return null;
+  return org;
+}

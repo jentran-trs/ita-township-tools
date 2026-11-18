@@ -8,7 +8,7 @@
 // it, the name, title and township/company centred on the left, and the QR
 // code on the right edge.
 import QRCode from 'qrcode';
-import { townshipLabel } from '@/lib/certificates/township';
+import { extraOrganization, townshipLabel } from '@/lib/certificates/township';
 
 export type LabelInput = {
   firstName: string;
@@ -160,6 +160,7 @@ export async function renderNiimbotLabel(input: LabelInput): Promise<Blob> {
     { text: input.lastName, weight: 'bold', max: 46, min: 24, gap: 0 },
     ...(input.title ? [{ text: input.title, weight: 'normal', max: 27, min: 17, gap: 8 }] : []),
     ...(place ? [{ text: place, weight: 'normal', max: 25, min: 16, gap: 2 }] : []),
+    ...(extraOrganization(input) ? [{ text: extraOrganization(input)!, weight: 'normal', max: 25, min: 16, gap: 2 }] : []),
   ];
   // Fit each line to the width, then shrink everything together if the block
   // is taller than the space.

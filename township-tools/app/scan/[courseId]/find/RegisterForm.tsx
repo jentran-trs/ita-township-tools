@@ -5,7 +5,7 @@ import { ArrowUp, CheckCircle2, ChevronRight, Delete } from 'lucide-react';
 
 const NAVY = '#1B2E5B';
 const IDLE_MS = 90_000; // walked away mid-form: back to the search screen after 1.5 minutes
-const THANKS_MS = 12_000;
+const THANKS_MS = 5_000; // thank-you, then straight back to Find My Badge Number
 const TYPES = ['Attendee', 'Sponsor', 'Speaker', 'Resource Vendor', 'Staff'];
 
 type FieldKey = 'first_name' | 'last_name' | 'title' | 'township' | 'county' | 'organization' | 'email';

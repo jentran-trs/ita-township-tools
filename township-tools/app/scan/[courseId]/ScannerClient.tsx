@@ -912,15 +912,19 @@ function CameraView({ paused, onCode, onStart, mode }: { paused: boolean; onCode
   const ring = mode === 'in' ? 'ring-green-500' : 'ring-blue-500';
 
   return (
-    <div className={`relative aspect-[4/3] bg-black rounded-2xl overflow-hidden ring-4 ${ring}`}>
+    <div
+      className={`relative bg-black rounded-2xl overflow-hidden ring-4 ${ring} ${
+        status === 'denied' || status === 'error' ? 'min-h-[13rem]' : 'aspect-[2/1]'
+      }`}
+    >
       <video ref={video} playsInline muted className="absolute inset-0 w-full h-full object-cover" />
       {status === 'running' && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="w-1/2 aspect-square border-4 border-white/80 rounded-2xl" />
+          <div className="h-[84%] aspect-square border-4 border-white/80 rounded-2xl" />
         </div>
       )}
       {status !== 'running' && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-white text-center p-6 gap-3">
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-white text-center p-4 gap-3">
           {status === 'denied' ? (
             <>
               <p className="font-semibold">Camera access was blocked.</p>
@@ -1143,6 +1147,12 @@ function NameLookup({
                       <div className="flex-1 min-w-0">
                         <div className="font-bold text-2xl leading-tight">
                           {p.first_name} {p.last_name}
+                          {st === 'in' && (
+                            <span className="ml-2 align-middle inline-block px-2.5 py-0.5 rounded-full text-base font-bold bg-green-600 text-white">Checked in</span>
+                          )}
+                          {st === 'out' && (
+                            <span className="ml-2 align-middle inline-block px-2.5 py-0.5 rounded-full text-base font-bold bg-gray-500 text-white">Checked out</span>
+                          )}
                         </div>
                         <div className="text-lg text-gray-600 mt-0.5">
                           {[p.title, townshipLabel(p.township) || p.organization].filter(Boolean).join(' · ')}
@@ -1156,11 +1166,9 @@ function NameLookup({
                         <span className="flex-shrink-0 text-2xl font-extrabold text-[#1B2E5B] text-right">Walk-in</span>
                       ) : null}
                     </div>
-                    {(st || p.cancelled || p.payment_status === 'due') && (
+                    {(p.cancelled || p.payment_status === 'due') && (
                       <div className="mt-2 flex flex-wrap gap-2">
                         {p.cancelled && <span className="px-3 py-1 rounded-full text-base font-bold bg-red-600 text-white">CANCELLED</span>}
-                        {st === 'in' && <span className="px-3 py-1 rounded-full text-base font-bold bg-green-600 text-white">Checked in</span>}
-                        {st === 'out' && <span className="px-3 py-1 rounded-full text-base font-bold bg-gray-500 text-white">Checked out</span>}
                         {p.payment_status === 'due' && (
                           <span className="px-3 py-1 rounded-full text-base font-bold bg-red-100 text-red-700 border border-red-300">Payment due</span>
                         )}

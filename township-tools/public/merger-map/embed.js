@@ -217,6 +217,14 @@
       var c = COUNTIES[j], name = c[0];
       pathEls[name].setAttribute("fill", fillFor(name));
       labelLayer.appendChild(svgText(c[2], c[3], name, name.length > 10 ? 9.5 : name.length > 8 ? 10.5 : 12, state.meetings[name] ? 700 : 500, "#222"));
+      /* Scheduled counties also show their meeting date ("11/10") under the name. */
+      var mt = state.meetings[name];
+      if (mt && mt.status === "scheduled" && mt.meeting_date){
+        var dp = mt.meeting_date.split("-");
+        if (dp.length === 3 && +dp[1] >= 1 && +dp[1] <= 12){
+          labelLayer.appendChild(svgText(c[2], c[3]+13, (+dp[1]) + "/" + (+dp[2]), 10.5, 700, "#0F1B2E"));
+        }
+      }
       if (order[name]){
         var circ = document.createElementNS(SVGNS, "circle");
         circ.setAttribute("cx", c[2]); circ.setAttribute("cy", c[3]-17); circ.setAttribute("r", 9);

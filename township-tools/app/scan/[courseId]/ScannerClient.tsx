@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import jsQR from 'jsqr';
-import { Camera, CheckCircle2, CloudOff, LogIn, LogOut, RefreshCw, Search, UserPlus, X, XCircle, AlertTriangle } from 'lucide-react';
+import QRCode from 'qrcode';
+import { Camera, CheckCircle2, CloudOff, LogIn, LogOut, QrCode, RefreshCw, Search, UserPlus, X, XCircle, AlertTriangle } from 'lucide-react';
 import { easternDate, easternTime } from '@/lib/badges/attendance';
 import { isBadgeToken } from '@/lib/badges/token';
 import { townshipLabel } from '@/lib/certificates/township';
@@ -541,12 +542,23 @@ function ScanScreen({
   );
 
   const pending = state.pendingScans.length + state.pendingWalkIns.length;
+  // QR code of this scanner's link, to bring another team member on board.
+  const [shareOpen, setShareOpen] = useState(false);
 
   return (
     <div className="min-h-[100dvh] bg-gray-100 text-gray-900 flex flex-col">
-      <header className="bg-[#1B2E5B] text-white px-4 pt-3 pb-3">
-        <div className="text-xs opacity-80">{formatCourseDates(today, null)}{isEventDay ? '' : ' · not an event day'}</div>
-        <div className="font-semibold leading-tight truncate">{event.name}</div>
+      <header className="bg-[#1B2E5B] text-white px-4 pt-3 pb-3 relative">
+        <button
+          type="button"
+          onClick={() => setShareOpen(true)}
+          className="absolute top-3 right-3 flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-xs font-semibold"
+          aria-label="Show the scanner link as a QR code"
+        >
+          <QrCode className="w-7 h-7" />
+          Share
+        </button>
+        <div className="text-xs opacity-80 pr-20">{formatCourseDates(today, null)}{isEventDay ? '' : ' · not an event day'}</div>
+        <div className="font-semibold leading-tight truncate pr-20">{event.name}</div>
         <button type="button" onClick={onSync} className="mt-1 inline-flex items-center gap-1.5 text-xs opacity-90">
           {syncing ? (
             <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Uploading…</>
@@ -655,6 +667,8 @@ function ScanScreen({
       <div className="px-4 pt-4 pb-20 text-center text-lg text-gray-600">
         Today: <strong>{counts.ins}</strong> checked in · <strong>{counts.outs}</strong> checked out · {counts.total} registered
       </div>
+
+      {shareOpen && <ShareScannerSheet eventName={event.name} onClose={() => setShareOpen(false)} />}
 
       {fixFor && (
         <FixDetailsSheet
@@ -944,6 +958,38 @@ function CameraView({ paused, onCode, onStart, mode }: { paused: boolean; onCode
 
 /* ───────────────────────────── Sheets ───────────────────────────── */
 
+/** Big QR code of this scanner's link: a team member scans it, then enters the event PIN. */
+function ShareScannerSheet({ eventName, onClose }: { eventName: string; onClose: () => void }) {
+  const [src, setSrc] = useState<string | null>(null);
+  const url = typeof window !== 'undefined' ? window.location.origin + window.location.pathname : '';
+  useEffect(() => {
+    QRCode.toDataURL(url, { margin: 1, width: 600, errorCorrectionLevel: 'M' })
+      .then(setSrc)
+      .catch(() => setSrc(null));
+  }, [url]);
+  return (
+    <Sheet title="Help scan: open this scanner" onClose={onClose}>
+      <div className="text-center space-y-3">
+        <p className="text-lg">
+          Have your team member point their phone camera at this code to open the <strong>{eventName}</strong> scanner.
+        </p>
+        <div className="flex justify-center">
+          {src ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={src} alt="QR code for the scanner link" className="w-72 h-72 max-w-full" style={{ imageRendering: 'pixelated' }} />
+          ) : (
+            <div className="w-72 h-72 bg-gray-100 rounded-xl" />
+          )}
+        </div>
+        <p className="text-base text-gray-700">
+          They&apos;ll need the <strong>event PIN</strong> to sign in. Tell them in person; it isn&apos;t in the code.
+        </p>
+        <p className="text-sm text-gray-500 break-all">{url}</p>
+      </div>
+    </Sheet>
+  );
+}
+
 /** Fix someone's name/title/township on the spot, then print a new NIIMBOT label. */
 function FixDetailsSheet({
   courseId,
@@ -1153,6 +1199,9 @@ function NameLookup({
                           {st === 'out' && (
                             <span className="ml-2 align-middle inline-block px-2.5 py-0.5 rounded-full text-base font-bold bg-gray-500 text-white">Checked out</span>
                           )}
+                          {statusFor(p.id) && (
+                            <span className="ml-2 align-middle inline-block text-lg font-semibold text-gray-800">{statusFor(p.id)}</span>
+                          )}
                         </div>
                         <div className="text-lg text-gray-600 mt-0.5">
                           {[p.title, townshipLabel(p.township) || p.organization].filter(Boolean).join(' · ')}
@@ -1174,7 +1223,6 @@ function NameLookup({
                         )}
                       </div>
                     )}
-                    {statusFor(p.id) && <div className="mt-1 text-lg text-gray-800">{statusFor(p.id)}</div>}
                     {p.in_place_of && <div className="mt-1 text-lg font-semibold text-amber-700">In place of {p.in_place_of}</div>}
                     {p.cancelled && <div className="mt-1 text-lg text-red-700">Registration was cancelled. If they came anyway, check them in as usual.</div>}
                     {(p.prior_unpaid || []).map((d, i) => (

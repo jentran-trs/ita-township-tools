@@ -9,7 +9,7 @@ import { townshipLabel } from '@/lib/certificates/township';
 import { badgeNumberLabel } from '@/lib/badges/badge-numbers';
 import { formatCourseDates } from '@/lib/certificates/date-range';
 import { deliverLabel, renderNiimbotLabel } from '@/lib/badges/niimbot-label';
-import { DoorPayment, PaymentSheet, PriorDebtSheet } from './PaymentFields';
+import { DOOR_METHOD_LABEL, DoorPayment, PaymentSheet, PriorDebtSheet } from './PaymentFields';
 import {
   ScannerState,
   RosterPerson,
@@ -428,7 +428,7 @@ function ScanScreen({
   );
 
   const record = useCallback(
-    (person: RosterPerson, source: 'scan' | 'name_search', opts?: { skipPayment?: boolean; skipPrior?: boolean; paidBy?: 'check' | 'card' | 'none' }) => {
+    (person: RosterPerson, source: 'scan' | 'name_search', opts?: { skipPayment?: boolean; skipPrior?: boolean; paidBy?: 'check' | 'card' | 'amo' | 'none' }) => {
       const name = `${person.first_name} ${person.last_name}`;
       const mine = state.scans.filter((x) => x.registrant_id === person.id && x.scan_date === today);
       const same = mine.filter((x) => x.direction === mode).sort((a, b) => a.scanned_at.localeCompare(b.scanned_at));
@@ -481,7 +481,7 @@ function ScanScreen({
       } else if (mode === 'in' && opts?.paidBy === 'none') {
         show({ kind: 'warn', title: `${name} checked in`, detail: 'No payment collected. They will be listed for follow-up.', undoScanId: rec.client_scan_id });
       } else {
-        const paid = opts?.paidBy === 'check' ? 'Paid by check' : opts?.paidBy === 'card' ? 'Paid by card' : null;
+        const paid = opts?.paidBy && opts.paidBy !== 'none' ? DOOR_METHOD_LABEL[opts.paidBy] : null;
         const owes = mode === 'out' && person.payment_status === 'due' ? 'Payment still due' : null;
         show({
           kind: owes ? 'warn' : 'ok',
@@ -680,7 +680,7 @@ function ScanScreen({
                 show({
                   kind: 'ok',
                   title: `Collected for ${person.first_name} ${person.last_name}'s previous event`,
-                  detail: `${pay.method === 'check' ? 'Check' : 'Credit card'} · not checked in yet.`,
+                  detail: `${DOOR_METHOD_LABEL[pay.method]} · not checked in yet.`,
                 });
               }
               return;
@@ -711,7 +711,7 @@ function ScanScreen({
             show({
               kind: 'ok',
               title: `${person.first_name} ${person.last_name} marked paid`,
-              detail: `${pay.method === 'check' ? 'Paid by check' : 'Paid by credit card'} · not checked in yet. Scan their badge when they arrive.`,
+              detail: `${DOOR_METHOD_LABEL[pay.method]} · not checked in yet. Scan their badge when they arrive.`,
             });
           }}
         />
@@ -1048,6 +1048,12 @@ function NameLookup({
       )
       .slice(0, 25);
   }, [q, roster]);
+  // Today: checked in (green) / checked out (grey) / nothing yet.
+  const stateFor = (id: string): 'in' | 'out' | null => {
+    const mine = todays.filter((x) => x.registrant_id === id).sort((a, b) => a.scanned_at.localeCompare(b.scanned_at));
+    if (!mine.length) return null;
+    return mine[mine.length - 1].direction === 'out' ? 'out' : 'in';
+  };
   const statusFor = (id: string) => {
     const mine = todays.filter((x) => x.registrant_id === id).sort((a, b) => a.scanned_at.localeCompare(b.scanned_at));
     const ins = mine.filter((x) => x.direction === 'in');
@@ -1092,6 +1098,12 @@ function NameLookup({
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-lg leading-tight">
                       {p.first_name} {p.last_name}
+                      {stateFor(p.id) === 'in' && (
+                        <span className="ml-2 align-middle inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-green-600 text-white">Checked in</span>
+                      )}
+                      {stateFor(p.id) === 'out' && (
+                        <span className="ml-2 align-middle inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-gray-500 text-white">Checked out</span>
+                      )}
                       {p.payment_status === 'due' && <span className="ml-2 text-xs font-semibold text-red-600">payment due</span>}
                     </div>
                     {(p.prior_unpaid || []).map((d, i) => (
@@ -1163,7 +1175,7 @@ function WalkInSheet({
   onSave: (w: WalkInRecord, checkIn: boolean, payment: DoorPayment | null) => void;
   onClose: () => void;
 }) {
-  const [payMethod, setPayMethod] = useState<'none' | 'check' | 'card'>('none');
+  const [payMethod, setPayMethod] = useState<'none' | 'check' | 'card' | 'amo'>('none');
   const [f, setF] = useState({ first_name: '', last_name: '', title: '', township: '', county: '', organization: '', email: '', registrant_type: 'Attendee' });
   const [checkIn, setCheckIn] = useState(mode === 'in');
   const field = (k: keyof typeof f, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
@@ -1240,6 +1252,7 @@ function WalkInSheet({
             {([
               ['check', 'Paid by check'],
               ['card', 'Paid by credit card'],
+              ['amo', 'Paid in AMO'],
               ['none', 'Not paid yet (listed for follow-up)'],
             ] as const).map(([v, label]) => (
               <label key={v} className="flex items-center gap-2 text-sm">

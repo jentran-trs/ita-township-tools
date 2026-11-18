@@ -26,7 +26,7 @@ export type RosterPerson = {
 export type PaymentRecord = {
   client_payment_id: string;
   registrant_id: string;
-  method: 'check' | 'card';
+  method: 'check' | 'card' | 'amo';
   recorded_at: string;
   device_label?: string;
 };

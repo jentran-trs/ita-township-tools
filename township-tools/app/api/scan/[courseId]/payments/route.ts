@@ -7,7 +7,7 @@ import { loadPriorUnpaid } from '@/lib/badges/prior-unpaid';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-// POST { client_payment_id, registrant_id, method: 'check' | 'card', recorded_at, device_label? }
+// POST { client_payment_id, registrant_id, method: 'check' | 'card' | 'amo', recorded_at, device_label? }
 // The door team records how someone paid. Only the method is stored — no
 // check images or check/card details. Safe to resend: a repeat
 // client_payment_id is acknowledged and ignored.
@@ -23,7 +23,7 @@ export async function POST(req: Request, { params }: { params: { courseId: strin
     return NextResponse.json({ error: 'Missing payment details' }, { status: 400 });
   }
   const clientId = String(meta.client_payment_id || '').slice(0, 80);
-  if (!clientId || !['check', 'card'].includes(meta.method)) {
+  if (!clientId || !['check', 'card', 'amo'].includes(meta.method)) {
     return NextResponse.json({ error: 'Bad payment' }, { status: 400 });
   }
 

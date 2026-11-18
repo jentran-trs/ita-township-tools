@@ -1,10 +1,17 @@
 "use client";
 
-import { CreditCard, FileCheck2, UserCheck, X } from 'lucide-react';
+import { CreditCard, FileCheck2, Globe, UserCheck, X } from 'lucide-react';
 
 // How someone paid at the door. Only the method is recorded — no check
 // photos or check/card details, since those are sensitive.
-export type DoorPayment = { method: 'check' | 'card' };
+export type DoorPayment = { method: 'check' | 'card' | 'amo' };
+
+/** "Paid by check" / "Paid by credit card" / "Paid in AMO". */
+export const DOOR_METHOD_LABEL: Record<DoorPayment['method'], string> = {
+  check: 'Paid by check',
+  card: 'Paid by credit card',
+  amo: 'Paid in AMO',
+};
 
 const money = (n: number | null | undefined) => (n == null ? '' : `$${Number(n).toFixed(2)}`);
 
@@ -41,6 +48,12 @@ export function PaymentSheet({
         <div className="overflow-y-auto p-4 space-y-3">
           <BigChoice icon={<FileCheck2 className="w-6 h-6" />} label="Paid by check" onClick={() => onDone({ method: 'check' })} />
           <BigChoice icon={<CreditCard className="w-6 h-6" />} label="Paid by credit card" onClick={() => onDone({ method: 'card' })} />
+          <BigChoice
+            icon={<Globe className="w-6 h-6" />}
+            label="Paid in AMO"
+            hint="Paid online; not yet in the list we imported"
+            onClick={() => onDone({ method: 'amo' })}
+          />
           {paymentOnly ? (
             <p className="text-sm text-gray-600">
               Records the payment only. They are <strong>not</strong> checked in; scan their badge when they arrive.
@@ -125,6 +138,7 @@ export function PriorDebtSheet({
           <p className="text-sm text-gray-600">Please collect this before checking them in.</p>
           <BigChoice icon={<FileCheck2 className="w-6 h-6" />} label="Collected by check" onClick={() => onDone({ method: 'check' })} />
           <BigChoice icon={<CreditCard className="w-6 h-6" />} label="Collected by credit card" onClick={() => onDone({ method: 'card' })} />
+          <BigChoice icon={<Globe className="w-6 h-6" />} label="Already paid in AMO" onClick={() => onDone({ method: 'amo' })} />
           {!paymentOnly && (
             <BigChoice
               icon={<UserCheck className="w-6 h-6" />}

@@ -15,6 +15,8 @@ export type RosterPerson = {
   // "#47" for pre-printed badges, "Walk-in #2" for walk-ins (v39).
   badge_number?: number | null;
   walkin_number?: number | null;
+  // Still owes for an earlier event (collect at check-in).
+  prior_unpaid?: { registrant_id: string; course_name: string; balance_due: number | null; matched_by: 'email' | 'name' }[];
   // 'due' = owes (AMO Balance Due > $0, or a walk-in at a paid event).
   payment_status?: 'paid' | 'due' | null;
   balance_due?: number | null;

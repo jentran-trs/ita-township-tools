@@ -3,6 +3,7 @@ import { assignWalkInNumbers } from '@/lib/badges/badge-numbers';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { requireScanSession } from '@/lib/badges/scan-session';
 import { eventDays } from '@/lib/badges/attendance';
+import { loadPriorUnpaid } from '@/lib/badges/prior-unpaid';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -31,6 +32,8 @@ export async function GET(_req: Request, { params }: { params: { courseId: strin
       .is('voided_at', null),
   ]);
   if (rErr || sErr) return NextResponse.json({ error: (rErr || sErr)!.message }, { status: 500 });
+  // Still owes for an earlier event (matched by email or name): collect at the door.
+  const prior = await loadPriorUnpaid(supabase, course, registrants || []);
 
   return NextResponse.json({
     event: {
@@ -53,6 +56,12 @@ export async function GET(_req: Request, { params }: { params: { courseId: strin
       is_walk_in: r.is_walk_in,
       badge_number: r.badge_number ?? null,
       walkin_number: r.walkin_number ?? null,
+      prior_unpaid: (prior.get(r.id) || []).map((d) => ({
+        registrant_id: d.registrant_id,
+        course_name: d.course_name,
+        balance_due: d.balance_due,
+        matched_by: d.matched_by,
+      })),
       payment_status: r.payment_status ?? null,
       balance_due: r.balance_due != null ? Number(r.balance_due) : null,
     })),

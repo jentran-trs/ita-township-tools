@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { requireScanSession } from '@/lib/badges/scan-session';
 import { markRegistrantPaid } from '@/lib/badges/payments';
+import { loadPriorUnpaid } from '@/lib/badges/prior-unpaid';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -30,17 +31,29 @@ export async function POST(req: Request, { params }: { params: { courseId: strin
   const { data: dupe } = await supabase.from('cert_payments').select('id').eq('client_payment_id', clientId).maybeSingle();
   if (dupe) return NextResponse.json({ ok: true, duplicate: true });
 
-  const { data: reg } = await supabase
+  const regId = String(meta.registrant_id || '');
+  let { data: reg } = await supabase
     .from('cert_registrants')
-    .select('id')
-    .eq('id', String(meta.registrant_id || ''))
+    .select('id, course_id')
+    .eq('id', regId)
     .eq('course_id', course.id)
     .maybeSingle();
+  if (!reg) {
+    // Collecting what someone at this event still owes for an EARLIER event:
+    // only accepted if that earlier registration is one of their flagged debts.
+    const { data: here } = await supabase
+      .from('cert_registrants')
+      .select('id, email, first_name, last_name')
+      .eq('course_id', course.id);
+    const prior = await loadPriorUnpaid(supabase, course, here || []);
+    const debt = Array.from(prior.values()).flat().find((d) => d.registrant_id === regId);
+    if (debt) reg = { id: debt.registrant_id, course_id: debt.course_id };
+  }
   if (!reg) return NextResponse.json({ error: 'Person not found for this event', rejected: true }, { status: 404 });
 
   const recordedAt = new Date(meta.recorded_at);
   const { error } = await supabase.from('cert_payments').insert({
-    course_id: course.id,
+    course_id: reg.course_id,
     registrant_id: reg.id,
     client_payment_id: clientId,
     method: meta.method,

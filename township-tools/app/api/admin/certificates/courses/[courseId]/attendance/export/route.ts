@@ -28,7 +28,7 @@ export async function GET(_req: Request, { params }: { params: { courseId: strin
   const header = [
     'Badge #', 'Last Name', 'First Name', 'Email', 'Title', 'Township', 'County', 'Walk-in',
     ...days.flatMap((d) => [`${dayLabel(d)} In`, `${dayLabel(d)} Out`]),
-    'Status', 'Needs review because', 'Payment', 'Credit Hours', 'Notes',
+    'Status', 'Needs review because', 'Payment', 'Owes from past event', 'Credit Hours', 'Notes',
   ];
   const SOURCE: Record<string, string> = { scan: 'Badge scan', name_search: 'Name search', manual: 'Entered by hand' };
   const shortDay = (d: string) => formatCourseDates(d, null, 'short').replace(/, \d{4}$/, '');
@@ -59,12 +59,14 @@ export async function GET(_req: Request, { params }: { params: { courseId: strin
       badgeNumberLabel(r as any), r.last_name, r.first_name, r.email, r.title || '', townshipLabel(r.township) || '',
       r.county ? `${r.county} County` : '', r.is_walk_in ? 'Yes' : '',
       ...r.attendance.days.flatMap((d) => [d.checkIn ? easternTime(d.checkIn) : '', d.checkOut ? easternTime(d.checkOut) : '']),
-      STATUS[r.status], r.status === 'review' ? r.reasons.join('; ') : '', paymentText(r), r.credit_hours, notesFor(r),
+      STATUS[r.status], r.status === 'review' ? r.reasons.join('; ') : '', paymentText(r),
+      r.prior_unpaid.map((d) => `${d.balance_due ? `$${Number(d.balance_due).toFixed(2)} ` : ''}from ${d.course_name}${d.matched_by === 'name' ? ' (name match)' : ''}`).join('; '),
+      r.credit_hours, notesFor(r),
     ]);
     row.getCell(header.length).alignment = { wrapText: true, vertical: 'top' };
-    if (r.status === 'review') row.getCell(header.length - 4).font = { color: { argb: 'FFB45309' }, bold: true };
+    if (r.status === 'review') row.getCell(header.length - 5).font = { color: { argb: 'FFB45309' }, bold: true };
   }
-  ws.columns.forEach((c, i) => (c.width = i === 0 ? 12 : i < 4 ? 22 : i < 8 ? 18 : i === header.length - 4 ? 36 : i === header.length - 1 ? 60 : 14));
+  ws.columns.forEach((c, i) => (c.width = i === 0 ? 12 : i < 4 ? 22 : i < 8 ? 18 : i === header.length - 5 || i === header.length - 3 ? 36 : i === header.length - 1 ? 60 : 14));
   ws.views = [{ state: 'frozen', ySplit: 4, xSplit: 3 }];
 
   // Second sheet: every check-in/out entry, oldest first, nothing left out.

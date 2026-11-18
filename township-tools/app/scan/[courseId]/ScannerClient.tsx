@@ -9,7 +9,7 @@ import { townshipLabel } from '@/lib/certificates/township';
 import { badgeNumberLabel } from '@/lib/badges/badge-numbers';
 import { formatCourseDates } from '@/lib/certificates/date-range';
 import { deliverLabel, renderNiimbotLabel } from '@/lib/badges/niimbot-label';
-import { DoorPayment, PaymentSheet } from './PaymentFields';
+import { DoorPayment, PaymentSheet, PriorDebtSheet } from './PaymentFields';
 import {
   ScannerState,
   RosterPerson,
@@ -355,6 +355,8 @@ function ScanScreen({
   const [fixFor, setFixFor] = useState<RosterPerson | null>(null);
   // Paying ahead of check-in (e.g. a trustee paying for their staff).
   const [payOnlyFor, setPayOnlyFor] = useState<RosterPerson | null>(null);
+  // Owes for an earlier event: collect at check-in (or record ahead with payOnly).
+  const [priorFor, setPriorFor] = useState<{ person: RosterPerson; source: 'scan' | 'name_search'; opts?: any; payOnly?: boolean } | null>(null);
   // Someone who owes, waiting for the team to choose check / card / no payment.
   const [paymentFor, setPaymentFor] = useState<{ person: RosterPerson; source: 'scan' | 'name_search' } | null>(null);
   // This event tracks payment if anyone imported with a Balance Due.
@@ -426,7 +428,7 @@ function ScanScreen({
   );
 
   const record = useCallback(
-    (person: RosterPerson, source: 'scan' | 'name_search', opts?: { skipPayment?: boolean; paidBy?: 'check' | 'card' | 'none' }) => {
+    (person: RosterPerson, source: 'scan' | 'name_search', opts?: { skipPayment?: boolean; skipPrior?: boolean; paidBy?: 'check' | 'card' | 'none' }) => {
       const name = `${person.first_name} ${person.last_name}`;
       const mine = state.scans.filter((x) => x.registrant_id === person.id && x.scan_date === today);
       const same = mine.filter((x) => x.direction === mode).sort((a, b) => a.scanned_at.localeCompare(b.scanned_at));
@@ -450,6 +452,12 @@ function ScanScreen({
           title: `${name} isn't checked in yet`,
           detail: 'Nothing recorded. Switch to Check IN to check them in first.',
         });
+      }
+      // Still owes for an earlier event: ask to collect that first.
+      if (mode === 'in' && (person.prior_unpaid || []).length && !opts?.skipPrior) {
+        setPriorFor({ person, source, opts });
+        beep('warn');
+        return;
       }
       // Owes and checking in: ask about payment first.
       if (mode === 'in' && person.payment_status === 'due' && !opts?.skipPayment) {
@@ -583,7 +591,7 @@ function ScanScreen({
           onCheck={(p) => record(p, 'name_search')}
           onAddWalkIn={() => setSheet('walkin')}
           onFix={(p) => setFixFor(p)}
-          onPay={(p) => setPayOnlyFor(p)}
+          onPay={(p) => ((p.prior_unpaid || []).length ? setPriorFor({ person: p, source: 'name_search', payOnly: true }) : setPayOnlyFor(p))}
         />
       </div>
 
@@ -651,6 +659,44 @@ function ScanScreen({
         />
       )}
 
+      {priorFor && (
+        <PriorDebtSheet
+          name={`${priorFor.person.first_name} ${priorFor.person.last_name}`}
+          debts={priorFor.person.prior_unpaid || []}
+          paymentOnly={priorFor.payOnly}
+          onCancel={() => setPriorFor(null)}
+          onDone={(pay) => {
+            const { person, source, opts, payOnly } = priorFor;
+            setPriorFor(null);
+            let next = person;
+            if (pay) {
+              // Marks the earlier event's registration paid (releases its held certificate).
+              (person.prior_unpaid || []).forEach((d) => queuePayment(d.registrant_id, pay));
+              next = { ...person, prior_unpaid: [] };
+              setState((st) => ({ ...st, roster: st.roster.map((x) => (x.id === person.id ? { ...x, prior_unpaid: [] } : x)) }));
+            }
+            if (payOnly) {
+              if (pay) {
+                show({
+                  kind: 'ok',
+                  title: `Collected for ${person.first_name} ${person.last_name}'s previous event`,
+                  detail: `${pay.method === 'check' ? 'Check' : 'Credit card'} · not checked in yet.`,
+                });
+              }
+              return;
+            }
+            record(next, source, { ...(opts || {}), skipPrior: true });
+            if (!pay) {
+              show({
+                kind: 'warn',
+                title: `${person.first_name} ${person.last_name} checked in`,
+                detail: `Still owes ${(person.prior_unpaid || []).map((d) => `${d.balance_due ? `$${Number(d.balance_due).toFixed(2)} ` : ''}from ${d.course_name}`).join('; ')}. Flagged for follow-up.`,
+              });
+            }
+          }}
+        />
+      )}
+
       {payOnlyFor && (
         <PaymentSheet
           name={`${payOnlyFor.first_name} ${payOnlyFor.last_name}`}
@@ -680,7 +726,7 @@ function ScanScreen({
             const { person, source } = paymentFor;
             setPaymentFor(null);
             if (pay) queuePayment(person.id, pay);
-            record({ ...person, payment_status: pay ? 'paid' : 'due' }, source, { skipPayment: true, paidBy: pay ? pay.method : 'none' });
+            record({ ...person, payment_status: pay ? 'paid' : 'due' }, source, { skipPayment: true, skipPrior: true, paidBy: pay ? pay.method : 'none' });
           }}
         />
       )}
@@ -1048,6 +1094,11 @@ function NameLookup({
                       {p.first_name} {p.last_name}
                       {p.payment_status === 'due' && <span className="ml-2 text-xs font-semibold text-red-600">payment due</span>}
                     </div>
+                    {(p.prior_unpaid || []).map((d, i) => (
+                      <div key={i} className="text-sm font-semibold text-red-700">
+                        Owes {d.balance_due ? `$${Number(d.balance_due).toFixed(2)} ` : ''}from {d.course_name}
+                      </div>
+                    ))}
                     <div className="text-sm text-gray-500">
                       {[p.title, townshipLabel(p.township) || p.organization].filter(Boolean).join(' · ')}
                       {statusFor(p.id) && <span className="ml-1 text-gray-700">· {statusFor(p.id)}</span>}
@@ -1073,7 +1124,7 @@ function NameLookup({
                     >
                       Fix name &amp; reprint
                     </button>
-                    {p.payment_status === 'due' && (
+                    {(p.payment_status === 'due' || (p.prior_unpaid || []).length > 0) && (
                       <button
                         type="button"
                         onClick={() => onPay(p)}

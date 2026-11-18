@@ -1,6 +1,7 @@
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { computeAttendance, easternDate, easternMinutes, easternTime, eventDays, formatEventTimes, AttendanceResult } from '@/lib/badges/attendance';
 import { formatCourseDates } from '@/lib/certificates/date-range';
+import { loadPriorUnpaid, PriorDebt } from '@/lib/badges/prior-unpaid';
 
 /** One check-in/out entry, including removed ones, with any notes. */
 export type ScanLogEntry = {
@@ -43,6 +44,8 @@ export type AttendanceRow = {
   cert_hours_override: number | null;
   // Days with both a check-in and a check-out.
   days_attended: number;
+  // Still owes for earlier events (matched by email or name).
+  prior_unpaid: PriorDebt[];
   // Every entry for this person, oldest first (removed ones included).
   log: ScanLogEntry[];
 };
@@ -91,6 +94,8 @@ export async function loadCourseAttendance(courseId: string): Promise<CourseAtte
     list.push(s);
     byPerson.set(s.registrant_id, list);
   });
+
+  const prior = await loadPriorUnpaid(supabase, course, regs || []);
 
   const rows: AttendanceRow[] = (regs || []).map((r: any) => {
     const attendance = computeAttendance(days, byPerson.get(r.id) || []);
@@ -151,6 +156,7 @@ export async function loadCourseAttendance(courseId: string): Promise<CourseAtte
       credit_hours: credit,
       cert_hours_override: override,
       days_attended: daysAttended,
+      prior_unpaid: prior.get(r.id) || [],
       log: (byPerson.get(r.id) || [])
         .slice()
         .sort((a: any, b: any) => String(a.scanned_at).localeCompare(String(b.scanned_at)))

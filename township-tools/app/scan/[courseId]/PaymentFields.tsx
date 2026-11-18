@@ -17,11 +17,14 @@ export function PaymentSheet({
   balance,
   onDone,
   onCancel,
+  paymentOnly,
 }: {
   name: string;
   balance: number | null | undefined;
   onDone: (payment: DoorPayment | null) => void;
   onCancel: () => void;
+  // Recording a payment ahead of time (e.g. a trustee paying for staff): no check-in.
+  paymentOnly?: boolean;
 }) {
   return (
     <div className="fixed inset-0 z-40 bg-black/40 flex items-end sm:items-center justify-center" onClick={onCancel}>
@@ -38,13 +41,19 @@ export function PaymentSheet({
         <div className="overflow-y-auto p-4 space-y-3">
           <BigChoice icon={<FileCheck2 className="w-6 h-6" />} label="Paid by check" onClick={() => onDone({ method: 'check' })} />
           <BigChoice icon={<CreditCard className="w-6 h-6" />} label="Paid by credit card" onClick={() => onDone({ method: 'card' })} />
-          <BigChoice
-            icon={<UserCheck className="w-6 h-6" />}
-            label="Check in without payment"
-            hint="They'll be listed for follow-up"
-            onClick={() => onDone(null)}
-            quiet
-          />
+          {paymentOnly ? (
+            <p className="text-sm text-gray-600">
+              Records the payment only. They are <strong>not</strong> checked in; scan their badge when they arrive.
+            </p>
+          ) : (
+            <BigChoice
+              icon={<UserCheck className="w-6 h-6" />}
+              label="Check in without payment"
+              hint="They'll be listed for follow-up"
+              onClick={() => onDone(null)}
+              quiet
+            />
+          )}
         </div>
       </div>
     </div>

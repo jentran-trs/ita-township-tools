@@ -353,6 +353,8 @@ function ScanScreen({
   // Last walk-in added, or someone whose details were just fixed: offer their NIIMBOT label.
   const [lastWalkIn, setLastWalkIn] = useState<RosterPerson | null>(null);
   const [fixFor, setFixFor] = useState<RosterPerson | null>(null);
+  // Paying ahead of check-in (e.g. a trustee paying for their staff).
+  const [payOnlyFor, setPayOnlyFor] = useState<RosterPerson | null>(null);
   // Someone who owes, waiting for the team to choose check / card / no payment.
   const [paymentFor, setPaymentFor] = useState<{ person: RosterPerson; source: 'scan' | 'name_search' } | null>(null);
   // This event tracks payment if anyone imported with a Balance Due.
@@ -581,6 +583,7 @@ function ScanScreen({
           onCheck={(p) => record(p, 'name_search')}
           onAddWalkIn={() => setSheet('walkin')}
           onFix={(p) => setFixFor(p)}
+          onPay={(p) => setPayOnlyFor(p)}
         />
       </div>
 
@@ -644,6 +647,26 @@ function ScanScreen({
             setFixFor(null);
             setLastWalkIn(updated);
             show({ kind: 'ok', title: `Saved ${updated.first_name} ${updated.last_name}`, detail: 'Print their new NIIMBOT label below. Same QR code, so either badge scans.' });
+          }}
+        />
+      )}
+
+      {payOnlyFor && (
+        <PaymentSheet
+          name={`${payOnlyFor.first_name} ${payOnlyFor.last_name}`}
+          balance={payOnlyFor.balance_due}
+          paymentOnly
+          onCancel={() => setPayOnlyFor(null)}
+          onDone={(pay) => {
+            const person = payOnlyFor;
+            setPayOnlyFor(null);
+            if (!pay) return;
+            queuePayment(person.id, pay);
+            show({
+              kind: 'ok',
+              title: `${person.first_name} ${person.last_name} marked paid`,
+              detail: `${pay.method === 'check' ? 'Paid by check' : 'Paid by credit card'} · not checked in yet. Scan their badge when they arrive.`,
+            });
           }}
         />
       )}
@@ -953,6 +976,7 @@ function NameLookup({
   onCheck,
   onAddWalkIn,
   onFix,
+  onPay,
 }: {
   roster: RosterPerson[];
   todays: ScanRecord[];
@@ -960,6 +984,7 @@ function NameLookup({
   onCheck: (p: RosterPerson) => void;
   onAddWalkIn: () => void;
   onFix: (p: RosterPerson) => void;
+  onPay: (p: RosterPerson) => void;
 }) {
   const [q, setQ] = useState('');
   const matches = useMemo(() => {
@@ -970,9 +995,12 @@ function NameLookup({
         (p) =>
           `${p.first_name} ${p.last_name}`.toLowerCase().includes(t) ||
           `${p.last_name} ${p.first_name}`.toLowerCase().includes(t) ||
-          (/^#?\d+$/.test(t) && !p.is_walk_in && String(p.badge_number ?? '') === t.replace('#', ''))
+          (/^#?\d+$/.test(t) && !p.is_walk_in && String(p.badge_number ?? '') === t.replace('#', '')) ||
+          // Township or organization, e.g. "Ohio" lists everyone from Ohio Township
+          // (a trustee paying for their staff).
+          (t.length >= 3 && `${p.township || ''} ${p.organization || ''}`.toLowerCase().includes(t))
       )
-      .slice(0, 8);
+      .slice(0, 25);
   }, [q, roster]);
   const statusFor = (id: string) => {
     const mine = todays.filter((x) => x.registrant_id === id).sort((a, b) => a.scanned_at.localeCompare(b.scanned_at));
@@ -990,7 +1018,7 @@ function NameLookup({
           type="search"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Find badge # by last name"
+          placeholder="Find by last name, township or #"
           autoComplete="off"
           className="w-full pl-12 pr-4 py-3.5 text-lg bg-white border-2 border-gray-300 rounded-xl focus:outline-none focus:border-[#1B2E5B]"
         />
@@ -1024,13 +1052,14 @@ function NameLookup({
                       {[p.title, townshipLabel(p.township) || p.organization].filter(Boolean).join(' · ')}
                       {statusFor(p.id) && <span className="ml-1 text-gray-700">· {statusFor(p.id)}</span>}
                     </div>
+                    <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
                     <button
                       type="button"
                       onClick={() => {
                         onCheck(p);
                         setQ('');
                       }}
-                      className="mt-1 text-sm font-semibold text-[#1B2E5B] underline underline-offset-2"
+                      className="text-sm font-semibold text-[#1B2E5B] underline underline-offset-2"
                     >
                       {mode === 'in' ? 'Check in without badge' : 'Check out without badge'}
                     </button>
@@ -1040,10 +1069,20 @@ function NameLookup({
                         onFix(p);
                         setQ('');
                       }}
-                      className="mt-1 ml-4 text-sm font-semibold text-amber-700 underline underline-offset-2"
+                      className="text-sm font-semibold text-amber-700 underline underline-offset-2"
                     >
                       Fix name &amp; reprint
                     </button>
+                    {p.payment_status === 'due' && (
+                      <button
+                        type="button"
+                        onClick={() => onPay(p)}
+                        className="text-sm font-semibold text-red-700 underline underline-offset-2"
+                      >
+                        Record payment
+                      </button>
+                    )}
+                    </div>
                   </div>
                   {badgeNumberLabel(p) ? (
                     <span className={`flex-shrink-0 font-extrabold text-[#C1272D] text-right leading-none ${p.is_walk_in ? 'text-lg' : 'text-4xl'}`}>

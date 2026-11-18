@@ -1183,8 +1183,18 @@ function NameLookup({
           onChange={(e) => setQ(e.target.value)}
           placeholder="Find by last name, township or #"
           autoComplete="off"
-          className="w-full pl-12 pr-4 py-4 text-xl bg-white border-2 border-gray-300 rounded-xl focus:outline-none focus:border-[#1B2E5B]"
+          className="w-full pl-12 pr-24 py-4 text-xl bg-white border-2 border-gray-300 rounded-xl focus:outline-none focus:border-[#1B2E5B] [&::-webkit-search-cancel-button]:appearance-none"
         />
+        {q && (
+          <button
+            type="button"
+            onClick={() => setQ('')}
+            className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 px-3 py-2 rounded-lg bg-gray-200 active:bg-gray-300 text-gray-800 text-lg font-bold"
+            aria-label="Clear search"
+          >
+            <X className="w-5 h-5" /> Clear
+          </button>
+        )}
       </div>
       {q.trim() && (
         <div className="mt-2 bg-white rounded-xl shadow-sm px-4">

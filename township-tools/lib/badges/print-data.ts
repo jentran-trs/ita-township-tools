@@ -34,6 +34,8 @@ export async function loadBadgePrintData(
     .from('cert_registrants')
     .select('id, first_name, last_name, title, registrant_type, organization, township, county, badge_token, badge_number, walkin_number, is_walk_in, created_at')
     .eq('course_id', course.id)
+    // Cancelled registrations get no badge (v45).
+    .is('cancelled_at', null)
     .order('last_name', { ascending: true })
     .order('first_name', { ascending: true });
   if (ids.length) query = query.in('id', ids);

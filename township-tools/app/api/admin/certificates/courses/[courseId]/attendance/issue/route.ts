@@ -33,7 +33,7 @@ function eligibility(r: AttendanceRow, forced: Set<string>): Eligibility {
   const attendanceReasons = r.reasons.filter((x) => !x.startsWith('Payment'));
   return {
     eligible: false,
-    reason: r.status === 'no_show' ? 'No scans' : attendanceReasons.join('; ') || 'Needs review',
+    reason: r.status === 'cancelled' ? 'Cancelled' : r.status === 'no_show' ? 'No scans' : attendanceReasons.join('; ') || 'Needs review',
     hold,
   };
 }

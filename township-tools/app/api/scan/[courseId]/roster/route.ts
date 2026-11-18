@@ -68,6 +68,8 @@ export async function GET(_req: Request, { params }: { params: { courseId: strin
       balance_due: r.balance_due != null ? Number(r.balance_due) : null,
       // Someone else is attending on this registration (v44).
       in_place_of: inPlaceOf(r),
+      // Marked cancelled (v45): shown on search; a scan still records (they came after all).
+      cancelled: !!r.cancelled_at,
     })),
     scans: scans || [],
   });

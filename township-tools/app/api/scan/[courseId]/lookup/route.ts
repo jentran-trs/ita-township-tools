@@ -19,6 +19,7 @@ export async function GET(_req: Request, { params }: { params: { courseId: strin
     .select('*')
     .eq('course_id', s.course.id)
     .eq('is_walk_in', false)
+    .is('cancelled_at', null)
     .not('badge_number', 'is', null)
     .order('last_name', { ascending: true })
     .order('first_name', { ascending: true });

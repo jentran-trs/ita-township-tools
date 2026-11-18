@@ -29,6 +29,17 @@ export async function PATCH(req: Request, { params }: RouteParams) {
 
   const patch: Record<string, any> = {};
   if (body.action === 'cancel_badge') patch.badge_token = generateBadgeToken();
+  // Registration cancelled (e.g. the day before), or back on (v45).
+  if (body.action === 'cancel_registration') {
+    patch.cancelled_at = new Date().toISOString();
+    patch.cancelled_by = 'Admin';
+    patch.cancel_note = String(body.note || '').trim().slice(0, 500) || null;
+  }
+  if (body.action === 'restore_registration') {
+    patch.cancelled_at = null;
+    patch.cancelled_by = null;
+    patch.cancel_note = null;
+  }
 
   if ('email' in body) {
     const email = String(body.email || '').trim().toLowerCase();

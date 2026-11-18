@@ -10,7 +10,7 @@ import { townshipLabel } from '@/lib/certificates/township';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const STATUS = { attended: 'Attended', review: 'Needs review', no_show: 'No scans' } as const;
+const STATUS = { attended: 'Attended', review: 'Needs review', no_show: 'No scans', cancelled: 'Cancelled' } as const;
 
 // GET — Excel file of everyone's check-in and check-out times per day (Eastern).
 export async function GET(_req: Request, { params }: { params: { courseId: string } }) {
@@ -61,7 +61,7 @@ export async function GET(_req: Request, { params }: { params: { courseId: strin
       r.county ? `${r.county} County` : '', r.is_walk_in ? 'Yes' : '',
       inPlaceOf(r as any) ? `${inPlaceOf(r as any)}${(r as any).substituted_for?.email ? ` (${(r as any).substituted_for.email})` : ''}` : '',
       ...r.attendance.days.flatMap((d) => [d.checkIn ? easternTime(d.checkIn) : '', d.checkOut ? easternTime(d.checkOut) : '']),
-      STATUS[r.status], r.status === 'review' ? r.reasons.join('; ') : '', paymentText(r),
+      STATUS[r.status], r.status === 'review' ? r.reasons.join('; ') : r.status === 'cancelled' && (r as any).cancel_note ? (r as any).cancel_note : '', paymentText(r),
       r.prior_unpaid.map((d) => `${d.balance_due ? `$${Number(d.balance_due).toFixed(2)} ` : ''}from ${d.course_name}${d.matched_by === 'name' ? ' (name match)' : ''}`).join('; '),
       r.credit_hours, notesFor(r),
     ]);

@@ -35,7 +35,9 @@ export type AttendanceRow = {
   attendance: AttendanceResult;
   // Checked in and out on every day.
   attendance_complete: boolean;
-  status: 'attended' | 'review' | 'no_show';
+  // cancelled = marked cancelled and never scanned (someone who cancelled but
+  // came after all is counted normally).
+  status: 'attended' | 'review' | 'no_show' | 'cancelled';
   // Plain-English reasons someone needs review, e.g. "No check-out on Dec 10".
   reasons: string[];
   // Hours that would go on the certificate.
@@ -132,7 +134,13 @@ export async function loadCourseAttendance(courseId: string): Promise<CourseAtte
       const owed = r.balance_due != null && Number(r.balance_due) > 0 ? ` ($${Number(r.balance_due).toFixed(2)} due)` : '';
       reasons.push(`Payment not completed${owed}`);
     }
-    const status: AttendanceRow['status'] = !attendance.anyScan ? 'no_show' : reasons.length ? 'review' : 'attended';
+    const status: AttendanceRow['status'] = !attendance.anyScan
+      ? r.cancelled_at
+        ? 'cancelled'
+        : 'no_show'
+      : reasons.length
+        ? 'review'
+        : 'attended';
     const courseHours = Number(course.hours);
     const daysAttended = attendance.days.filter((d) => d.complete).length;
     const earned = plan

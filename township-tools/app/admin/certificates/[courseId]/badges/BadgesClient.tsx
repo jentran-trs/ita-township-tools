@@ -57,6 +57,9 @@ type Registrant = {
   walkin_number?: number | null;
   // Someone else is attending on this registration (v44): the original registrant.
   substituted_for?: { first_name: string; last_name: string; email: string | null } | null;
+  // Registration cancelled (v45).
+  cancelled_at?: string | null;
+  cancel_note?: string | null;
 };
 
 type PreviewRow = {
@@ -195,10 +198,10 @@ export function BadgesClient({
 
   const stats = useMemo(() => {
     const rows = att?.rows || [];
-    const c = { review: 0, payment: 0, attended: 0, no_show: 0, inNow: 0, outToday: 0 };
+    const c = { review: 0, payment: 0, attended: 0, no_show: 0, cancelled: 0, inNow: 0, outToday: 0 };
     rows.forEach((r) => {
       c[r.status] += 1;
-      if (r.payment_status === 'due') c.payment += 1;
+      if (r.payment_status === 'due' && r.status !== 'cancelled') c.payment += 1;
       const d = r.attendance.days.find((x) => x.date === today);
       if (d?.checkIn && !d.checkOut) c.inNow += 1;
       if (d?.checkOut) c.outToday += 1;
@@ -261,7 +264,12 @@ export function BadgesClient({
       )}
       {enabled && hasPeople && (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <StatTile label="Registered" value={registrants.length} onClick={() => setTab('registrants')} />
+          <StatTile
+            label="Registered"
+            value={registrants.filter((r) => !r.cancelled_at).length}
+            sub={registrants.some((r) => r.cancelled_at) ? `${registrants.filter((r) => r.cancelled_at).length} cancelled` : undefined}
+            onClick={() => setTab('registrants')}
+          />
           {eventToday ? (
             <StatTile label="Checked in now" value={stats.inNow} sub={`${stats.outToday} checked out today`} tone="blue" onClick={() => goAttendance('all')} />
           ) : (
@@ -1188,6 +1196,12 @@ function RegistrantsCard({
                     {inPlaceOf(r as any) && (
                       <div className="text-xs font-semibold text-amber-700 dark:text-amber-400">In place of {inPlaceOf(r as any)}</div>
                     )}
+                    {(r as any).cancelled_at && (
+                      <div className="text-xs font-semibold text-red-700 dark:text-red-400">
+                        <span className="inline-block px-1.5 rounded bg-red-100 dark:bg-red-900/40 mr-1">CANCELLED</span>
+                        {(r as any).cancel_note || ''}
+                      </div>
+                    )}
                     {r.email ? (
                       <div className="text-xs text-gray-500">{r.email}</div>
                     ) : (
@@ -1263,8 +1277,28 @@ function RegistrantsCard({
                             }
                           },
                         },
+                        r.cancelled_at
+                          ? {
+                              label: 'Undo cancellation',
+                              onClick: () =>
+                                call(
+                                  r.id,
+                                  { method: 'PATCH', body: JSON.stringify({ action: 'restore_registration' }) },
+                                  `${r.first_name} ${r.last_name} is coming after all? Their registration goes back to normal.`
+                                ),
+                            }
+                          : {
+                              label: 'Mark registration cancelled',
+                              onClick: () => {
+                                const note = window.prompt(
+                                  `Mark ${r.first_name} ${r.last_name}'s registration as cancelled?\n\nThey stay on the list marked Cancelled: no badge printed, not counted as a no-show, not on the badge-number kiosk.\n\nNote (optional, e.g. "Called 11/17, refund requested"):`
+                                );
+                                if (note === null) return;
+                                call(r.id, { method: 'PATCH', body: JSON.stringify({ action: 'cancel_registration', note }) });
+                              },
+                            },
                         {
-                          label: 'Cancel badge',
+                          label: 'Cancel badge (lost badge: new QR code)',
                           onClick: () =>
                             call(
                               r.id,
@@ -1822,7 +1856,7 @@ type AttRow = {
   township: string | null;
   is_walk_in: boolean;
   day_hours: Record<string, number> | null;
-  status: 'attended' | 'review' | 'no_show';
+  status: 'attended' | 'review' | 'no_show' | 'cancelled';
   reasons: string[];
   credit_hours: number;
   cert_hours_override?: number | null;
@@ -1835,14 +1869,15 @@ type AttRow = {
   attendance: { days: DayAtt[] };
   log?: LogEntry[];
 };
-type Filter = 'review' | 'payment' | 'prior' | 'attended' | 'no_show' | 'all';
+type Filter = 'review' | 'payment' | 'prior' | 'attended' | 'no_show' | 'cancelled' | 'all';
 
-const STATUS_LABEL: Record<AttRow['status'], string> = { attended: 'Attended', review: 'Needs review', no_show: 'No scans' };
-const FILTER_LABEL: Record<Filter, string> = { review: 'Needs review', payment: 'Payment due', prior: 'Owes from past event', attended: 'Attended', no_show: 'No scans', all: 'Everyone' };
+const STATUS_LABEL: Record<AttRow['status'], string> = { attended: 'Attended', review: 'Needs review', no_show: 'No scans', cancelled: 'Cancelled' };
+const FILTER_LABEL: Record<Filter, string> = { review: 'Needs review', payment: 'Payment due', prior: 'Owes from past event', attended: 'Attended', no_show: 'No scans', cancelled: 'Cancelled', all: 'Everyone' };
 const STATUS_CLS: Record<AttRow['status'], string> = {
   attended: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
   review: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
   no_show: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
+  cancelled: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
 };
 const METHOD_LABEL: Record<string, string> = { check: 'Check', card: 'Credit card', admin: 'Marked by ITA', amo: 'AMO' };
 const money = (n: number | null | undefined) => (n == null ? '' : `$${Number(n).toFixed(2)}`);
@@ -1882,10 +1917,10 @@ function AttendanceCard({
   const load = reload;
 
   const counts = useMemo(() => {
-    const c = { review: 0, payment: 0, prior: 0, attended: 0, no_show: 0, all: rows?.length || 0 };
+    const c = { review: 0, payment: 0, prior: 0, attended: 0, no_show: 0, cancelled: 0, all: rows?.length || 0 };
     rows?.forEach((r) => {
       c[r.status] += 1;
-      if (r.payment_status === 'due') c.payment += 1;
+      if (r.payment_status === 'due' && r.status !== 'cancelled') c.payment += 1;
       if ((r.prior_unpaid || []).length) c.prior += 1;
     });
     return c;
@@ -1904,7 +1939,7 @@ function AttendanceCard({
       (filter === 'all'
         ? true
         : filter === 'payment'
-          ? r.payment_status === 'due'
+          ? r.payment_status === 'due' && r.status !== 'cancelled'
           : filter === 'prior'
             ? (r.prior_unpaid || []).length > 0
             : r.status === filter) &&
@@ -1968,7 +2003,7 @@ function AttendanceCard({
         placeholder="Find someone by name, email, township, organization…"
       />
       <div className="flex flex-wrap gap-1 mb-3">
-        {(['review', ...(tracksPayment ? ['payment'] : []), ...(counts.prior ? ['prior'] : []), 'attended', 'no_show', 'all'] as Filter[]).map((f) => (
+        {(['review', ...(tracksPayment ? ['payment'] : []), ...(counts.prior ? ['prior'] : []), 'attended', 'no_show', ...(counts.cancelled ? ['cancelled'] : []), 'all'] as Filter[]).map((f) => (
           <button
             key={f}
             type="button"
@@ -2020,6 +2055,12 @@ function AttendanceCard({
                     </div>
                     {inPlaceOf(r as any) && (
                       <div className="text-xs font-semibold text-amber-700 dark:text-amber-400">In place of {inPlaceOf(r as any)}</div>
+                    )}
+                    {(r as any).cancelled_at && (
+                      <div className="text-xs font-semibold text-red-700 dark:text-red-400">
+                        <span className="inline-block px-1.5 rounded bg-red-100 dark:bg-red-900/40 mr-1">CANCELLED</span>
+                        {(r as any).cancel_note || ''}
+                      </div>
                     )}
                     <div className="text-xs text-gray-500">{[r.title, townshipLabel(r.township)].filter(Boolean).join(' · ')}</div>
                     {(r.prior_unpaid || []).map((d) => (

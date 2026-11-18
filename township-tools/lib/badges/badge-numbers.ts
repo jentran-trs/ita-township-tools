@@ -14,13 +14,14 @@ export async function assignBadgeNumbers(supabase: Supa, courseId: string): Prom
   for (let attempt = 0; attempt < 3; attempt++) {
     const { data: rows } = await supabase
       .from('cert_registrants')
-      .select('id, badge_number, is_walk_in, last_name, first_name')
+      .select('id, badge_number, is_walk_in, last_name, first_name, cancelled_at')
       .eq('course_id', courseId)
       .eq('is_walk_in', false)
       .order('last_name', { ascending: true })
       .order('first_name', { ascending: true });
     const list = rows || [];
-    const todo = list.filter((r: any) => r.badge_number == null);
+    // Cancelled before their badge was numbered: no number (v45).
+    const todo = list.filter((r: any) => r.badge_number == null && !r.cancelled_at);
     if (!todo.length) return;
     let next = list.reduce((m: number, r: any) => Math.max(m, r.badge_number || 0), 0);
     let clash = false;

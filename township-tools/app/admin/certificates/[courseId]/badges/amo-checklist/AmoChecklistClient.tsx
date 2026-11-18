@@ -12,7 +12,7 @@ export type ChecklistPerson = {
   email: string;
   place: string;
   walkIn: boolean;
-  status: 'attended' | 'review' | 'no_show';
+  status: 'attended' | 'review' | 'no_show' | 'cancelled';
   reasons: string[];
   times: { day: string; in: string | null; out: string | null }[];
 };
@@ -34,6 +34,7 @@ const SECTIONS: { status: ChecklistPerson['status']; title: string; note: string
     note: 'Check the reason first (fix it on the Attendance tab of the course page), then update AMO.',
   },
   { status: 'no_show', title: 'Not scanned', note: 'Never checked in. Mark as not attended in AMO if you track that.' },
+  { status: 'cancelled', title: 'Cancelled', note: 'Marked cancelled and never checked in. Cancel these in AMO if not done yet.' },
 ];
 
 export function AmoChecklistClient({ courseId, courseName, courseCode, dates, multiDay, people }: Props) {

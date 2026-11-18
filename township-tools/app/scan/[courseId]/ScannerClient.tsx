@@ -288,7 +288,7 @@ function PinScreen({
         </div>
       )}
       <label className="block">
-        <span className="block text-sm font-semibold mb-1">Event PIN</span>
+        <span className="block text-base font-semibold mb-1">Event PIN</span>
         <input
           value={pin}
           onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
@@ -302,14 +302,14 @@ function PinScreen({
         />
       </label>
       <label className="block">
-        <span className="block text-sm font-semibold mb-1">Your name or station</span>
+        <span className="block text-base font-semibold mb-1">Your name or station</span>
         <input
           value={label}
           onChange={(e) => setLabel(e.target.value)}
           className="w-full px-4 py-3 border border-gray-300 rounded-xl"
           placeholder="e.g. Lydia – front door"
         />
-        <span className="block text-xs text-gray-500 mt-1">Saved with each scan so Jen knows who scanned.</span>
+        <span className="block text-sm text-gray-500 mt-1">Saved with each scan so Jen knows who scanned.</span>
       </label>
       {error && <p className="text-red-600 text-sm">{error}</p>}
       <button
@@ -485,10 +485,11 @@ function ScanScreen({
       } else {
         const paid = opts?.paidBy && opts.paidBy !== 'none' ? DOOR_METHOD_LABEL[opts.paidBy] : null;
         const owes = mode === 'out' && person.payment_status === 'due' ? 'Payment still due' : null;
+        const cancelledNote = mode === 'in' && person.cancelled ? 'Their registration was marked CANCELLED. Checked in anyway' : null;
         show({
-          kind: owes ? 'warn' : 'ok',
+          kind: owes || cancelledNote ? 'warn' : 'ok',
           title: `${name} ${mode === 'in' ? 'checked in' : 'checked out'}`,
-          detail: [mode === 'in' ? (badgeNumberLabel(person) ? `Badge ${badgeNumberLabel(person)}` : null) : null, paid, owes, person.title, townshipLabel(person.township)].filter(Boolean).join(' · ') || undefined,
+          detail: [cancelledNote, mode === 'in' ? (badgeNumberLabel(person) ? `Badge ${badgeNumberLabel(person)}` : null) : null, paid, owes, person.title, townshipLabel(person.township)].filter(Boolean).join(' · ') || undefined,
           undoScanId: rec.client_scan_id,
         });
       }
@@ -651,7 +652,7 @@ function ScanScreen({
       )}
 
       {/* pb leaves room for the floating dark-mode button */}
-      <div className="px-4 pt-4 pb-20 text-center text-sm text-gray-600">
+      <div className="px-4 pt-4 pb-20 text-center text-lg text-gray-600">
         Today: <strong>{counts.ins}</strong> checked in · <strong>{counts.outs}</strong> checked out · {counts.total} registered
       </div>
 
@@ -967,8 +968,8 @@ function FixDetailsSheet({
   const [err, setErr] = useState<string | null>(null);
   const field = (k: keyof typeof f, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
     <label className="block">
-      <span className="block text-sm font-semibold mb-1">{label}</span>
-      <input value={f[k]} onChange={(e) => setF((x) => ({ ...x, [k]: e.target.value }))} className="w-full px-3 py-2.5 border border-gray-300 rounded-xl" {...props} />
+      <span className="block text-base font-semibold mb-1">{label}</span>
+      <input value={f[k]} onChange={(e) => setF((x) => ({ ...x, [k]: e.target.value }))} className="w-full px-3 py-3 text-lg border border-gray-300 rounded-xl" {...props} />
     </label>
   );
   const save = async (e: React.FormEvent) => {
@@ -1015,11 +1016,11 @@ function FixDetailsSheet({
           {field('county', 'County', { autoCapitalize: 'words' })}
         </div>
         {field('organization', 'Organization (sponsors, speakers, vendors)', { autoCapitalize: 'words' })}
-        {err && <p className="text-sm text-red-600">{err}</p>}
+        {err && <p className="text-base text-red-600">{err}</p>}
         <button type="submit" disabled={busy} className="w-full py-3.5 text-lg font-semibold bg-[#1B2E5B] text-white rounded-xl disabled:opacity-50">
           {busy ? 'Saving…' : substitute ? 'Save and make their label' : 'Save and make new label'}
         </button>
-        <p className="text-xs text-gray-500">
+        <p className="text-sm text-gray-500">
           {substitute
             ? 'Needs internet. They use this registration (badge number, QR code and payment). The original registrant is kept on record, and an AMO re-import won\'t undo it.'
             : 'Needs internet. Their badge number and QR code stay the same, so the old badge still scans. The fix is kept when the AMO list is imported again.'}
@@ -1104,110 +1105,117 @@ function NameLookup({
   return (
     <div className="px-3">
       <div className="relative">
-        <Search className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+        <Search className="w-6 h-6 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
         <input
           type="search"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Find by last name, township or #"
           autoComplete="off"
-          className="w-full pl-12 pr-4 py-3.5 text-lg bg-white border-2 border-gray-300 rounded-xl focus:outline-none focus:border-[#1B2E5B]"
+          className="w-full pl-12 pr-4 py-4 text-xl bg-white border-2 border-gray-300 rounded-xl focus:outline-none focus:border-[#1B2E5B]"
         />
       </div>
       {q.trim() && (
         <div className="mt-2 bg-white rounded-xl shadow-sm px-4">
           {!matches.length ? (
-            <div className="py-3 flex items-center gap-3">
-              <p className="flex-1 text-sm text-gray-600">No one by that name, so they&apos;re a walk-in.</p>
+            <div className="py-4 flex flex-col gap-3">
+              <p className="text-lg text-gray-700">No one by that name, so they&apos;re a walk-in.</p>
               <button
                 type="button"
                 onClick={() => {
                   setQ('');
                   onAddWalkIn();
                 }}
-                className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 bg-[#1B2E5B] text-white rounded-lg font-semibold text-sm"
+                className="w-full flex items-center justify-center gap-2 py-3.5 bg-[#1B2E5B] text-white rounded-xl font-bold text-lg"
               >
-                <UserPlus className="w-4 h-4" /> Add walk-in
+                <UserPlus className="w-5 h-5" /> Add walk-in
               </button>
             </div>
           ) : (
-            <ul className="divide-y">
-              {matches.map((p) => (
-                <li key={p.id} className="py-3 flex items-center gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-lg leading-tight">
-                      {p.first_name} {p.last_name}
-                      {stateFor(p.id) === 'in' && (
-                        <span className="ml-2 align-middle inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-green-600 text-white">Checked in</span>
-                      )}
-                      {stateFor(p.id) === 'out' && (
-                        <span className="ml-2 align-middle inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-gray-500 text-white">Checked out</span>
-                      )}
-                      {p.payment_status === 'due' && <span className="ml-2 text-xs font-semibold text-red-600">payment due</span>}
+            <ul className="divide-y-2 divide-gray-200">
+              {matches.map((p) => {
+                const st = stateFor(p.id);
+                const owes = p.payment_status === 'due' || (p.prior_unpaid || []).length > 0;
+                const action = 'w-full py-3.5 px-4 rounded-xl text-lg font-bold text-left border-2';
+                return (
+                  <li key={p.id} className="py-4">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-2xl leading-tight">
+                          {p.first_name} {p.last_name}
+                        </div>
+                        <div className="text-lg text-gray-600 mt-0.5">
+                          {[p.title, townshipLabel(p.township) || p.organization].filter(Boolean).join(' · ')}
+                        </div>
+                      </div>
+                      {badgeNumberLabel(p) ? (
+                        <span className={`flex-shrink-0 font-extrabold text-[#C1272D] text-right leading-none ${p.is_walk_in ? 'text-2xl' : 'text-5xl'}`}>
+                          {badgeNumberLabel(p)}
+                        </span>
+                      ) : p.is_walk_in ? (
+                        <span className="flex-shrink-0 text-2xl font-extrabold text-[#1B2E5B] text-right">Walk-in</span>
+                      ) : null}
                     </div>
-                    {p.in_place_of && <div className="text-sm font-semibold text-amber-700">In place of {p.in_place_of}</div>}
+                    {(st || p.cancelled || p.payment_status === 'due') && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {p.cancelled && <span className="px-3 py-1 rounded-full text-base font-bold bg-red-600 text-white">CANCELLED</span>}
+                        {st === 'in' && <span className="px-3 py-1 rounded-full text-base font-bold bg-green-600 text-white">Checked in</span>}
+                        {st === 'out' && <span className="px-3 py-1 rounded-full text-base font-bold bg-gray-500 text-white">Checked out</span>}
+                        {p.payment_status === 'due' && (
+                          <span className="px-3 py-1 rounded-full text-base font-bold bg-red-100 text-red-700 border border-red-300">Payment due</span>
+                        )}
+                      </div>
+                    )}
+                    {statusFor(p.id) && <div className="mt-1 text-lg text-gray-800">{statusFor(p.id)}</div>}
+                    {p.in_place_of && <div className="mt-1 text-lg font-semibold text-amber-700">In place of {p.in_place_of}</div>}
+                    {p.cancelled && <div className="mt-1 text-lg text-red-700">Registration was cancelled. If they came anyway, check them in as usual.</div>}
                     {(p.prior_unpaid || []).map((d, i) => (
-                      <div key={i} className="text-sm font-semibold text-red-700">
+                      <div key={i} className="mt-1 text-lg font-semibold text-red-700">
                         Owes {d.balance_due ? `$${Number(d.balance_due).toFixed(2)} ` : ''}from {d.course_name}
                       </div>
                     ))}
-                    <div className="text-sm text-gray-500">
-                      {[p.title, townshipLabel(p.township) || p.organization].filter(Boolean).join(' · ')}
-                      {statusFor(p.id) && <span className="ml-1 text-gray-700">· {statusFor(p.id)}</span>}
-                    </div>
-                    <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onCheck(p);
-                        setQ('');
-                      }}
-                      className="text-sm font-semibold text-[#1B2E5B] underline underline-offset-2"
-                    >
-                      {mode === 'in' ? 'Check in without badge' : 'Check out without badge'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onFix(p);
-                        setQ('');
-                      }}
-                      className="text-sm font-semibold text-amber-700 underline underline-offset-2"
-                    >
-                      Fix name &amp; reprint
-                    </button>
-                    {!p.is_walk_in && (
+                    <div className="mt-3 flex flex-col gap-2">
                       <button
                         type="button"
                         onClick={() => {
-                          onSubstitute(p);
+                          onCheck(p);
                           setQ('');
                         }}
-                        className="text-sm font-semibold text-amber-700 underline underline-offset-2"
+                        className={`${action} bg-[#1B2E5B] border-[#1B2E5B] text-white`}
                       >
-                        Someone else is attending
+                        {mode === 'in' ? 'Check in without badge' : 'Check out without badge'}
                       </button>
-                    )}
-                    {(p.payment_status === 'due' || (p.prior_unpaid || []).length > 0) && (
+                      {owes && (
+                        <button type="button" onClick={() => onPay(p)} className={`${action} bg-white border-red-600 text-red-700`}>
+                          Record payment
+                        </button>
+                      )}
                       <button
                         type="button"
-                        onClick={() => onPay(p)}
-                        className="text-sm font-semibold text-red-700 underline underline-offset-2"
+                        onClick={() => {
+                          onFix(p);
+                          setQ('');
+                        }}
+                        className={`${action} bg-white border-gray-300 text-gray-900`}
                       >
-                        Record payment
+                        Fix name &amp; reprint
                       </button>
-                    )}
+                      {!p.is_walk_in && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onSubstitute(p);
+                            setQ('');
+                          }}
+                          className={`${action} bg-white border-amber-500 text-amber-800`}
+                        >
+                          Someone else is attending
+                        </button>
+                      )}
                     </div>
-                  </div>
-                  {badgeNumberLabel(p) ? (
-                    <span className={`flex-shrink-0 font-extrabold text-[#C1272D] text-right leading-none ${p.is_walk_in ? 'text-lg' : 'text-4xl'}`}>
-                      {badgeNumberLabel(p)}
-                    </span>
-                  ) : p.is_walk_in ? (
-                    <span className="flex-shrink-0 text-lg font-extrabold text-[#1B2E5B] text-right">Walk-in</span>
-                  ) : null}
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
@@ -1232,8 +1240,8 @@ function WalkInSheet({
   const [checkIn, setCheckIn] = useState(mode === 'in');
   const field = (k: keyof typeof f, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
     <label className="block">
-      <span className="block text-sm font-semibold mb-1">{label}</span>
-      <input value={f[k]} onChange={(e) => setF((x) => ({ ...x, [k]: e.target.value }))} className="w-full px-3 py-2.5 border border-gray-300 rounded-xl" {...props} />
+      <span className="block text-base font-semibold mb-1">{label}</span>
+      <input value={f[k]} onChange={(e) => setF((x) => ({ ...x, [k]: e.target.value }))} className="w-full px-3 py-3 text-lg border border-gray-300 rounded-xl" {...props} />
     </label>
   );
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim());
@@ -1272,7 +1280,7 @@ function WalkInSheet({
         <div className="grid grid-cols-2 gap-3">
           {field('title', 'Title', { autoCapitalize: 'words' })}
           <label className="block">
-            <span className="block text-sm font-semibold mb-1">Type</span>
+            <span className="block text-base font-semibold mb-1">Type</span>
             <select
               value={f.registrant_type}
               onChange={(e) => setF((x) => ({ ...x, registrant_type: e.target.value }))}
@@ -1317,8 +1325,8 @@ function WalkInSheet({
         <button type="submit" disabled={!ok} className="w-full py-3.5 text-lg font-semibold bg-[#1B2E5B] text-white rounded-xl disabled:opacity-50">
           Add walk-in
         </button>
-        {!ok && <p className="text-xs text-gray-500 text-center">First name, last name and email are required.</p>}
-        <p className="text-xs text-gray-500">Works offline. It uploads with the scans when the phone is back online.</p>
+        {!ok && <p className="text-sm text-gray-500 text-center">First name, last name and email are required.</p>}
+        <p className="text-sm text-gray-500">Works offline. It uploads with the scans when the phone is back online.</p>
       </form>
     </Sheet>
   );

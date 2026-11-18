@@ -42,7 +42,9 @@ export async function loadPriorUnpaid(
     .from('cert_registrants')
     .select('id, course_id, email, first_name, last_name, balance_due')
     .in('course_id', earlier.map((c: any) => c.id))
-    .eq('payment_status', 'due');
+    .eq('payment_status', 'due')
+    // A cancelled registration isn't a debt (v45).
+    .is('cancelled_at', null);
   if (!owing?.length) return out;
 
   const byEmail = new Map<string, any[]>();

@@ -22,6 +22,8 @@ export type RosterPerson = {
   balance_due?: number | null;
   // "Sheri Bartoli": someone else is attending on her registration.
   in_place_of?: string | null;
+  // Registration marked cancelled by the office.
+  cancelled?: boolean;
 };
 
 /** How someone paid at the door (method only), waiting to upload. */

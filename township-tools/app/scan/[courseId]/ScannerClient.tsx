@@ -28,7 +28,8 @@ import {
 type Info = { id: string; name: string; dates: string; times: string | null; scanning_open: boolean };
 type Phase = 'loading' | 'notfound' | 'closed' | 'pin' | 'scan';
 type Mode = 'in' | 'out';
-type Result = { kind: 'ok' | 'warn' | 'error'; title: string; detail?: string; at: number; undoScanId?: string };
+// out: a check-out confirmation (blue instead of green, like the Check OUT button).
+type Result = { kind: 'ok' | 'warn' | 'error'; title: string; detail?: string; at: number; undoScanId?: string; out?: boolean };
 
 const SYNC_EVERY_MS = 15_000;
 
@@ -480,7 +481,7 @@ function ScanScreen({
       };
       setState((s) => ({ ...s, scans: [...s.scans, rec], pendingScans: [...s.pendingScans, rec] }));
       if (mode === 'out' && same.length) {
-        show({ kind: 'ok', title: `${name} checked out again`, detail: `Check-out time updated to ${easternTime(now)}.`, undoScanId: rec.client_scan_id });
+        show({ kind: 'ok', title: `${name} checked out again`, detail: `Check-out time updated to ${easternTime(now)}.`, undoScanId: rec.client_scan_id, out: true });
       } else if (mode === 'in' && opts?.paidBy === 'none') {
         show({ kind: 'warn', title: `${name} checked in`, detail: 'No payment collected. They will be listed for follow-up.', undoScanId: rec.client_scan_id });
       } else {
@@ -489,6 +490,7 @@ function ScanScreen({
         const cancelledNote = mode === 'in' && person.cancelled ? 'Their registration was marked CANCELLED. Checked in anyway' : null;
         show({
           kind: owes || cancelledNote ? 'warn' : 'ok',
+          out: mode === 'out',
           title: `${name} ${mode === 'in' ? 'checked in' : 'checked out'}`,
           detail: [cancelledNote, mode === 'in' ? (badgeNumberLabel(person) ? `Badge ${badgeNumberLabel(person)}` : null) : null, paid, owes, person.title, townshipLabel(person.township)].filter(Boolean).join(' · ') || undefined,
           undoScanId: rec.client_scan_id,
@@ -831,7 +833,7 @@ function ModeButton({ active, onClick, icon, label, color }: { active: boolean; 
 
 function ResultCard({ result, onUndo }: { result: Result; onUndo?: () => void }) {
   const styles = {
-    ok: 'bg-green-600 text-white',
+    ok: result.out ? 'bg-blue-600 text-white' : 'bg-green-600 text-white',
     warn: 'bg-amber-400 text-amber-950',
     error: 'bg-red-600 text-white',
   }[result.kind];

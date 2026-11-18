@@ -976,10 +976,10 @@ function ShareScannerSheet({ courseId, eventName, onClose }: { courseId: string;
       .catch(() => setSrc(null));
   }, [url]);
   return (
-    <Sheet title="Help scan: open this scanner" onClose={onClose}>
+    <Sheet title="Help scan" onClose={onClose}>
       <div className="text-center space-y-3">
-        <p className="text-lg">
-          Have your team member point their phone camera at this code to open the <strong>{eventName}</strong> scanner.
+        <p className="text-xl">
+          Scan to help check in attendees for <strong>{eventName}</strong>
         </p>
         <div className="flex justify-center">
           {src ? (
@@ -989,16 +989,15 @@ function ShareScannerSheet({ courseId, eventName, onClose }: { courseId: string;
             <div className="w-72 h-72 bg-gray-100 rounded-xl" />
           )}
         </div>
-        <div className="rounded-xl bg-gray-100 px-4 py-3">
-          <div className="text-base text-gray-700">Then they enter the event PIN:</div>
-          {pin ? (
-            <div className="text-5xl font-extrabold tracking-[0.2em] text-[#1B2E5B] mt-1">{pin}</div>
-          ) : (
-            <div className="text-lg text-gray-600 mt-1">
-              {pin === undefined ? 'Loading…' : "Couldn't show the PIN (no connection?). It's on the course page's Setup tab."}
-            </div>
-          )}
-        </div>
+        {pin ? (
+          <div className="text-5xl font-extrabold text-[#1B2E5B]">
+            PIN: <span className="tracking-[0.15em]">{pin}</span>
+          </div>
+        ) : (
+          <div className="text-lg text-gray-600">
+            {pin === undefined ? 'Loading PIN…' : "Couldn't show the PIN (no connection?). It's on the course page's Setup tab."}
+          </div>
+        )}
         <p className="text-sm text-gray-500 break-all">{url}</p>
       </div>
     </Sheet>

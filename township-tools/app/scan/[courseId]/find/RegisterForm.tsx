@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 
 const NAVY = '#1B2E5B';
-const IDLE_MS = 120_000; // walked away mid-form: back to the search screen
+const IDLE_MS = 90_000; // walked away mid-form: back to the search screen after 1.5 minutes
 const THANKS_MS = 12_000;
 const TYPES = ['Attendee', 'Sponsor', 'Speaker', 'Resource Vendor', 'Staff'];
 

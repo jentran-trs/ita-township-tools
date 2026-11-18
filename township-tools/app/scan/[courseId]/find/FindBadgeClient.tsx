@@ -209,7 +209,7 @@ export function FindBadgeClient({ courseId }: { courseId: string }) {
   return (
     <div className="h-[100dvh] flex flex-col bg-gray-50 text-gray-900 overflow-hidden">
       {/* Compact header so the search and results stay above the on-screen keyboard. */}
-      <header className="relative flex items-center justify-center px-40 py-3 text-white flex-shrink-0" style={{ background: NAVY }}>
+      <header className="relative flex items-center justify-center px-60 py-4 text-white flex-shrink-0" style={{ background: NAVY }}>
         {!registering && (
           <button
             type="button"
@@ -217,10 +217,10 @@ export function FindBadgeClient({ courseId }: { courseId: string }) {
               clearName();
               setRegistering(true);
             }}
-            className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white text-xl font-bold active:scale-95 transition-transform"
+            className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-3 px-7 py-4 rounded-2xl bg-white text-3xl font-extrabold shadow-lg active:scale-95 transition-transform"
             style={{ color: NAVY }}
           >
-            <UserPlus className="w-6 h-6" /> Register
+            <UserPlus className="w-9 h-9" /> Register
           </button>
         )}
         {/* Logo, title and event name together in the middle of the banner. */}

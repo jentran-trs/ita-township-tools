@@ -31,6 +31,7 @@ export async function GET(_req: Request, { params }: RouteParams) {
 
   return NextResponse.json({
     days: data.days,
+    event_over: data.event_over,
     course: { hours: Number(data.course.hours), event_start_time: data.course.event_start_time, event_end_time: data.course.event_end_time },
     rows: data.rows.map((r) => ({ ...r, payment: latest.get(r.id) || null })),
   });

@@ -56,7 +56,19 @@ export type CourseAttendance = {
   course: any;
   days: string[];
   rows: AttendanceRow[];
+  // Past the event end time on the last event day (Eastern; end of that day if
+  // no end time is set). From then on, anyone never checked in is a "No show".
+  event_over: boolean;
 };
+
+/** Is the event over (last day's end time has passed, Eastern)? */
+export function isEventOver(days: string[], endMinutes: number | null, now = new Date()): boolean {
+  const last = days[days.length - 1];
+  if (!last) return false;
+  const today = easternDate(now);
+  if (today !== last) return today > last;
+  return easternMinutes(now) >= (endMinutes ?? 24 * 60);
+}
 
 /** Registrants + scans for one course, with the attendance rule applied. */
 export async function loadCourseAttendance(courseId: string): Promise<CourseAttendance | null> {
@@ -183,7 +195,7 @@ export async function loadCourseAttendance(courseId: string): Promise<CourseAtte
     };
   });
 
-  return { course, days, rows };
+  return { course, days, rows, event_over: isEventOver(days, endMinutes) };
 }
 
 const round1 = (n: number) => Math.round(n * 10) / 10;

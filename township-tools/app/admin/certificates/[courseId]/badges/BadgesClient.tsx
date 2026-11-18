@@ -113,7 +113,7 @@ export function BadgesClient({
   const [course, setCourse] = useState<Course | null>(null);
   const [registrants, setRegistrants] = useState<Registrant[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [att, setAtt] = useState<{ rows: AttRow[]; days: string[] } | null>(null);
+  const [att, setAtt] = useState<{ rows: AttRow[]; days: string[]; eventOver: boolean } | null>(null);
   const [attError, setAttError] = useState<string | null>(null);
   const [tab, setTabState] = useState<Tab | null>(null);
   const [attFilter, setAttFilter] = useState<Filter>('review');
@@ -138,7 +138,7 @@ export function BadgesClient({
       const res = await fetch(`/api/admin/certificates/courses/${courseId}/attendance`, { cache: 'no-store' });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Failed to load attendance');
-      setAtt({ rows: json.rows, days: json.days });
+      setAtt({ rows: json.rows, days: json.days, eventOver: !!json.event_over });
       setAttError(null);
     } catch (e: any) {
       setAttError(e.message);
@@ -273,7 +273,7 @@ export function BadgesClient({
           {eventToday ? (
             <StatTile label="Checked in now" value={stats.inNow} sub={`${stats.outToday} checked out today`} tone="blue" onClick={() => goAttendance('all')} />
           ) : (
-            <StatTile label="Not scanned" value={stats.no_show} onClick={() => goAttendance('no_show')} />
+            <StatTile label={att?.eventOver ? 'No show' : 'Not checked in'} value={stats.no_show} onClick={() => goAttendance('no_show')} />
           )}
           <StatTile label="Attended" value={stats.attended} tone="green" onClick={() => goAttendance('attended')} />
           <StatTile label="Needs review" value={stats.review} tone={stats.review ? 'amber' : undefined} onClick={() => goAttendance('review')} />
@@ -346,6 +346,7 @@ export function BadgesClient({
           course={course}
           rows={att?.rows || null}
           days={att?.days || []}
+          eventOver={!!att?.eventOver}
           loadError={attError}
           reload={loadAtt}
           filter={attFilter}
@@ -1871,8 +1872,8 @@ type AttRow = {
 };
 type Filter = 'review' | 'payment' | 'prior' | 'attended' | 'no_show' | 'cancelled' | 'all';
 
-const STATUS_LABEL: Record<AttRow['status'], string> = { attended: 'Attended', review: 'Needs review', no_show: 'No scans', cancelled: 'Cancelled' };
-const FILTER_LABEL: Record<Filter, string> = { review: 'Needs review', payment: 'Payment due', prior: 'Owes from past event', attended: 'Attended', no_show: 'No scans', cancelled: 'Cancelled', all: 'Everyone' };
+const STATUS_LABEL: Record<AttRow['status'], string> = { attended: 'Attended', review: 'Needs review', no_show: 'No show', cancelled: 'Cancelled' };
+const FILTER_LABEL: Record<Filter, string> = { review: 'Needs review', payment: 'Payment due', prior: 'Owes from past event', attended: 'Attended', no_show: 'No show', cancelled: 'Cancelled', all: 'Everyone' };
 const STATUS_CLS: Record<AttRow['status'], string> = {
   attended: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
   review: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
@@ -1886,6 +1887,7 @@ function AttendanceCard({
   course,
   rows,
   days,
+  eventOver,
   loadError,
   reload,
   filter,
@@ -1898,6 +1900,8 @@ function AttendanceCard({
   course: Course;
   rows: AttRow[] | null;
   days: string[];
+  // Past the end time on the last day: never checked in = "No show".
+  eventOver: boolean;
   loadError: string | null;
   reload: () => Promise<void> | void;
   filter: Filter;
@@ -1909,6 +1913,9 @@ function AttendanceCard({
 }) {
   const [actionError, setError] = useState<string | null>(null);
   const error = actionError || loadError;
+  const noShow = eventOver ? 'No show' : 'Not checked in';
+  const statusLabel = (st: AttRow['status']) => (st === 'no_show' ? noShow : STATUS_LABEL[st]);
+  const filterLabel = (f: Filter) => (f === 'no_show' ? noShow : FILTER_LABEL[f]);
   const [notice] = useState<string | null>(null);
   const [editing, setEditing] = useState<{ id: string; date: string; direction: 'in' | 'out' } | null>(null);
   const [payingId, setPayingId] = useState<string | null>(null);
@@ -2012,7 +2019,7 @@ function AttendanceCard({
               filter === f ? 'bg-amber-500 border-amber-500 text-white' : 'border-gray-300 dark:border-gray-700'
             }`}
           >
-            {FILTER_LABEL[f]} ({counts[f]})
+            {filterLabel(f)} ({counts[f]})
           </button>
         ))}
       </div>
@@ -2023,7 +2030,7 @@ function AttendanceCard({
         <p className="text-sm text-gray-500">Loading…</p>
       ) : shown.length === 0 ? (
         <p className="text-sm text-gray-500">
-          {query.trim() ? `No one matches "${query.trim()}" in ${FILTER_LABEL[filter]}.` : filter === 'review' ? 'Nothing to review.' : 'No one here.'}
+          {query.trim() ? `No one matches "${query.trim()}" in ${filterLabel(filter)}.` : filter === 'review' ? 'Nothing to review.' : 'No one here.'}
           {query.trim() && filter !== 'all' && (
             <button type="button" onClick={() => setFilter('all')} className="ml-2 font-semibold text-amber-700 dark:text-amber-400 hover:underline">
               Search everyone
@@ -2144,7 +2151,7 @@ function AttendanceCard({
                     </td>
                   ))}
                   <td className="py-2 pr-3 min-w-[15rem]">
-                    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_CLS[r.status]}`}>{STATUS_LABEL[r.status]}</span>
+                    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_CLS[r.status]}`}>{statusLabel(r.status)}</span>
                     {r.status === 'review' && r.reasons.length > 0 && (
                       <ul className="mt-1 text-xs text-amber-800 dark:text-amber-300 space-y-0.5">
                         {r.reasons.map((x) => (

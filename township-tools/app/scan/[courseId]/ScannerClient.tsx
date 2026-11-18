@@ -1208,19 +1208,17 @@ function NameLookup({
                       <div className="flex-1 min-w-0">
                         <div className="font-bold text-2xl leading-tight">
                           {p.first_name} {p.last_name}
-                          {st === 'in' && (
-                            <span className="ml-2 align-middle inline-block px-2.5 py-0.5 rounded-full text-base font-bold bg-green-600 text-white">Checked in</span>
-                          )}
-                          {st === 'out' && (
-                            <span className="ml-2 align-middle inline-block px-2.5 py-0.5 rounded-full text-base font-bold bg-gray-500 text-white">Checked out</span>
-                          )}
-                          {statusFor(p.id) && (
-                            <span className="ml-2 align-middle inline-block text-lg font-semibold text-gray-800">{statusFor(p.id)}</span>
-                          )}
                         </div>
-                        <div className="text-lg text-gray-600 mt-0.5">
-                          {[p.title, townshipLabel(p.township) || p.organization].filter(Boolean).join(' · ')}
-                        </div>
+                        {st && (
+                          <div className="mt-1 flex items-center gap-2 whitespace-nowrap">
+                            <span
+                              className={`px-2.5 py-0.5 rounded-full text-base font-bold text-white ${st === 'in' ? 'bg-green-600' : 'bg-gray-500'}`}
+                            >
+                              {st === 'in' ? 'Checked in' : 'Checked out'}
+                            </span>
+                            {statusFor(p.id) && <span className="text-lg font-semibold text-gray-800">{statusFor(p.id)}</span>}
+                          </div>
+                        )}
                       </div>
                       {badgeNumberLabel(p) ? (
                         <span className={`flex-shrink-0 font-extrabold text-[#C1272D] text-right leading-none ${p.is_walk_in ? 'text-2xl' : 'text-5xl'}`}>
@@ -1230,6 +1228,10 @@ function NameLookup({
                         <span className="flex-shrink-0 text-2xl font-extrabold text-[#1B2E5B] text-right">Walk-in</span>
                       ) : null}
                     </div>
+                    {p.title && <div className="mt-1 text-lg text-gray-600 leading-snug">{p.title}</div>}
+                    {(townshipLabel(p.township) || p.organization) && (
+                      <div className="text-lg text-gray-600 leading-snug">{townshipLabel(p.township) || p.organization}</div>
+                    )}
                     {(p.cancelled || p.payment_status === 'due') && (
                       <div className="mt-2 flex flex-wrap gap-2">
                         {p.cancelled && <span className="px-3 py-1 rounded-full text-base font-bold bg-red-600 text-white">CANCELLED</span>}
@@ -1239,7 +1241,7 @@ function NameLookup({
                       </div>
                     )}
                     {p.in_place_of && <div className="mt-1 text-lg font-semibold text-amber-700">In place of {p.in_place_of}</div>}
-                    {p.cancelled && <div className="mt-1 text-lg text-red-700">Registration was cancelled. If they came anyway, check them in as usual.</div>}
+                    {p.cancelled && <div className="mt-1 text-lg text-red-700">Came anyway? Check them in as usual.</div>}
                     {(p.prior_unpaid || []).map((d, i) => (
                       <div key={i} className="mt-1 text-lg font-semibold text-red-700">
                         Owes {d.balance_due ? `$${Number(d.balance_due).toFixed(2)} ` : ''}from {d.course_name}

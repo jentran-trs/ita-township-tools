@@ -156,8 +156,8 @@ export async function renderNiimbotLabel(input: LabelInput): Promise<Blob> {
   const place = [townshipLabel(input.township), input.county ? `${input.county} County` : null].filter(Boolean).join(', ') || input.organization || '';
   type Line = { text: string; weight: string; max: number; min: number; gap: number };
   const lines: Line[] = [
-    { text: input.firstName, weight: 'bold', max: 64, min: 30, gap: 0 },
-    { text: input.lastName, weight: 'bold', max: 46, min: 24, gap: 0 },
+    // First and last name on one line, as big as fits.
+    { text: `${input.firstName} ${input.lastName}`.trim(), weight: 'bold', max: 52, min: 22, gap: 0 },
     ...(input.title ? [{ text: input.title, weight: 'normal', max: 27, min: 17, gap: 8 }] : []),
     ...(place ? [{ text: place, weight: 'normal', max: 25, min: 16, gap: 2 }] : []),
     ...(extraOrganization(input) ? [{ text: extraOrganization(input)!, weight: 'normal', max: 25, min: 16, gap: 2 }] : []),

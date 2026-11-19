@@ -50,6 +50,44 @@ export async function POST(req: Request, { params }: RouteParams) {
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
+  // Several at once (e.g. "Check out everyone who forgot"):
+  //   { entries: [{ registrant_id, date, direction, time }], note }
+  if (Array.isArray(b.entries)) {
+    const note = typeof b.note === 'string' ? b.note.trim().slice(0, 300) : '';
+    if (!note) return NextResponse.json({ error: 'A note is required' }, { status: 400 });
+    const entries = b.entries.slice(0, 2000);
+    for (const e of entries) {
+      if (!['in', 'out'].includes(e?.direction) || !/^\d{4}-\d{2}-\d{2}$/.test(e?.date || '') || !/^\d{2}:\d{2}$/.test(e?.time || '')) {
+        return NextResponse.json({ error: 'Each entry needs registrant_id, date, direction and time' }, { status: 400 });
+      }
+    }
+    const supabase = createServerSupabaseClient();
+    const ids = Array.from(new Set(entries.map((e: any) => String(e.registrant_id))));
+    const { data: regs } = await supabase.from('cert_registrants').select('id').eq('course_id', params.courseId).in('id', ids);
+    const known = new Set((regs || []).map((r: any) => r.id));
+    const by = await adminName();
+    const rows = entries
+      .filter((e: any) => known.has(String(e.registrant_id)))
+      .map((e: any) => {
+        const at = easternToUtc(e.date, e.time);
+        return {
+          course_id: params.courseId,
+          registrant_id: String(e.registrant_id),
+          scan_date: easternDate(at),
+          direction: e.direction,
+          scanned_at: at.toISOString(),
+          source: 'manual',
+          entered_by: by,
+          note,
+        };
+      });
+    if (rows.length) {
+      const { error } = await supabase.from('cert_attendance_scans').insert(rows);
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true, added: rows.length });
+  }
+
   if (!['in', 'out'].includes(b.direction)) return NextResponse.json({ error: 'direction must be in or out' }, { status: 400 });
   if (!/^\d{4}-\d{2}-\d{2}$/.test(b.date || '')) return NextResponse.json({ error: 'date must be YYYY-MM-DD' }, { status: 400 });
   if (!/^\d{2}:\d{2}$/.test(b.time || '')) return NextResponse.json({ error: 'time must be HH:MM' }, { status: 400 });

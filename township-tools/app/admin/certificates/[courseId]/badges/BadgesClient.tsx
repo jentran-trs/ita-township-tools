@@ -10,7 +10,7 @@ import { getSupabaseClient } from '@/lib/supabase';
 import { fileSize, printedWhen } from '@/components/badges/PrintFilesList';
 import { townshipLabel } from '@/lib/certificates/township';
 import { formatCourseDates } from '@/lib/certificates/date-range';
-import { easternDate, easternTime, eventDays, formatEventTimes } from '@/lib/badges/attendance';
+import { easternDate, easternTime, easternToUtc, eventDays, formatEventTimes } from '@/lib/badges/attendance';
 
 type Course = {
   id: string;
@@ -1872,10 +1872,10 @@ type AttRow = {
   attendance: { days: DayAtt[] };
   log?: LogEntry[];
 };
-type Filter = 'review' | 'payment' | 'prior' | 'attended' | 'no_show' | 'cancelled' | 'walkin' | 'all';
+type Filter = 'review' | 'payment' | 'prior' | 'attended' | 'no_show' | 'not_out' | 'cancelled' | 'walkin' | 'all';
 
 const STATUS_LABEL: Record<AttRow['status'], string> = { attended: 'Attended', review: 'Needs review', no_show: 'No show', cancelled: 'Cancelled' };
-const FILTER_LABEL: Record<Filter, string> = { review: 'Needs review', payment: 'Payment due', prior: 'Owes from past event', attended: 'Attended', no_show: 'No show', cancelled: 'Cancelled', walkin: 'Walk-ins', all: 'Everyone' };
+const FILTER_LABEL: Record<Filter, string> = { review: 'Needs review', payment: 'Payment due', prior: 'Owes from past event', attended: 'Attended', no_show: 'No show', not_out: 'Not checked out', cancelled: 'Cancelled', walkin: 'Walk-ins', all: 'Everyone' };
 const STATUS_CLS: Record<AttRow['status'], string> = {
   attended: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
   review: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
@@ -1919,6 +1919,7 @@ function AttendanceCard({
   const statusLabel = (st: AttRow['status']) => (st === 'no_show' ? noShow : STATUS_LABEL[st]);
   const filterLabel = (f: Filter) => (f === 'no_show' ? noShow : FILTER_LABEL[f]);
   const [notice] = useState<string | null>(null);
+  const [massNotice, setMassNotice] = useState<string | null>(null);
   const [editing, setEditing] = useState<{ id: string; date: string; direction: 'in' | 'out' } | null>(null);
   const [payingId, setPayingId] = useState<string | null>(null);
   const [historyId, setHistoryId] = useState<string | null>(null);
@@ -1926,10 +1927,11 @@ function AttendanceCard({
   const load = reload;
 
   const counts = useMemo(() => {
-    const c = { review: 0, payment: 0, prior: 0, attended: 0, no_show: 0, cancelled: 0, walkin: 0, all: rows?.length || 0 };
+    const c = { review: 0, payment: 0, prior: 0, attended: 0, no_show: 0, not_out: 0, cancelled: 0, walkin: 0, all: rows?.length || 0 };
     rows?.forEach((r) => {
       c[r.status] += 1;
       if (r.is_walk_in) c.walkin += 1;
+      if (notOut(r)) c.not_out += 1;
       if (r.payment_status === 'due' && r.status !== 'cancelled') c.payment += 1;
       if ((r.prior_unpaid || []).length) c.prior += 1;
     });
@@ -1954,7 +1956,9 @@ function AttendanceCard({
             ? (r.prior_unpaid || []).length > 0
             : filter === 'walkin'
               ? r.is_walk_in
-              : r.status === filter) &&
+              : filter === 'not_out'
+                ? notOut(r)
+                : r.status === filter) &&
       (!query.trim() || matches(searchText.get(r.id) || haystack(r.first_name, r.last_name, r.title, r.township), query))
   );
   useEffect(() => setPage(0), [query, filter]);
@@ -1980,6 +1984,9 @@ function AttendanceCard({
       else shown.forEach((r) => n.add(r.id));
       return n;
     });
+  // Check out everyone (or the ticked people) who forgot to check out.
+  const outTargets = (pickedShown.length ? pickedShown : shown).filter(notOut);
+  const [massOut, setMassOut] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const copyEmails = async () => {
     const text = shownEmails.join(', ');
@@ -2056,7 +2063,7 @@ function AttendanceCard({
         placeholder="Find someone by name, email, township, organization…"
       />
       <div className="flex flex-wrap gap-1 mb-3">
-        {(['review', ...(tracksPayment ? ['payment'] : []), ...(counts.prior ? ['prior'] : []), 'attended', 'no_show', ...(counts.cancelled ? ['cancelled'] : []), ...(counts.walkin ? ['walkin'] : []), 'all'] as Filter[]).map((f) => (
+        {(['review', ...(tracksPayment ? ['payment'] : []), ...(counts.prior ? ['prior'] : []), 'attended', 'no_show', ...(counts.not_out ? ['not_out'] : []), ...(counts.cancelled ? ['cancelled'] : []), ...(counts.walkin ? ['walkin'] : []), 'all'] as Filter[]).map((f) => (
           <button
             key={f}
             type="button"
@@ -2077,6 +2084,15 @@ function AttendanceCard({
         >
           <Copy className="w-4 h-4" /> {pickedShown.length ? `Copy selected emails (${shownEmails.length})` : `Copy all emails (${shownEmails.length})`}
         </button>
+        {filter === 'not_out' && outTargets.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setMassOut(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-full bg-blue-600 text-white hover:bg-blue-700"
+          >
+            Check out {outTargets.length} {outTargets.length === 1 ? 'person' : 'people'}
+          </button>
+        )}
         {pickedShown.length > 0 && (
           <button
             type="button"
@@ -2088,6 +2104,22 @@ function AttendanceCard({
         )}
       </div>
       {copied && <p className="text-sm text-green-600 mb-3">{copied}. Paste into the To or BCC field.</p>}
+      {massOut && (
+        <MassCheckOut
+          courseId={course.id}
+          people={outTargets}
+          defaultTime={course.event_end_time?.slice(0, 5) || '16:00'}
+          onClose={() => setMassOut(false)}
+          onDone={(n) => {
+            setMassOut(false);
+            setPicked(new Set());
+            setError(null);
+            setMassNotice(`Checked out ${n} ${n === 1 ? 'person' : 'people'}. Each shows "entered by hand" with your note in their History.`);
+            load();
+          }}
+        />
+      )}
+      {massNotice && <p className="text-sm text-green-600 mb-3">{massNotice}</p>}
 
       {notice && <p className="text-sm text-green-600 mb-3">{notice}</p>}
       {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
@@ -2720,5 +2752,97 @@ function IssueCard({ course, onIssued, manualHref }: { course: Course; onIssued:
         )}
       </div>
     </section>
+  );
+}
+
+/** Checked in on some day but no check-out that day. */
+function notOut(r: AttRow): boolean {
+  return r.attendance.days.some((d) => d.checkIn && !d.checkOut);
+}
+
+/** Add a check-out time for everyone who forgot (kept as hand-entered, with the note). */
+function MassCheckOut({
+  courseId,
+  people,
+  defaultTime,
+  onClose,
+  onDone,
+}: {
+  courseId: string;
+  people: AttRow[];
+  defaultTime: string;
+  onClose: () => void;
+  onDone: (count: number) => void;
+}) {
+  const [time, setTime] = useState(defaultTime);
+  const [note, setNote] = useState('Forgot to check out (didn\'t return badge)');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  // One check-out per day they checked in without checking out; skip a day when
+  // the chosen time is before their check-in.
+  const entries = people.flatMap((r) =>
+    r.attendance.days
+      .filter((d) => d.checkIn && !d.checkOut)
+      .filter((d) => easternTime(d.checkIn!) && easternToUtc(d.date, time).getTime() > new Date(d.checkIn!).getTime())
+      .map((d) => ({ registrant_id: r.id, date: d.date, direction: 'out' as const, time }))
+  );
+  const skipped = people.reduce((n, r) => n + r.attendance.days.filter((d) => d.checkIn && !d.checkOut).length, 0) - entries.length;
+  const save = async () => {
+    if (!note.trim()) return setErr('Add a note (it is kept on each record).');
+    setBusy(true);
+    setErr(null);
+    try {
+      const res = await fetch(`/api/admin/certificates/courses/${courseId}/attendance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entries, note: note.trim() }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || 'Could not save');
+      onDone(new Set(entries.map((e) => e.registrant_id)).size);
+    } catch (e: any) {
+      setErr(e.message);
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md bg-white dark:bg-gray-900 rounded-xl shadow-xl p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-bold">
+            Check out {people.length} {people.length === 1 ? 'person' : 'people'}
+          </h3>
+          <button type="button" onClick={onClose} className="p-1 text-gray-500 hover:text-gray-900" aria-label="Close">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-300">
+          Adds a check-out time on each day they checked in but never checked out. It&apos;s saved as entered by hand, with your
+          note, in each person&apos;s History and the Excel check-in log.
+        </p>
+        <label className="block text-sm">
+          <span className="block font-medium mb-1">Check-out time (Eastern)</span>
+          <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className={inputCls + ' w-40'} />
+        </label>
+        <label className="block text-sm">
+          <span className="block font-medium mb-1">Note *</span>
+          <input value={note} onChange={(e) => setNote(e.target.value)} className={inputCls + ' w-full'} />
+        </label>
+        {skipped > 0 && (
+          <p className="text-sm text-amber-700 dark:text-amber-400">
+            {skipped} day{skipped === 1 ? '' : 's'} skipped: the person checked in after this time.
+          </p>
+        )}
+        {err && <p className="text-sm text-red-600">{err}</p>}
+        <div className="flex gap-2 justify-end">
+          <button type="button" onClick={onClose} className={btn + ' bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}>
+            Cancel
+          </button>
+          <button type="button" onClick={save} disabled={busy || !entries.length} className={btn + ' bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50'}>
+            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} Check out {new Set(entries.map((e) => e.registrant_id)).size}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

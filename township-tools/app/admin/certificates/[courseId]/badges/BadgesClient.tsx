@@ -2156,6 +2156,11 @@ function AttendanceCard({
                       </div>
                     )}
                     <div className="text-xs text-gray-500">{[r.title, townshipLabel(r.township)].filter(Boolean).join(' · ')}</div>
+                    {emailById.get(r.id) ? (
+                      <div className="text-xs text-gray-500 break-all">{emailById.get(r.id)}</div>
+                    ) : (
+                      <div className="text-xs text-amber-700 dark:text-amber-400">No email</div>
+                    )}
                     {(r.prior_unpaid || []).map((d) => (
                       <a
                         key={d.registrant_id}

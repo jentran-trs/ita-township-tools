@@ -1960,7 +1960,26 @@ function AttendanceCard({
   useEffect(() => setPage(0), [query, filter]);
   // Copy every email in the current filter + search (for a BCC list).
   const emailById = useMemo(() => new Map(registrants.map((r) => [r.id, (r.email || '').trim()])), [registrants]);
-  const shownEmails = Array.from(new Set(shown.map((r) => (emailById.get(r.id) || '').toLowerCase()).filter(Boolean)));
+  // Ticked people (kept while switching filters); none ticked = copy everyone shown.
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const pickedShown = shown.filter((r) => picked.has(r.id));
+  const copyFrom = pickedShown.length ? pickedShown : shown;
+  const shownEmails = Array.from(new Set(copyFrom.map((r) => (emailById.get(r.id) || '').toLowerCase()).filter(Boolean)));
+  const allPicked = shown.length > 0 && pickedShown.length === shown.length;
+  const togglePick = (id: string) =>
+    setPicked((cur) => {
+      const n = new Set(cur);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+  const toggleAll = () =>
+    setPicked((cur) => {
+      const n = new Set(cur);
+      if (allPicked) shown.forEach((r) => n.delete(r.id));
+      else shown.forEach((r) => n.add(r.id));
+      return n;
+    });
   const [copied, setCopied] = useState<string | null>(null);
   const copyEmails = async () => {
     const text = shownEmails.join(', ');
@@ -1976,7 +1995,7 @@ function AttendanceCard({
       } catch {}
       document.body.removeChild(t);
     }
-    const missing = shown.length - shown.filter((r) => emailById.get(r.id)).length;
+    const missing = copyFrom.length - copyFrom.filter((r) => emailById.get(r.id)).length;
     setCopied(`Copied ${shownEmails.length} email${shownEmails.length === 1 ? '' : 's'}${missing ? ` (${missing} without an email)` : ''}`);
     setTimeout(() => setCopied(null), 4000);
   };
@@ -2054,10 +2073,19 @@ function AttendanceCard({
           onClick={copyEmails}
           disabled={!shownEmails.length}
           className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-full border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40"
-          title="Copy the emails of everyone shown (this filter and search), separated by commas"
+          title="Tick people to copy just theirs; with none ticked, copies everyone shown (this filter and search). Separated by commas."
         >
-          <Copy className="w-4 h-4" /> Copy emails ({shownEmails.length})
+          <Copy className="w-4 h-4" /> {pickedShown.length ? `Copy selected emails (${shownEmails.length})` : `Copy all emails (${shownEmails.length})`}
         </button>
+        {pickedShown.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setPicked(new Set())}
+            className="px-3 py-1.5 text-sm rounded-full text-gray-600 dark:text-gray-300 hover:underline"
+          >
+            Clear selection ({pickedShown.length})
+          </button>
+        )}
       </div>
       {copied && <p className="text-sm text-green-600 mb-3">{copied}. Paste into the To or BCC field.</p>}
 
@@ -2079,6 +2107,16 @@ function AttendanceCard({
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-gray-500 border-b border-gray-200 dark:border-gray-800">
+                <th className="py-2 pr-2 w-6">
+                  <input
+                    type="checkbox"
+                    checked={allPicked}
+                    onChange={toggleAll}
+                    aria-label="Select everyone shown"
+                    title={`Select all ${shown.length} shown (every page)`}
+                    className="h-4 w-4 align-middle"
+                  />
+                </th>
                 <th className="py-2 pr-3">Name</th>
                 {days.map((d) => (
                   <th key={d} className="py-2 pr-3 whitespace-nowrap">{formatCourseDates(d, null, 'short').replace(/, \d{4}$/, '')}</th>
@@ -2092,6 +2130,15 @@ function AttendanceCard({
               {pageRows.map((r) => (
                 <Fragment key={r.id}>
                 <tr className="border-b border-gray-100 dark:border-gray-800 align-top">
+                  <td className="py-2 pr-2">
+                    <input
+                      type="checkbox"
+                      checked={picked.has(r.id)}
+                      onChange={() => togglePick(r.id)}
+                      aria-label={`Select ${r.first_name} ${r.last_name}`}
+                      className="h-4 w-4 mt-0.5"
+                    />
+                  </td>
                   <td className="py-2 pr-3">
                     <div className="font-medium">
                       {r.first_name} {r.last_name}
@@ -2227,7 +2274,7 @@ function AttendanceCard({
                 </tr>
                 {historyId === r.id && (
                   <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/40">
-                    <td colSpan={days.length + 3 + (tracksPayment ? 1 : 0)} className="px-3 py-3">
+                    <td colSpan={days.length + 4 + (tracksPayment ? 1 : 0)} className="px-3 py-3">
                       <ScanHistory log={r.log || []} />
                     </td>
                   </tr>

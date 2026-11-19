@@ -27,7 +27,7 @@ export default async function CertificateCoursesPage() {
             <BackLink href="/dashboard">Dashboard</BackLink>
             <div className="flex items-center gap-2">
               <Award className="w-6 h-6 text-amber-600 dark:text-amber-400" />
-              <h1 className="text-xl font-bold">Certificates</h1>
+              <h1 className="text-xl font-bold">Certificate &amp; Badge Generator</h1>
             </div>
           </div>
           <div className="flex items-center gap-2">

@@ -193,8 +193,8 @@ export default function Dashboard() {
                   iconBg="bg-indigo-100 dark:bg-indigo-900/40"
                   hoverBorder="hover:border-indigo-400 dark:hover:border-indigo-500"
                   accentText="text-indigo-700 dark:text-indigo-300"
-                  title="Certificate Generator (Admin)"
-                  description="Create training courses, import attendees, and issue credential IDs. Attendees download their PDFs from the public lookup page."
+                  title="Certificate & Badge Generator (Admin)"
+                  description="Create training courses and events, print badges, check people in with QR codes, and issue certificates. Attendees download their PDFs from the public lookup page."
                   cta="Open tool"
                   badge={{ label: "ITA ONLY", className: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" }}
                 />

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, Check, ChevronLeft, ChevronRight, Download, FileUp, Loader2, MoreHorizontal, Printer, RotateCcw, Search, Tag, Trash2, Upload, X } from 'lucide-react';
+import { AlertTriangle, Check, ChevronLeft, ChevronRight, Download, FileUp, Loader2, MoreHorizontal, Printer, RotateCcw, Search, Tag, Trash2, Upload, X, Copy } from 'lucide-react';
 import { deliverLabel, renderNiimbotLabel } from '@/lib/badges/niimbot-label';
 import { badgeNumberLabel } from '@/lib/badges/badge-numbers';
 import { inPlaceOf } from '@/lib/badges/registrant-edit';
@@ -1955,6 +1955,28 @@ function AttendanceCard({
       (!query.trim() || matches(searchText.get(r.id) || haystack(r.first_name, r.last_name, r.title, r.township), query))
   );
   useEffect(() => setPage(0), [query, filter]);
+  // Copy every email in the current filter + search (for a BCC list).
+  const emailById = useMemo(() => new Map(registrants.map((r) => [r.id, (r.email || '').trim()])), [registrants]);
+  const shownEmails = Array.from(new Set(shown.map((r) => (emailById.get(r.id) || '').toLowerCase()).filter(Boolean)));
+  const [copied, setCopied] = useState<string | null>(null);
+  const copyEmails = async () => {
+    const text = shownEmails.join(', ');
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const t = document.createElement('textarea');
+      t.value = text;
+      document.body.appendChild(t);
+      t.select();
+      try {
+        document.execCommand('copy');
+      } catch {}
+      document.body.removeChild(t);
+    }
+    const missing = shown.length - shown.filter((r) => emailById.get(r.id)).length;
+    setCopied(`Copied ${shownEmails.length} email${shownEmails.length === 1 ? '' : 's'}${missing ? ` (${missing} without an email)` : ''}`);
+    setTimeout(() => setCopied(null), 4000);
+  };
   const pageRows = shown.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   const voidTime = async (r: AttRow, date: string, direction: 'in' | 'out') => {
@@ -2024,7 +2046,17 @@ function AttendanceCard({
             {filterLabel(f)} ({counts[f]})
           </button>
         ))}
+        <button
+          type="button"
+          onClick={copyEmails}
+          disabled={!shownEmails.length}
+          className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-full border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40"
+          title="Copy the emails of everyone shown (this filter and search), separated by commas"
+        >
+          <Copy className="w-4 h-4" /> Copy emails ({shownEmails.length})
+        </button>
       </div>
+      {copied && <p className="text-sm text-green-600 mb-3">{copied}. Paste into the To or BCC field.</p>}
 
       {notice && <p className="text-sm text-green-600 mb-3">{notice}</p>}
       {error && <p className="text-sm text-red-600 mb-3">{error}</p>}

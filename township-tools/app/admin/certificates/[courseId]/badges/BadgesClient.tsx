@@ -1872,10 +1872,10 @@ type AttRow = {
   attendance: { days: DayAtt[] };
   log?: LogEntry[];
 };
-type Filter = 'review' | 'payment' | 'prior' | 'attended' | 'no_show' | 'not_out' | 'cancelled' | 'walkin' | 'all';
+type Filter = 'review' | 'payment' | 'paid' | 'prior' | 'attended' | 'no_show' | 'not_out' | 'cancelled' | 'walkin' | 'all';
 
 const STATUS_LABEL: Record<AttRow['status'], string> = { attended: 'Attended', review: 'Needs review', no_show: 'No show', cancelled: 'Cancelled' };
-const FILTER_LABEL: Record<Filter, string> = { review: 'Needs review', payment: 'Payment due', prior: 'Owes from past event', attended: 'Attended', no_show: 'No show', not_out: 'Not checked out', cancelled: 'Cancelled', walkin: 'Walk-ins', all: 'Everyone' };
+const FILTER_LABEL: Record<Filter, string> = { review: 'Needs review', payment: 'Payment due', paid: 'Paid', prior: 'Owes from past event', attended: 'Attended', no_show: 'No show', not_out: 'Not checked out', cancelled: 'Cancelled', walkin: 'Walk-ins', all: 'Everyone' };
 const STATUS_CLS: Record<AttRow['status'], string> = {
   attended: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
   review: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
@@ -1927,12 +1927,13 @@ function AttendanceCard({
   const load = reload;
 
   const counts = useMemo(() => {
-    const c = { review: 0, payment: 0, prior: 0, attended: 0, no_show: 0, not_out: 0, cancelled: 0, walkin: 0, all: rows?.length || 0 };
+    const c = { review: 0, payment: 0, paid: 0, prior: 0, attended: 0, no_show: 0, not_out: 0, cancelled: 0, walkin: 0, all: rows?.length || 0 };
     rows?.forEach((r) => {
       c[r.status] += 1;
       if (r.is_walk_in) c.walkin += 1;
       if (notOut(r)) c.not_out += 1;
       if (r.payment_status === 'due' && r.status !== 'cancelled') c.payment += 1;
+      if (r.payment_status === 'paid') c.paid += 1;
       if ((r.prior_unpaid || []).length) c.prior += 1;
     });
     return c;
@@ -1952,6 +1953,8 @@ function AttendanceCard({
         ? true
         : filter === 'payment'
           ? r.payment_status === 'due' && r.status !== 'cancelled'
+          : filter === 'paid'
+            ? r.payment_status === 'paid'
           : filter === 'prior'
             ? (r.prior_unpaid || []).length > 0
             : filter === 'walkin'
@@ -2063,7 +2066,7 @@ function AttendanceCard({
         placeholder="Find someone by name, email, township, organization…"
       />
       <div className="flex flex-wrap gap-1 mb-3">
-        {(['review', ...(tracksPayment ? ['payment'] : []), ...(counts.prior ? ['prior'] : []), 'attended', 'no_show', ...(counts.not_out ? ['not_out'] : []), ...(counts.cancelled ? ['cancelled'] : []), ...(counts.walkin ? ['walkin'] : []), 'all'] as Filter[]).map((f) => (
+        {(['review', ...(tracksPayment ? ['payment', 'paid'] : []), ...(counts.prior ? ['prior'] : []), 'attended', 'no_show', ...(counts.not_out ? ['not_out'] : []), ...(counts.cancelled ? ['cancelled'] : []), ...(counts.walkin ? ['walkin'] : []), 'all'] as Filter[]).map((f) => (
           <button
             key={f}
             type="button"

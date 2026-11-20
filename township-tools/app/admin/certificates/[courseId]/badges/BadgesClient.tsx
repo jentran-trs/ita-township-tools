@@ -2078,11 +2078,14 @@ function AttendanceCard({
             {filterLabel(f)} ({counts[f]})
           </button>
         ))}
+      </div>
+      {/* Actions on the people listed: their own row, on the left above the table. */}
+      <div className="flex flex-wrap items-center gap-2 mb-3">
         <button
           type="button"
           onClick={copyEmails}
           disabled={!shownEmails.length}
-          className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-full border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-full border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40"
           title="Tick people to copy just theirs; with none ticked, copies everyone shown (this filter and search). Separated by commas."
         >
           <Copy className="w-4 h-4" /> {pickedShown.length ? `Copy selected emails (${shownEmails.length})` : `Copy all emails (${shownEmails.length})`}

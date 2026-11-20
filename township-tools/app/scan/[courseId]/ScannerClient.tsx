@@ -261,6 +261,10 @@ function PinScreen({
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!label.trim()) {
+      setError('Enter your name, so each check-in shows who scanned it.');
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -304,10 +308,12 @@ function PinScreen({
         />
       </label>
       <label className="block">
-        <span className="block text-base font-semibold mb-1">Your name or station</span>
+        <span className="block text-base font-semibold mb-1">Your name *</span>
         <input
           value={label}
           onChange={(e) => setLabel(e.target.value)}
+          required
+          autoCapitalize="words"
           className="w-full px-4 py-3 border border-gray-300 rounded-xl"
           placeholder="e.g. Lydia – front door"
         />
@@ -552,6 +558,14 @@ function ScanScreen({
   const pending = state.pendingScans.length + state.pendingWalkIns.length;
   // QR code of this scanner's link, to bring another team member on board.
   const [shareOpen, setShareOpen] = useState(false);
+
+  if (!state.deviceLabel?.trim()) {
+    return (
+      <Shell title={event.name}>
+        <NameScreen onSave={(label) => setState((s) => ({ ...s, deviceLabel: label }))} />
+      </Shell>
+    );
+  }
 
   return (
     <div className="min-h-[100dvh] bg-gray-100 text-gray-900 flex flex-col">
@@ -1046,6 +1060,37 @@ function CameraView({ paused, onCode, onStart, mode }: { paused: boolean; onCode
 }
 
 /* ───────────────────────────── Sheets ───────────────────────────── */
+
+/** Phone unlocked before a name was required: ask for it once. */
+function NameScreen({ onSave }: { onSave: (label: string) => void }) {
+  const [label, setLabel] = useState('');
+  return (
+    <form
+      className="space-y-4 pt-4"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (label.trim()) onSave(label.trim().slice(0, 60));
+      }}
+    >
+      <p className="text-lg">Who&apos;s scanning on this phone? Your name is saved with each check-in so the office knows who scanned it.</p>
+      <label className="block">
+        <span className="block text-base font-semibold mb-1">Your name *</span>
+        <input
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          required
+          autoFocus
+          autoCapitalize="words"
+          className="w-full px-4 py-3 text-lg border border-gray-300 rounded-xl"
+          placeholder="e.g. Lydia – front door"
+        />
+      </label>
+      <button type="submit" disabled={!label.trim()} className="w-full py-3.5 text-xl font-bold bg-[#1B2E5B] text-white rounded-xl disabled:opacity-50">
+        Start scanning
+      </button>
+    </form>
+  );
+}
 
 /** Copy to the clipboard (e.g. an email into the Square card reader). */
 function CopyButton({ text, label = 'Copy' }: { text: string; label?: string }) {

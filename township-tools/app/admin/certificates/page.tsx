@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { Award, FileSignature, Plus, ShieldCheck } from 'lucide-react';
+import { Award, FileSignature, Plus, ShieldCheck, Wallet } from 'lucide-react';
 import { isSuperadmin } from '@/lib/auth/superadmin';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { BackLink } from './_shared/BackLink';
@@ -31,6 +31,13 @@ export default async function CertificateCoursesPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Link
+              href="/admin/certificates/unpaid"
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-red-50 text-red-800 dark:bg-red-900/30 dark:text-red-300 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/50"
+            >
+              <Wallet className="w-4 h-4" />
+              Unpaid across events
+            </Link>
             <Link
               href="/admin/certificates/signatures"
               className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"

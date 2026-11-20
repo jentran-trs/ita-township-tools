@@ -2029,8 +2029,16 @@ function AttendanceCard({
       } catch {}
       document.body.removeChild(t);
     }
-    const missing = copyFrom.length - copyFrom.filter((r) => emailById.get(r.id)).length;
-    setCopied(`Copied ${shownEmails.length} email${shownEmails.length === 1 ? '' : 's'}${missing ? ` (${missing} without an email)` : ''}`);
+    const withEmail = copyFrom.filter((r) => emailById.get(r.id)).length;
+    const missing = copyFrom.length - withEmail;
+    const shared = withEmail - shownEmails.length;
+    setCopied(
+      `Copied ${shownEmails.length} email${shownEmails.length === 1 ? '' : 's'} for ${copyFrom.length} ${copyFrom.length === 1 ? 'person' : 'people'}` +
+        [shared ? `${shared} shared address${shared === 1 ? '' : 'es'} listed once` : '', missing ? `${missing} without an email` : '']
+          .filter(Boolean)
+          .map((x) => ` (${x})`)
+          .join('')
+    );
     setTimeout(() => setCopied(null), 4000);
   };
   const pageRows = shown.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
@@ -2124,16 +2132,17 @@ function AttendanceCard({
           type="button"
           onClick={copyEmails}
           disabled={!shownEmails.length}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-full border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40"
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-semibold rounded-lg bg-[#1B2E5B] text-white hover:bg-[#15244a] disabled:opacity-40"
           title="Tick people to copy just theirs; with none ticked, copies everyone shown (this filter and search). Separated by commas."
         >
-          <Copy className="w-4 h-4" /> {pickedShown.length ? `Copy selected emails (${shownEmails.length})` : `Copy all emails (${shownEmails.length})`}
+          <Copy className="w-4 h-4" /> {pickedShown.length ? 'Copy selected emails' : 'Copy all emails'} ({shownEmails.length}
+          {shownEmails.length !== copyFrom.length ? ` for ${copyFrom.length} people` : ''})
         </button>
         {filter === 'not_out' && outTargets.length > 0 && (
           <button
             type="button"
             onClick={() => setMassOut(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-full bg-blue-600 text-white hover:bg-blue-700"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700"
           >
             Check out {outTargets.length} {outTargets.length === 1 ? 'person' : 'people'}
           </button>

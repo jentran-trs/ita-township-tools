@@ -1668,7 +1668,7 @@ function RowMenu({
       </button>
       {open && (
         <div
-          className="fixed z-50 w-64 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg py-1"
+          className="fixed z-50 w-max min-w-[12rem] max-w-[calc(100vw-1rem)] rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg py-1"
           style={pos ? { top: pos.top, bottom: pos.bottom, right: pos.right } : undefined}
         >
           {items.map((it) => (
@@ -1679,7 +1679,7 @@ function RowMenu({
                 setOpen(false);
                 it.onClick();
               }}
-              className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-gray-50 dark:hover:bg-gray-800 ${
+              className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left whitespace-nowrap hover:bg-gray-50 dark:hover:bg-gray-800 ${
                 it.danger ? 'text-red-600' : ''
               }`}
             >

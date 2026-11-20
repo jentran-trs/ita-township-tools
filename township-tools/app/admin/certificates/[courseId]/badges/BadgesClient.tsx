@@ -2255,7 +2255,7 @@ function AttendanceCard({
                         <button
                           type="button"
                           onClick={() => setHistoryId(historyId === r.id ? null : r.id)}
-                          className={`mt-1 text-xs hover:underline ${noted ? 'font-semibold text-blue-700 dark:text-blue-400' : 'text-gray-500'}`}
+                          className="mt-1 text-xs font-semibold text-blue-700 dark:text-blue-400 hover:underline"
                         >
                           {historyId === r.id ? 'Hide history' : noted ? `History · ${noted} note${noted === 1 ? '' : 's'}` : 'History'}
                         </button>

@@ -1965,6 +1965,30 @@ function AttendanceCard({
       (!query.trim() || matches(searchText.get(r.id) || haystack(r.first_name, r.last_name, r.title, r.township), query))
   );
   useEffect(() => setPage(0), [query, filter]);
+  // Needs review: how many people for each kind of reason ("Left early", "No check-out"…).
+  const reviewSummary = useMemo(() => {
+    const kind = (x: string) =>
+      x.startsWith('Left early')
+        ? 'Left more than 30 minutes before the event end time'
+        : x.startsWith('No check-out')
+          ? 'Checked in but no check-out'
+          : x.startsWith('No check-in')
+            ? 'Checked out but no check-in'
+            : x.startsWith('Not scanned on')
+              ? 'Missed a day (multi-day event)'
+              : x.startsWith('Payment')
+                ? 'Payment not completed'
+                : x.startsWith('Checked in, not out yet')
+                  ? 'Still here today (not checked out yet)'
+                  : x.startsWith('Still to come')
+                    ? 'Event days still to come'
+                    : x;
+    const m = new Map<string, number>();
+    (rows || [])
+      .filter((r) => r.status === 'review')
+      .forEach((r) => new Set(r.reasons.map(kind)).forEach((k) => m.set(k, (m.get(k) || 0) + 1)));
+    return Array.from(m.entries()).sort((a, b) => b[1] - a[1]);
+  }, [rows]);
   // Copy every email in the current filter + search (for a BCC list).
   const emailById = useMemo(() => new Map(registrants.map((r) => [r.id, (r.email || '').trim()])), [registrants]);
   // Ticked people (kept while switching filters); none ticked = copy everyone shown.
@@ -2079,6 +2103,21 @@ function AttendanceCard({
           </button>
         ))}
       </div>
+      {filter === 'review' && reviewSummary.length > 0 && (
+        <div className="mb-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 text-sm text-amber-900 dark:text-amber-200">
+          <div className="font-bold mb-1">Why people need review</div>
+          <ul className="space-y-0.5">
+            {reviewSummary.map(([why, n]) => (
+              <li key={why}>
+                <strong>{n}</strong> · {why}
+              </li>
+            ))}
+          </ul>
+          <p className="text-xs mt-2 opacity-80">
+            Each person&apos;s reason is under their status below. Fix a time with the in/out links, or issue anyway from the Certificates tab.
+          </p>
+        </div>
+      )}
       {/* Actions on the people listed: their own row, on the left above the table. */}
       <div className="flex flex-wrap items-center gap-2 mb-3">
         <button
@@ -2282,11 +2321,14 @@ function AttendanceCard({
                   <td className="py-2 pr-3 min-w-[15rem]">
                     <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_CLS[r.status]}`}>{statusLabel(r.status)}</span>
                     {r.status === 'review' && r.reasons.length > 0 && (
-                      <ul className="mt-1 text-xs text-amber-800 dark:text-amber-300 space-y-0.5">
-                        {r.reasons.map((x) => (
-                          <li key={x} className="whitespace-nowrap">• {x}</li>
-                        ))}
-                      </ul>
+                      <div className="mt-1.5 rounded-md bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-2 py-1.5">
+                        <div className="text-xs font-bold text-amber-900 dark:text-amber-200">Why:</div>
+                        <ul className="text-sm text-amber-900 dark:text-amber-200 space-y-0.5">
+                          {r.reasons.map((x) => (
+                            <li key={x}>• {x}</li>
+                          ))}
+                        </ul>
+                      </div>
                     )}
                   </td>
                   {tracksPayment && (

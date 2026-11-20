@@ -1622,21 +1622,44 @@ function RowMenu({
   disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  // Screen position of the menu: fixed, so the table's scroll box can't clip it.
+  const [pos, setPos] = useState<{ top?: number; bottom?: number; right: number } | null>(null);
   const ref = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const place = useCallback(() => {
+    const r = btnRef.current?.getBoundingClientRect();
+    if (!r) return;
+    const right = Math.max(8, window.innerWidth - r.right);
+    // Not enough room below: open upwards.
+    setPos(window.innerHeight - r.bottom < 260 ? { bottom: window.innerHeight - r.top + 4, right } : { top: r.bottom + 4, right });
+  }, []);
+  const toggle = () => {
+    if (open) return setOpen(false);
+    place();
+    setOpen(true);
+  };
   useEffect(() => {
     if (!open) return;
     const close = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
+    // Scrolling keeps the menu next to its button.
     document.addEventListener('mousedown', close);
-    return () => document.removeEventListener('mousedown', close);
-  }, [open]);
+    window.addEventListener('scroll', place, true);
+    window.addEventListener('resize', place);
+    return () => {
+      document.removeEventListener('mousedown', close);
+      window.removeEventListener('scroll', place, true);
+      window.removeEventListener('resize', place);
+    };
+  }, [open, place]);
   return (
     <div ref={ref} className="relative inline-block text-left">
       <button
         type="button"
+        ref={btnRef}
         disabled={disabled}
-        onClick={() => setOpen((o) => !o)}
+        onClick={toggle}
         className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 disabled:opacity-50"
         aria-label="More actions"
         title="More actions"
@@ -1644,7 +1667,10 @@ function RowMenu({
         {disabled ? <Loader2 className="w-4 h-4 animate-spin" /> : <MoreHorizontal className="w-4 h-4" />}
       </button>
       {open && (
-        <div className="absolute right-0 z-20 mt-1 w-48 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg py-1">
+        <div
+          className="fixed z-50 w-64 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg py-1"
+          style={pos ? { top: pos.top, bottom: pos.bottom, right: pos.right } : undefined}
+        >
           {items.map((it) => (
             <button
               key={it.label}

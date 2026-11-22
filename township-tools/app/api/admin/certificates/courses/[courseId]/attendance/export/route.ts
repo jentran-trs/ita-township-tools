@@ -49,7 +49,7 @@ export async function GET(_req: Request, { params }: { params: { courseId: strin
           : []
       )
       .join('\n');
-  const METHOD: Record<string, string> = { check: 'check', card: 'credit card', admin: 'marked paid', amo: 'AMO' };
+  const METHOD: Record<string, string> = { check: 'check', card: 'credit card', admin: 'marked paid', amo: 'AMO', waived: 'fee waived' };
   const paymentText = (r: any) =>
     r.payment_status === 'due'
       ? `Due${r.balance_due ? ` $${Number(r.balance_due).toFixed(2)}` : ''}`

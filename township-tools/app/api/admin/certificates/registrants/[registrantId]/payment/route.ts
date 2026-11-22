@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 type RouteParams = { params: { registrantId: string } };
 
-// POST { method: 'check' | 'card' | 'amo' | 'admin' }
+// POST { method: 'check' | 'card' | 'amo' | 'admin' | 'waived' }
 // Jen records a payment (e.g. after matching it in AMO). Any certificate held
 // for payment becomes downloadable immediately.
 export async function POST(req: Request, { params }: RouteParams) {
@@ -21,8 +21,8 @@ export async function POST(req: Request, { params }: RouteParams) {
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
-  if (!['check', 'card', 'amo', 'admin'].includes(b.method)) {
-    return NextResponse.json({ error: 'method must be check, card, amo or admin' }, { status: 400 });
+  if (!['check', 'card', 'amo', 'admin', 'waived'].includes(b.method)) {
+    return NextResponse.json({ error: 'method must be check, card, amo, admin or waived' }, { status: 400 });
   }
   const supabase = createServerSupabaseClient();
   const { data: reg } = await supabase

@@ -1935,7 +1935,7 @@ const STATUS_CLS: Record<AttRow['status'], string> = {
   no_show: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
   cancelled: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
 };
-const METHOD_LABEL: Record<string, string> = { check: 'Check', card: 'Credit card', admin: 'Marked by ITA', amo: 'AMO' };
+const METHOD_LABEL: Record<string, string> = { check: 'Check', card: 'Credit card', admin: 'Marked by ITA', amo: 'AMO', waived: 'Fee waived' };
 const money = (n: number | null | undefined) => (n == null ? '' : `$${Number(n).toFixed(2)}`);
 
 function AttendanceCard({
@@ -2596,7 +2596,7 @@ function PaymentCell({ r, onMarkPaid, onUndo }: { r: AttRow; onMarkPaid: () => v
 }
 
 function MarkPaidForm({ registrantId, onDone }: { registrantId: string; onDone: (changed: boolean) => void }) {
-  const [method, setMethod] = useState<'admin' | 'check' | 'card'>('admin');
+  const [method, setMethod] = useState<'admin' | 'check' | 'card' | 'waived'>('admin');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const save = async () => {
@@ -2623,6 +2623,7 @@ function MarkPaidForm({ registrantId, onDone }: { registrantId: string; onDone: 
         <option value="admin">Paid (matched in AMO)</option>
         <option value="check">Paid by check</option>
         <option value="card">Paid by credit card</option>
+        <option value="waived">Waive fee</option>
       </select>
       {err && <div className="text-xs text-red-600">{err}</div>}
       <div className="flex gap-3 text-xs">

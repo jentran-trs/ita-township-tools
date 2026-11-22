@@ -31,6 +31,7 @@ const METHODS: [string, string][] = [
   ['check', 'Check'],
   ['amo', 'Paid in AMO'],
   ['admin', 'Other / marked paid'],
+  ['waived', 'Waive fee'],
 ];
 
 export function UnpaidClient() {
@@ -166,7 +167,7 @@ export function UnpaidClient() {
           </label>
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" checked={onlyCame} onChange={(e) => setOnlyCame(e.target.checked)} className="h-4 w-4" />
-            Only people who came (checked in)
+            Only people who attended (checked in)
           </label>
           <button type="button" onClick={load} className="ml-auto inline-flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:underline">
             <RotateCcw className="w-4 h-4" /> Refresh
@@ -224,7 +225,7 @@ export function UnpaidClient() {
                                 d.attended ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
                               }`}
                             >
-                              {d.attended ? 'Came' : "Didn't check in"}
+                              {d.attended ? 'Attended' : "Didn't check in"}
                             </span>
                             {d.is_walk_in && <span className="text-xs text-amber-600">walk-in</span>}
                             {busy === d.registrant_id ? (

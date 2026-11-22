@@ -1,12 +1,13 @@
 import { createServerSupabaseClient } from '@/lib/supabase';
 
-export type PaymentMethod = 'check' | 'card' | 'admin' | 'amo';
+export type PaymentMethod = 'check' | 'card' | 'admin' | 'amo' | 'waived';
 
 export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
   check: 'Check',
   card: 'Credit card',
   admin: 'Marked paid',
   amo: 'Paid in AMO',
+  waived: 'Fee waived',
 };
 
 /**

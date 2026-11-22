@@ -1975,6 +1975,32 @@ function AttendanceCard({
     if (note === null) return;
     setReview(r, { action: 'mark_reviewed', note });
   };
+  // Several at once: everyone ticked who is in Needs review (reviewTargets, below).
+  const markManyReviewed = async () => {
+    const n = reviewTargets.length;
+    const note = window.prompt(
+      `Mark ${n} ${n === 1 ? 'person' : 'people'} as reviewed?\n\nThey'll count as attended (full credit) and leave Needs review. Payment is still tracked separately.\n\nNote for all of them (optional):`
+    );
+    if (note === null) return;
+    setReviewBusy('bulk');
+    let failed = 0;
+    for (const r of reviewTargets) {
+      try {
+        const res = await fetch(`/api/admin/certificates/registrants/${r.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'mark_reviewed', note }),
+        });
+        if (!res.ok) failed += 1;
+      } catch {
+        failed += 1;
+      }
+    }
+    setReviewBusy(null);
+    setPicked(new Set());
+    setMassNotice(`Marked ${n - failed} reviewed.${failed ? ` ${failed} could not be saved; try again.` : ''}`);
+    await load();
+  };
   const undoReviewed = (r: AttRow) => {
     if (!window.confirm(`Undo the review for ${r.first_name} ${r.last_name}? They go back to Needs review.`)) return;
     setReview(r, { action: 'unmark_reviewed' });
@@ -2053,6 +2079,7 @@ function AttendanceCard({
   // Ticked people (kept while switching filters); none ticked = copy everyone shown.
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const pickedShown = shown.filter((r) => picked.has(r.id));
+  const reviewTargets = pickedShown.filter((r) => r.status === 'review');
   const copyFrom = pickedShown.length ? pickedShown : shown;
   const shownEmails = Array.from(new Set(copyFrom.map((r) => (emailById.get(r.id) || '').toLowerCase()).filter(Boolean)));
   const allPicked = shown.length > 0 && pickedShown.length === shown.length;
@@ -2181,7 +2208,7 @@ function AttendanceCard({
             ))}
           </ul>
           <p className="text-xs mt-2 opacity-80">
-            Each person&apos;s reason is under their status below. Fix a time with the in/out links, or issue anyway from the Certificates tab.
+            Each person&apos;s reason is under their status below. Fix a time with the in/out links, or accept it with Mark reviewed (tick several people to mark them all at once).
           </p>
         </div>
       )}
@@ -2197,6 +2224,16 @@ function AttendanceCard({
           <Copy className="w-4 h-4" /> {pickedShown.length ? 'Copy selected emails' : 'Copy all emails'} ({shownEmails.length}
           {shownEmails.length !== copyFrom.length ? ` for ${copyFrom.length} people` : ''})
         </button>
+        {reviewTargets.length > 0 && (
+          <button
+            type="button"
+            onClick={markManyReviewed}
+            disabled={reviewBusy === 'bulk'}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-sm font-semibold rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+          >
+            {reviewBusy === 'bulk' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} Mark {reviewTargets.length} reviewed
+          </button>
+        )}
         {filter === 'not_out' && outTargets.length > 0 && (
           <button
             type="button"

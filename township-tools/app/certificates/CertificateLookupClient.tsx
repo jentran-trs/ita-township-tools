@@ -499,7 +499,11 @@ function EmptyState({ label }: { label: string }) {
       <div className="font-semibold mb-1">No certificates found</div>
       <p className="text-sm text-gray-600 dark:text-gray-400 max-w-md mx-auto">
         We couldn&apos;t find any active certificates for {label ? <strong>{label}</strong> : 'that search'}.
-        If you believe this is an error, please contact the Indiana Township Association so they can verify your roster entry.
+        If you believe this is an error, please email{' '}
+        <a href="mailto:registration@ita-in.org" className="font-medium text-amber-700 dark:text-amber-400 underline">
+          registration@ita-in.org
+        </a>{' '}
+        so we can check your registration.
       </p>
     </div>
   );

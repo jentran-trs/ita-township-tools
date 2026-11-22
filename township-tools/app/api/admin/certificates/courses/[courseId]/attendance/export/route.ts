@@ -43,6 +43,11 @@ export async function GET(_req: Request, { params }: { params: { courseId: strin
         if (e.voided_at) out.push(`${what} removed${e.voided_by ? ` by ${e.voided_by}` : ''}${e.void_note ? `: ${e.void_note}` : ''}`);
         return out;
       })
+      .concat(
+        (r as any).reviewed_at
+          ? [`Reviewed${(r as any).reviewed_by ? ` by ${(r as any).reviewed_by}` : ''}${(r as any).review_note ? `: ${(r as any).review_note}` : ''}`]
+          : []
+      )
       .join('\n');
   const METHOD: Record<string, string> = { check: 'check', card: 'credit card', admin: 'marked paid', amo: 'AMO' };
   const paymentText = (r: any) =>

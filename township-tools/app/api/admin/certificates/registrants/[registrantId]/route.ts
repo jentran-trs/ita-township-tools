@@ -1,3 +1,4 @@
+import { adminName } from '@/lib/badges/admin-name';
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { requireSuperadmin } from '@/lib/auth/superadmin';
@@ -34,6 +35,17 @@ export async function PATCH(req: Request, { params }: RouteParams) {
     patch.cancelled_at = new Date().toISOString();
     patch.cancelled_by = 'Admin';
     patch.cancel_note = String(body.note || '').trim().slice(0, 500) || null;
+  }
+  // Needs review → accepted by the office (v47), or back to needs review.
+  if (body.action === 'mark_reviewed') {
+    patch.reviewed_at = new Date().toISOString();
+    patch.reviewed_by = await adminName();
+    patch.review_note = String(body.note || '').trim().slice(0, 500) || null;
+  }
+  if (body.action === 'unmark_reviewed') {
+    patch.reviewed_at = null;
+    patch.reviewed_by = null;
+    patch.review_note = null;
   }
   if (body.action === 'restore_registration') {
     patch.cancelled_at = null;

@@ -1886,6 +1886,10 @@ type AttRow = {
   is_walk_in: boolean;
   day_hours: Record<string, number> | null;
   status: 'attended' | 'review' | 'no_show' | 'cancelled';
+  // Accepted by the office from Needs review (v47).
+  reviewed_at?: string | null;
+  reviewed_by?: string | null;
+  review_note?: string | null;
   reasons: string[];
   credit_hours: number;
   cert_hours_override?: number | null;
@@ -1946,6 +1950,35 @@ function AttendanceCard({
   const filterLabel = (f: Filter) => (f === 'no_show' ? noShow : FILTER_LABEL[f]);
   const [notice] = useState<string | null>(null);
   const [massNotice, setMassNotice] = useState<string | null>(null);
+  // Accept someone in Needs review (they move to Attended), or undo that.
+  const [reviewBusy, setReviewBusy] = useState<string | null>(null);
+  const setReview = async (r: AttRow, body: Record<string, any>) => {
+    setReviewBusy(r.id);
+    try {
+      const res = await fetch(`/api/admin/certificates/registrants/${r.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Could not save');
+      await load();
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setReviewBusy(null);
+    }
+  };
+  const markReviewed = (r: AttRow) => {
+    const note = window.prompt(
+      `Mark ${r.first_name} ${r.last_name} as reviewed?\n\nThey'll count as attended (full credit) and leave Needs review. Payment is still tracked separately.\n\nNote (optional, e.g. "Left early, approved by John"):`
+    );
+    if (note === null) return;
+    setReview(r, { action: 'mark_reviewed', note });
+  };
+  const undoReviewed = (r: AttRow) => {
+    if (!window.confirm(`Undo the review for ${r.first_name} ${r.last_name}? They go back to Needs review.`)) return;
+    setReview(r, { action: 'unmark_reviewed' });
+  };
   const [editing, setEditing] = useState<{ id: string; date: string; direction: 'in' | 'out' } | null>(null);
   const [payingId, setPayingId] = useState<string | null>(null);
   const [historyId, setHistoryId] = useState<string | null>(null);
@@ -2363,6 +2396,33 @@ function AttendanceCard({
                             <li key={x}>• {x}</li>
                           ))}
                         </ul>
+                        <button
+                          type="button"
+                          onClick={() => markReviewed(r)}
+                          disabled={reviewBusy === r.id}
+                          className="mt-1.5 inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-md bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+                        >
+                          {reviewBusy === r.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />} Mark reviewed
+                        </button>
+                      </div>
+                    )}
+                    {r.reviewed_at && r.status !== 'review' && r.status !== 'no_show' && r.status !== 'cancelled' && (
+                      <div className="mt-1.5 rounded-md bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 px-2 py-1.5 text-xs text-green-900 dark:text-green-200">
+                        <div className="font-bold">
+                          Reviewed{r.reviewed_by ? ` by ${r.reviewed_by}` : ''} · {new Date(r.reviewed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </div>
+                        {r.review_note && <div>Note: {r.review_note}</div>}
+                        {r.reasons.filter((x) => !x.startsWith('Payment')).length > 0 && (
+                          <div className="opacity-80">Was: {r.reasons.filter((x) => !x.startsWith('Payment')).join('; ')}</div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => undoReviewed(r)}
+                          disabled={reviewBusy === r.id}
+                          className="mt-0.5 font-semibold underline underline-offset-2 disabled:opacity-50"
+                        >
+                          Undo review
+                        </button>
                       </div>
                     )}
                   </td>

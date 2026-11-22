@@ -146,23 +146,26 @@ export async function loadCourseAttendance(courseId: string): Promise<CourseAtte
       const owed = r.balance_due != null && Number(r.balance_due) > 0 ? ` ($${Number(r.balance_due).toFixed(2)} due)` : '';
       reasons.push(`Payment not completed${owed}`);
     }
+    // Reviewed by the office (v47): their attendance is accepted as it is.
+    const reviewed = !!r.reviewed_at && attendance.anyScan;
     const status: AttendanceRow['status'] = !attendance.anyScan
       ? r.cancelled_at
         ? 'cancelled'
         : 'no_show'
-      : reasons.length
+      : reasons.length && !reviewed
         ? 'review'
         : 'attended';
     const courseHours = Number(course.hours);
     const daysAttended = attendance.days.filter((d) => d.complete).length;
+    // Reviewed: each day they came counts (multi-day), or the full course hours.
     const earned = plan
-      ? round1(attendance.days.reduce((sum, d) => sum + (d.complete ? plan[d.date] : 0), 0))
-      : attendance.attended
+      ? round1(attendance.days.reduce((sum, d) => sum + (d.complete || (reviewed && (d.checkIn || d.checkOut)) ? plan[d.date] : 0), 0))
+      : attendance.attended || reviewed
         ? courseHours
         : 0;
     // Partial credit entered by hand wins; otherwise what they earned.
     const credit = r.day_hours ? round1(days.reduce((sum, d) => sum + (Number(r.day_hours[d]) || 0), 0)) : earned;
-    const complete = plan ? attendanceOk && earned > 0 : attendance.attended;
+    const complete = reviewed ? earned > 0 : plan ? attendanceOk && earned > 0 : attendance.attended;
     const override = r.day_hours ? credit : plan && complete && earned !== courseHours ? earned : null;
     return {
       ...r,

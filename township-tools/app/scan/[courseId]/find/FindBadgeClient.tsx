@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, ChevronUp, Delete, Maximize, Search, UserPlus, X } from 'lucide-react';
+import { ArrowLeft, ChevronUp, Delete, Maximize, Minimize, Search, UserPlus, X } from 'lucide-react';
 import { RegisterForm } from './RegisterForm';
 
 type Person = { first: string; last: string; place: string; number: number };
@@ -163,7 +163,25 @@ export function FindBadgeClient({ courseId }: { courseId: string }) {
     return () => clearTimeout(t);
   }, [matches.length, term]);
 
+  // Full screen on the tablet, and a clear way back out of it.
+  const [isFull, setIsFull] = useState(false);
+  useEffect(() => {
+    const d: any = document;
+    const update = () => setIsFull(!!(d.fullscreenElement || d.webkitFullscreenElement));
+    update();
+    document.addEventListener('fullscreenchange', update);
+    document.addEventListener('webkitfullscreenchange', update as any);
+    return () => {
+      document.removeEventListener('fullscreenchange', update);
+      document.removeEventListener('webkitfullscreenchange', update as any);
+    };
+  }, []);
   const fullscreen = () => {
+    const d: any = document;
+    if (d.fullscreenElement || d.webkitFullscreenElement) {
+      (d.exitFullscreen || d.webkitExitFullscreen)?.call(d);
+      return;
+    }
     const el: any = document.documentElement;
     (el.requestFullscreen || el.webkitRequestFullscreen)?.call(el);
   };
@@ -247,11 +265,19 @@ export function FindBadgeClient({ courseId }: { courseId: string }) {
         <button
           type="button"
           onClick={fullscreen}
-          className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-lg hover:bg-white/10"
-          aria-label="Full screen"
-          title="Full screen"
+          className={`absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2 rounded-lg ${
+            isFull ? 'px-3 py-2 bg-white/15 hover:bg-white/25 text-base font-semibold' : 'p-2 hover:bg-white/10'
+          }`}
+          aria-label={isFull ? 'Exit full screen' : 'Full screen'}
+          title={isFull ? 'Exit full screen' : 'Full screen'}
         >
-          <Maximize className="w-6 h-6" />
+          {isFull ? (
+            <>
+              <Minimize className="w-6 h-6" /> Exit full screen
+            </>
+          ) : (
+            <Maximize className="w-6 h-6" />
+          )}
         </button>
       </header>
 

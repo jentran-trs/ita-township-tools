@@ -73,6 +73,17 @@ export async function PATCH(req: Request, { params }: RouteParams) {
     patch.badge_tagline = t || null;
   }
 
+  // Registration fee (v48): what a walk-in owes; blank = not set.
+  if ('registration_fee' in body) {
+    const raw = body.registration_fee;
+    if (raw === null || raw === '') patch.registration_fee = null;
+    else {
+      const n = Number(String(raw).replace(/[$,\s]/g, ''));
+      if (!Number.isFinite(n) || n < 0 || n > 100000) return NextResponse.json({ error: 'Registration fee must be a dollar amount' }, { status: 400 });
+      patch.registration_fee = Math.round(n * 100) / 100;
+    }
+  }
+
   for (const key of ['event_start_time', 'event_end_time'] as const) {
     if (key in body) {
       const v = body[key];
@@ -109,5 +120,14 @@ export async function PATCH(req: Request, { params }: RouteParams) {
 
   const { error } = await supabase.from('cert_courses').update(patch).eq('id', course.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  // People who owe with no amount yet (walk-ins) owe the fee.
+  if (patch.registration_fee != null) {
+    await supabase
+      .from('cert_registrants')
+      .update({ balance_due: patch.registration_fee })
+      .eq('course_id', course.id)
+      .eq('payment_status', 'due')
+      .is('balance_due', null);
+  }
   return NextResponse.json({ ok: true });
 }

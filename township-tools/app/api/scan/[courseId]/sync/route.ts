@@ -83,7 +83,13 @@ export async function POST(req: Request, { params }: { params: { courseId: strin
       .select('id', { count: 'exact', head: true })
       .eq('course_id', course.id)
       .not('payment_status', 'is', null);
-    if (count) walkInRows.forEach((w: any) => (w.payment_status = 'due'));
+    // They owe the event's registration fee (v48) when it's set.
+    const fee = (course as any).registration_fee != null ? Number((course as any).registration_fee) : null;
+    if (count)
+      walkInRows.forEach((w: any) => {
+        w.payment_status = 'due';
+        if (fee != null) w.balance_due = fee;
+      });
     const { error } = await supabase.from('cert_registrants').upsert(walkInRows, { onConflict: 'id', ignoreDuplicates: true });
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     // "Walk-in #1, #2…" in the order they arrived.

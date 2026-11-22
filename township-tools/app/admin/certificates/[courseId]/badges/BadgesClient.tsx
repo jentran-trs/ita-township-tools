@@ -29,6 +29,8 @@ type Course = {
   pin?: string | null;
   // Hours per event day for multi-day courses (v38); null = all days for full hours.
   day_hours?: Record<string, number> | null;
+  // Registration fee (v48): what a walk-in owes; null = not set.
+  registration_fee?: number | string | null;
 };
 
 /** The course's hours per day, when set for every event day. */
@@ -478,6 +480,7 @@ function SettingsCard({ course, onSaved }: { course: Course; onSaved: () => void
   const [start, setStart] = useState(hhmm(course.event_start_time));
   const [end, setEnd] = useState(hhmm(course.event_end_time));
   const [tagline, setTagline] = useState(course.badge_tagline || '');
+  const [fee, setFee] = useState(course.registration_fee != null ? String(Number(course.registration_fee)) : '');
   const [pin, setPin] = useState('');
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -490,6 +493,7 @@ function SettingsCard({ course, onSaved }: { course: Course; onSaved: () => void
         event_start_time: start || null,
         event_end_time: end || null,
         badge_tagline: tagline,
+        registration_fee: fee.trim() === '' ? null : fee.trim(),
       };
       if (pin.trim()) body.scanner_pin = pin.trim();
       const res = await fetch(`/api/admin/certificates/courses/${course.id}/badges`, {
@@ -545,6 +549,25 @@ function SettingsCard({ course, onSaved }: { course: Course; onSaved: () => void
           className={inputCls + ' w-full'}
         />
         <span className="block text-xs text-gray-500 mt-1">Printed in gold under the event name on every badge.</span>
+      </label>
+
+      <label className="text-sm block mb-4">
+        <span className="block font-medium mb-1">Registration fee</span>
+        <span className="flex items-center gap-1">
+          <span className="text-gray-500">$</span>
+          <input
+            type="text"
+            inputMode="decimal"
+            value={fee}
+            onChange={(e) => setFee(e.target.value.replace(/[^0-9.]/g, ''))}
+            placeholder="e.g. 100"
+            className={inputCls + ' w-32'}
+          />
+        </span>
+        <span className="block text-xs text-gray-500 mt-1">
+          What a walk-in owes. People from the AMO file keep their AMO balance due. Used for amounts on the scanner, the
+          Attendance tab and Unpaid across events.
+        </span>
       </label>
 
       <div className="grid sm:grid-cols-3 gap-4">

@@ -23,7 +23,7 @@ export async function GET() {
   if (!list.length) return NextResponse.json({ rows: [] });
 
   const courseIds = Array.from(new Set(list.map((r: any) => r.course_id)));
-  const { data: courses } = await supabase.from('cert_courses').select('id, name, course_date').in('id', courseIds);
+  const { data: courses } = await supabase.from('cert_courses').select('id, name, course_date, registration_fee').in('id', courseIds);
   const courseById = new Map<string, any>((courses || []).map((c: any) => [c.id, c]));
 
   // Did they come? (any scan that wasn't undone)
@@ -53,7 +53,8 @@ export async function GET() {
         township: r.township,
         county: r.county,
         organization: r.organization,
-        balance_due: r.balance_due != null ? Number(r.balance_due) : null,
+        // AMO's balance, else the event's registration fee (v48).
+        balance_due: r.balance_due != null ? Number(r.balance_due) : c?.registration_fee != null ? Number(c.registration_fee) : null,
         is_walk_in: r.is_walk_in,
         attended: came.has(r.id),
       };

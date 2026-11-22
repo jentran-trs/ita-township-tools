@@ -53,6 +53,8 @@ export async function POST(req: Request, { params }: { params: { courseId: strin
     badge_token: generateBadgeToken(),
     is_walk_in: true,
     payment_status: count ? 'due' : null,
+    // The event's registration fee (v48), when set.
+    balance_due: count && (s.course as any).registration_fee != null ? Number((s.course as any).registration_fee) : null,
     self_registered_at: new Date().toISOString(),
   };
   const { error } = await supabase.from('cert_registrants').insert(row);

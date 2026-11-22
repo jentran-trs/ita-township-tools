@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowUp, CheckCircle2, ChevronRight, Delete } from 'lucide-react';
 
 const NAVY = '#1B2E5B';
-const IDLE_MS = 90_000; // walked away mid-form: back to the search screen after 1.5 minutes
+const IDLE_MS = 30_000; // walked away mid-form: back to Find my badge number 30 s after the last touch
 const THANKS_MS = 5_000; // thank-you, then straight back to Find My Badge Number
 const TYPES = ['Attendee', 'Sponsor', 'Speaker', 'Resource Vendor', 'Staff'];
 

@@ -62,6 +62,8 @@ type Registrant = {
   // Registration cancelled (v45).
   cancelled_at?: string | null;
   cancel_note?: string | null;
+  payment_status?: 'paid' | 'due' | null;
+  balance_due?: number | string | null;
 };
 
 type PreviewRow = {
@@ -1386,6 +1388,9 @@ function EditRegistrant({
     county: r.county || '',
     organization: r.organization || '',
   });
+  // Amount owed (only while they still owe): e.g. a sponsor's fee.
+  const owes = r.payment_status === 'due';
+  const [owed, setOwed] = useState(r.balance_due != null ? String(Number(r.balance_due)) : '');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   // "Someone else is attending": the registration becomes them; the original is kept.
@@ -1435,7 +1440,7 @@ function EditRegistrant({
       const res = await fetch(`/api/admin/certificates/registrants/${r.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(substitute ? { ...f, substitute: true } : f),
+        body: JSON.stringify({ ...(substitute ? { ...f, substitute: true } : f), ...(owes ? { balance_due: owed.trim() === '' ? null : owed.trim() } : {}) }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Could not save');
@@ -1512,6 +1517,26 @@ function EditRegistrant({
           {field('county', 'County', { placeholder: 'e.g. Boone' })}
         </div>
         {field('organization', 'Organization (company or agency)', { placeholder: 'e.g. Indiana Township Association' })}
+        {owes && (
+          <label className="block text-sm">
+            <span className="block font-medium mb-1">Amount owed</span>
+            <span className="flex items-center gap-1">
+              <span className="text-gray-500">$</span>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={owed}
+                onChange={(e) => setOwed(e.target.value.replace(/[^0-9.]/g, ''))}
+                placeholder="e.g. 1500"
+                className={inputCls + ' w-36'}
+              />
+            </span>
+            <span className="block text-xs text-gray-500 mt-1">
+              For someone who owes a different amount than the registration fee (e.g. a sponsor). A later AMO import replaces it
+              with AMO&apos;s balance due for people in the AMO file.
+            </span>
+          </label>
+        )}
         <p className="text-xs text-gray-500">
           The badge shows Township &amp; County when filled in; otherwise the Organization. Your changes are kept when you
           re-import the AMO file.

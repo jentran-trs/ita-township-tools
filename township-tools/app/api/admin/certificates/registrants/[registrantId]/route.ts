@@ -36,6 +36,16 @@ export async function PATCH(req: Request, { params }: RouteParams) {
     patch.cancelled_by = 'Admin';
     patch.cancel_note = String(body.note || '').trim().slice(0, 500) || null;
   }
+  // Amount this person owes (e.g. a sponsor's fee instead of the general registration fee).
+  if ('balance_due' in body) {
+    const raw = body.balance_due;
+    if (raw === null || raw === '') patch.balance_due = null;
+    else {
+      const n = Number(String(raw).replace(/[$,\s]/g, ''));
+      if (!Number.isFinite(n) || n < 0 || n > 1000000) return NextResponse.json({ error: 'Amount owed must be a dollar amount' }, { status: 400 });
+      patch.balance_due = Math.round(n * 100) / 100;
+    }
+  }
   // Needs review → accepted by the office (v47), or back to needs review.
   if (body.action === 'mark_reviewed') {
     patch.reviewed_at = new Date().toISOString();

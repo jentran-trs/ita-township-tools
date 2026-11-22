@@ -25,7 +25,7 @@ type Row = {
 
 type Person = { key: string; name: string; email: string; place: string; debts: Row[]; total: number };
 
-const money = (n: number) => `$${n.toFixed(2)}`;
+const money = (n: number) => `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const METHODS: [string, string][] = [
   ['card', 'Credit card'],
   ['check', 'Check'],
@@ -106,6 +106,34 @@ export function UnpaidClient() {
     }
   };
 
+  // A different amount for this person (e.g. a sponsor's fee).
+  const editAmount = async (d: Row) => {
+    const v = window.prompt(
+      `Amount ${d.first_name} ${d.last_name} owes for ${d.course_name} ($):`,
+      d.balance_due != null ? String(d.balance_due) : ''
+    );
+    if (v === null) return;
+    const clean = v.replace(/[$,\s]/g, '');
+    if (clean !== '' && !Number.isFinite(Number(clean))) {
+      setError('Enter a dollar amount, e.g. 1500');
+      return;
+    }
+    setBusy(d.registrant_id);
+    try {
+      const res = await fetch(`/api/admin/certificates/registrants/${d.registrant_id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ balance_due: clean === '' ? null : clean }),
+      });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Could not save');
+      await load();
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const copyEmails = async () => {
     const emails = Array.from(new Set(shown.map((p) => p.email.trim().toLowerCase()).filter(Boolean)));
     const text = emails.join(', ');
@@ -133,6 +161,8 @@ export function UnpaidClient() {
       <p className="text-sm text-gray-600 dark:text-gray-400">
         Everyone whose registration is still unpaid, at any event (the latest one included). People are matched across
         events by email, or by first and last name when there&apos;s no email. Cancelled registrations aren&apos;t counted.
+        Amounts come from AMO&apos;s balance due, or the event&apos;s registration fee; click an amount to change it for that
+        person (e.g. a sponsor).
       </p>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -219,7 +249,14 @@ export function UnpaidClient() {
                               {d.course_name}
                             </Link>
                             <span className="text-xs text-gray-500">{d.course_date ? formatCourseDates(d.course_date, null, 'short') : ''}</span>
-                            <span className="font-semibold text-red-700 dark:text-red-400">{d.balance_due ? money(d.balance_due) : 'amount not set'}</span>
+                            <button
+                              type="button"
+                              onClick={() => editAmount(d)}
+                              title="Change the amount (e.g. a sponsor's fee)"
+                              className="font-semibold text-red-700 dark:text-red-400 underline decoration-dotted underline-offset-2 hover:decoration-solid"
+                            >
+                              {d.balance_due ? money(d.balance_due) : 'amount not set'}
+                            </button>
                             <span
                               className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                                 d.attended ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'

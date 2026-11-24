@@ -8,6 +8,7 @@ import { badgeNumberLabel } from '@/lib/badges/badge-numbers';
 import { inPlaceOf } from '@/lib/badges/registrant-edit';
 import { getSupabaseClient } from '@/lib/supabase';
 import { fileSize, printedWhen } from '@/components/badges/PrintFilesList';
+import { PaperSizeSelect } from '@/components/badges/PaperSize';
 import { townshipLabel } from '@/lib/certificates/township';
 import { formatCourseDates } from '@/lib/certificates/date-range';
 import { easternDate, easternTime, easternToUtc, eventDays, formatEventTimes } from '@/lib/badges/attendance';
@@ -659,6 +660,7 @@ type AdminPrintFile = {
   file_name: string;
   size_bytes: number | null;
   copies: number;
+  paper_size: string | null;
   printed_at: string | null;
   printed_by: string | null;
   download_url: string | null;
@@ -669,6 +671,8 @@ function PrintFilesCard({ courseId }: { courseId: string }) {
   const api = `/api/admin/certificates/courses/${courseId}/files`;
   const [files, setFiles] = useState<AdminPrintFile[] | null>(null);
   const [copies, setCopies] = useState('1');
+  // Paper size for the next upload(s) (v50).
+  const [paper, setPaper] = useState<string | null>('Letter (8.5 × 11 in)');
   const [uploading, setUploading] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -696,7 +700,7 @@ function PrintFilesCard({ courseId }: { courseId: string }) {
         const res = await fetch(api, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ file_name: file.name, size_bytes: file.size, content_type: file.type, copies: parseInt(copies, 10) || 1 }),
+          body: JSON.stringify({ file_name: file.name, size_bytes: file.size, content_type: file.type, copies: parseInt(copies, 10) || 1, paper_size: paper }),
         });
         const start = await res.json();
         if (!res.ok) throw new Error(start.error || 'Could not upload');
@@ -748,6 +752,10 @@ function PrintFilesCard({ courseId }: { courseId: string }) {
             className={inputCls + ' w-24'}
           />
         </label>
+        <div className="text-sm">
+          <span className="block font-medium mb-1">Paper size</span>
+          <PaperSizeSelect value={paper} onChange={setPaper} />
+        </div>
         <label className={btn + ' bg-amber-500 text-white hover:bg-amber-600 cursor-pointer'}>
           {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
           {uploading ? `Uploading ${uploading}…` : 'Upload files'}
@@ -787,6 +795,7 @@ function PrintFilesCard({ courseId }: { courseId: string }) {
                   className={inputCls + ' w-20 py-1'}
                 />
               </label>
+              <PaperSizeSelect value={f.paper_size} onChange={(v) => v !== f.paper_size && patch(f.id, { paper_size: v })} />
               <label className="flex items-center gap-1.5 cursor-pointer" title={f.printed_at ? `Ticked by ${f.printed_by || 'printer'}` : ''}>
                 <input type="checkbox" checked={!!f.printed_at} onChange={() => patch(f.id, { printed: !f.printed_at })} className="h-4 w-4 accent-green-600" />
                 <span className={f.printed_at ? 'text-green-700 dark:text-green-400 font-semibold' : 'text-gray-600'}>

@@ -37,7 +37,7 @@ export async function POST(req: Request, { params }: RouteParams) {
   const safe = name.replace(/[^A-Za-z0-9._ -]+/g, '_').replace(/\s+/g, '_');
   const { data: row, error } = await supabase
     .from('cert_print_files')
-    .insert({ course_id: course.id, file_name: name, storage_path: 'pending', content_type: String(b?.content_type || '') || null, size_bytes: size || null, copies })
+    .insert({ course_id: course.id, file_name: name, storage_path: 'pending', content_type: String(b?.content_type || '') || null, size_bytes: size || null, copies, paper_size: String(b?.paper_size || '').trim().slice(0, 80) || null })
     .select('id')
     .single();
   if (error || !row) return NextResponse.json({ error: error?.message || 'Could not start upload' }, { status: 500 });
@@ -51,7 +51,7 @@ export async function POST(req: Request, { params }: RouteParams) {
   return NextResponse.json({ id: row.id, bucket: PRINT_FILES_BUCKET, path, token: up.token });
 }
 
-// PATCH { id, copies? , uploaded? , printed? }
+// PATCH { id, copies? , paper_size? , uploaded? , printed? }
 export async function PATCH(req: Request, { params }: RouteParams) {
   const sErr = await requireSuperadmin();
   if (sErr) return sErr;
@@ -65,6 +65,7 @@ export async function PATCH(req: Request, { params }: RouteParams) {
   const patch: Record<string, any> = {};
   if (b.copies !== undefined) patch.copies = Math.max(0, Math.min(10000, Math.round(Number(b.copies) || 0)));
   if (b.uploaded === true) patch.uploaded = true;
+  if (b.paper_size !== undefined) patch.paper_size = String(b.paper_size || '').trim().slice(0, 80) || null;
   if (Object.keys(patch).length) {
     const { error } = await supabase.from('cert_print_files').update(patch).eq('id', String(b.id)).eq('course_id', params.courseId);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });

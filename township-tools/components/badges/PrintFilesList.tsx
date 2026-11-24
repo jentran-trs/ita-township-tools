@@ -11,6 +11,7 @@ export type PrintFileRow = {
   file_name: string;
   size_bytes: number | null;
   copies: number;
+  paper_size?: string | null;
   printed_at: string | null;
   printed_by: string | null;
   download_url: string | null;
@@ -70,7 +71,7 @@ export function PrintFilesList({ api }: { api: string }) {
       <div>
         <div className="font-bold">Other files to print</div>
         <p className="text-gray-600">
-          {left ? `${left} of ${files.length} still to print.` : 'All printed.'} Download each one, print the number of copies
+          {left ? `${left} of ${files.length} still to print.` : 'All printed.'} Download each one, print the number of copies on the paper size
           shown, then tick <strong>Printed</strong>.
         </p>
       </div>
@@ -83,6 +84,7 @@ export function PrintFilesList({ api }: { api: string }) {
               <div className="text-xs text-gray-500">
                 <strong className="text-gray-900">
                   {f.copies} cop{f.copies === 1 ? 'y' : 'ies'}
+                  {f.paper_size ? ` · ${f.paper_size}` : ''}
                 </strong>
                 {f.size_bytes ? ` · ${fileSize(f.size_bytes)}` : ''}
                 {f.printed_at ? ` · Printed ${printedWhen(f.printed_at)}` : ''}

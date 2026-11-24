@@ -12,6 +12,8 @@ export type PrintFile = {
   content_type: string | null;
   size_bytes: number | null;
   copies: number;
+  // Paper size to print on (v50), e.g. "Letter (8.5 × 11 in)"; null = not set.
+  paper_size: string | null;
   printed_at: string | null;
   printed_by: string | null;
   created_at: string;
@@ -38,6 +40,7 @@ export async function listPrintFiles(supabase: any, courseId: string): Promise<P
         content_type: r.content_type,
         size_bytes: r.size_bytes != null ? Number(r.size_bytes) : null,
         copies: r.copies,
+        paper_size: r.paper_size ?? null,
         printed_at: r.printed_at,
         printed_by: r.printed_by,
         created_at: r.created_at,
